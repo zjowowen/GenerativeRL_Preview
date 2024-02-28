@@ -1,0 +1,27 @@
+from setuptools import setup, find_packages
+
+setup(
+    name='generative_rl',
+    version='0.0.1',
+    description='PyTorch implementations of deep generative reinforcement learning algorithms',
+    author='zjowowen',
+
+    packages=find_packages(
+        exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
+    install_requires=[
+        'gym',
+        'numpy',
+        'torch>=2.2.0',
+        'tensordict',
+        'matplotlib',
+        'wandb',
+        'rich',
+        'mujoco_py',
+        'easydict',
+        'Cython<3.0',
+        'tqdm',
+        'torchdyn',
+        'torchode',
+        'torchsde',
+    ]
+)
