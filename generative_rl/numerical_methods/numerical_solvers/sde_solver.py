@@ -125,6 +125,7 @@ class SDESolver(nn.Module):
             atol=self.atol,
             logqp=logqp,
             adaptive=adaptive,
+            **self.kwargs,
         )
 
         return trajectory

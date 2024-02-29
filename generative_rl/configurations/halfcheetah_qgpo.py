@@ -13,7 +13,6 @@ t_encoder = dict(
     ),
 )
 
-
 config = EasyDict(
     train = dict(
         project = 'd4rl-halfcheetah-v2-qgpo',
@@ -31,7 +30,6 @@ config = EasyDict(
                 critic = dict(
                     device = device,
                     q_alpha = 1.0,
-                    
                     DoubleQNetwork = dict(
                         backbone = dict(
                             type = "ConcatenateMLP",
@@ -47,21 +45,32 @@ config = EasyDict(
                     device = device,
                     x_size = action_size,
                     alpha = 1.0,
-                    noise_schedule = "linear",
-                    solver = "DPMSolver",
-                    marginal_prob_std = "marginal_prob_std",
-                    score_model = dict(
-                        marginal_prob_std = "marginal_prob_std",
-                        t_encoder = t_encoder,
-                        backbone = dict(
-                            type = "TemporalSpatialResidualNet",
-                            args = dict(
-                                hidden_sizes = [512, 256, 128],
-                                output_dim = action_size,
-                                t_dim = t_embedding_dim,
-                                condition_dim = state_size,
-                                condition_hidden_dim = 32,
-                                t_condition_hidden_dim = 128,
+                    solver = dict(
+                        type = "ODESolver",
+                        args = dict(
+                            library="torchdyn",
+                        ),
+                    ),
+                    gaussian_conditional_probability_path = dict(
+                        type = "linear_vp_sde",
+                        beta_0 = 0.1,
+                        beta_1 = 20.0,
+                    ),
+                    diffusion_process = "VPSDE",
+                    score_function = dict(
+                        type = "noise_function",
+                        model = dict(
+                            t_encoder = t_encoder,
+                            backbone = dict(
+                                type = "TemporalSpatialResidualNet",
+                                args = dict(
+                                    hidden_sizes = [512, 256, 128],
+                                    output_dim = action_size,
+                                    t_dim = t_embedding_dim,
+                                    condition_dim = state_size,
+                                    condition_hidden_dim = 32,
+                                    t_condition_hidden_dim = 128,
+                                ),
                             ),
                         ),
                     ),

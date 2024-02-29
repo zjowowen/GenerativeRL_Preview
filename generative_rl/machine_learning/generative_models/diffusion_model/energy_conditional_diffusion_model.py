@@ -124,12 +124,12 @@ class EnergyConditionalDiffusionModel(nn.Module):
         self.device = config.device
         self.alpha = config.alpha
 
-        self.solver = get_solver(config.solver)
+        self.solver = get_solver(config.solver.type)(config.solver.args)
         self.gaussian_generator = gaussian_random_variable(config.x_size, config.device)
 
-        self.gaussian_conditional_probability_path = GaussianConditionalProbabilityPath(config.GaussianConditionalProbabilityPath.type)(config.GaussianConditionalProbabilityPath.args)
+        self.gaussian_conditional_probability_path = GaussianConditionalProbabilityPath(config.gaussian_conditional_probability_path.type)(config.gaussian_conditional_probability_path.args)
         self.diffusion_process = get_diffusion_process(config.diffusion_process)(self.gaussian_conditional_probability_path)
-        self.score_function = ScoreFunction(config.score_model, self.gaussian_conditional_probability_path)
+        self.score_function = ScoreFunction(config.score_function, self.gaussian_conditional_probability_path)
 
         self.energy_model = energy_model
         self.energy_guidance = EnergyGuidance(self.config.energy_guidance)

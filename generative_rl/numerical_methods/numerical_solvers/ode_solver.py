@@ -62,6 +62,7 @@ class ODESolver(nn.Module):
             atol=self.atol,
             rtol=self.rtol,
             return_t_eval=False,
+            **self.kwargs,
         )
         t, trajectory = neural_ode(x0, t_span)
         return trajectory
