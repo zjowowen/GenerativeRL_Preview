@@ -25,6 +25,7 @@ ACTIVATIONS = {
     "relu": nn.ReLU(),
     "softplus": nn.Softplus(),
     "elu": nn.ELU(),
+    "silu": nn.SiLU(),
     "swish": Swish(),
     "square": Lambda(lambda x: x**2),
     "identity": Lambda(lambda x: x),

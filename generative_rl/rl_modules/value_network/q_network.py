@@ -16,16 +16,16 @@ class QNetwork(nn.Module):
         self.config = config
         self.model = torch.nn.ModuleDict()
         if hasattr(config, "action_encoder"):
-            self.model["action_encoder"] = get_encoder(config.action_encoder.type)(config.action_encoder.args)
+            self.model["action_encoder"] = get_encoder(config.action_encoder.type)(**config.action_encoder.args)
         else:
             self.model["action_encoder"] = torch.nn.Identity()
         if hasattr(config, "state_encoder"):
-            self.model["state_encoder"] = get_encoder(config.state_encoder.type)(config.state_encoder.args)
+            self.model["state_encoder"] = get_encoder(config.state_encoder.type)(**config.state_encoder.args)
         else:
             self.model["state_encoder"] = torch.nn.Identity()
         #TODO
         # specific backbone network
-        self.model["backbone"] = get_module(config.backbone.type)(config.backbone.args)
+        self.model["backbone"] = get_module(config.backbone.type)(**config.backbone.args)
 
 
     def forward(

@@ -4,7 +4,7 @@ import torch
 from torch import nn
 import torchsde
 
-class TorchSDE(torch.nn.Module):
+class TorchSDE(nn.Module):
     """
     Overview:
         The SDE class for torchsde library, wich is an object with methods `f` and `g` representing the drift and diffusion.
@@ -49,13 +49,10 @@ class TorchSDE(torch.nn.Module):
         return self.diffusion(t, y)
 
 
-class SDESolver(nn.Module):
+class SDESolver:
 
     def __init__(
         self,
-        drift,
-        diffusion,
-        data_size: Union[torch.Size, int, Tuple[int], List[int], Dict[Any, Any]],
         sde_solver="euler",
         sde_noise_type="general",
         sde_type="ito",
@@ -69,22 +66,16 @@ class SDESolver(nn.Module):
         Overview:
             Initialize the SDE solver using torchsde library.
         Arguments:
-            - drift (:obj:`nn.Module`): The function that defines the ODE.
-            - diffusion (:obj:`nn.Module`): The function that defines the ODE.
-            - data_size (:obj:`int` or :obj:`tuple`): The dimension of the variable.
             - sde_solver (:obj:`str`): The SDE solver to use.
             - sde_noise_type (:obj:`str`): The type of noise of the SDE. It can be 'diagonal', 'general', 'scalar' or 'additive'.
             - sde_type (:obj:`str`): The type of the SDE. It can be 'ito' or 'stratonovich'.
             - dt (:obj:`float`): The time step.
             - atol (:obj:`float`): The absolute tolerance.
             - rtol (:obj:`float`): The relative tolerance.
-            - library (:obj:`str`): The library to use for the ODE solver.
+            - library (:obj:`str`): The library to use for the ODE solver. Currently, it supports 'torchsde'.
             - **kwargs: Additional arguments for the ODE solver.
         """
         super().__init__()
-        self.drift = drift
-        self.diffusion = diffusion
-        self.data_size = data_size
         self.sde_solver = sde_solver
         self.sde_noise_type = sde_noise_type
         self.sde_type = sde_type
@@ -96,21 +87,38 @@ class SDESolver(nn.Module):
         self.kwargs = kwargs
         self.library = library
 
-    def forward_drift(self, t, x):
-        self.nfe_drift += 1
-        return self.drift(t, x)
-    
-    def forward_diffusion(self, t, x):
-        self.nfe_diffusion += 1
-        return self.diffusion(t, x)
+    def integrate(
+            self,
+            drift,
+            diffusion,
+            x0,
+            t_span,
+            logqp=False,
+            adaptive=False
+        ):
+        """
+        Overview:
+            Integrate the SDE.
+        Arguments:
+            - drift (:obj:`nn.Module`): The function that defines the ODE.
+            - diffusion (:obj:`nn.Module`): The function that defines the ODE.
 
-    def integrate(self, x0, t_span, logqp=False, adaptive=False):
+        """
+
         self.nfe_drift = 0
         self.nfe_diffusion = 0
 
+        def forward_drift(t, x):
+            self.nfe_drift += 1
+            return drift(t, x)
+        
+        def forward_diffusion(t, x):
+            self.nfe_diffusion += 1
+            return diffusion(t, x)
+
         sde = TorchSDE(
-            drift=self.forward_drift,
-            diffusion=self.forward_diffusion,
+            drift=forward_drift,
+            diffusion=forward_diffusion,
             noise_type=self.sde_noise_type,
             sde_type=self.sde_type
         )

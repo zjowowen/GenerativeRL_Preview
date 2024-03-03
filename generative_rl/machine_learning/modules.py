@@ -182,13 +182,13 @@ class TemporalSpatialResBlock(nn.Module):
         self.dense2 = nn.Sequential(nn.Linear(output_dim, output_dim), activation)
         self.modify_x = nn.Linear(input_dim, output_dim) if input_dim != output_dim else nn.Identity()
 
-    def forward(self, x, t) -> torch.Tensor:
+    def forward(self, t, x) -> torch.Tensor:
         """
         Overview:
             Return the redisual block output.
         Arguments:
-            - x (:obj:`torch.Tensor`): The input tensor.
             - t (:obj:`torch.Tensor`): The temporal input tensor.
+            - x (:obj:`torch.Tensor`): The input tensor.        
         """
         h1 = self.dense1(x) + self.time_mlp(t)
         h2 = self.dense2(h1)
@@ -196,47 +196,47 @@ class TemporalSpatialResBlock(nn.Module):
 
 class TemporalSpatialResidualNet(nn.Module):
 
-    def __init__(self, config: EasyDict):
+    def __init__(
+            self,
+            hidden_sizes: List[int],
+            output_dim: int,
+            t_dim: int,
+            condition_dim: int,
+            condition_hidden_dim: int,
+            t_condition_hidden_dim: int = None,
+        ):
         super().__init__()
-        hidden_sizes = config.hidden_sizes
-        t_dim = config.t_dim
-        condition_dim = config.condition_dim
-        condition_hidden_dim = config.condition_hidden_dim
         t_condition_dim = t_dim + condition_hidden_dim
-        t_condition_hidden_dim = config.t_condition_hidden_dim if hasattr(config, 't_condition_hidden_dim') else t_condition_dim
+        t_condition_hidden_dim = t_condition_hidden_dim if t_condition_hidden_dim is not None else t_condition_dim
         self.pre_sort_condition = nn.Sequential(nn.Linear(condition_dim, condition_hidden_dim), torch.nn.SiLU())
         self.sort_t = nn.Sequential(
             nn.Linear(t_condition_dim, t_condition_hidden_dim),
             torch.nn.SiLU(),
             nn.Linear(t_condition_hidden_dim, t_condition_hidden_dim),
         )
-        self.first_block = TemporalSpatialResBlock(config.output_dim, hidden_sizes[0], t_dim=t_condition_hidden_dim)
-        self.down_block = []
-        for i in range(len(hidden_sizes) - 1):
-            self.down_block.append(TemporalSpatialResBlock(hidden_sizes[i], hidden_sizes[i + 1], t_dim=t_condition_hidden_dim))
+        self.first_block = TemporalSpatialResBlock(output_dim, hidden_sizes[0], t_dim=t_condition_hidden_dim)
+        self.down_block = nn.ModuleList([TemporalSpatialResBlock(hidden_sizes[i], hidden_sizes[i + 1], t_dim=t_condition_hidden_dim) for i in range(len(hidden_sizes) - 1)])
         self.middle_block = TemporalSpatialResBlock(hidden_sizes[-1], hidden_sizes[-1], t_dim=t_condition_hidden_dim)
-        self.up_block = []
-        for i in range(len(hidden_sizes) - 2, 0, -1):
-            self.up_block.append(TemporalSpatialResBlock(hidden_sizes[i], hidden_sizes[i], t_dim=t_condition_hidden_dim))
-        self.last_block = nn.Linear(hidden_sizes[0]*2, config.output_dim)
+        self.up_block = nn.ModuleList([TemporalSpatialResBlock(hidden_sizes[i], hidden_sizes[i], t_dim=t_condition_hidden_dim) for i in range(len(hidden_sizes) - 2, -1, -1)])
+        self.last_block = nn.Linear(hidden_sizes[0]*2, output_dim)
 
     def forward(
             self,
-            x: torch.Tensor,
             t: torch.Tensor,
+            x: torch.Tensor,
             condition: torch.Tensor = None,
         ) -> torch.Tensor:
 
         t_condition = torch.cat([t, self.pre_sort_condition(condition)], dim=-1)
         t_condition_embedding = self.sort_t(t_condition)
-        d0 = self.first_block(x, t_condition_embedding)
+        d0 = self.first_block(t_condition_embedding, x)
         d=[d0]
         for i, block in enumerate(self.down_block):
-            d_i = block(d_i, t_condition_embedding)
+            d_i = block(t_condition_embedding, d[i])
             d.append(d_i)
-        u = self.middle_block(d[-1], t_condition_embedding)
+        u = self.middle_block(t_condition_embedding, d[-1])
         for i, block in enumerate(self.up_block):
-            u = block(torch.cat([u, d[-i-1]], dim=-1), t_condition_embedding)
+            u = block(t_condition_embedding, torch.cat([u, d[-i-1]], dim=-1))
         return self.last_block(torch.cat([u, d[0]], dim=-1))
             
         
@@ -250,47 +250,57 @@ class ConcatenateLayer(nn.Module):
         return torch.cat(x, dim=-1)
 
 class MultiLayerPerceptron(nn.Module):
-    def __init__(self, config):
+    def __init__(
+            self,
+            hidden_sizes: List[int],
+            output_size: int,
+            activation: Union[str, List[str]],
+            dropout: float = None,
+            layernorm: bool = False,
+            final_activation: str = None,
+            scale: float = None,
+            shrink: float = None,
+        ):
         super().__init__()
 
         self.model = nn.Sequential()
 
-        for i in range(len(config.hidden_sizes)-1):
-            self.model.add_module('linear'+str(i), nn.Linear(config.hidden_sizes[i], config.hidden_sizes[i+1]))
+        for i in range(len(hidden_sizes)-1):
+            self.model.add_module('linear'+str(i), nn.Linear(hidden_sizes[i], hidden_sizes[i+1]))
 
-            if isinstance(config.activation, list):
-                self.model.add_module('activation'+str(i), get_activation(config.activation[i]))
+            if isinstance(activation, list):
+                self.model.add_module('activation'+str(i), get_activation(activation[i]))
             else:
-                self.model.add_module('activation'+str(i), get_activation(config.activation))
-            if hasattr(config,"dropout") and config.dropout > 0:
-                self.model.add_module('dropout', nn.Dropout(config.dropout))
-            if hasattr(config,"layernorm") and config.layernorm:
-                self.model.add_module('layernorm', nn.LayerNorm(config.hidden_sizes[i]))
+                self.model.add_module('activation'+str(i), get_activation(activation))
+            if dropout is not None and dropout > 0:
+                self.model.add_module('dropout', nn.Dropout(dropout))
+            if layernorm:
+                self.model.add_module('layernorm', nn.LayerNorm(hidden_sizes[i]))
 
-        self.model.add_module('linear'+str(len(config.hidden_sizes)-1), nn.Linear(config.hidden_sizes[-1], config.output_size))
+        self.model.add_module('linear'+str(len(hidden_sizes)-1), nn.Linear(hidden_sizes[-1], output_size))
 
-        if hasattr(config,'final_activation'):
-            self.model.add_module('final_activation', get_activation(config.final_activation))
+        if final_activation is not None:
+            self.model.add_module('final_activation', get_activation(final_activation))
         
-        if hasattr(config,'scale'):
-            self.scale=nn.Parameter(torch.tensor(config.scale),requires_grad=False)
+        if scale is not None:
+            self.scale=nn.Parameter(torch.tensor(scale),requires_grad=False)
         else:
             self.scale=1.0
 
-        # shrink the weight of linear layer 'linear'+str(len(config.hidden_sizes) to it's origin 0.01
-        if hasattr(config,'shrink'):
-            if hasattr(config,'final_activation'):
-                self.model[-2].weight.data.normal_(0, config.shrink)
+        # shrink the weight of linear layer 'linear'+str(len(hidden_sizes) to it's origin 0.01
+        if shrink is not None:
+            if final_activation is not None:
+                self.model[-2].weight.data.normal_(0, shrink)
             else:
-                self.model[-1].weight.data.normal_(0, config.shrink)
+                self.model[-1].weight.data.normal_(0, shrink)
 
     def forward(self, x):
         return self.scale*self.model(x)
 
 class ConcatenateMLP(nn.Module):
-    def __init__(self, config):
+    def __init__(self, **kwargs):
         super().__init__()
-        self.model = MultiLayerPerceptron(config)
+        self.model = MultiLayerPerceptron(**kwargs)
 
     def forward(self, *x):
         return self.model(torch.cat(x, dim=-1))

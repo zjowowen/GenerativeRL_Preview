@@ -89,13 +89,25 @@ config = EasyDict(
             )
         ),
         parameter = dict(
-            policy_lr = 1e-3,
-            q_lr = 1e-3,
-            q_t_lr = 1e-3,
-            num_train_steps_per_epoch = 1000,
-            num_train_epochs = 100,
-            num_eval_steps_per_epoch = 1000,
-            num_eval_epochs = 10,
+            behaviour_policy = dict(
+                batch_size = 4096,
+                learning_rate = 1e-4,
+                iterations = 600000,
+            ),
+            sample_per_state = 16,
+            energy_guided_policy = dict(
+                batch_size = 256,
+            ),
+            critic = dict(
+                stop_training_iterations = 500000,
+                learning_rate = 3e-4,
+                discount_factor = 0.99,
+                update_momentum = 0.995,
+            ),
+            energy_guidance = dict(
+                iterations = 600000,
+                learning_rate = 3e-4,
+            ),
         ),
     ),
     deploy = dict(

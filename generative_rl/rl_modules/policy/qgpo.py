@@ -7,9 +7,7 @@ from easydict import EasyDict
 import torch
 import torch.nn as nn
 from tensordict import TensorDict
-from generative_rl.machine_learning.generative_models.diffusion_model.score_model import ScoreModel
 from generative_rl.machine_learning.generative_models.diffusion_model.energy_conditional_diffusion_model import EnergyConditionalDiffusionModel
-from generative_rl.numerical_methods.numerical_solvers.dpm_solver import NoiseScheduleVP
 from generative_rl.rl_modules.value_network.qgpo import QGPOCritic
 
 
@@ -35,27 +33,39 @@ class QGPOPolicy(nn.Module):
         """
         return self.sample(state)
     
-    def sample(self, state: Union[torch.Tensor, TensorDict]) -> Union[torch.Tensor, TensorDict]:
+    def sample(
+            self,
+            state: Union[torch.Tensor, TensorDict],
+            guidance_scale: Union[torch.Tensor, float] = torch.tensor(1.0),
+            solver_config: EasyDict = None,
+        ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
             Return the output of QGPO policy, which is the action conditioned on the state.
         Arguments:
             - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            - guidance_scale (:obj:`Union[torch.Tensor, float]`): The guidance scale.
+            - solver_config (:obj:`EasyDict`): The configuration for the ODE solver.
         Returns:
             - action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
-        return self.diffusion_model.sample(condition=state)
+        return self.diffusion_model.sample(condition=state, guidance_scale=guidance_scale, with_grad=False, solver_config=solver_config)
 
-    def behavior_policy_sample(self, state: Union[torch.Tensor, TensorDict]) -> Union[torch.Tensor, TensorDict]:
+    def behaviour_policy_sample(
+            self,
+            state: Union[torch.Tensor, TensorDict],
+            solver_config: EasyDict = None,
+        ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
-            Return the output of behavior policy, which is the action conditioned on the state.
+            Return the output of behaviour policy, which is the action conditioned on the state.
         Arguments:
             - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            - solver_config (:obj:`EasyDict`): The configuration for the ODE solver.
         Returns:
             - action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
-        return self.diffusion_model.sample_without_energy_guidance(condition=state)
+        return self.diffusion_model.sample_without_energy_guidance(condition=state, solver_config=solver_config)
     
 
     def compute_q(
@@ -82,15 +92,15 @@ class QGPOPolicy(nn.Module):
         ):
         """
         Overview:
-            Calculate the behavior policy loss.
+            Calculate the behaviour policy loss.
         Arguments:
             - action (:obj:`torch.Tensor`): The input action.
             - state (:obj:`torch.Tensor`): The input state.
         """
         
-        return self.diffusion_model.unconditional_loss(action, state)
+        return self.diffusion_model.score_matching_loss(action, state)
 
-    def qt_loss(
+    def energy_guidance_loss(
             self,
             state: Union[torch.Tensor, TensorDict],
             fake_next_action: Union[torch.Tensor, TensorDict]
@@ -103,7 +113,7 @@ class QGPOPolicy(nn.Module):
             - fake_next_action (:obj:`Union[torch.Tensor, TensorDict]`): The input fake next action.
         """
 
-        return self.diffusion_model.energy_guidance_loss(state, fake_next_action)
+        return self.diffusion_model.energy_guidance_loss(fake_next_action, state)
 
     def q_loss(
             self,

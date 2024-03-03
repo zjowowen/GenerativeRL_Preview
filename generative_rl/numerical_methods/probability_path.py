@@ -68,7 +68,8 @@ class GaussianConditionalProbabilityPath:
         """
         self.config = config
         self.type = config.type
-        assert type in ["diffusion", "vp_sde", "linear_vp_sde", "cosine_vp_sde", "general_ve_sde", "op_flow"], \
+        self.t_max = 1.0 if not hasattr(config, "t_max") else config.t_max
+        assert self.type in ["diffusion", "vp_sde", "linear_vp_sde", "cosine_vp_sde", "general_ve_sde", "op_flow"], \
             "Unknown type of Gaussian conditional probability path {}".format(type)
     
     def drift(
@@ -90,7 +91,8 @@ class GaussianConditionalProbabilityPath:
         """
 
         if self.type == "linear_vp_sde":
-            return -0.5 * (self.config.beta_0 + t * (self.config.beta_1 - self.config.beta_0)) * x
+            #TODO: make it compatible with TensorDict
+            return  torch.einsum("i...,i->i...", x, -0.5 * (self.config.beta_0 + t * (self.config.beta_1 - self.config.beta_0)))
         else:
             raise NotImplementedError("Drift term for type {} is not implemented".format(self.type))
 

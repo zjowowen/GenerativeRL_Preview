@@ -23,7 +23,6 @@ class VPSDE:
         ):
         super().__init__()
         self.gaussian_conditional_probability_path = gaussian_conditional_probability_path
-        self.t_max = torch.tensor(1.)
 
     def drift(
             self,
@@ -160,7 +159,8 @@ class VPSDE:
                 t: torch.Tensor,
                 x: Union[torch.Tensor, TensorDict],
         ) -> Union[torch.Tensor, TensorDict]:
-            return - self.drift(T - t, x, condition) + 0.5 * self.diffusion_squared(T - t, x, condition) * score_function(T - t, x, condition)
+            
+            return - self.drift(T - t, x, condition) + 0.5 * torch.einsum("i,i...->i...", self.diffusion_squared(T - t, x, condition), score_function(T - t, x, condition))
         
         return ODE(drift=reverse_ode_drift)
         
@@ -230,7 +230,18 @@ class VPSDE:
             - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         """
 
-        return x * self.gaussian_conditional_probability_path.scale(t) + self.gaussian_conditional_probability_path.std(t) * torch.randn_like(x)
+        #TODO: make it compatible with TensorDict
+
+        scale = self.gaussian_conditional_probability_path.scale(t)
+        std = self.gaussian_conditional_probability_path.std(t)
+        if len(x.shape) > len(scale.shape):
+            while len(x.shape)>len(scale.shape):
+                scale = scale.unsqueeze(-1)
+                std = std.unsqueeze(-1)
+            scale = scale.expand(x.shape)
+            std = std.expand(x.shape)
+
+        return x * scale + std * torch.randn_like(x)
 
     def direct_sample_and_return_noise(
             self,

@@ -42,7 +42,6 @@ class QGPOCritic(nn.Module):
         """
 
         return self.q(action, state)
-    
 
     def compute_double_q(
             self,
@@ -85,12 +84,10 @@ class QGPOCritic(nn.Module):
         """
         with torch.no_grad():
             softmax = nn.Softmax(dim=1)
-            next_energy = self.q.q0_target(fake_next_action, torch.stack([next_state] * fake_next_action.shape[1], axis=1)).detach().squeeze()
+            next_energy = self.q_target(fake_next_action, torch.stack([next_state] * fake_next_action.shape[1], axis=1)).detach().squeeze()
             next_v = torch.sum(softmax(self.q_alpha * next_energy) * next_energy, dim=-1, keepdim=True)
         # Update Q function
         targets = reward + (1. - done.float()) * discount_factor * next_v.detach()
         q0, q1 = self.q.compute_double_q(action, state)
         q_loss = (torch.nn.functional.mse_loss(q0, targets) + torch.nn.functional.mse_loss(q1, targets)) / 2
-
         return q_loss
-
