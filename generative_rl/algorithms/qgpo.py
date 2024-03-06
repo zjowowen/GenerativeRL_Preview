@@ -1,7 +1,6 @@
 from typing import Optional, Tuple, Union, List, Dict, Any, Callable
 from easydict import EasyDict
 
-import tqdm
 from rich.progress import Progress
 from rich.progress import track
 import numpy as np

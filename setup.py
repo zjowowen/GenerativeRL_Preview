@@ -9,9 +9,10 @@ setup(
     packages=find_packages(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=[
-        'gym',
+        'gym==0.23.1',
         'numpy',
         'torch>=2.2.0',
+        'opencv-python',
         'tensordict',
         'matplotlib',
         'wandb',
@@ -23,5 +24,6 @@ setup(
         'torchdyn',
         'torchode',
         'torchsde',
+        'scipy'
     ]
 )

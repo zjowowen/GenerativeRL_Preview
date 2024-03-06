@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, List, Tuple, Dict, Any, Callable
 from easydict import EasyDict
 import torch
 import torch.nn as nn
@@ -49,7 +49,9 @@ class DiffusionModel(nn.Module):
 
     def sample(
             self,
-            condition: Union[torch.Tensor, TensorDict],
+            t_span: torch.Tensor = None,
+            condition: Union[torch.Tensor, TensorDict] = None,
+            batch_size: Union[torch.Size, int, Tuple[int], List[int]]  = None,
             with_grad: bool = False,
             solver_config: EasyDict = None,
         ):
@@ -57,12 +59,24 @@ class DiffusionModel(nn.Module):
         Overview:
             Sample from the diffusion model.
         Arguments:
+            - t_span (:obj:`torch.Tensor`): The time span.
             - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            - batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
             - with_grad (:obj:`bool`): Whether to return the gradient.
             - solver_config (:obj:`EasyDict`): The configuration of the solver.
         Returns:
             - x (:obj:`Union[torch.Tensor, TensorDict]`): The sampled result.
         """
+
+        if t_span is not None:
+            self.t_span = t_span.to(self.device)
+
+        if batch_size is not None:
+            pass
+        elif condition is not None:
+            batch_size = condition.shape[0]
+        else:
+            batch_size = 1
 
         if solver_config is not None:
             solver = get_solver(solver_config.type)(**solver_config.args)
@@ -77,7 +91,7 @@ class DiffusionModel(nn.Module):
             #TODO: make it compatible with TensorDict
             if not hasattr(self, "t_span") is None:
                 self.t_span = torch.linspace(0, self.gaussian_conditional_probability_path.t_max, 2).to(self.device)
-            x = self.gaussian_generator(batch_size=condition.shape[0])
+            x = self.gaussian_generator(batch_size=batch_size)
             if with_grad:
                 data = solver.integrate(
                     drift=self.diffusion_process.reverse_ode(score_function=self.score_function, condition=condition).drift,
@@ -91,13 +105,12 @@ class DiffusionModel(nn.Module):
                         x0=x,
                         t_span=self.t_span,
                     )[1]
-            self.diffusion_process.reverse_ode(score_function=self.score_function, condition=condition).drift
         elif isinstance(solver, SDESolver):
             #TODO: make it compatible with TensorDict
             #TODO: validate the implementation
             if not hasattr(self, "t_span") is None:
                 self.t_span = torch.linspace(0, self.gaussian_conditional_probability_path.t_max, 2).to(self.device)
-            x = self.gaussian_generator(batch_size=condition.shape[0])
+            x = self.gaussian_generator(batch_size=batch_size)
             sde = self.diffusion_process.reverse_sde(score_function=self.score_function, condition=condition)
             if with_grad:
                 data = solver.integrate(
@@ -118,37 +131,90 @@ class DiffusionModel(nn.Module):
             raise NotImplementedError("Solver type {} is not implemented".format(self.config.solver.type))
         return data
 
-    def sample(
+    def sample_forward_process(
             self,
-            condition: Union[torch.Tensor, TensorDict],
-            **solver_kwargs,
+            t_span: torch.Tensor,
+            batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
+            condition: Union[torch.Tensor, TensorDict] = None,
+            with_grad: bool = False,
+            solver_config: EasyDict = None,
         ):
         """
         Overview:
             Sample from the diffusion model.
         Arguments:
+            - t_span (:obj:`torch.Tensor`): The time span.
+            - batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
             - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
-            - solver_kwargs (:obj:`EasyDict`): The keyword arguments for the SDE solver or ODE solver.
+            - with_grad (:obj:`bool`): Whether to return the gradient.
+            - solver_config (:obj:`EasyDict`): The configuration of the solver.
         Returns:
             - x (:obj:`Union[torch.Tensor, TensorDict]`): The sampled result.
         """
 
-        if self.config.solver.type.lower() == "dpmsolver":
+        t_span = t_span.to(self.device)
+        
+        if batch_size is not None:
+            pass
+        elif condition is not None:
+            batch_size = condition.shape[0]
+        else:
+            batch_size = 1
+        
+        if solver_config is not None:
+            solver = get_solver(solver_config.type)(**solver_config.args)
+        else:
+            assert hasattr(self, "solver"), "solver must be specified in config or solver_config"
+            solver = self.solver
+
+        if isinstance(solver, DPMSolver):
             #TODO
             pass
-        elif self.config.solver.type.lower() == "odesolver":
-            x = self.gaussian_generator()
-            self.diffusion_process.reverse_ode(score_function=self.score_function, condition=condition).sample(t=self.gaussian_conditional_probability_path.t_max, x=x, **solver_kwargs)
-        elif self.config.solver.type.lower() == "sdesolver":
-            x = self.gaussian_generator()
-            self.diffusion_process.reverse_sde(score_function=self.score_function, condition=condition).sample(t=self.gaussian_conditional_probability_path.t_max, x=x, **solver_kwargs)
+        elif isinstance(solver, ODESolver):
+            #TODO: make it compatible with TensorDict
+            x = self.gaussian_generator(batch_size=batch_size)
+            if with_grad:
+                data = solver.integrate(
+                    drift=self.diffusion_process.reverse_ode(score_function=self.score_function, condition=condition).drift,
+                    x0=x,
+                    t_span=t_span,
+                )
+            else:
+                with torch.no_grad():
+                    data = solver.integrate(
+                        drift=self.diffusion_process.reverse_ode(score_function=self.score_function, condition=condition).drift,
+                        x0=x,
+                        t_span=t_span,
+                    )
+        elif isinstance(solver, SDESolver):
+            #TODO: make it compatible with TensorDict
+            #TODO: validate the implementation
+            x = self.gaussian_generator(batch_size=batch_size)
+            sde = self.diffusion_process.reverse_sde(score_function=self.score_function, condition=condition)
+            if with_grad:
+                data = solver.integrate(
+                    drift=sde.drift,
+                    diffusion=sde.diffusion,
+                    x0=x,
+                    t_span=t_span,
+                )
+            else:
+                with torch.no_grad():
+                    data = solver.integrate(
+                        drift=sde.drift,
+                        diffusion=sde.diffusion,
+                        x0=x,
+                        t_span=t_span,
+                    )
         else:
             raise NotImplementedError("Solver type {} is not implemented".format(self.config.solver.type))
+        return data
+
 
     def score_matching_loss(
             self,
             x: Union[torch.Tensor, TensorDict],
-            condition: Union[torch.Tensor, TensorDict],
+            condition: Union[torch.Tensor, TensorDict] = None,
         ) -> torch.Tensor:
         """
         Overview:

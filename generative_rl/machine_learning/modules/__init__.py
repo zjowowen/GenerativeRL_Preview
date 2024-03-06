@@ -201,14 +201,19 @@ class TemporalSpatialResidualNet(nn.Module):
             hidden_sizes: List[int],
             output_dim: int,
             t_dim: int,
-            condition_dim: int,
-            condition_hidden_dim: int,
+            condition_dim: int = None,
+            condition_hidden_dim: int = None,
             t_condition_hidden_dim: int = None,
         ):
         super().__init__()
-        t_condition_dim = t_dim + condition_hidden_dim
-        t_condition_hidden_dim = t_condition_hidden_dim if t_condition_hidden_dim is not None else t_condition_dim
-        self.pre_sort_condition = nn.Sequential(nn.Linear(condition_dim, condition_hidden_dim), torch.nn.SiLU())
+        if condition_dim is None or condition_dim <= 0:
+            condition_hidden_dim = 0
+            t_condition_dim = t_dim
+            t_condition_hidden_dim = t_dim
+        else:
+            t_condition_dim = t_dim + condition_hidden_dim
+            t_condition_hidden_dim = t_condition_hidden_dim if t_condition_hidden_dim is not None else t_condition_dim
+            self.pre_sort_condition = nn.Sequential(nn.Linear(condition_dim, condition_hidden_dim), torch.nn.SiLU())
         self.sort_t = nn.Sequential(
             nn.Linear(t_condition_dim, t_condition_hidden_dim),
             torch.nn.SiLU(),
@@ -227,7 +232,10 @@ class TemporalSpatialResidualNet(nn.Module):
             condition: torch.Tensor = None,
         ) -> torch.Tensor:
 
-        t_condition = torch.cat([t, self.pre_sort_condition(condition)], dim=-1)
+        if condition:
+            t_condition = torch.cat([t, self.pre_sort_condition(condition)], dim=-1)
+        else:
+            t_condition = t
         t_condition_embedding = self.sort_t(t_condition)
         d0 = self.first_block(t_condition_embedding, x)
         d=[d0]
@@ -238,9 +246,6 @@ class TemporalSpatialResidualNet(nn.Module):
         for i, block in enumerate(self.up_block):
             u = block(t_condition_embedding, torch.cat([u, d[-i-1]], dim=-1))
         return self.last_block(torch.cat([u, d[0]], dim=-1))
-            
-        
-
 
 class ConcatenateLayer(nn.Module):
     def __init__(self):
@@ -305,12 +310,14 @@ class ConcatenateMLP(nn.Module):
     def forward(self, *x):
         return self.model(torch.cat(x, dim=-1))
 
+from .transformers.dit import DiT
 
 MODULES={
     "ConcatenateLayer".lower(): ConcatenateLayer,
     "MultiLayerPerceptron".lower(): MultiLayerPerceptron,
     "ConcatenateMLP".lower(): ConcatenateMLP,
     "TemporalSpatialResidualNet".lower(): TemporalSpatialResidualNet,
+    "DiT".lower(): DiT,
 }
 
 def get_module(type):
@@ -318,4 +325,3 @@ def get_module(type):
         return MODULES[type.lower()]
     else:
         raise ValueError(f"Unknown module type: {type}")
-

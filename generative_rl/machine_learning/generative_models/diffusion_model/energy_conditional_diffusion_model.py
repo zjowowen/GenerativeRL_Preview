@@ -212,7 +212,6 @@ class EnergyConditionalDiffusionModel(nn.Module):
                         x0=x,
                         t_span=self.t_span,
                     )[1]
-            self.diffusion_process.reverse_ode(score_function=score_function_with_energy_guidance, condition=condition).drift
         elif isinstance(solver, SDESolver):
             #TODO: make it compatible with TensorDict
             #TODO: validate the implementation

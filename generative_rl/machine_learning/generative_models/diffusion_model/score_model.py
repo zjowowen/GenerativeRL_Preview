@@ -140,7 +140,7 @@ class ScoreFunction(nn.Module):
         #TODO: make it compatible with TensorDict
         if self.type == "noise_function":
             #TODO: test esp
-            eps = 1e-3
+            eps = 1e-5
             t_random = torch.rand(x.shape[0], device=x.device) * (self.gaussian_conditional_probability_path.t_max - eps) + eps
             noise = torch.randn_like(x).to(x.device)
             x_t = torch.einsum('i,i...->i...', self.gaussian_conditional_probability_path.scale(t_random), x) + torch.einsum('i,i...->i...', self.gaussian_conditional_probability_path.std(t_random), noise)
@@ -149,7 +149,7 @@ class ScoreFunction(nn.Module):
             return loss
         elif self.type == "score_function":
             #TODO: test esp
-            eps = 1e-3
+            eps = 1e-5
             t_random = torch.rand(x.shape[0], device=x.device) * (self.gaussian_conditional_probability_path.t_max - eps) + eps
             noise = torch.randn_like(x).to(x.device)
             std = self.gaussian_conditional_probability_path.std(t_random)
