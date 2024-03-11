@@ -4,7 +4,9 @@ from easydict import EasyDict
 import gym
 import minerl
 import random
+
 import multiprocessing as mp
+
 from torchvision.datasets import ImageFolder
 from torchvision import transforms
 from PIL import Image
@@ -32,7 +34,10 @@ def kill_process_by_string(process_string):
                 proc.kill()
 
 def resize_image(image, size):
+    # image is numpy array of shape (360, 640, 3), resize to (64, 64, 3)
     return cv2.resize(image[:, :, ::-1], (size, size), interpolation=cv2.INTER_AREA)
+    # return cv2.resize(image[:, :, ::-1], (128, 72), interpolation=cv2.INTER_AREA)
+    # return cv2.resize(image[:, :, ::-1], (128, 72))
 
 def save_image(image, path):
     cv2.imwrite(path, image, [cv2.IMWRITE_PNG_COMPRESSION, 0])
@@ -134,3 +139,6 @@ if __name__ == "__main__":
                 kill_process_by_string("build/libs/mcprec-6.13.jar")
                 time.sleep(10)
                 continue
+            
+            
+

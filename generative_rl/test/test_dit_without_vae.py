@@ -11,6 +11,7 @@ import torch
 import torch.nn as nn
 
 from generative_rl.machine_learning.generative_models.diffusion_model.base import DiffusionModel
+from generative_rl.utils.config import merge_two_dicts_into_newone
 
 from diffusers.models import AutoencoderKL
 import torchvision
@@ -19,10 +20,12 @@ from torchvision import transforms
 from PIL import Image
 import wandb
 
+train_mode = "single_card"
+assert train_mode in ["single_card", "ddp"]
 device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
-vae_hidden_size = 8
-vae_channel_size = 4
-x_size = (4, vae_hidden_size, vae_hidden_size)
+image_size = 64
+channel_size = 3
+x_size = (channel_size, image_size, image_size)
 t_embedding_dim = 32
 t_encoder = dict(
     type = "GaussianFourierProjectionTimeEncoder",
@@ -31,13 +34,11 @@ t_encoder = dict(
         scale = 30.0,
     ),
 )
-image_size = 64
-train_mode = "single_card"
-assert train_mode in ["single_card", "ddp"]
 
 config = EasyDict(
     dict(
         device = device,
+        project = 'dit-minecraft-without-vae',
         data=dict(
             image_size=image_size,
             data_path="./minerl_images",
@@ -65,9 +66,9 @@ config = EasyDict(
                         backbone = dict(
                             type = "DiT",
                             args = dict(
-                                input_size = vae_hidden_size,
-                                patch_size = 2,
-                                in_channels = vae_channel_size,
+                                input_size = image_size,
+                                patch_size = 4,
+                                in_channels = channel_size,
                                 hidden_size = 384,
                                 depth = 12,
                                 num_heads = 6,
@@ -80,10 +81,10 @@ config = EasyDict(
         ),
         parameter=dict(
             train_mode=train_mode,
-            batch_size=256,
+            batch_size=32,
             eval_freq=100,
             learning_rate=5e-4,
-            iterations=20000,
+            iterations=200000,
             clip_grad_norm=1.0,
             image_save_path="./images",
         ),
@@ -114,9 +115,11 @@ def center_crop_arr(pil_image, image_size):
 if __name__ == "__main__":
 
     with wandb.init(
-        project=config.project if hasattr(config, "project") else "dit-minecraft",
+        project=config.project if hasattr(config, "project") else "dit-minecraft-without-vae",
         **config.wandb if hasattr(config, "wandb") else {}
     ) as wandb_run:
+        config=merge_two_dicts_into_newone(EasyDict(wandb_run.config), config)
+        wandb_run.config.update(config)
 
         if config.parameter.train_mode == "ddp":
             torch.distributed.init_process_group("nccl")
@@ -127,8 +130,6 @@ if __name__ == "__main__":
 
         diffusion_model = DiffusionModel(config=config.model.diffusion_model)
         diffusion_model = torch.compile(diffusion_model)
-
-        vae = AutoencoderKL.from_pretrained(f"/home/zjow/huggingface/sd-vae-ft-ema").to(device)
 
         if config.parameter.train_mode == "ddp":
             diffusion_model = nn.parallel.DistributedDataParallel(diffusion_model.to(config.model.diffusion_model.device), device_ids=[torch.distributed.get_rank()])
@@ -181,12 +182,12 @@ if __name__ == "__main__":
                 x_t = diffusion_model.sample_forward_process(t_span=t_span, batch_size=1).detach()
                 x_t=[x.squeeze(0) for x in torch.split(x_t, split_size_or_sections=1, dim=0)]
                 # render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
-                # image_x_t = [vae.decode(z / 0.18215).sample for z in x_t]
-                image_x_1 = vae.decode(x_t[-1] / 0.18215).sample
+                image_x_1 = x_t[-1]
                 if not os.path.exists(config.parameter.image_save_path):
                     os.makedirs(config.parameter.image_save_path)
                 torchvision.utils.save_image(image_x_1, os.path.join(config.parameter.image_save_path, f"iteration_{iteration}.png"),  nrow=4, normalize=True, value_range=(-1, 1))
-                image_x_1 = image_x_1[0].mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
+                image_x_1 = torchvision.utils.make_grid(image_x_1, nrow=4, normalize=True, value_range=(-1, 1))
+                image_x_1 = image_x_1.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
                 image = wandb.Image(image_x_1, caption=f"iteration {iteration}")
                 wandb_run.log(
                     data=dict(
@@ -197,8 +198,6 @@ if __name__ == "__main__":
             batch_data, label = next(iter(data_loader))
             batch_data = batch_data.to(config.device)
 
-            batch_data = vae.encode(batch_data).latent_dist.sample().mul_(0.18215)
-            
             diffusion_model.train()
             loss=diffusion_model.score_matching_loss(batch_data)
             optimizer.zero_grad()
@@ -217,19 +216,19 @@ if __name__ == "__main__":
                 x_t = diffusion_model.sample_forward_process(t_span=t_span, batch_size=1).detach()
                 x_t=[x.squeeze(0) for x in torch.split(x_t, split_size_or_sections=1, dim=0)]
                 # render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
-                # image_x_t = [vae.decode(z / 0.18215).sample for z in x_t]
-                image_x_1 = vae.decode(x_t[-1] / 0.18215).sample
+                image_x_1 = x_t[-1]
                 if not os.path.exists(config.parameter.image_save_path):
                     os.makedirs(config.parameter.image_save_path)
                 torchvision.utils.save_image(image_x_1, os.path.join(config.parameter.image_save_path, f"iteration_{iteration}.png"),  nrow=4, normalize=True, value_range=(-1, 1))
-                image_x_1 = image_x_1[0].mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
+                image_x_1 = torchvision.utils.make_grid(image_x_1, nrow=4, normalize=True, value_range=(-1, 1))
+                image_x_1 = image_x_1.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
                 image = wandb.Image(image_x_1, caption=f"iteration {iteration}")
                 wandb_run.log(
                     data=dict(
                         image = image,
                     ),
                     commit=False)
-
+                
             wandb_run.log(
                 data=dict(
                     iteration=iteration,
@@ -238,3 +237,6 @@ if __name__ == "__main__":
                     average_gradient=gradient_sum/counter,
                 ),
                 commit=True)
+
+        wandb.finish()
+

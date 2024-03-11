@@ -24,6 +24,11 @@ setup(
         'torchdyn',
         'torchode',
         'torchsde',
-        'scipy'
+        'scipy',
+        'diffusers',
+        'timm',
+        'av',
+        'moviepy',
+        'imageio[ffmpeg]',
     ]
 )
