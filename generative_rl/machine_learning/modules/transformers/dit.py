@@ -1,4 +1,4 @@
-from typing import Callable, List, Optional, Union
+from typing import Callable, List, Optional, Union, Tuple
 from easydict import EasyDict
 import math
 import numpy as np
@@ -101,6 +101,38 @@ class LabelEmbedder(nn.Module):
         return embeddings
 
 # https://github.com/facebookresearch/mae/blob/main/util/pos_embed.py
+
+def get_3d_sincos_pos_embed(
+        embed_dim,
+        grid_num
+    ):
+    """
+    Overview:
+        Get 3D positional embeddings for 3D data.
+    Arguments:
+        - embed_dim (:obj:`int`): The output dimension of embeddings for each grid.
+        - grid_num (:obj:`List[int]`): The number of the grid in each dimension.
+    """
+    assert len(grid_num) == 3
+    grid_num_sum = grid_num[0] + grid_num[1] + grid_num[2]
+    assert embed_dim % grid_num_sum == 0, f"Embedding dimension {embed_dim} must be divisible by the total grid size {grid_num_sum}."
+    embed_dim_per_grid = embed_dim // grid_num_sum
+    grid_0 = np.arange(grid_num[0], dtype=np.float32)
+    grid_1 = np.arange(grid_num[1], dtype=np.float32)
+    grid_2 = np.arange(grid_num[2], dtype=np.float32)
+
+    grid = np.meshgrid(grid_1, grid_0, grid_2)  # here w goes first
+    grid = np.stack([grid[1], grid[0], grid[2]], axis=0)
+
+    # emb_i of shape (embed_dim_per_grid*grid_num[i], total_grid_num = grid_num[0]*grid_num[1]*grid_num[2])
+    emb_0 = get_1d_sincos_pos_embed_from_grid(embed_dim_per_grid*grid_num[0], grid[0])
+    emb_1 = get_1d_sincos_pos_embed_from_grid(embed_dim_per_grid*grid_num[1], grid[1])
+    emb_2 = get_1d_sincos_pos_embed_from_grid(embed_dim_per_grid*grid_num[2], grid[2])
+
+    # emb is of shape (total_grid_num, embed_dim)
+    emb = np.concatenate([emb_0, emb_1, emb_2], axis=-1)
+    return emb
+    
 
 def get_2d_sincos_pos_embed(embed_dim, grid_size, cls_token=False, extra_tokens=0):
     """
@@ -220,6 +252,68 @@ class FinalLayer(nn.Module):
         x = modulate(self.norm_final(x), shift, scale)
         x = self.linear(x)
         return x
+
+class FinalLayer_3D(nn.Module):
+    """
+    Overview:
+        The final layer of DiT for 3D data.
+    Interfaces:
+        ``__init__``, ``forward``
+    """
+    def __init__(
+            self,
+            hidden_size: int,
+            patch_size: Union[int, List[int], Tuple[int]],
+            out_channels: Union[int, List[int], Tuple[int]]
+        ):
+        """
+        Overview:
+            Initialize the final layer.
+        Arguments:
+            - hidden_size (:obj:`int`): The hidden size.
+            - patch_size (:obj:`Union[int, List[int], Tuple[int]]`): The patch size of each token in attention layer.
+            - out_channels (:obj:`Union[int, List[int], Tuple[int]]`): The number of output channels.
+        """
+        super().__init__()
+        assert isinstance(patch_size, (list, tuple)) and len(patch_size) == 3 or isinstance(patch_size, int)
+        if isinstance(patch_size, int):
+            self.patch_size = [patch_size] * 3
+        else:
+            self.patch_size = list(patch_size)
+        assert isinstance(out_channels, (list, tuple)) or isinstance(out_channels, int)
+        if isinstance(out_channels, int):
+            self.out_channels = [out_channels]
+        else:
+            self.out_channels = list(out_channels)
+
+        output_dim = np.prod(self.patch_size) * np.prod(self.out_channels)
+
+        self.norm_final = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
+        self.linear = nn.Linear(hidden_size, output_dim, bias=True)
+        self.adaLN_modulation = nn.Sequential(
+            nn.SiLU(),
+            nn.Linear(hidden_size, 2 * hidden_size, bias=True)
+        )
+
+    def forward(
+            self,
+            x: torch.Tensor,
+            c: torch.Tensor
+        ):
+        """
+        Overview:
+            Forward pass of the final layer.
+        Arguments:
+            - x (:obj:`torch.Tensor`): The input tensor of shape (N, total_patches, hidden_size).
+            - c (:obj:`torch.Tensor`): The conditioning tensor.
+        Returns:
+            - x (:obj:`torch.Tensor`): The output tensor of shape (N, total_patches, patch_size[0] * patch_size[1] * patch_size[2] * **out_channels).
+        """
+        shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
+        x = modulate(self.norm_final(x), shift, scale)
+        x = self.linear(x)
+        return x
+
 
 
 class DiT(nn.Module):
@@ -390,6 +484,215 @@ class DiT(nn.Module):
         eps = torch.cat([half_eps, half_eps], dim=0)
         return torch.cat([eps, rest], dim=1)
 
+class Patchify_3D(nn.Module):
+    """
+    Overview:
+        Patchify the input tensor of shape (T, H, W) of attention layer.
+    Interfaces:
+        ``__init__``, ``forward``
+    """
+
+
+    def __init__(
+            self,
+            channel_size: Union[int, List[int]] = [3],
+            data_size: List[int] = [32, 32, 32],
+            patch_size: List[int] = [2, 2, 2],
+            hidden_size: int = 768,
+            bias: bool = False,
+            convolved: bool = False,
+        ):
+        """
+        Overview:
+            Initialize the patchify layer.
+        Arguments:
+            - channel_size (:obj:`Union[int, List[int]]`): The number of input channels, defaults to 3.
+            - data_size (:obj:`List[int]`): The input size of data, defaults to [32, 32, 32].
+            - patch_size (:obj:`List[int]`): The patch size of each token for attention layer, defaults to [2, 2, 2].
+            - hidden_size (:obj:`int`): The hidden size of attention layer, defaults to 768.
+            - bias (:obj:`bool`): Whether to use bias, defaults to False.
+            - convolved (:obj:`bool`): Whether to use fully connected layer for all channels, defaults to False.
+        """
+        super().__init__()
+        assert isinstance(data_size, (list, tuple)) or isinstance(data_size, int)
+        self.channel_size = list(channel_size) if isinstance(channel_size, (list, tuple)) else [channel_size]
+        self.patch_size = patch_size
+        
+        in_channels = 1
+        for i in self.channel_size:
+            in_channels *= i
+
+        self.num_patches = 1
+        for i in range(3):
+            self.num_patches *= data_size[i] // patch_size[i]
+
+        if convolved:
+            self.proj = nn.Conv3d(in_channels=in_channels, out_channels=hidden_size, kernel_size=patch_size, stride=patch_size, bias=bias)
+        else:
+            self.proj = nn.Conv3d(in_channels=in_channels, out_channels=hidden_size, kernel_size=patch_size, stride=patch_size, groups=in_channels, bias=bias)
+
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Overview:
+            Forward pass of the patchify layer.
+        Arguments:
+            - x (:obj:`torch.Tensor`): The input tensor of shape (B, C, T, H, W).
+        Returns:
+            - x (:obj:`torch.Tensor`): The output tensor of shape (B, T' * H'* W', hidden_size). \
+            where T' = T // patch_size[0], H' = H // patch_size[1], W' = W // patch_size[2].
+        """
+
+        # x: (B, (C1, C2), T, H, W)
+        x = x.flatten(start_dim=1, end_dim=-4)
+        # x: (B, C1 * C2, T, H, W)
+        x = self.proj(x)
+        # x: (B, hidden_size, T', H', W')
+        x = x.flatten(start_dim=-3)
+        # x: (B, hidden_size, T' * H' * W')
+        x = x.transpose(1, 2)
+        # x: (B, T' * H' * W', hidden_size)
+        return x
+
+class DiT_3D(nn.Module):
+    """
+    Overview:
+        Transformer backbone for Diffusion model for data of 3D shape.
+    Interfaces:
+        ``__init__``, ``forward``
+    """
+    def __init__(
+        self,
+        patch_block_size: Union[List[int], Tuple[int]] = [10, 32, 32],
+        patch_size: Union[int, List[int], Tuple[int]] = 2,
+        in_channels: Union[int, List[int], Tuple[int]] = 4,
+        hidden_size: int = 1152,
+        depth: int = 28,
+        num_heads: int = 16,
+        mlp_ratio: float = 4.0,
+        learn_sigma: bool = True,
+    ):
+        """
+        Overview:
+            Initialize the DiT model.
+        Arguments:
+            - patch_block_size (:obj:`Union[List[int], Tuple[int]]`): The size of patch block, defaults to [10, 32, 32].
+            - patch_size (:obj:`Union[int, List[int], Tuple[int]]`): The patch size of each token in attention layer, defaults to 2.
+            - in_channels (:obj:`Union[int, List[int], Tuple[int]]`): The number of input channels, defaults to 4.
+            - hidden_size (:obj:`int`): The hidden size of attention layer, defaults to 1152.
+            - depth (:obj:`int`): The depth of transformer, defaults to 28.
+            - num_heads (:obj:`int`): The number of attention heads, defaults to 16.
+            - mlp_ratio (:obj:`float`): The hidden size of the MLP with respect to the hidden size of Attention, defaults to 4.0.
+            - learn_sigma (:obj:`bool`): Whether to learn sigma, defaults to True.
+        """
+        super().__init__()
+
+        assert isinstance(patch_block_size, (list, tuple)) and len(patch_block_size) == 3 or isinstance(patch_block_size, int)
+        self.patch_block_size = list(patch_block_size) if isinstance(patch_block_size, (list, tuple)) else [patch_block_size] * 3
+        assert isinstance(patch_size, (list, tuple)) and len(patch_size) == 3 or isinstance(patch_size, int)
+        self.patch_size = list(patch_size) if isinstance(patch_size, (list, tuple)) else [patch_size] * 3 
+        for i in range(3):
+            assert self.patch_block_size[i] % self.patch_size[i] == 0, f"Patch block size {self.patch_block_size[i]} should be divisible by patch size {self.patch_size[i]}."
+        self.patch_grid_num = [self.patch_block_size[i] // self.patch_size[i] for i in range(3)]
+
+        self.learn_sigma = learn_sigma
+        assert isinstance(in_channels, (list, tuple)) or isinstance(in_channels, int)
+        self.in_channels = list(in_channels) if isinstance(in_channels, (list, tuple)) else [in_channels]
+        self.out_channels = in_channels * 2 if learn_sigma else self.in_channels
+
+        self.num_heads = num_heads
+
+        self.x_embedder = Patchify_3D(in_channels, patch_block_size, patch_size, hidden_size, bias=True, convolved=False)
+        self.t_embedder = TimestepEmbedder(hidden_size)
+
+        pos_embed = get_3d_sincos_pos_embed(embed_dim=hidden_size, grid_num=self.patch_grid_num)
+        self.pos_embed = nn.Parameter(torch.from_numpy(pos_embed).float(), requires_grad=False)
+        
+        self.blocks = nn.ModuleList([
+            DiTBlock(hidden_size, num_heads, mlp_ratio=mlp_ratio) for _ in range(depth)
+        ])
+        self.final_layer = FinalLayer_3D(hidden_size, patch_size, self.out_channels)
+        self.initialize_weights()
+
+    def initialize_weights(self):
+        # Initialize transformer layers:
+        def _basic_init(module):
+            if isinstance(module, nn.Linear):
+                torch.nn.init.xavier_uniform_(module.weight)
+                if module.bias is not None:
+                    nn.init.constant_(module.bias, 0)
+        self.apply(_basic_init)
+
+
+        # Initialize patch_embed like nn.Linear (instead of nn.Conv2d):
+        w = self.x_embedder.proj.weight.data
+        nn.init.xavier_uniform_(w.view([w.shape[0], -1]))
+        nn.init.constant_(self.x_embedder.proj.bias, 0)
+
+        # Initialize timestep embedding MLP:
+        nn.init.normal_(self.t_embedder.mlp[0].weight, std=0.02)
+        nn.init.normal_(self.t_embedder.mlp[2].weight, std=0.02)
+
+        # Zero-out adaLN modulation layers in DiT blocks:
+        for block in self.blocks:
+            nn.init.constant_(block.adaLN_modulation[-1].weight, 0)
+            nn.init.constant_(block.adaLN_modulation[-1].bias, 0)
+
+        # Zero-out output layers:
+        nn.init.constant_(self.final_layer.adaLN_modulation[-1].weight, 0)
+        nn.init.constant_(self.final_layer.adaLN_modulation[-1].bias, 0)
+        nn.init.constant_(self.final_layer.linear.weight, 0)
+        nn.init.constant_(self.final_layer.linear.bias, 0)
+
+    def unpatchify(self, x):
+        """
+        Overview:
+            Unpatchify the output tensor of attention layer.
+        Arguments:
+            x: (N, total_patches = T' * H' * W', patch_size[0] * patch_size[1] * patch_size[2] * C)
+        Returns:
+            x: (N, T, C, H, W)
+        """
+
+        x = x.reshape(shape=(x.shape[0], self.patch_grid_num[0], self.patch_grid_num[1], self.patch_grid_num[2], self.patch_size[0], self.patch_size[1], self.patch_size[2], np.prod(self.out_channels)))
+        x = torch.einsum('nthwpqrc->ntrchpwq', x)
+        x = x.reshape(shape=(x.shape[0], self.patch_grid_num[0] * self.patch_size[0], *self.out_channels, self.patch_grid_num[1] * self.patch_size[1], self.patch_grid_num[2] * self.patch_size[2]))
+
+        return x
+
+    def forward(
+            self,
+            t: torch.Tensor,
+            x: torch.Tensor,
+            condition: Optional[Union[torch.Tensor, TensorDict]] = None,
+        ):
+        """
+        Overview:
+            Forward pass of DiT for 3D data.
+        Arguments:
+            - t (:obj:`torch.Tensor`): Tensor of diffusion timesteps.
+            - x (:obj:`torch.Tensor`): Tensor of inputs with spatial information (originally at t=0 it is tensor of videos or latent representations of videos).
+            - condition (:obj:`Union[torch.Tensor, TensorDict]`, optional): The input condition, such as class labels.
+        """
+
+        # x is of shape (N, T, C, H, W), reshape to (N, C, T, H, W)
+        x = x.reshape(x.shape[0], x.shape[2], x.shape[1], x.shape[3], x.shape[4])
+
+        x = self.x_embedder(x) + self.pos_embed  # (N, total_patches, hidden_size), where total_patches = T' * H' * W' = T * H * W / patch_size[0] * patch_size[1] * patch_size[2]
+        t = self.t_embedder(t)                   # (N, hidden_size)
+        
+        if condition is not None:
+            #TODO: polish this part
+            y = self.y_embedder(condition, self.training)    # (N, hidden_size)
+            c = t + y                                # (N, hidden_size)
+        else:
+            c = t
+        
+        for block in self.blocks:
+            x = block(x, c)                      # (N, total_patches, hidden_size)
+        x = self.final_layer(x, c)                # (N, total_patches, patch_size[0] * patch_size[1] * patch_size[2] * C)
+        x = self.unpatchify(x)                   # (N, T, C, H, W)
+        return x
 
 
 class DiT_Video(nn.Module):
