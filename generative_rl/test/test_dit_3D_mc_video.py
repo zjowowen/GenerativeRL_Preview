@@ -32,8 +32,8 @@ x_size = (video_length, channel_size, image_size, image_size)
 patch_block_size = (video_length, image_size, image_size)
 patch_size = (1, 4, 4)
 patch_grid_num = (video_length//patch_size[0], image_size//patch_size[1], image_size//patch_size[2])
-hidden_size = 1008
 num_heads = 6
+hidden_size = np.sum(patch_grid_num) * 2 * num_heads * 2
 assert hidden_size % (np.sum(patch_grid_num) * 2 * num_heads) == 0, f"hidden_size must be divisible by patch_grid_num * 2 * num_heads."
 
 t_embedding_dim = 32
@@ -94,7 +94,7 @@ config = EasyDict(
             train_mode=train_mode,
             batch_size=2,
             eval_freq=100,
-            learning_rate=1e-5,
+            learning_rate=5e-4,
             iterations=200000,
             clip_grad_norm=1.0,
             video_save_path="./videos",
@@ -187,7 +187,7 @@ if __name__ == "__main__":
 
         for iteration in track(range(config.parameter.iterations), description="Training"):
 
-            if iteration >= 0 and iteration % config.parameter.eval_freq == 0:
+            if iteration > 0 and iteration % config.parameter.eval_freq == 0:
                 diffusion_model.eval()
                 t_span=torch.linspace(0.0, 1.0, 1000)
                 x_t = diffusion_model.sample_forward_process(t_span=t_span, batch_size=1).detach()

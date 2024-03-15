@@ -101,8 +101,8 @@ class LabelEmbedder(nn.Module):
         return embeddings
 
 # https://github.com/facebookresearch/mae/blob/main/util/pos_embed.py
-
-def get_3d_sincos_pos_embed(
+   
+def get_3d_pos_embed(
         embed_dim,
         grid_num
     ):
@@ -122,17 +122,16 @@ def get_3d_sincos_pos_embed(
     grid_2 = np.arange(grid_num[2], dtype=np.float32)
 
     grid = np.meshgrid(grid_1, grid_0, grid_2)  # here w goes first
-    grid = np.stack([grid[1], grid[0], grid[2]], axis=0)
+    grid = np.stack([grid[1], grid[0], grid[2]], axis=0) # grid is of shape (3, grid_num[0], grid_num[1], grid_num[2]) or (3, T, H, W)
 
     # emb_i of shape (embed_dim_per_grid*grid_num[i], total_grid_num = grid_num[0]*grid_num[1]*grid_num[2])
-    emb_0 = get_1d_sincos_pos_embed_from_grid(embed_dim_per_grid*grid_num[0], grid[0])
-    emb_1 = get_1d_sincos_pos_embed_from_grid(embed_dim_per_grid*grid_num[1], grid[1])
-    emb_2 = get_1d_sincos_pos_embed_from_grid(embed_dim_per_grid*grid_num[2], grid[2])
+    emb_0 = get_sincos_pos_embed_from_grid(embed_dim_per_grid*grid_num[0], grid[0])
+    emb_1 = get_sincos_pos_embed_from_grid(embed_dim_per_grid*grid_num[1], grid[1])
+    emb_2 = get_sincos_pos_embed_from_grid(embed_dim_per_grid*grid_num[2], grid[2])
 
     # emb is of shape (total_grid_num, embed_dim)
     emb = np.concatenate([emb_0, emb_1, emb_2], axis=-1)
     return emb
-    
 
 def get_2d_sincos_pos_embed(embed_dim, grid_size, cls_token=False, extra_tokens=0):
     """
@@ -151,7 +150,6 @@ def get_2d_sincos_pos_embed(embed_dim, grid_size, cls_token=False, extra_tokens=
         pos_embed = np.concatenate([np.zeros([extra_tokens, embed_dim]), pos_embed], axis=0)
     return pos_embed
 
-
 def get_2d_sincos_pos_embed_from_grid(embed_dim, grid):
     assert embed_dim % 2 == 0
 
@@ -162,6 +160,24 @@ def get_2d_sincos_pos_embed_from_grid(embed_dim, grid):
     emb = np.concatenate([emb_h, emb_w], axis=1) # (H*W, D)
     return emb
 
+def get_sincos_pos_embed_from_grid(embed_dim, pos):
+    """
+    embed_dim: output dimension for each position
+    pos: a list of positions to be encoded: size (M,)
+    out: (M, D)
+    """
+    assert embed_dim % 2 == 0
+    omega = np.arange(embed_dim // 2, dtype=np.float64)
+    omega /= embed_dim / 2.
+    omega = 1. / 10000**omega  # (D/2,)
+
+    out = np.einsum('...,d->...d', pos, omega)  # (M, D/2), outer product
+
+    emb_sin = np.sin(out) # (M, D/2)
+    emb_cos = np.cos(out) # (M, D/2)
+
+    emb = np.concatenate([emb_sin, emb_cos], axis=-1)  # (M, D)
+    return emb
 
 def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
     """
@@ -182,7 +198,6 @@ def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
 
     emb = np.concatenate([emb_sin, emb_cos], axis=1)  # (M, D)
     return emb
-
 
 class DiTBlock(nn.Module):
     """
@@ -313,8 +328,6 @@ class FinalLayer_3D(nn.Module):
         x = modulate(self.norm_final(x), shift, scale)
         x = self.linear(x)
         return x
-
-
 
 class DiT(nn.Module):
     """
@@ -543,14 +556,14 @@ class Patchify_3D(nn.Module):
             where T' = T // patch_size[0], H' = H // patch_size[1], W' = W // patch_size[2].
         """
 
-        # x: (B, (C1, C2), T, H, W)
+        # x: (B, (C1, C2), T, H, W) # x.reshape(shape=(x.shape[0], *self.channel_size, x.shape[-3], x.shape[-2], x.shape[-1]))
         x = x.flatten(start_dim=1, end_dim=-4)
         # x: (B, C1 * C2, T, H, W)
         x = self.proj(x)
-        # x: (B, hidden_size, T', H', W')
-        x = x.flatten(start_dim=-3)
-        # x: (B, hidden_size, T' * H' * W')
-        x = x.transpose(1, 2)
+        # x: (B, hidden_size, T', H', W') # x.reshape(shape=(x.shape[0], x.shape[1], -1))
+        # x = x.flatten(start_dim=-3)
+        # x: (B, hidden_size, T' * H' * W') # x = torch.einsum('bhN->bNh', x)
+        # x = x.transpose(1, 2)
         # x: (B, T' * H' * W', hidden_size)
         return x
 
@@ -605,7 +618,7 @@ class DiT_3D(nn.Module):
         self.x_embedder = Patchify_3D(in_channels, patch_block_size, patch_size, hidden_size, bias=True, convolved=False)
         self.t_embedder = TimestepEmbedder(hidden_size)
 
-        pos_embed = get_3d_sincos_pos_embed(embed_dim=hidden_size, grid_num=self.patch_grid_num)
+        pos_embed = get_3d_pos_embed(embed_dim=hidden_size, grid_num=self.patch_grid_num)
         self.pos_embed = nn.Parameter(torch.from_numpy(pos_embed).float(), requires_grad=False)
         
         self.blocks = nn.ModuleList([
@@ -655,7 +668,7 @@ class DiT_3D(nn.Module):
         """
 
         x = x.reshape(shape=(x.shape[0], self.patch_grid_num[0], self.patch_grid_num[1], self.patch_grid_num[2], self.patch_size[0], self.patch_size[1], self.patch_size[2], np.prod(self.out_channels)))
-        x = torch.einsum('nthwpqrc->ntrchpwq', x)
+        x = torch.einsum('nthwpqr...->ntp...hqwr', x)
         x = x.reshape(shape=(x.shape[0], self.patch_grid_num[0] * self.patch_size[0], *self.out_channels, self.patch_grid_num[1] * self.patch_size[1], self.patch_grid_num[2] * self.patch_size[2]))
 
         return x
@@ -676,9 +689,10 @@ class DiT_3D(nn.Module):
         """
 
         # x is of shape (N, T, C, H, W), reshape to (N, C, T, H, W)
-        x = x.reshape(x.shape[0], x.shape[2], x.shape[1], x.shape[3], x.shape[4])
-
-        x = self.x_embedder(x) + self.pos_embed  # (N, total_patches, hidden_size), where total_patches = T' * H' * W' = T * H * W / patch_size[0] * patch_size[1] * patch_size[2]
+        x = torch.einsum('nt...hw->n...thw', x)
+        x = self.x_embedder(x) + torch.einsum("tHWh->htHW", self.pos_embed)
+        x = x.reshape(shape=(x.shape[0], x.shape[1], -1))
+        x = torch.einsum("nhs->nsh", x) # (N, total_patches, hidden_size), where total_patches = T' * H' * W' = T * H * W / patch_size[0] * patch_size[1] * patch_size[2]
         t = self.t_embedder(t)                   # (N, hidden_size)
         
         if condition is not None:
@@ -693,7 +707,6 @@ class DiT_3D(nn.Module):
         x = self.final_layer(x, c)                # (N, total_patches, patch_size[0] * patch_size[1] * patch_size[2] * C)
         x = self.unpatchify(x)                   # (N, T, C, H, W)
         return x
-
 
 class DiT_Video(nn.Module):
     """
