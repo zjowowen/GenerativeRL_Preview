@@ -48,7 +48,7 @@ t_encoder = dict(
 config = EasyDict(
     dict(
         device = device,
-        project = 'dit-3D-mc-video',
+        project = 'dit-ode-3D-mc-video',
         data=dict(
             image_size=image_size,
             data_path="./MineRLBasaltFindCave-v0-100000",
@@ -75,14 +75,14 @@ config = EasyDict(
                     type = "noise_function",
                     model = dict(
                         backbone = dict(
-                            type = "DiT_3D",
+                            type = "DiTOde_3D",
                             args = dict(
                                 patch_block_size = patch_block_size,
                                 patch_size = patch_size,
                                 in_channels = channel_size,
                                 hidden_size = hidden_size,
-                                depth = 6,
                                 num_heads = num_heads,
+                                time_invariant = False,
                                 learn_sigma = False,
                                 convolved = True,
                             ),
@@ -127,7 +127,7 @@ def center_crop_arr(pil_image, image_size):
 if __name__ == "__main__":
 
     with wandb.init(
-        project=config.project if hasattr(config, "project") else "dit-3D-mc-video",
+        project=config.project if hasattr(config, "project") else "dit-ode-3D-mc-video",
         **config.wandb if hasattr(config, "wandb") else {}
     ) as wandb_run:
         config=merge_two_dicts_into_newone(EasyDict(wandb_run.config), config)

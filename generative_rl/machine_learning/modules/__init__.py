@@ -310,7 +310,7 @@ class ConcatenateMLP(nn.Module):
     def forward(self, *x):
         return self.model(torch.cat(x, dim=-1))
 
-from .transformers.dit import DiT, DiT_Video, DiT_3D
+from .transformers.dit import DiT, DiT_3D, DiTOde_3D
 
 MODULES={
     "ConcatenateLayer".lower(): ConcatenateLayer,
@@ -318,8 +318,8 @@ MODULES={
     "ConcatenateMLP".lower(): ConcatenateMLP,
     "TemporalSpatialResidualNet".lower(): TemporalSpatialResidualNet,
     "DiT".lower(): DiT,
-    "DiT_Video".lower(): DiT_Video,
     "DiT_3D".lower(): DiT_3D,
+    "DiTOde_3D".lower(): DiTOde_3D,
 }
 
 def get_module(type):
