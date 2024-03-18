@@ -5,7 +5,9 @@ from torch.utils.data import DataLoader
 import wandb
 
 from generative_rl.rl_modules.policy.base import BasePolicy
+from generative_rl.datasets import create_dataset
 from generative_rl.datasets.base import BaseDataset
+from generative_rl.simulators import create_simulator
 from generative_rl.utils.config import merge_two_dicts_into_newone
 from generative_rl.agents.base import BaseAgent
 
@@ -14,7 +16,7 @@ class BaseAlgorithm:
     def __init__(
         self,
         config:EasyDict = None,
-        env = None,
+        simulator = None,
         dataset: BaseDataset = None,
         model: Union[torch.nn.Module, torch.nn.ModuleDict] = None,
     ):
@@ -25,14 +27,14 @@ class BaseAlgorithm:
             - config (:obj:`EasyDict`): The configuration , which must contain the following keys:
                 - train (:obj:`EasyDict`): The training configuration.
                 - deploy (:obj:`EasyDict`): The deployment configuration.
-            - env (:obj:`Env`): The environment.
+            - simulator (:obj:`object`): The environment.
             - dataset (:obj:`BaseDataset`): The dataset.
             - model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The model.
         Interface:
             ``__init__``, ``train``, ``deploy``
         """
         self.config = config
-        self.env = env
+        self.simulator = simulator
         self.dataset = dataset
         
         #---------------------------------------
@@ -47,9 +49,7 @@ class BaseAlgorithm:
 
     def train(
         self,
-        config: EasyDict = None,
-        create_env_func: Callable = None, 
-        create_dataset_func: Callable = None,
+        config: EasyDict = None
     ):
         """
         Overview:
@@ -57,8 +57,6 @@ class BaseAlgorithm:
             A weight-and-bias run will be created automatically when this function is called.
         Arguments:
             - config (:obj:`EasyDict`): The training configuration.
-            - create_env_func (:obj:`Callable`): The function for creating the environment.
-            - create_dataset_func (:obj:`Callable`): The function for creating the dataset.
         """
 
         if config is not None:
@@ -75,15 +73,17 @@ class BaseAlgorithm:
             wandb_run.config.update(config)
             self.config.train = config
 
-            self.env = create_env_func(config.env) if create_env_func is not None and hasattr(config, "env") else self.env
-            self.dataset = create_dataset_func(config.dataset) if create_dataset_func is not None and hasattr(config, "dataset") else self.dataset
+            self.simulator = create_simulator(config.simulator) if hasattr(config, "simulator") else self.simulator
+            self.dataset = create_dataset(config.dataset) if hasattr(config, "dataset") else self.dataset
 
             #---------------------------------------
             # Customized model initialization code ↓
             #---------------------------------------
 
             self.model["BasePolicy"] = BasePolicy(config.model.BasePolicy) if hasattr(config.model, "BasePolicy") else self.model.get("BasePolicy", None)
-            
+            if torch.__version__ >= "2.0.0":
+                self.model["BasePolicy"] = torch.compile(self.model["BasePolicy"])
+
             #---------------------------------------
             # Customized model initialization code ↑
             #---------------------------------------

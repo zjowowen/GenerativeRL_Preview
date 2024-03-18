@@ -232,7 +232,7 @@ class TemporalSpatialResidualNet(nn.Module):
             condition: torch.Tensor = None,
         ) -> torch.Tensor:
 
-        if condition:
+        if condition is not None:
             t_condition = torch.cat([t, self.pre_sort_condition(condition)], dim=-1)
         else:
             t_condition = t
@@ -322,7 +322,7 @@ MODULES={
     "DiTOde_3D".lower(): DiTOde_3D,
 }
 
-def get_module(type):
+def get_module(type: str):
     if type.lower() in MODULES:
         return MODULES[type.lower()]
     else:

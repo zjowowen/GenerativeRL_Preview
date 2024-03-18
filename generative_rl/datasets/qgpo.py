@@ -17,14 +17,12 @@ class QGPODataset(torch.utils.data.Dataset):
         ``__init__``, ``__getitem__``, ``__len__``.
     """
 
-    def __init__(self, config):
+    def __init__(self):
         """
         Overview:
             Initialization method of QGPOD4RLDataset class
-        Arguments:
-            - config (:obj:`EasyDict`): Config dict
         """
-        self.config = config
+        pass
 
     def __getitem__(self, index):
         """
@@ -65,10 +63,6 @@ class QGPODataset(torch.utils.data.Dataset):
     def __len__(self):
         return self.len
 
-    @staticmethod
-    def create(config):
-        raise NotImplementedError
-
     @abstractmethod
     def return_range(self, dataset, max_episode_steps):
         raise NotImplementedError
@@ -83,25 +77,30 @@ class QGPOD4RLDataset(QGPODataset):
         ``__init__``, ``__getitem__``, ``__len__``.
     """
 
-    def __init__(self, config):
+    def __init__(
+            self,
+            env_id: str,
+            device: str = None,
+        ):
         """
         Overview:
             Initialization method of QGPOD4RLDataset class
         Arguments:
-            - config (:obj:`EasyDict`): Config dict
+            - env_id (:obj:`str`): The environment id
+            - device (:obj:`str`): The device to store the dataset
         """
 
-        super().__init__(config)
+        super().__init__()
         import d4rl
-        device = config.device if hasattr(config, "device") else "cpu"
-        data = d4rl.qlearning_dataset(gym.make(config.env_id))
+        device = "cpu" if device is None else device
+        data = d4rl.qlearning_dataset(gym.make(env_id))
         self.states = torch.from_numpy(data['observations']).float().to(device)
         self.actions = torch.from_numpy(data['actions']).float().to(device)
         self.next_states = torch.from_numpy(data['next_observations']).float().to(device)
         reward = torch.from_numpy(data['rewards']).view(-1, 1).float().to(device)
         self.is_finished = torch.from_numpy(data['terminals']).view(-1, 1).float().to(device)
 
-        reward_tune = "iql_antmaze" if "antmaze" in config.env_id else "iql_locomotion"
+        reward_tune = "iql_antmaze" if "antmaze" in env_id else "iql_locomotion"
         if reward_tune == 'normalize':
             reward = (reward - reward.mean()) / reward.std()
         elif reward_tune == 'iql_antmaze':
@@ -132,8 +131,3 @@ class QGPOD4RLDataset(QGPODataset):
         lengths.append(ep_len)  # but still keep track of number of steps
         assert sum(lengths) == len(dataset['rewards'])
         return min(returns), max(returns)
-
-
-    @staticmethod
-    def create(config):
-        return QGPOD4RLDataset(config)

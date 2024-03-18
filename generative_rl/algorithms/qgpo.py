@@ -10,8 +10,11 @@ from torch.utils.data import DataLoader
 import wandb
 
 from generative_rl.rl_modules.policy import QGPOPolicy
+from generative_rl.datasets import create_dataset
 from generative_rl.datasets.qgpo import QGPODataset
+from generative_rl.simulators import create_simulator
 from generative_rl.utils.config import merge_two_dicts_into_newone
+from generative_rl.utils.log import log
 from generative_rl.agents.qgpo import QGPOAgent
 
 class QGPO:
@@ -19,7 +22,7 @@ class QGPO:
     def __init__(
         self,
         config:EasyDict = None,
-        env = None,
+        simulator = None,
         dataset: QGPODataset = None,
         model: Union[torch.nn.Module, torch.nn.ModuleDict] = None,
     ):
@@ -30,14 +33,14 @@ class QGPO:
             - config (:obj:`EasyDict`): The configuration , which must contain the following keys:
                 - train (:obj:`EasyDict`): The training configuration.
                 - deploy (:obj:`EasyDict`): The deployment configuration.
-            - env (:obj:`Env`): The environment.
+            - simulator (:obj:`object`): The environment simulator.
             - dataset (:obj:`QGPODataset`): The dataset.
             - model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The model.
         Interface:
             ``__init__``, ``train``, ``deploy``
         """
         self.config = config
-        self.env = env
+        self.simulator = simulator
         self.dataset = dataset
         
         #---------------------------------------
@@ -52,9 +55,7 @@ class QGPO:
 
     def train(
         self,
-        config: EasyDict = None,
-        create_env_func: Union[Callable, object] = None, 
-        create_dataset_func: Union[Callable, object] = None,
+        config: EasyDict = None
     ):
         """
         Overview:
@@ -62,8 +63,6 @@ class QGPO:
             A weight-and-bias run will be created automatically when this function is called.
         Arguments:
             - config (:obj:`EasyDict`): The training configuration.
-            - create_env_func (:obj:`Union[Callable, object]`): The function to create the environment.
-            - create_dataset_func (:obj:`Union[Callable, object]`): The function to create the dataset.
         """
         
         config = merge_two_dicts_into_newone(
@@ -79,8 +78,8 @@ class QGPO:
             wandb_run.config.update(config)
             self.config.train = config
 
-            self.env = create_env_func(config.env) if create_env_func is not None and hasattr(config, "env") else self.env
-            self.dataset = create_dataset_func(config.dataset) if create_dataset_func is not None and hasattr(config, "dataset") else self.dataset
+            self.simulator = create_simulator(config.simulator) if hasattr(config, "simulator") else self.simulator
+            self.dataset = create_dataset(config.dataset) if hasattr(config, "dataset") else self.dataset
 
             #---------------------------------------
             # Customized model initialization code ↓
@@ -88,6 +87,8 @@ class QGPO:
 
             self.model["QGPOPolicy"] = QGPOPolicy(config.model.QGPOPolicy) if hasattr(config.model, "QGPOPolicy") else self.model.get("QGPOPolicy", None)
             self.model["QGPOPolicy"].to(config.model.QGPOPolicy.device)
+            if torch.__version__ >= "2.0.0":
+                self.model["QGPOPolicy"] = torch.compile(self.model["QGPOPolicy"])
             
             #---------------------------------------
             # Customized model initialization code ↑
@@ -119,6 +120,19 @@ class QGPO:
                 fake_actions = torch.cat(fake_actions_sampled, dim=0)
                 return fake_actions
 
+            def evaluate(model, train_iter):
+                evaluation_results = dict()
+                for guidance_scale in config.parameter.evaluation.guidance_scale:
+                    def policy(obs: np.ndarray) -> np.ndarray:
+                        obs = torch.tensor(obs, dtype=torch.float32, device=config.model.QGPOPolicy.device).unsqueeze(0)
+                        action = model.sample(obs, guidance_scale=guidance_scale).squeeze(0).cpu().detach().numpy()
+                        return action
+                    evaluation_results[f"evaluation/guidance_scale:[{guidance_scale}]/total_return"] = self.simulator.evaluate(policy=policy, )[0]["total_return"]
+                    log.info(f"Train iter: {train_iter}, guidance_scale: {guidance_scale}, total_return: {evaluation_results[f'evaluation/guidance_scale:[{guidance_scale}]/total_return']}")
+
+                return evaluation_results
+                
+
             data_generator = get_train_data(DataLoader(
                 self.dataset,
                 batch_size=config.parameter.behaviour_policy.batch_size,
@@ -137,6 +151,10 @@ class QGPO:
                 behaviour_model_optimizer.zero_grad()
                 behaviour_model_training_loss.backward()
                 behaviour_model_optimizer.step()
+
+                if train_iter == 0 or (train_iter + 1) % config.parameter.evaluation.evaluation_interval == 0:
+                    evaluation_results = evaluate(self.model["QGPOPolicy"], train_iter=train_iter)
+                    wandb_run.log(data=evaluation_results, commit=False)
 
                 wandb_run.log(
                     data=dict(
@@ -202,6 +220,10 @@ class QGPO:
                     energy_guidance_loss.backward()
                     energy_guidance_optimizer.step()
 
+                    if train_iter == 0 or (train_iter + 1) % config.parameter.evaluation.evaluation_interval == 0:
+                        evaluation_results = evaluate(self.model["QGPOPolicy"], train_iter=train_iter)
+                        wandb_run.log(data=evaluation_results, commit=False)
+
                     wandb_run.log(
                         data=dict(
                             train_iter=train_iter,
@@ -209,6 +231,8 @@ class QGPO:
                         ),
                         commit=True)
                     progress.update(energy_guidance_training, advance=1)
+
+
 
             #---------------------------------------
             # Customized training code ↑
@@ -221,6 +245,8 @@ class QGPO:
         
         if config is not None:
             config = merge_two_dicts_into_newone(self.config.deploy, config)
+        else:
+            config = self.config.deploy
 
         return QGPOAgent(
             config=config,

@@ -16,13 +16,18 @@ t_encoder = dict(
 config = EasyDict(
     train = dict(
         project = 'd4rl-halfcheetah-v2-qgpo',
-        env = dict(
-            env_id = 'HalfCheetah-v2',
-            seed = 0,
+        simulator = dict(
+            type = "GymEnvSimulator",
+            args = dict(
+                env_id = 'HalfCheetah-v2',
+            ),
         ),
         dataset = dict(
-            env_id = "halfcheetah-medium-expert-v2",
-            device = device,
+            type = "QGPOD4RLDataset",
+            args = dict(
+                env_id = "halfcheetah-medium-expert-v2",
+                device = device,
+            ),
         ),
         model = dict(
             QGPOPolicy = dict(
@@ -108,9 +113,18 @@ config = EasyDict(
                 iterations = 600000,
                 learning_rate = 3e-4,
             ),
+            evaluation = dict(
+                evaluation_interval = 1000,
+                guidance_scale = [0.0, 1.0, 2.0, 3.0, 5.0, 8.0, 10.0],
+            ),
         ),
     ),
     deploy = dict(
+        device = device,
+        env = dict(
+            env_id = 'HalfCheetah-v2',
+            seed = 0,
+        ),
         num_deploy_steps = 1000,
     ),
 )

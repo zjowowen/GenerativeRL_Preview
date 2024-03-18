@@ -1,8 +1,7 @@
 from generative_rl.configurations.halfcheetah_qgpo import config
 from generative_rl.algorithms.qgpo import QGPO
-from generative_rl.environments.gym_env import GymEnv
-from generative_rl.datasets.qgpo import QGPOD4RLDataset
 from generative_rl.utils.log import log
+import gym
 
 def qgpo_pipeline(config):
 
@@ -11,7 +10,7 @@ def qgpo_pipeline(config):
     #---------------------------------------
     # Customized train code ↓
     #---------------------------------------
-    qgpo.train(create_env_func=GymEnv, create_dataset_func=QGPOD4RLDataset)
+    qgpo.train()
     #---------------------------------------
     # Customized train code ↑
     #---------------------------------------
@@ -20,10 +19,11 @@ def qgpo_pipeline(config):
     # Customized deploy code ↓
     #---------------------------------------
     agent = qgpo.deploy()
-    deploy_env = GymEnv(config.deploy.env)
+    env = gym.make(config.deploy.env.env_id)
+    env.reset()
     for _ in range(config.deploy.num_deploy_steps):
-        deploy_env.render()
-        deploy_env.step(agent.act(deploy_env.observation))
+        env.render()
+        env.step(agent.act(env.observation))
     #---------------------------------------
     # Customized deploy code ↑
     #---------------------------------------

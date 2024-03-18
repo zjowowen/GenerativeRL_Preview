@@ -2,14 +2,19 @@ from easydict import EasyDict
 
 config = EasyDict(
     train = dict(
-        env = dict(
-            env_id = 'HalfCheetah-v2',
-            seed = 0,
+        simulator = dict(
+            type = 'GymEnvSimulator',
+            args = dict(
+                env_id = 'HalfCheetah-v2',
+            ),
         ),
         dataset = dict(
-            dataset_path = 'd4rl/halfcheetah-medium-v0',
-            batch_size = 64,
-            num_workers = 4,
+            type = 'QGPOD4RLDataset',
+            args = dict(
+                dataset_path = 'd4rl/halfcheetah-medium-v0',
+                batch_size = 64,
+                num_workers = 4,
+            ),
         ),
         model = dict(
             policy = dict(

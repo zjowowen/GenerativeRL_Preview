@@ -58,7 +58,7 @@ ENCODERS={
     "GaussianFourierProjectionTimeEncoder".lower(): GaussianFourierProjectionTimeEncoder,
 }
 
-def get_encoder(type):
+def get_encoder(type: str):
 
     if type.lower() in ENCODERS:
         return ENCODERS[type.lower()]

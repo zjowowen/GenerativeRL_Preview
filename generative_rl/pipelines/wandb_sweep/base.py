@@ -2,7 +2,7 @@ import wandb
 from generative_rl.configurations.wandb_sweep.base import sweep_config
 from generative_rl.configurations.base import config
 from generative_rl.algorithms.base import BaseAlgorithm
-from generative_rl.environments.base import BaseEnv
+from generative_rl.simulators.base import BaseEnv
 from generative_rl.datasets.base import BaseDataset
 from generative_rl.utils.log import log
 
@@ -12,7 +12,7 @@ def base_wandb_sweep_pipeline(config, sweep_config):
     Overview:
         The base pipeline for training an algorithm by using weight-and-bias sweep.
     Arguments:
-        - config (:obj:`EasyDict`): The configuration, which must contain the following keys:
+        - config (:obj:`EasyDict`): The configuration.
 
     .. note::
         This pipeline is for demonstration purposes only.
@@ -20,7 +20,7 @@ def base_wandb_sweep_pipeline(config, sweep_config):
 
     def train_func():
         algo = BaseAlgorithm(config)
-        algo.train(create_env_func=BaseEnv, create_dataset_func=BaseDataset)
+        algo.train()
 
     sweep_id = wandb.sweep(config=sweep_config, project="generative_rl")
     wandb.agent(sweep_id, function=train_func)
