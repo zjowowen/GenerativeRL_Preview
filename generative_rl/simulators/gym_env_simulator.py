@@ -57,7 +57,7 @@ class GymEnvSimulator:
                         obs, _ = self.collect_env.reset()
                         done = False
                         truncated = False
-                        while not done or not truncated:
+                        while not done and not truncated:
                             action = policy(obs)
                             next_obs, reward, done, truncated, _ = self.collect_env.step(action)
                             data_list.append(
@@ -97,7 +97,7 @@ class GymEnvSimulator:
                         obs, _ = self.collect_env.reset()
                         done = False
                         truncated = False
-                        while not done or not truncated:
+                        while not done and not truncated:
                             action = policy(obs)
                             next_obs, reward, done, truncated, _ = self.collect_env.step(action)
                             data_list.append(
@@ -154,7 +154,7 @@ class GymEnvSimulator:
                         obs, _ = self.collect_env.reset()
                         done = False
                         truncated = False
-                        while not done or not truncated:
+                        while not done and not truncated:
                             action = policy(obs)
                             next_obs, reward, done, truncated, _ = self.collect_env.step(action)
                             data_list.append(
@@ -277,7 +277,7 @@ class GymEnvSimulator:
                             render_output.append(render_env(env, render_args))
                         done = False
                         truncated = False
-                        while not done or not truncated:
+                        while not done and not truncated:
                             action = policy(obs)
                             next_obs, reward, done, truncated, _ = env.step(action)
                             data_list.append(
@@ -295,6 +295,7 @@ class GymEnvSimulator:
                             render_output.append(render_env(env, render_args))
                 else:
                     for i in range(num_episodes):
+                        step = 0
                         obs = env.reset()
                         if render:
                             render_output.append(render_env(env, render_args))
@@ -302,6 +303,8 @@ class GymEnvSimulator:
                         while not done:
                             action = policy(obs)
                             next_obs, reward, done, _ = env.step(action)
+                            step += 1
+                            print(f"step {step} reward {reward}")
                             if render:
                                 render_output.append(render_env(env, render_args))
                             data_list.append(

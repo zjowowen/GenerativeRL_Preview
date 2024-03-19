@@ -36,6 +36,7 @@ class QGPOPolicy(nn.Module):
     def sample(
             self,
             state: Union[torch.Tensor, TensorDict],
+            batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
             guidance_scale: Union[torch.Tensor, float] = torch.tensor(1.0),
             solver_config: EasyDict = None,
         ) -> Union[torch.Tensor, TensorDict]:
@@ -49,11 +50,19 @@ class QGPOPolicy(nn.Module):
         Returns:
             - action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
-        return self.diffusion_model.sample(condition=state, guidance_scale=guidance_scale, with_grad=False, solver_config=solver_config)
+        return self.diffusion_model.sample(
+            t_span = torch.linspace(0.0, 1.0, 32).to(self.device),
+            condition=state,
+            batch_size=batch_size,
+            guidance_scale=guidance_scale,
+            with_grad=False,
+            solver_config=solver_config
+        )
 
     def behaviour_policy_sample(
             self,
             state: Union[torch.Tensor, TensorDict],
+            batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
             solver_config: EasyDict = None,
         ) -> Union[torch.Tensor, TensorDict]:
         """
@@ -65,9 +74,13 @@ class QGPOPolicy(nn.Module):
         Returns:
             - action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
-        return self.diffusion_model.sample_without_energy_guidance(condition=state, solver_config=solver_config)
+        return self.diffusion_model.sample_without_energy_guidance(
+            t_span = torch.linspace(0.0, 1.0, 32).to(self.device),
+            condition=state,
+            batch_size=batch_size,
+            solver_config=solver_config
+        )
     
-
     def compute_q(
             self,
             state: Union[torch.Tensor, TensorDict],

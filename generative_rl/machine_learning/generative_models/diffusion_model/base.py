@@ -89,7 +89,7 @@ class DiffusionModel(nn.Module):
             pass
         elif isinstance(solver, ODESolver):
             #TODO: make it compatible with TensorDict
-            if not hasattr(self, "t_span") is None:
+            if not hasattr(self, "t_span"):
                 self.t_span = torch.linspace(0, self.gaussian_conditional_probability_path.t_max, 2).to(self.device)
             x = self.gaussian_generator(batch_size=batch_size)
             if with_grad:
@@ -97,18 +97,18 @@ class DiffusionModel(nn.Module):
                     drift=self.diffusion_process.reverse_ode(score_function=self.score_function, condition=condition).drift,
                     x0=x,
                     t_span=self.t_span,
-                )[1]
+                )[-1]
             else:
                 with torch.no_grad():
                     data = solver.integrate(
                         drift=self.diffusion_process.reverse_ode(score_function=self.score_function, condition=condition).drift,
                         x0=x,
                         t_span=self.t_span,
-                    )[1]
+                    )[-1]
         elif isinstance(solver, SDESolver):
             #TODO: make it compatible with TensorDict
             #TODO: validate the implementation
-            if not hasattr(self, "t_span") is None:
+            if not hasattr(self, "t_span"):
                 self.t_span = torch.linspace(0, self.gaussian_conditional_probability_path.t_max, 2).to(self.device)
             x = self.gaussian_generator(batch_size=batch_size)
             sde = self.diffusion_process.reverse_sde(score_function=self.score_function, condition=condition)
@@ -118,7 +118,7 @@ class DiffusionModel(nn.Module):
                     diffusion=sde.diffusion,
                     x0=x,
                     t_span=self.t_span,
-                )[1]
+                )[-1]
             else:
                 with torch.no_grad():
                     data = solver.integrate(
@@ -126,7 +126,7 @@ class DiffusionModel(nn.Module):
                         diffusion=sde.diffusion,
                         x0=x,
                         t_span=self.t_span,
-                    )[1]
+                    )[-1]
         else:
             raise NotImplementedError("Solver type {} is not implemented".format(self.config.solver.type))
         return data

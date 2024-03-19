@@ -114,8 +114,8 @@ config = EasyDict(
                 learning_rate = 3e-4,
             ),
             evaluation = dict(
-                evaluation_interval = 1000,
-                guidance_scale = [0.0, 1.0, 2.0, 3.0, 5.0, 8.0, 10.0],
+                evaluation_interval = 10000,
+                guidance_scale = [0.0, 1.0],
             ),
         ),
     ),

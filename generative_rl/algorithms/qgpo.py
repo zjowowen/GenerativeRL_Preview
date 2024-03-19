@@ -112,8 +112,8 @@ class QGPO:
                     for _ in range(sample_per_state):
                         fake_actions_per_state.append(
                             model.sample(
-                                states,
-                                guidance_scale=0.0,
+                                state = states,
+                                guidance_scale = 0.0,
                             )
                         )
                     fake_actions_sampled.append(torch.stack(fake_actions_per_state, dim=1))
@@ -125,7 +125,9 @@ class QGPO:
                 for guidance_scale in config.parameter.evaluation.guidance_scale:
                     def policy(obs: np.ndarray) -> np.ndarray:
                         obs = torch.tensor(obs, dtype=torch.float32, device=config.model.QGPOPolicy.device).unsqueeze(0)
-                        action = model.sample(obs, guidance_scale=guidance_scale).squeeze(0).cpu().detach().numpy()
+                        action = model.sample(
+                            state = obs,
+                            guidance_scale=guidance_scale).squeeze(0).cpu().detach().numpy()
                         return action
                     evaluation_results[f"evaluation/guidance_scale:[{guidance_scale}]/total_return"] = self.simulator.evaluate(policy=policy, )[0]["total_return"]
                     log.info(f"Train iter: {train_iter}, guidance_scale: {guidance_scale}, total_return: {evaluation_results[f'evaluation/guidance_scale:[{guidance_scale}]/total_return']}")

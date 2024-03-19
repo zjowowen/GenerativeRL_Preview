@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, List, Tuple, Dict, Any, Callable
 from easydict import EasyDict
 import torch
 import torch.nn as nn
@@ -165,7 +165,9 @@ class EnergyConditionalDiffusionModel(nn.Module):
 
     def sample(
             self,
-            condition: Union[torch.Tensor, TensorDict],
+            t_span: torch.Tensor = None,
+            condition: Union[torch.Tensor, TensorDict] = None,
+            batch_size: Union[torch.Size, int, Tuple[int], List[int]]  = None,
             guidance_scale: float = 1.0,
             with_grad: bool = False,
             solver_config: EasyDict = None,
@@ -174,6 +176,7 @@ class EnergyConditionalDiffusionModel(nn.Module):
         Overview:
             Sample from the diffusion model.
         Arguments:
+            - t_span (:obj:`torch.Tensor`): The time span.
             - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
             - guidance_scale (:obj:`float`): The scale of guidance.
             - with_grad (:obj:`bool`): Whether to return the gradient.
@@ -181,6 +184,16 @@ class EnergyConditionalDiffusionModel(nn.Module):
         Returns:
             - x (:obj:`Union[torch.Tensor, TensorDict]`): The sampled result.
         """
+
+        if t_span is not None:
+            self.t_span = t_span.to(self.device)
+
+        if batch_size is not None:
+            pass
+        elif condition is not None:
+            batch_size = condition.shape[0]
+        else:
+            batch_size = 1
 
         if solver_config is not None:
             solver = get_solver(solver_config.type)(**solver_config.args)
@@ -196,28 +209,28 @@ class EnergyConditionalDiffusionModel(nn.Module):
             pass
         elif isinstance(solver, ODESolver):
             #TODO: make it compatible with TensorDict
-            if not hasattr(self, "t_span") is None:
+            if not hasattr(self, "t_span"):
                 self.t_span = torch.linspace(0, self.gaussian_conditional_probability_path.t_max, 2).to(self.device)
-            x = self.gaussian_generator(batch_size=condition.shape[0])
+            x = self.gaussian_generator(batch_size=batch_size)
             if with_grad:
                 data = solver.integrate(
                     drift=self.diffusion_process.reverse_ode(score_function=score_function_with_energy_guidance, condition=condition).drift,
                     x0=x,
                     t_span=self.t_span,
-                )[1]
+                )[-1]
             else:
                 with torch.no_grad():
                     data = solver.integrate(
                         drift=self.diffusion_process.reverse_ode(score_function=score_function_with_energy_guidance, condition=condition).drift,
                         x0=x,
                         t_span=self.t_span,
-                    )[1]
+                    )[-1]
         elif isinstance(solver, SDESolver):
             #TODO: make it compatible with TensorDict
             #TODO: validate the implementation
-            if not hasattr(self, "t_span") is None:
+            if not hasattr(self, "t_span"):
                 self.t_span = torch.linspace(0, self.gaussian_conditional_probability_path.t_max, 2).to(self.device)
-            x = self.gaussian_generator(batch_size=condition.shape[0])
+            x = self.gaussian_generator(batch_size=batch_size)
             sde = self.diffusion_process.reverse_sde(score_function=score_function_with_energy_guidance, condition=condition)
             if with_grad:
                 data = solver.integrate(
@@ -225,7 +238,7 @@ class EnergyConditionalDiffusionModel(nn.Module):
                     diffusion=sde.diffusion,
                     x0=x,
                     t_span=self.t_span,
-                )[1]
+                )[-1]
             else:
                 with torch.no_grad():
                     data = solver.integrate(
@@ -233,27 +246,36 @@ class EnergyConditionalDiffusionModel(nn.Module):
                         diffusion=sde.diffusion,
                         x0=x,
                         t_span=self.t_span,
-                    )[1]
+                    )[-1]
         else:
             raise NotImplementedError("Solver type {} is not implemented".format(self.config.solver.type))
         return data
 
     def sample_without_energy_guidance(
             self,
-            condition: Union[torch.Tensor, TensorDict],
+            t_span: torch.Tensor = None,
+            condition: Union[torch.Tensor, TensorDict] = None,
+            batch_size: Union[torch.Size, int, Tuple[int], List[int]]  = None,
             solver_config: EasyDict = None,
         ):
         """
         Overview:
             Sample from the diffusion model without energy guidance.
         Arguments:
+            - t_span (:obj:`torch.Tensor`): The time span.
             - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            - batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
             - solver_config (:obj:`EasyDict`): The configuration of the solver.
         Returns:
             - x (:obj:`Union[torch.Tensor, TensorDict]`): The sampled result.
         """
 
-        return self.sample(condition, guidance_scale=0.0, solver_config=solver_config)
+        return self.sample(
+            t_span=t_span,
+            condition=condition,
+            batch_size=batch_size,
+            guidance_scale=0.0,
+            solver_config=solver_config)
 
     def energy_guidance_loss(
             self,
