@@ -3,7 +3,7 @@ os.environ['MASTER_ADDR'] = 'localhost'
 os.environ['MASTER_PORT'] = '23333'
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 rank_list = [0,1]
-os.environ["CUDA_VISIBLE_DEVICES"] = "[" + ",".join([str(rank_list[i]) for i in range(len(rank_list))]) + "]"
+os.environ["CUDA_VISIBLE_DEVICES"] = ",".join([str(rank_list[i]) for i in range(len(rank_list))])
 from easydict import EasyDict
 from rich.progress import track
 import numpy as np
