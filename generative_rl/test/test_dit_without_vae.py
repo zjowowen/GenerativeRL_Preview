@@ -158,12 +158,16 @@ if __name__ == "__main__":
         data_loader = torch.utils.data.DataLoader(
             dataset,
             batch_size=config.parameter.batch_size if config.parameter.train_mode == "single_card" else int(config.parameter.batch_size // torch.distributed.get_world_size()),
-            shuffle=False,
+            shuffle=True,
             sampler=sampler,
             num_workers=config.parameter.num_workers if hasattr(config.parameter, "num_workers") else 2,
             pin_memory=True,
             drop_last=True,
         )
+        def get_train_data(dataloader):
+            while True:
+                yield from dataloader
+        data_generator = get_train_data(data_loader)
 
         optimizer = torch.optim.Adam(
             diffusion_model.parameters(), 
@@ -195,7 +199,7 @@ if __name__ == "__main__":
                     ),
                     commit=False)
 
-            batch_data, label = next(iter(data_loader))
+            batch_data, label = next(data_generator)
             batch_data = batch_data.to(config.device)
 
             diffusion_model.train()
