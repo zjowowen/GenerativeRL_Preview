@@ -1,13 +1,18 @@
+"""
+Overview:
+    This file is used to show the data size examples of the input tensor.
+"""
+
 import torch
 
 
-base_data_size = 1
-base_data_size = 2
-base_data_size = [2, 2]
-base_data_size = (2, 2)
-base_data_size = torch.Size([2])
-base_data_size = torch.Size([2, 2])
-base_data_size = dict(
+data_size = 1
+data_size = 2
+data_size = [2, 2]
+data_size = (2, 2)
+data_size = torch.Size([2])
+data_size = torch.Size([2, 2])
+data_size = dict(
     a = 1,
     b = 2,
     c = [2, 2],

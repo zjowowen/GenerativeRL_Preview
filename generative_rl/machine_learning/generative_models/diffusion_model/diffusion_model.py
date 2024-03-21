@@ -9,16 +9,18 @@ from generative_rl.numerical_methods.numerical_solvers import get_solver
 from generative_rl.numerical_methods.numerical_solvers.dpm_solver import DPMSolver
 from generative_rl.numerical_methods.numerical_solvers.ode_solver import ODESolver
 from generative_rl.numerical_methods.numerical_solvers.sde_solver import SDESolver
-from generative_rl.numerical_methods.diffusion_process import get_diffusion_process
-from generative_rl.machine_learning.generative_models.diffusion_model.random_init import gaussian_random_variable
-from generative_rl.machine_learning.generative_models.diffusion_model.score_model import ScoreFunction
+from generative_rl.machine_learning.generative_models.random_generator import gaussian_random_variable
+from generative_rl.machine_learning.generative_models.intrinsic_model import IntrinsicModel
+from generative_rl.machine_learning.generative_models.diffusion_process import DiffusionProcess
+from generative_rl.machine_learning.generative_models.model_functions.score_function import ScoreFunction
+from generative_rl.machine_learning.generative_models.model_functions.velocity_function import VelocityFunction
 
 class DiffusionModel(nn.Module):
     """
     Overview:
         Diffusion Model.
     Interfaces:
-        ``__init__``, ``sample``, ``score_matching_loss``
+        ``__init__``, ``sample``, ``score_function``, ``score_matching_loss``, ``velocity_function``, ``flow_matching_loss``.
     """
 
     def __init__(
@@ -40,9 +42,14 @@ class DiffusionModel(nn.Module):
         self.solver = get_solver(config.solver.type)(config.solver.args)
         self.gaussian_generator = gaussian_random_variable(config.x_size, config.device)
 
-        self.gaussian_conditional_probability_path = GaussianConditionalProbabilityPath(config.gaussian_conditional_probability_path)
-        self.diffusion_process = get_diffusion_process(config.diffusion_process)(self.gaussian_conditional_probability_path)
-        self.score_function = ScoreFunction(config.score_function, self.gaussian_conditional_probability_path)
+        self.path = GaussianConditionalProbabilityPath(config.path)
+        self.model_type = config.model.type
+        assert self.model_type in ["score_function", "data_prediction_function", "velocity_function", "noise_function"], \
+            "Unknown type of model {}".format(self.model_type)
+        self.model = IntrinsicModel(config.model.args)
+        self.diffusion_process = DiffusionProcess(self.path)
+        self.score_function_ = ScoreFunction(self.model_type, self.diffusion_process)
+        self.velocity_function_ = VelocityFunction(self.model_type, self.diffusion_process)
 
         if hasattr(config, "solver"):
             self.solver=get_solver(config.solver.type)(**config.solver.args)
@@ -90,18 +97,18 @@ class DiffusionModel(nn.Module):
         elif isinstance(solver, ODESolver):
             #TODO: make it compatible with TensorDict
             if not hasattr(self, "t_span"):
-                self.t_span = torch.linspace(0, self.gaussian_conditional_probability_path.t_max, 2).to(self.device)
+                self.t_span = torch.linspace(0, self.diffusion_process.t_max, 2).to(self.device)
             x = self.gaussian_generator(batch_size=batch_size)
             if with_grad:
                 data = solver.integrate(
-                    drift=self.diffusion_process.reverse_ode(score_function=self.score_function, condition=condition).drift,
+                    drift=self.diffusion_process.reverse_ode(function=self.model, function_type=self.model_type, condition=condition).drift,
                     x0=x,
                     t_span=self.t_span,
                 )[-1]
             else:
                 with torch.no_grad():
                     data = solver.integrate(
-                        drift=self.diffusion_process.reverse_ode(score_function=self.score_function, condition=condition).drift,
+                        drift=self.diffusion_process.reverse_ode(function=self.model, function_type=self.model_type, condition=condition).drift,
                         x0=x,
                         t_span=self.t_span,
                     )[-1]
@@ -109,9 +116,9 @@ class DiffusionModel(nn.Module):
             #TODO: make it compatible with TensorDict
             #TODO: validate the implementation
             if not hasattr(self, "t_span"):
-                self.t_span = torch.linspace(0, self.gaussian_conditional_probability_path.t_max, 2).to(self.device)
+                self.t_span = torch.linspace(0, self.diffusion_process.t_max, 2).to(self.device)
             x = self.gaussian_generator(batch_size=batch_size)
-            sde = self.diffusion_process.reverse_sde(score_function=self.score_function, condition=condition)
+            sde = self.diffusion_process.reverse_sde(function=self.model, function_type=self.model_type, condition=condition)
             if with_grad:
                 data = solver.integrate(
                     drift=sde.drift,
@@ -175,14 +182,14 @@ class DiffusionModel(nn.Module):
             x = self.gaussian_generator(batch_size=batch_size)
             if with_grad:
                 data = solver.integrate(
-                    drift=self.diffusion_process.reverse_ode(score_function=self.score_function, condition=condition).drift,
+                    drift=self.diffusion_process.reverse_ode(function=self.model, function_type=self.model_type, condition=condition).drift,
                     x0=x,
                     t_span=t_span,
                 )
             else:
                 with torch.no_grad():
                     data = solver.integrate(
-                        drift=self.diffusion_process.reverse_ode(score_function=self.score_function, condition=condition).drift,
+                        drift=self.diffusion_process.reverse_ode(function=self.model, function_type=self.model_type, condition=condition).drift,
                         x0=x,
                         t_span=t_span,
                     )
@@ -190,7 +197,7 @@ class DiffusionModel(nn.Module):
             #TODO: make it compatible with TensorDict
             #TODO: validate the implementation
             x = self.gaussian_generator(batch_size=batch_size)
-            sde = self.diffusion_process.reverse_sde(score_function=self.score_function, condition=condition)
+            sde = self.diffusion_process.reverse_sde(function=self.model, function_type=self.model_type, condition=condition)
             if with_grad:
                 data = solver.integrate(
                     drift=sde.drift,
@@ -210,6 +217,24 @@ class DiffusionModel(nn.Module):
             raise NotImplementedError("Solver type {} is not implemented".format(self.config.solver.type))
         return data
 
+    def score_function(
+            self,
+            t: torch.Tensor,
+            x: Union[torch.Tensor, TensorDict],
+            condition: Union[torch.Tensor, TensorDict] = None,
+        ) -> torch.Tensor:
+        """
+        Overview:
+            Return score function of the model at time t given the initial state, which is the gradient of the log-likelihood.
+            .. math::
+                \nabla_{x_t} \log p_{\theta}(x_t)
+        Arguments:
+            - t (:obj:`torch.Tensor`): The input time.
+            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+        """
+
+        return self.score_function_.forward(self.model, t, x, condition)
 
     def score_matching_loss(
             self,
@@ -224,4 +249,38 @@ class DiffusionModel(nn.Module):
             - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         """
 
-        return self.score_function.score_matching_loss(x, condition)
+        return self.score_function_.score_matching_loss(self.model, x, condition)
+
+    def velocity_function(
+            self,
+            t: torch.Tensor,
+            x: Union[torch.Tensor, TensorDict],
+            condition: Union[torch.Tensor, TensorDict] = None,
+        ) -> torch.Tensor:
+        """
+        Overview:
+            Return velocity of the model at time t given the initial state.
+            .. math::
+                v_{\theta}(t, x)
+        Arguments:
+            - t (:obj:`torch.Tensor`): The input time.
+            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state at time t.
+            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+        """
+
+        return self.velocity_function_.forward(self.model, t, x, condition)
+    
+    def flow_matching_loss(
+            self,
+            x: Union[torch.Tensor, TensorDict],
+            condition: Union[torch.Tensor, TensorDict] = None,
+        ) -> torch.Tensor:
+        """
+        Overview:
+            Return the flow matching loss function of the model given the initial state and the condition.
+        Arguments:
+            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+        """
+
+        return self.velocity_function_.flow_matching_loss(self.model, x, condition)

@@ -56,15 +56,14 @@ config = EasyDict(
                             library="torchdyn",
                         ),
                     ),
-                    gaussian_conditional_probability_path = dict(
+                    path = dict(
                         type = "linear_vp_sde",
                         beta_0 = 0.1,
                         beta_1 = 20.0,
                     ),
-                    diffusion_process = "VPSDE",
-                    score_function = dict(
+                    model = dict(
                         type = "noise_function",
-                        model = dict(
+                        args = dict(
                             t_encoder = t_encoder,
                             backbone = dict(
                                 type = "TemporalSpatialResidualNet",
@@ -114,7 +113,7 @@ config = EasyDict(
                 learning_rate = 3e-4,
             ),
             evaluation = dict(
-                evaluation_interval = 10000,
+                evaluation_interval = 100000,
                 guidance_scale = [0.0, 1.0],
             ),
         ),

@@ -11,7 +11,7 @@ import torch
 import torch.nn as nn
 
 from generative_rl.datasets.minecraft import MineRLVideoDataset
-from generative_rl.machine_learning.generative_models.diffusion_model.base import DiffusionModel
+from generative_rl.machine_learning.generative_models.diffusion_model.diffusion_model import DiffusionModel
 from generative_rl.utils.config import merge_two_dicts_into_newone
 
 from diffusers.models import AutoencoderKL
@@ -28,14 +28,6 @@ image_size = 64
 channel_size = 3
 video_length = 10
 x_size = (video_length, channel_size, image_size, image_size)
-t_embedding_dim = 32
-t_encoder = dict(
-    type = "GaussianFourierProjectionTimeEncoder",
-    args = dict(
-        embed_dim = t_embedding_dim,
-        scale = 30.0,
-    ),
-)
 
 config = EasyDict(
     dict(
@@ -57,15 +49,14 @@ config = EasyDict(
                         library="torchdyn",
                     ),
                 ),
-                gaussian_conditional_probability_path = dict(
+                path = dict(
                     type = "linear_vp_sde",
                     beta_0 = 0.1,
                     beta_1 = 20.0,
                 ),
-                diffusion_process = "VPSDE",
-                score_function = dict(
+                model = dict(
                     type = "noise_function",
-                    model = dict(
+                    args = dict(
                         backbone = dict(
                             type = "DiT_Video",
                             args = dict(
@@ -84,6 +75,7 @@ config = EasyDict(
             ),
         ),
         parameter=dict(
+            training_loss_type = "flow_matching",
             train_mode=train_mode,
             batch_size=32,
             eval_freq=100,
@@ -142,7 +134,6 @@ if __name__ == "__main__":
 
         transform = transforms.Compose([
             transforms.Lambda(lambda pil_image: center_crop_arr(pil_image, config.data.image_size)),
-            # transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], inplace=True)
         ])
@@ -162,7 +153,7 @@ if __name__ == "__main__":
         data_loader = torch.utils.data.DataLoader(
             dataset,
             batch_size=config.parameter.batch_size if config.parameter.train_mode == "single_card" else int(config.parameter.batch_size // torch.distributed.get_world_size()),
-            shuffle=True,
+            shuffle=False,
             sampler=sampler,
             num_workers=config.parameter.num_workers if hasattr(config.parameter, "num_workers") else 2,
             pin_memory=True,
@@ -204,7 +195,12 @@ if __name__ == "__main__":
             batch_data = batch_data.to(config.device)
 
             diffusion_model.train()
-            loss=diffusion_model.score_matching_loss(batch_data)
+            if config.parameter.training_loss_type=="flow_matching":
+                loss=diffusion_model.flow_matching_loss(batch_data)
+            elif config.parameter.training_loss_type=="score_matching":
+                loss=diffusion_model.score_matching_loss(batch_data)
+            else:
+                raise NotImplementedError("Unknown loss type")
             optimizer.zero_grad()
             loss.backward()
             gradien_norm = torch.nn.utils.clip_grad_norm_(diffusion_model.parameters(), config.parameter.clip_grad_norm)

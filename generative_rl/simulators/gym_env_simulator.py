@@ -304,7 +304,6 @@ class GymEnvSimulator:
                             action = policy(obs)
                             next_obs, reward, done, _ = env.step(action)
                             step += 1
-                            print(f"step {step} reward {reward}")
                             if render:
                                 render_output.append(render_env(env, render_args))
                             data_list.append(

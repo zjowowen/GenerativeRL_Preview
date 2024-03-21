@@ -1,8 +1,6 @@
 from typing import Union
 from easydict import EasyDict
 import torch
-import torch.nn as nn
-from torch.distributions import Distribution
 from tensordict import TensorDict
 
 
@@ -35,7 +33,7 @@ class GaussianConditionalProbabilityPath:
         
         or,
         .. math::
-            \mathrm{d}x=f(t)x(t)\mathrm{d}t+g(t)e^{-\lambda(t)}w_{t}
+            \mathrm{d}x=f(t)x(t)\mathrm{d}t+g(t)w_{t}
             
 
         where :math:`s(t)` is the scale factor, :math:`\sigma^2(t)I` is the covariance matrix, \
@@ -71,7 +69,32 @@ class GaussianConditionalProbabilityPath:
         self.t_max = 1.0 if not hasattr(config, "t_max") else config.t_max
         assert self.type in ["diffusion", "vp_sde", "linear_vp_sde", "cosine_vp_sde", "general_ve_sde", "op_flow"], \
             "Unknown type of Gaussian conditional probability path {}".format(type)
-    
+
+    def drift_coefficient(
+            self,
+            t: torch.Tensor,
+        ) -> Union[torch.Tensor, TensorDict]:
+        """
+        Overview:
+            Return the drift coefficient term of the Gaussian conditional probability path.
+            The drift term is given by the following:
+            .. math::
+                f(t)
+            which satisfies the following SDE:
+            .. math::
+                \mathrm{d}x=f(t)x(t)\mathrm{d}t+g(t)w_{t}
+        Arguments:
+            - t (:obj:`torch.Tensor`): The input time.
+        Returns:
+            - drift (:obj:`Union[torch.Tensor, TensorDict]`): The output drift term.
+        """
+
+        if self.type == "linear_vp_sde":
+            #TODO: make it compatible with TensorDict
+            return -0.5 * (self.config.beta_0 + t * (self.config.beta_1 - self.config.beta_0))
+        else:
+            raise NotImplementedError("Drift coefficient term for type {} is not implemented".format(self.type))
+
     def drift(
             self,
             t: torch.Tensor,
@@ -92,14 +115,13 @@ class GaussianConditionalProbabilityPath:
 
         if self.type == "linear_vp_sde":
             #TODO: make it compatible with TensorDict
-            return  torch.einsum("i...,i->i...", x, -0.5 * (self.config.beta_0 + t * (self.config.beta_1 - self.config.beta_0)))
+            return  torch.einsum("i...,i->i...", x, self.drift_coefficient(t))
         else:
             raise NotImplementedError("Drift term for type {} is not implemented".format(self.type))
 
     def diffusion(
             self,
             t: torch.Tensor,
-            x: Union[torch.Tensor, TensorDict] = None,
         ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
@@ -122,7 +144,6 @@ class GaussianConditionalProbabilityPath:
     def diffusion_squared(
             self,
             t: torch.Tensor,
-            x: Union[torch.Tensor, TensorDict] = None,
         ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
@@ -180,6 +201,46 @@ class GaussianConditionalProbabilityPath:
         else:
             raise NotImplementedError("Log scale factor for type {} is not implemented".format(self.type))
 
+    def d_log_scale_dt(
+            self,
+            t: torch.Tensor,
+        ) -> Union[torch.Tensor, TensorDict]:
+        """
+        Overview:
+            Compute the time derivative of the log scale factor of the Gaussian conditional probability path, which is
+            .. math::
+                \log(s'(t))
+        Arguments:
+            - t (:obj:`torch.Tensor`): The input time.
+        Returns:
+            - d_log_scale_dt (:obj:`Union[torch.Tensor, TensorDict]`): The time derivative of the log scale factor.
+        """
+
+        if self.type == "linear_vp_sde":
+            return -0.5 * t * (self.config.beta_1 - self.config.beta_0)
+        else:
+            raise NotImplementedError("Time derivative of the log scale factor for type {} is not implemented".format(self.type))
+
+    def d_scale_dt(
+            self,
+            t: torch.Tensor,
+        ) -> Union[torch.Tensor, TensorDict]:
+        """
+        Overview:
+            Compute the time derivative of the scale factor of the Gaussian conditional probability path, which is
+            .. math::
+                s'(t)
+        Arguments:
+            - t (:obj:`torch.Tensor`): The input time.
+        Returns:
+            - d_scale_dt (:obj:`Union[torch.Tensor, TensorDict]`): The time derivative of the scale factor.
+        """
+
+        if self.type == "linear_vp_sde":
+            return -0.5 * t * (self.config.beta_1 - self.config.beta_0) * self.scale(t)
+        else:
+            raise NotImplementedError("Time derivative of the scale factor for type {} is not implemented".format(self.type))
+
     def std(self, t: torch.Tensor) -> torch.Tensor:
         """
         Overview:
@@ -188,7 +249,10 @@ class GaussianConditionalProbabilityPath:
                 \sqrt(\Sigma(t))
             or
             .. math::
-                s(t)\sigma(t)
+                \sigma(t)
+            or
+            .. math::
+                s(t)e^{-\lambda(t)}
         Arguments:
             - t (:obj:`torch.Tensor`): The input time.
         Returns:
@@ -199,6 +263,61 @@ class GaussianConditionalProbabilityPath:
             return torch.sqrt(1. - self.scale(t) ** 2)
         else:
             raise NotImplementedError("Standard deviation for type {} is not implemented".format(self.type))
+
+    def d_std_dt(self, t: torch.Tensor) -> torch.Tensor:
+        """
+        Overview:
+            Compute the time derivative of the standard deviation of the Gaussian conditional probability path, which is
+            .. math::
+                \frac{\mathrm{d}\sigma(t)}{\mathrm{d}t}
+        Arguments:
+            - t (:obj:`torch.Tensor`): The input time.
+        """
+
+        if self.type == "linear_vp_sde":
+            return - self.d_scale_dt(t) * self.scale(t) / self.std(t)
+        else:
+            raise NotImplementedError("Time derivative of standard deviation for type {} is not implemented".format(self.type))
+
+    def covariance(self, t: torch.Tensor) -> torch.Tensor:
+        """
+        Overview:
+            Compute the covariance matrix of the Gaussian conditional probability path, which is
+            .. math::
+                \Sigma(t)
+            or
+            .. math::
+                \sigma^2(t)I
+            or
+            .. math::
+                s^2(t)e^{-2\lambda(t)}I
+        Arguments:
+            - t (:obj:`torch.Tensor`): The input time.
+        Returns:
+            - covariance (:obj:`torch.Tensor`): The covariance matrix.
+        """
+
+        if self.type == "linear_vp_sde":
+            return 1. - self.scale(t) ** 2
+        else:
+            raise NotImplementedError("Covariance for type {} is not implemented".format(self.type))
+
+    def d_covariance_dt(self, t: torch.Tensor) -> torch.Tensor:
+        """
+        Overview:
+            Compute the time derivative of the covariance matrix of the Gaussian conditional probability path, which is
+            .. math::
+                \frac{\mathrm{d}\Sigma(t)}{\mathrm{d}t}
+        Arguments:
+            - t (:obj:`torch.Tensor`): The input time.
+        Returns:
+            - d_covariance_dt (:obj:`torch.Tensor`): The time derivative of the covariance matrix.
+        """
+
+        if self.type == "linear_vp_sde":
+            return -2. * self.scale(t) * self.d_scale_dt(t)
+        else:
+            raise NotImplementedError("Time derivative of covariance for type {} is not implemented".format(self.type))
 
     def HalfLogSNR(self, t: torch.Tensor) -> torch.Tensor:
         """

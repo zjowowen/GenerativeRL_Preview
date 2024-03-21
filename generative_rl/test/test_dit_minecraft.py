@@ -10,7 +10,7 @@ from easydict import EasyDict
 import torch
 import torch.nn as nn
 
-from generative_rl.machine_learning.generative_models.diffusion_model.base import DiffusionModel
+from generative_rl.machine_learning.generative_models.diffusion_model.diffusion_model import DiffusionModel
 
 from diffusers.models import AutoencoderKL
 import torchvision
@@ -23,14 +23,6 @@ device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('
 vae_hidden_size = 8
 vae_channel_size = 4
 x_size = (4, vae_hidden_size, vae_hidden_size)
-t_embedding_dim = 32
-t_encoder = dict(
-    type = "GaussianFourierProjectionTimeEncoder",
-    args = dict(
-        embed_dim = t_embedding_dim,
-        scale = 30.0,
-    ),
-)
 image_size = 64
 train_mode = "single_card"
 assert train_mode in ["single_card", "ddp"]
@@ -53,15 +45,14 @@ config = EasyDict(
                         library="torchdyn",
                     ),
                 ),
-                gaussian_conditional_probability_path = dict(
+                path = dict(
                     type = "linear_vp_sde",
                     beta_0 = 0.1,
                     beta_1 = 20.0,
                 ),
-                diffusion_process = "VPSDE",
-                score_function = dict(
+                model = dict(
                     type = "noise_function",
-                    model = dict(
+                    args = dict(
                         backbone = dict(
                             type = "DiT",
                             args = dict(
@@ -79,6 +70,7 @@ config = EasyDict(
             ),
         ),
         parameter=dict(
+            training_loss_type = "flow_matching",
             train_mode=train_mode,
             batch_size=256,
             eval_freq=100,
@@ -157,7 +149,7 @@ if __name__ == "__main__":
         data_loader = torch.utils.data.DataLoader(
             dataset,
             batch_size=config.parameter.batch_size if config.parameter.train_mode == "single_card" else int(config.parameter.batch_size // torch.distributed.get_world_size()),
-            shuffle=True,
+            shuffle=False,
             sampler=sampler,
             num_workers=config.parameter.num_workers if hasattr(config.parameter, "num_workers") else 2,
             pin_memory=True,
@@ -204,7 +196,12 @@ if __name__ == "__main__":
             batch_data = vae.encode(batch_data).latent_dist.sample().mul_(0.18215)
             
             diffusion_model.train()
-            loss=diffusion_model.score_matching_loss(batch_data)
+            if config.parameter.training_loss_type=="flow_matching":
+                loss=diffusion_model.flow_matching_loss(batch_data)
+            elif config.parameter.training_loss_type=="score_matching":
+                loss=diffusion_model.score_matching_loss(batch_data)
+            else:
+                raise NotImplementedError("Unknown loss type")
             optimizer.zero_grad()
             loss.backward()
             gradien_norm = torch.nn.utils.clip_grad_norm_(diffusion_model.parameters(), config.parameter.clip_grad_norm)

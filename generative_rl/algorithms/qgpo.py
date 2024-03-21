@@ -143,7 +143,7 @@ class QGPO:
             ))
 
             behaviour_model_optimizer = torch.optim.Adam(
-                self.model["QGPOPolicy"].diffusion_model.score_function.parameters(),
+                self.model["QGPOPolicy"].diffusion_model.model.parameters(),
                 lr=config.parameter.behaviour_policy.learning_rate,
             )
 
@@ -233,8 +233,6 @@ class QGPO:
                         ),
                         commit=True)
                     progress.update(energy_guidance_training, advance=1)
-
-
 
             #---------------------------------------
             # Customized training code ↑

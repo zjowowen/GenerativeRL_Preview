@@ -1,3 +1,8 @@
+"""
+Overview:
+    This file is used to show the configuration for wandb sweep.
+"""
+
 from easydict import EasyDict
 
 sweep_config = EasyDict(

@@ -2,14 +2,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-class GeneralEncoder(nn.Module):
-
-    def __init__(self, config):
-        super().__init__()
-        self.config = config
-
-    def forward(self, x):
-        pass
 
 class GaussianFourierProjectionTimeEncoder(nn.Module):
     """
@@ -54,7 +46,6 @@ class GaussianFourierProjectionTimeEncoder(nn.Module):
         return torch.cat([torch.sin(x_proj), torch.cos(x_proj)], dim=-1)
 
 ENCODERS={
-    "GeneralEncoder".lower(): GeneralEncoder,
     "GaussianFourierProjectionTimeEncoder".lower(): GaussianFourierProjectionTimeEncoder,
 }
 

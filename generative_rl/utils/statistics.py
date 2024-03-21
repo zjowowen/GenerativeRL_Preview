@@ -1,7 +1,6 @@
 import torch
 
 
-
 def calculate_tensor_memory_size(tensor):
     memory_usage_in_bytes = tensor.element_size() * tensor.nelement()
     return memory_usage_in_bytes
