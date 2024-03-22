@@ -77,6 +77,7 @@ config = EasyDict(
 
 if __name__ == "__main__":
     diffusion_model = DiffusionModel(config=config.diffusion_model).to(config.diffusion_model.device)
+    diffusion_model = torch.compile(diffusion_model)
 
     # get data
     data = make_swiss_roll(n_samples=config.parameter.data_num, noise=0.01)[0].astype(np.float32)[:,[0,2]]
@@ -101,7 +102,7 @@ if __name__ == "__main__":
         else:
             checkpoint_files = [f for f in os.listdir(config.parameter.checkpoint_path) if f.endswith(".pt")]
             checkpoint_files = sorted(checkpoint_files, key=lambda x: int(x.split("_")[-1].split(".")[0]))
-            checkpoint = torch.load(os.path.join(config.parameter.checkpoint_path, checkpoint_files[-1]))
+            checkpoint = torch.load(os.path.join(config.parameter.checkpoint_path, checkpoint_files[-1]), map_location="cpu")
             diffusion_model.load_state_dict(checkpoint["model"])
             optimizer.load_state_dict(checkpoint["optimizer"])
             last_iteration = checkpoint["iteration"]

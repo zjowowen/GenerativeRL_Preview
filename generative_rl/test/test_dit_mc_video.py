@@ -38,7 +38,7 @@ config = EasyDict(
         project = 'dit-mc-video',
         data=dict(
             image_size=image_size,
-            data_path="./MineRLBasaltFindCave-v0-100000",
+            data_path="./minecraft/MineRLBasaltFindCave-v0-100000",
             video_length=video_length,
         ),
         model=dict(
@@ -181,7 +181,7 @@ if __name__ == "__main__":
             else:
                 checkpoint_files = [f for f in os.listdir(config.parameter.checkpoint_path) if f.endswith(".pt")]
                 checkpoint_files = sorted(checkpoint_files, key=lambda x: int(x.split("_")[-1].split(".")[0]))
-                checkpoint = torch.load(os.path.join(config.parameter.checkpoint_path, checkpoint_files[-1]))
+                checkpoint = torch.load(os.path.join(config.parameter.checkpoint_path, checkpoint_files[-1]), map_location="cpu")
                 diffusion_model.load_state_dict(checkpoint["model"])
                 optimizer.load_state_dict(checkpoint["optimizer"])
                 last_iteration = checkpoint["iteration"]

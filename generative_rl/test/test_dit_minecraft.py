@@ -35,7 +35,7 @@ config = EasyDict(
         device = device,
         data=dict(
             image_size=image_size,
-            data_path="./minerl_images",
+            data_path="./minecraft",
         ),
         model=dict(
             diffusion_model = dict(
@@ -177,7 +177,7 @@ if __name__ == "__main__":
             else:
                 checkpoint_files = [f for f in os.listdir(config.parameter.checkpoint_path) if f.endswith(".pt")]
                 checkpoint_files = sorted(checkpoint_files, key=lambda x: int(x.split("_")[-1].split(".")[0]))
-                checkpoint = torch.load(os.path.join(config.parameter.checkpoint_path, checkpoint_files[-1]))
+                checkpoint = torch.load(os.path.join(config.parameter.checkpoint_path, checkpoint_files[-1]), map_location="cpu")
                 diffusion_model.load_state_dict(checkpoint["model"])
                 optimizer.load_state_dict(checkpoint["optimizer"])
                 last_iteration = checkpoint["iteration"]
