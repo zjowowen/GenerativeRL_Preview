@@ -123,6 +123,7 @@ if __name__ == "__main__":
             log.info(f"Starting rank={torch.distributed.get_rank()}, world_size={torch.distributed.get_world_size()}.")
 
         diffusion_model = DiffusionModel(config=config.model.diffusion_model)
+        diffusion_model = torch.compile(diffusion_model)
 
         vae = AutoencoderKL.from_pretrained(f"/home/zjow/huggingface/sd-vae-ft-ema").to(device)
 
@@ -183,8 +184,6 @@ if __name__ == "__main__":
                 last_iteration = checkpoint["iteration"]
         else:
             last_iteration = -1
-
-        diffusion_model = torch.compile(diffusion_model)
 
         gradient_sum=0
         loss_sum=0

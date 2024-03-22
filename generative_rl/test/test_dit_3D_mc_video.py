@@ -137,6 +137,7 @@ if __name__ == "__main__":
             log.info(f"Starting rank={torch.distributed.get_rank()}, world_size={torch.distributed.get_world_size()}.")
 
         diffusion_model = DiffusionModel(config=config.model.diffusion_model)
+        diffusion_model = torch.compile(diffusion_model)
 
         if config.parameter.train_mode == "ddp":
             diffusion_model = nn.parallel.DistributedDataParallel(diffusion_model.to(config.model.diffusion_model.device), device_ids=[torch.distributed.get_rank()])
@@ -194,8 +195,6 @@ if __name__ == "__main__":
                 last_iteration = checkpoint["iteration"]
         else:
             last_iteration = -1
-
-        diffusion_model = torch.compile(diffusion_model)
 
         gradient_sum=0
         loss_sum=0

@@ -149,6 +149,7 @@ def main(rank, world_size):
         wandb_run.config.update(config)
 
         diffusion_model = DiffusionModel(config=config.model.diffusion_model)
+        diffusion_model = torch.compile(diffusion_model)
 
         if config.parameter.train_mode == "ddp":
             diffusion_model = nn.parallel.DistributedDataParallel(diffusion_model.to(config.model.diffusion_model.device), device_ids=[torch.distributed.get_rank()], find_unused_parameters=True)
@@ -206,8 +207,6 @@ def main(rank, world_size):
                 last_iteration = checkpoint["iteration"]
         else:
             last_iteration = -1
-
-        diffusion_model = torch.compile(diffusion_model)
 
         gradient_sum=0
         loss_sum=0
