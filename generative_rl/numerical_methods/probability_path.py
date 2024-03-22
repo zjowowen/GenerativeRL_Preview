@@ -92,6 +92,10 @@ class GaussianConditionalProbabilityPath:
         if self.type == "linear_vp_sde":
             #TODO: make it compatible with TensorDict
             return -0.5 * (self.config.beta_0 + t * (self.config.beta_1 - self.config.beta_0))
+        elif self.type == "linear":
+            return 1.0 - t
+        elif self.type == "gvp":
+            return -0.5 * t * self.config.beta
         else:
             raise NotImplementedError("Drift coefficient term for type {} is not implemented".format(self.type))
 
@@ -179,6 +183,10 @@ class GaussianConditionalProbabilityPath:
 
         if self.type == "linear_vp_sde":
             return torch.exp(-0.25 * t ** 2 * (self.config.beta_1 - self.config.beta_0) - 0.5 * t * self.config.beta_0)
+        elif self.type == "linear":
+            return 1 - t
+        elif self.type == "gvp":
+            return torch.cos(0.5 * torch.pi * t)
         else:
             raise NotImplementedError("Scale factor for type {} is not implemented".format(self.type))
 
@@ -198,6 +206,10 @@ class GaussianConditionalProbabilityPath:
 
         if self.type == "linear_vp_sde":
             return -0.25 * t ** 2 * (self.config.beta_1 - self.config.beta_0) - 0.5 * t * self.config.beta_0
+        elif self.type == "linear":
+            return torch.log(1.0 - t)
+        elif self.type == "gvp":
+            return torch.log(torch.cos(0.5 * torch.pi * t))
         else:
             raise NotImplementedError("Log scale factor for type {} is not implemented".format(self.type))
 
@@ -218,6 +230,10 @@ class GaussianConditionalProbabilityPath:
 
         if self.type == "linear_vp_sde":
             return -0.5 * t * (self.config.beta_1 - self.config.beta_0)
+        elif self.type == "linear":
+            return - 1.0 / (1.0000001 - t)
+        elif self.type == "gvp":
+            return - 0.5 * torch.pi * torch.tan(0.5 * torch.pi * t)
         else:
             raise NotImplementedError("Time derivative of the log scale factor for type {} is not implemented".format(self.type))
 
@@ -238,6 +254,10 @@ class GaussianConditionalProbabilityPath:
 
         if self.type == "linear_vp_sde":
             return -0.5 * t * (self.config.beta_1 - self.config.beta_0) * self.scale(t)
+        elif self.type == "linear":
+            return -1.0
+        elif self.type == "gvp":
+            return - 0.5 * torch.pi * torch.sin(0.5 * torch.pi * t)
         else:
             raise NotImplementedError("Time derivative of the scale factor for type {} is not implemented".format(self.type))
 
@@ -261,6 +281,10 @@ class GaussianConditionalProbabilityPath:
 
         if self.type == "linear_vp_sde":
             return torch.sqrt(1. - self.scale(t) ** 2)
+        elif self.type == "linear":
+            return t
+        elif self.type == "gvp":
+            return torch.sin(0.5 * torch.pi * t)
         else:
             raise NotImplementedError("Standard deviation for type {} is not implemented".format(self.type))
 
@@ -276,6 +300,10 @@ class GaussianConditionalProbabilityPath:
 
         if self.type == "linear_vp_sde":
             return - self.d_scale_dt(t) * self.scale(t) / self.std(t)
+        elif self.type == "linear":
+            return 1.0
+        elif self.type == "gvp":
+            return 0.5 * torch.pi * torch.cos(0.5 * torch.pi * t)
         else:
             raise NotImplementedError("Time derivative of standard deviation for type {} is not implemented".format(self.type))
 

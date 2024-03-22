@@ -60,7 +60,7 @@ config = EasyDict(
             ),
         ),
         parameter = dict(
-            training_loss_type = "score_matching",
+            training_loss_type = "flow_matching",
             lr=5e-3,
             data_num=10000,
             weight_decay=1e-4,
