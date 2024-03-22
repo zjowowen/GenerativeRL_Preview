@@ -11,6 +11,7 @@ import torch
 import torch.nn as nn
 
 from generative_rl.machine_learning.generative_models.diffusion_model.diffusion_model import DiffusionModel
+from generative_rl.utils.log import log
 
 from diffusers.models import AutoencoderKL
 import torchvision
@@ -77,6 +78,8 @@ config = EasyDict(
             learning_rate=5e-4,
             iterations=20000,
             clip_grad_norm=1.0,
+            checkpoint_freq=100,
+            checkpoint_path="./checkpoint",
             image_save_path="./images",
         ),
     )
@@ -118,7 +121,6 @@ if __name__ == "__main__":
             print(f"Starting rank={torch.distributed.get_rank()}, world_size={torch.distributed.get_world_size()}.")
 
         diffusion_model = DiffusionModel(config=config.model.diffusion_model)
-        diffusion_model = torch.compile(diffusion_model)
 
         vae = AutoencoderKL.from_pretrained(f"/home/zjow/huggingface/sd-vae-ft-ema").to(device)
 
@@ -165,11 +167,31 @@ if __name__ == "__main__":
             lr=config.parameter.learning_rate,
             )
 
+        if config.parameter.checkpoint_path is not None:
+
+            if not os.path.exists(config.parameter.checkpoint_path):
+                log.warning(f"Checkpoint path {config.parameter.checkpoint_path} does not exist")
+                last_iteration = -1
+            else:
+                checkpoint_files = [f for f in os.listdir(config.parameter.checkpoint_path) if f.endswith(".pt")]
+                checkpoint_files = sorted(checkpoint_files, key=lambda x: int(x.split("_")[-1].split(".")[0]))
+                checkpoint = torch.load(os.path.join(config.parameter.checkpoint_path, checkpoint_files[-1]))
+                diffusion_model.load_state_dict(checkpoint["model"])
+                optimizer.load_state_dict(checkpoint["optimizer"])
+                last_iteration = checkpoint["iteration"]
+        else:
+            last_iteration = -1
+
+        diffusion_model = torch.compile(diffusion_model)
+
         gradient_sum=0
         loss_sum=0
         counter=0
 
         for iteration in track(range(config.parameter.iterations), description="Training"):
+
+            if iteration <= last_iteration:
+                continue
 
             if iteration >= 0 and iteration % config.parameter.eval_freq == 0:
                 diffusion_model.eval()
@@ -239,3 +261,15 @@ if __name__ == "__main__":
                     average_gradient=gradient_sum/counter,
                 ),
                 commit=True)
+
+            if (iteration+1) % config.parameter.checkpoint_freq == 0:
+                if not os.path.exists(config.parameter.checkpoint_path):
+                    os.makedirs(config.parameter.checkpoint_path)
+                torch.save(
+                    dict(
+                        model=diffusion_model.state_dict(),
+                        optimizer=optimizer.state_dict(),
+                        iteration=iteration,
+                    ),f=os.path.join(config.parameter.checkpoint_path, f"checkpoint_{iteration}.pt"))
+
+        wandb.finish()

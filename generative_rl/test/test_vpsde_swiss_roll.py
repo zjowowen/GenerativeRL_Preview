@@ -12,6 +12,7 @@ from easydict import EasyDict
 import torch
 import torch.nn as nn
 from generative_rl.machine_learning.generative_models.diffusion_model.diffusion_model import DiffusionModel
+from generative_rl.utils.log import log
 
 x_size=2
 device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
@@ -42,7 +43,7 @@ config = EasyDict(
                 beta_1 = 20.0,
             ),
             model = dict(
-                type = "velocity_function",
+                type = "noise_function",
                 args = dict(
                     t_encoder = t_encoder,
                     backbone = dict(
@@ -57,7 +58,7 @@ config = EasyDict(
             ),
         ),
         parameter = dict(
-            training_loss_type = "flow_matching",
+            training_loss_type = "score_matching",
             lr=5e-3,
             data_num=10000,
             weight_decay=1e-4,
@@ -65,6 +66,8 @@ config = EasyDict(
             batch_size=2048,
             clip_grad_norm=1.0,
             eval_freq=500,
+            checkpoint_freq=100,
+            checkpoint_path="./checkpoint",
             video_save_path="./video",
             device=device,
         ),
@@ -87,7 +90,22 @@ if __name__ == "__main__":
         lr=config.parameter.lr,
         weight_decay=config.parameter.weight_decay,
         )
-    
+
+    if config.parameter.checkpoint_path is not None:
+
+        if not os.path.exists(config.parameter.checkpoint_path):
+            log.warning(f"Checkpoint path {config.parameter.checkpoint_path} does not exist")
+            last_iteration = -1
+        else:
+            checkpoint_files = [f for f in os.listdir(config.parameter.checkpoint_path) if f.endswith(".pt")]
+            checkpoint_files = sorted(checkpoint_files, key=lambda x: int(x.split("_")[-1].split(".")[0]))
+            checkpoint = torch.load(os.path.join(config.parameter.checkpoint_path, checkpoint_files[-1]))
+            diffusion_model.load_state_dict(checkpoint["model"])
+            optimizer.load_state_dict(checkpoint["optimizer"])
+            last_iteration = checkpoint["iteration"]
+    else:
+        last_iteration = -1
+
     data_loader = torch.utils.data.DataLoader(data, batch_size=config.parameter.batch_size, shuffle=True)
     def get_train_data(dataloader):
         while True:
@@ -127,6 +145,9 @@ if __name__ == "__main__":
 
     for iteration in track(range(config.parameter.iterations), description="Training"):
 
+        if iteration <= last_iteration:
+            continue
+
         if iteration > 0 and iteration % config.parameter.eval_freq == 0:
             diffusion_model.eval()
             t_span=torch.linspace(0.0, 1.0, 1000)
@@ -161,5 +182,12 @@ if __name__ == "__main__":
             x_t=[x.squeeze(0) for x in torch.split(x_t, split_size_or_sections=1, dim=0)]
             render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
 
-        iteration+=1
-    
+        if (iteration+1) % config.parameter.checkpoint_freq == 0:
+            if not os.path.exists(config.parameter.checkpoint_path):
+                os.makedirs(config.parameter.checkpoint_path)
+            torch.save(
+                dict(
+                    model=diffusion_model.state_dict(),
+                    optimizer=optimizer.state_dict(),
+                    iteration=iteration,
+                ),f=os.path.join(config.parameter.checkpoint_path, f"checkpoint_{iteration}.pt"))
