@@ -1,4 +1,6 @@
 import os
+import signal
+import sys
 from easydict import EasyDict
 from rich.progress import track
 import numpy as np
@@ -118,7 +120,7 @@ if __name__ == "__main__":
             assert config.parameter.batch_size % torch.distributed.get_world_size() == 0, f"Batch size must be divisible by world size."
             device = torch.distributed.get_rank() % torch.cuda.device_count()
             torch.cuda.set_device(device)
-            print(f"Starting rank={torch.distributed.get_rank()}, world_size={torch.distributed.get_world_size()}.")
+            log.info(f"Starting rank={torch.distributed.get_rank()}, world_size={torch.distributed.get_world_size()}.")
 
         diffusion_model = DiffusionModel(config=config.model.diffusion_model)
 
@@ -188,6 +190,26 @@ if __name__ == "__main__":
         loss_sum=0
         counter=0
 
+        def save_checkpoint(model, optimizer, iteration):
+            if not os.path.exists(config.parameter.checkpoint_path):
+                os.makedirs(config.parameter.checkpoint_path)
+            torch.save(
+                dict(
+                    model=model.state_dict(),
+                    optimizer=optimizer.state_dict(),
+                    iteration=iteration,
+                ),f=os.path.join(config.parameter.checkpoint_path, f"checkpoint_{iteration}.pt"))
+
+        history_iteration = [-1]
+        def save_checkpoint_on_exit(model, optimizer, iterations):
+            def exit_handler(signal, frame):
+                log.info("Saving checkpoint when exit...")
+                save_checkpoint(model, optimizer, iteration=iterations[-1])
+                log.info("Done.")
+                sys.exit(0)
+            signal.signal(signal.SIGINT, exit_handler)
+        save_checkpoint_on_exit(diffusion_model, optimizer, history_iteration)
+
         for iteration in track(range(config.parameter.iterations), description="Training"):
 
             if iteration <= last_iteration:
@@ -232,7 +254,8 @@ if __name__ == "__main__":
             loss_sum+=loss.item()
             counter+=1
 
-            print(f"iteration {iteration}, gradient {gradient_sum/counter}, loss {loss_sum/counter}")
+            log.info(f"iteration {iteration}, gradient {gradient_sum/counter}, loss {loss_sum/counter}")
+            history_iteration.append(iteration)
 
             if iteration == config.parameter.iterations-1:
                 diffusion_model.eval()
@@ -263,13 +286,6 @@ if __name__ == "__main__":
                 commit=True)
 
             if (iteration+1) % config.parameter.checkpoint_freq == 0:
-                if not os.path.exists(config.parameter.checkpoint_path):
-                    os.makedirs(config.parameter.checkpoint_path)
-                torch.save(
-                    dict(
-                        model=diffusion_model.state_dict(),
-                        optimizer=optimizer.state_dict(),
-                        iteration=iteration,
-                    ),f=os.path.join(config.parameter.checkpoint_path, f"checkpoint_{iteration}.pt"))
+                save_checkpoint(diffusion_model, optimizer, iteration)
 
         wandb.finish()

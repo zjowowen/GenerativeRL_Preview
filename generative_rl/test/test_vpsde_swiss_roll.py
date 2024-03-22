@@ -1,4 +1,6 @@
 import os
+import signal
+import sys
 from easydict import EasyDict
 from rich.progress import track
 import numpy as np
@@ -93,7 +95,7 @@ if __name__ == "__main__":
 
     if config.parameter.checkpoint_path is not None:
 
-        if not os.path.exists(config.parameter.checkpoint_path):
+        if not os.path.exists(config.parameter.checkpoint_path) or len(os.listdir(config.parameter.checkpoint_path)) == 0:
             log.warning(f"Checkpoint path {config.parameter.checkpoint_path} does not exist")
             last_iteration = -1
         else:
@@ -141,10 +143,28 @@ if __name__ == "__main__":
         plt.close(fig)
         plt.clf()
 
+    def save_checkpoint(model, optimizer, iteration):
+        if not os.path.exists(config.parameter.checkpoint_path):
+            os.makedirs(config.parameter.checkpoint_path)
+        torch.save(
+            dict(
+                model=model.state_dict(),
+                optimizer=optimizer.state_dict(),
+                iteration=iteration,
+            ),f=os.path.join(config.parameter.checkpoint_path, f"checkpoint_{iteration}.pt"))
 
+    history_iteration = [-1]
+    def save_checkpoint_on_exit(model, optimizer, iterations):
+        def exit_handler(signal, frame):
+            log.info("Saving checkpoint when exit...")
+            save_checkpoint(model, optimizer, iteration=iterations[-1])
+            log.info("Done.")
+            sys.exit(0)
+        signal.signal(signal.SIGINT, exit_handler)
+    save_checkpoint_on_exit(diffusion_model, optimizer, history_iteration)
 
     for iteration in track(range(config.parameter.iterations), description="Training"):
-
+        
         if iteration <= last_iteration:
             continue
 
@@ -173,8 +193,9 @@ if __name__ == "__main__":
         loss_sum+=loss.item()
         counter+=1
 
-        print(f"iteration {iteration}, gradient {gradient_sum/counter}, loss {loss_sum/counter}")
-        
+        log.info(f"iteration {iteration}, gradient {gradient_sum/counter}, loss {loss_sum/counter}")
+        history_iteration.append(iteration)
+
         if iteration == config.parameter.iterations-1:
             diffusion_model.eval()
             t_span=torch.linspace(0.0, 1.0, 1000)
@@ -183,11 +204,4 @@ if __name__ == "__main__":
             render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
 
         if (iteration+1) % config.parameter.checkpoint_freq == 0:
-            if not os.path.exists(config.parameter.checkpoint_path):
-                os.makedirs(config.parameter.checkpoint_path)
-            torch.save(
-                dict(
-                    model=diffusion_model.state_dict(),
-                    optimizer=optimizer.state_dict(),
-                    iteration=iteration,
-                ),f=os.path.join(config.parameter.checkpoint_path, f"checkpoint_{iteration}.pt"))
+            save_checkpoint(diffusion_model, optimizer, iteration)

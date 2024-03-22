@@ -8,4 +8,9 @@ import os
 # wandb_logger = logging.getLogger("wandb")
 # wandb_logger.setLevel(logging.ERROR)
 
+FORMAT = "%(message)s"
+logging.basicConfig(
+    level="INFO", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+)
+
 log = logging.getLogger("rich")
