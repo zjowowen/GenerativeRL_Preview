@@ -78,7 +78,7 @@ class VelocityFunction:
             std = self.process.std(t_random, x)
             x_t = self.process.scale(t_random, x) * x + std * noise
             velocity_value = self.process.drift(t_random, x_t) + 0.5 * self.process.diffusion_squared(t_random, x_t) * model(t_random, x_t, condition=condition) / std
-            velocity = self.process.velocity(t_random, x_t, noise=noise)
+            velocity = self.process.velocity(t_random, x, noise=noise)
             loss = torch.mean(torch.sum((velocity_value - velocity) ** 2, dim=(1, )))
             return loss
         elif self.model_type == "score_function":
@@ -88,7 +88,7 @@ class VelocityFunction:
             std = self.process.std(t_random, x)
             x_t = self.process.scale(t_random, x) * x + std * noise
             velocity_value = self.process.drift(t_random, x_t) - 0.5 * self.process.diffusion_squared(t_random, x_t) * model(t_random, x_t, condition=condition)
-            velocity = self.process.velocity(t_random, x_t, noise=noise)
+            velocity = self.process.velocity(t_random, x, noise=noise)
             loss = torch.mean(torch.sum((velocity_value - velocity) ** 2, dim=(1, )))
             return loss
         elif self.model_type == "velocity_function":
@@ -98,7 +98,7 @@ class VelocityFunction:
             std = self.process.std(t_random, x)
             x_t = self.process.scale(t_random, x) * x + std * noise
             velocity_value = model(t_random, x_t, condition=condition)
-            velocity = self.process.velocity(t_random, x_t, noise=noise)
+            velocity = self.process.velocity(t_random, x, noise=noise)
             loss = torch.mean(torch.sum((velocity_value - velocity) ** 2, dim=(1, )))
             return loss
         elif self.model_type == "data_prediction_function":
@@ -110,7 +110,7 @@ class VelocityFunction:
             x_t = self.process.scale(t_random, x) * x + std * noise
             D = 0.5 * self.process.diffusion_squared(t_random, x) / self.process.covariance(t_random, x)
             velocity_value = (self.process.drift_coefficient(t_random, x_t) + D) * x_t - D * self.process.scale(t_random, x_t) * model(t_random, x_t, condition=condition)
-            velocity = self.process.velocity(t_random, x_t, noise=noise)
+            velocity = self.process.velocity(t_random, x, noise=noise)
             loss = torch.mean(torch.sum((velocity_value - velocity) ** 2, dim=(1, )))
             return loss
         else:
