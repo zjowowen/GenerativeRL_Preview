@@ -9,7 +9,7 @@ setup(
     packages=find_packages(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=[
-        'gym==0.23.1',
+        'gym',
         'numpy',
         'torch>=2.2.0',
         'opencv-python',
