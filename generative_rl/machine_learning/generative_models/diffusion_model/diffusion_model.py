@@ -14,6 +14,8 @@ from generative_rl.machine_learning.generative_models.intrinsic_model import Int
 from generative_rl.machine_learning.generative_models.diffusion_process import DiffusionProcess
 from generative_rl.machine_learning.generative_models.model_functions.score_function import ScoreFunction
 from generative_rl.machine_learning.generative_models.model_functions.velocity_function import VelocityFunction
+from generative_rl.machine_learning.generative_models.model_functions.data_prediction_function import DataPredictionFunction
+from generative_rl.machine_learning.generative_models.model_functions.noise_function import NoiseFunction
 
 class DiffusionModel(nn.Module):
     """
@@ -49,6 +51,8 @@ class DiffusionModel(nn.Module):
         self.diffusion_process = DiffusionProcess(self.path)
         self.score_function_ = ScoreFunction(self.model_type, self.diffusion_process)
         self.velocity_function_ = VelocityFunction(self.model_type, self.diffusion_process)
+        self.noise_function_ = NoiseFunction(self.model_type, self.diffusion_process)
+        self.data_prediction_function_ = DataPredictionFunction(self.model_type, self.diffusion_process)
 
         if hasattr(config, "solver"):
             self.solver=get_solver(config.solver.type)(**config.solver.args)
@@ -91,8 +95,27 @@ class DiffusionModel(nn.Module):
             solver = self.solver
 
         if isinstance(solver, DPMSolver):
-            #TODO
-            pass
+            #TODO: make it compatible with TensorDict
+            x = self.gaussian_generator(batch_size=batch_size)
+            if with_grad:
+                data = solver.integrate(
+                    diffusion_process=self.diffusion_process,
+                    noise_function=self.noise_function,
+                    data_prediction_function=self.data_prediction_function,
+                    x=x,
+                    condition=condition,
+                    save_intermediate=True,
+                )
+            else:
+                with torch.no_grad():
+                    data = solver.integrate(
+                        diffusion_process=self.diffusion_process,
+                        noise_function=self.noise_function,
+                        data_prediction_function=self.data_prediction_function,
+                        x=x,
+                        condition=condition,
+                        save_intermediate=True,
+                    )
         elif isinstance(solver, ODESolver):
             #TODO: make it compatible with TensorDict
             if not hasattr(self, "t_span"):
@@ -139,7 +162,7 @@ class DiffusionModel(nn.Module):
 
     def sample_forward_process(
             self,
-            t_span: torch.Tensor,
+            t_span: torch.Tensor = None,
             batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
             condition: Union[torch.Tensor, TensorDict] = None,
             with_grad: bool = False,
@@ -174,8 +197,27 @@ class DiffusionModel(nn.Module):
             solver = self.solver
 
         if isinstance(solver, DPMSolver):
-            #TODO
-            pass
+            #TODO: make it compatible with TensorDict
+            x = self.gaussian_generator(batch_size=batch_size)
+            if with_grad:
+                data = solver.integrate(
+                    diffusion_process=self.diffusion_process,
+                    noise_function=self.noise_function,
+                    data_prediction_function=self.data_prediction_function,
+                    x=x,
+                    condition=condition,
+                    save_intermediate=True,
+                )
+            else:
+                with torch.no_grad():
+                    data = solver.integrate(
+                        diffusion_process=self.diffusion_process,
+                        noise_function=self.noise_function,
+                        data_prediction_function=self.data_prediction_function,
+                        x=x,
+                        condition=condition,
+                        save_intermediate=True,
+                    )
         elif isinstance(solver, ODESolver):
             #TODO: make it compatible with TensorDict
             x = self.gaussian_generator(batch_size=batch_size)
@@ -221,7 +263,7 @@ class DiffusionModel(nn.Module):
             t: torch.Tensor,
             x: Union[torch.Tensor, TensorDict],
             condition: Union[torch.Tensor, TensorDict] = None,
-        ) -> torch.Tensor:
+        ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
             Return score function of the model at time t given the initial state, which is the gradient of the log-likelihood.
@@ -255,7 +297,7 @@ class DiffusionModel(nn.Module):
             t: torch.Tensor,
             x: Union[torch.Tensor, TensorDict],
             condition: Union[torch.Tensor, TensorDict] = None,
-        ) -> torch.Tensor:
+        ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
             Return velocity of the model at time t given the initial state.
@@ -283,3 +325,42 @@ class DiffusionModel(nn.Module):
         """
 
         return self.velocity_function_.flow_matching_loss(self.model, x, condition)
+
+    def noise_function(
+            self,
+            t: torch.Tensor,
+            x: Union[torch.Tensor, TensorDict],
+            condition: Union[torch.Tensor, TensorDict] = None,
+        ) -> Union[torch.Tensor, TensorDict]:
+        """
+        Overview:
+            Return noise function of the model at time t given the initial state.
+            .. math::
+                - \sigma(t) \nabla_{x_t} \log p_{\theta}(x_t)
+        Arguments:
+            - t (:obj:`torch.Tensor`): The input time.
+            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+        """
+
+        return self.noise_function_.forward(self.model, t, x, condition)
+    
+    def data_prediction_function(
+            self,
+            t: torch.Tensor,
+            x: Union[torch.Tensor, TensorDict],
+            condition: Union[torch.Tensor, TensorDict] = None,
+        ) -> Union[torch.Tensor, TensorDict]:
+        """
+        Overview:
+            Return data prediction function of the model at time t given the initial state.
+            .. math::
+                \frac{- \sigma(t) x_t + \sigma^2(t) \nabla_{x_t} \log p_{\theta}(x_t)}{s(t)}
+        Arguments:
+            - t (:obj:`torch.Tensor`): The input time.
+            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+        """
+
+        return self.data_prediction_function_.forward(self.model, t, x, condition)
+    

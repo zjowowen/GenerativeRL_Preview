@@ -114,4 +114,4 @@ class VelocityFunction:
             loss = torch.mean(torch.sum((velocity_value - velocity) ** 2, dim=(1, )))
             return loss
         else:
-            raise NotImplementedError("Unknown type of Velocity Function {}".format(type))
+            raise NotImplementedError("Unknown type of velocity function {}".format(type))

@@ -377,7 +377,7 @@ class GaussianConditionalProbabilityPath:
             Compute the half-logSNR of the Gaussian conditional probability path, which is
             .. math::
                 \log(s(t))-\log(\sigma(t))
-            Arguments:
+        Arguments:
             - t (:obj:`torch.Tensor`): The input time.
         Returns:
             - HalfLogSNR (:obj:`torch.Tensor`): The half-logSNR.

@@ -73,7 +73,10 @@ class DiffusionProcess:
             - drift_coefficient (:obj:`Union[torch.Tensor, TensorDict]`): The output drift coefficient.
         """
 
-        return torch.einsum("i,i...->i...", self.path.drift_coefficient(t), torch.ones_like(x, device=x.device))
+        if x is not None and len(x.shape) > len(t.shape):
+            return torch.einsum("i,i...->i...", self.path.drift_coefficient(t), torch.ones_like(x, device=x.device))
+        else:
+            return self.path.drift_coefficient(t)
 
     def diffusion(
             self,
@@ -95,7 +98,10 @@ class DiffusionProcess:
             - diffusion (:obj:`Union[torch.Tensor, TensorDict]`): The output diffusion term.
         """
 
-        return torch.einsum("i,i...->i...", self.path.diffusion(t), torch.ones_like(x, device=x.device))
+        if x is not None and len(x.shape) > len(t.shape):
+            return torch.einsum("i,i...->i...", self.path.diffusion(t), torch.ones_like(x, device=x.device))
+        else:
+            return self.path.diffusion(t)
 
     def diffusion_squared(
             self,
@@ -117,7 +123,10 @@ class DiffusionProcess:
             - diffusion_squared (:obj:`Union[torch.Tensor, TensorDict]`): The output square of the diffusion term.
         """
 
-        return torch.einsum("i,i...->i...", self.path.diffusion_squared(t), torch.ones_like(x, device=x.device))
+        if x is not None and len(x.shape) > len(t.shape):
+            return torch.einsum("i,i...->i...", self.path.diffusion_squared(t), torch.ones_like(x, device=x.device))
+        else:
+            return self.path.diffusion_squared(t)
 
     def scale(
             self,
@@ -139,7 +148,35 @@ class DiffusionProcess:
             - scale (:obj:`Union[torch.Tensor, TensorDict]`): The output scale.
         """
 
-        return torch.einsum("i,i...->i...", self.path.scale(t), torch.ones_like(x, device=x.device))
+        if x is not None and len(x.shape) > len(t.shape):
+            return torch.einsum("i,i...->i...", self.path.scale(t), torch.ones_like(x, device=x.device))
+        else:
+            return self.path.scale(t)
+
+    def log_scale(
+            self,
+            t: torch.Tensor,
+            x: Union[torch.Tensor, TensorDict],
+            condition: Union[torch.Tensor, TensorDict] = None,
+        ) -> Union[torch.Tensor, TensorDict]:
+        """
+        Overview:
+            Return the log scale of the diffusion process.
+            The log scale is given by the following:
+            .. math::
+                \log(s(t))
+        Arguments:
+            - t (:obj:`torch.Tensor`): The input time.
+            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+        Returns:
+            - log_scale (:obj:`Union[torch.Tensor, TensorDict]`): The output log scale.
+        """
+
+        if x is not None and len(x.shape) > len(t.shape):
+            return torch.einsum("i,i...->i...", self.path.log_scale(t), torch.ones_like(x, device=x.device))
+        else:
+            return self.path.log_scale(t)
 
     def std(
             self,
@@ -161,7 +198,10 @@ class DiffusionProcess:
             - std (:obj:`Union[torch.Tensor, TensorDict]`): The output standard deviation.
         """
 
-        return torch.einsum("i,i...->i...", self.path.std(t), torch.ones_like(x, device=x.device))
+        if x is not None and len(x.shape) > len(t.shape):
+            return torch.einsum("i,i...->i...", self.path.std(t), torch.ones_like(x, device=x.device))
+        else:
+            return self.path.std(t)
 
     def covariance(
             self,
@@ -183,7 +223,10 @@ class DiffusionProcess:
             - covariance (:obj:`Union[torch.Tensor, TensorDict]`): The output covariance.
         """
 
-        return torch.einsum("i,i...->i...", self.path.covariance(t), torch.ones_like(x, device=x.device))
+        if x is not None and len(x.shape) > len(t.shape):
+            return torch.einsum("i,i...->i...", self.path.covariance(t), torch.ones_like(x, device=x.device))
+        else:
+            return self.path.covariance(t)
 
     def velocity(
             self,
@@ -208,6 +251,54 @@ class DiffusionProcess:
             noise = torch.randn_like(x).to(x.device)
 
         return torch.einsum("i,i...->i...", self.path.d_scale_dt(t), x) + torch.einsum("i,i...->i...", self.path.d_std_dt(t), noise)
+
+    def HalfLogSNR(
+            self,
+            t: torch.Tensor,
+            x: Union[torch.Tensor, TensorDict] = None,
+            condition: Union[torch.Tensor, TensorDict] = None,
+        ) -> Union[torch.Tensor, TensorDict]:
+        """
+        Overview:
+            Return the half log signal-to-noise ratio of the diffusion process.
+            The half log signal-to-noise ratio is given by the following:
+            .. math::
+                \log(s(t))-\log(\sigma(t))
+        Arguments:
+            - t (:obj:`torch.Tensor`): The input time.
+            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+        Returns:
+            - HalfLogSNR (:obj:`torch.Tensor`): The half-logSNR.
+        """
+
+        if x is not None and len(x.shape) > len(t.shape):
+            return torch.einsum("i,i...->i...", self.path.HalfLogSNR(t), torch.ones_like(x, device=x.device))
+        else:
+            return self.path.HalfLogSNR(t)
+    
+    def InverseHalfLogSNR(
+            self,
+            HalfLogSNR: torch.Tensor,
+            x: Union[torch.Tensor, TensorDict] = None,
+            condition: Union[torch.Tensor, TensorDict] = None,
+        ) -> Union[torch.Tensor, TensorDict]:
+        """
+        Overview:
+            Return the inverse function of half log signal-to-noise ratio of the diffusion process, \
+            which is the time at which the half log signal-to-noise ratio is given.
+        Arguments:
+            - HalfLogSNR (:obj:`torch.Tensor`): The input half-logSNR.
+            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+        Returns:
+            - t (:obj:`torch.Tensor`): The output time.
+        """
+
+        if x is not None:
+            return self.path.InverseHalfLogSNR(HalfLogSNR).to(x.device)
+        else:
+            return self.path.InverseHalfLogSNR(HalfLogSNR)
 
     def sde(self, condition: Union[torch.Tensor, TensorDict] = None) -> SDE:
         """
@@ -364,16 +455,18 @@ class DiffusionProcess:
 
         #TODO: make it compatible with TensorDict
 
-        scale = self.path.scale(t)
-        std = self.path.std(t)
-        if len(x.shape) > len(scale.shape):
-            while len(x.shape)>len(scale.shape):
-                scale = scale.unsqueeze(-1)
-                std = std.unsqueeze(-1)
-            scale = scale.expand(x.shape)
-            std = std.expand(x.shape)
+        return self.scale(t, x) * x + self.std(t, x) * torch.randn_like(x).to(x.device)
 
-        return x * scale + std * torch.randn_like(x)
+        # scale = self.path.scale(t)
+        # std = self.path.std(t)
+        # if len(x.shape) > len(scale.shape):
+        #     while len(x.shape)>len(scale.shape):
+        #         scale = scale.unsqueeze(-1)
+        #         std = std.unsqueeze(-1)
+        #     scale = scale.expand(x.shape)
+        #     std = std.expand(x.shape)
+
+        # return x * scale + std * torch.randn_like(x)
 
     def direct_sample_and_return_noise(
             self,
@@ -395,4 +488,6 @@ class DiffusionProcess:
 
         noise = torch.randn_like(x).to(x.device)
 
-        return x * self.path.scale(t) + self.path.std(t) * noise, noise
+        return self.scale(t, x) * x + self.std(t, x) * noise, noise
+
+        # return x * self.path.scale(t) + self.path.std(t) * noise, noise

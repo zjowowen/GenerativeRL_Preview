@@ -35,9 +35,11 @@ config = EasyDict(
             x_size = x_size,
             alpha = 1.0,
             solver = dict(
-                type = "ODESolver",
+                type = "DPMSolver",
                 args = dict(
-                    library="torchdyn",
+                    order=2,
+                    device=device,
+                    steps=17,
                 ),
             ),
             path = dict(
@@ -61,7 +63,7 @@ config = EasyDict(
             ),
         ),
         parameter = dict(
-            training_loss_type = "flow_matching",
+            training_loss_type = "score_matching",
             lr=5e-3,
             data_num=10000,
             weight_decay=1e-4,

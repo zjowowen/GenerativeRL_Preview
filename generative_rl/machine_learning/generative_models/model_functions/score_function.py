@@ -116,4 +116,4 @@ class ScoreFunction:
             loss = torch.mean(torch.sum((noise_value - noise) ** 2, dim=(1, )))
             return loss
         else:
-            raise NotImplementedError("Unknown type of ScoreFunction {}".format(type))
+            raise NotImplementedError("Unknown type of score function {}".format(type))

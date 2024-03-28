@@ -215,7 +215,7 @@ def main(rank, world_size):
         counter=0
         accumulation_steps = config.parameter.accumulation_steps
 
-        def save_checkpoint(model, optimizer, iteration,epoch):
+        def save_checkpoint(model, optimizer, iteration, epoch):
             if not os.path.exists(config.parameter.checkpoint_path):
                 os.makedirs(config.parameter.checkpoint_path)
             torch.save(
@@ -227,10 +227,10 @@ def main(rank, world_size):
                 ),f=os.path.join(config.parameter.checkpoint_path, f"checkpoint_{iteration}.pt"))
 
         history_iteration = [-1]
-        def save_checkpoint_on_exit(model, optimizer, iterations,epoch):
+        def save_checkpoint_on_exit(model, optimizer, iterations, epoch):
             def exit_handler(signal, frame):
                 log.info("Saving checkpoint when exit...")
-                save_checkpoint(model, optimizer, iteration=iterations[-1],epoch)
+                save_checkpoint(model, optimizer, iteration=iterations[-1], epoch=epoch)
                 log.info("Done.")
                 sys.exit(0)
             signal.signal(signal.SIGINT, exit_handler)
