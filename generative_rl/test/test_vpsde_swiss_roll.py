@@ -15,7 +15,7 @@ import torch
 import torch.nn as nn
 from generative_rl.machine_learning.generative_models.diffusion_model.diffusion_model import DiffusionModel
 from generative_rl.utils.log import log
-from generative_rl.utils import seed
+from generative_rl.utils import set_seed
 
 x_size=2
 device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
@@ -77,7 +77,7 @@ config = EasyDict(
 ))
 
 if __name__ == "__main__":
-    seed_value=seed()
+    seed_value=set_seed()
     log.info(f"start ,and the seed value is {seed_value}")
     diffusion_model = DiffusionModel(config=config.diffusion_model).to(config.diffusion_model.device)
     diffusion_model = torch.compile(diffusion_model)

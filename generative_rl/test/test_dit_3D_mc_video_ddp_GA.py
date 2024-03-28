@@ -22,7 +22,7 @@ from generative_rl.datasets.minecraft import MineRLVideoDataset
 from generative_rl.machine_learning.generative_models.diffusion_model.diffusion_model import DiffusionModel
 from generative_rl.utils.config import merge_two_dicts_into_newone
 from generative_rl.utils.log import log
-from  generative_rl.utils import seed
+from  generative_rl.utils import set_seed
 from diffusers.models import AutoencoderKL
 import torchvision
 from torchvision.datasets import ImageFolder
@@ -54,7 +54,7 @@ def center_crop_arr(pil_image, image_size):
 
 
 def main(rank, world_size):
-    seed_value=seed()
+    seed_value=set_seed()
     train_mode = "ddp"
     assert train_mode in ["single_card", "ddp"]
 
@@ -80,11 +80,13 @@ def main(rank, world_size):
     num_heads = 6
     hidden_size = np.sum(patch_grid_num) * 2 * num_heads * 2
     assert hidden_size % (np.sum(patch_grid_num) * 2 * num_heads) == 0, f"hidden_size must be divisible by patch_grid_num * 2 * num_heads."
+    
+    projectname = "dit-3D-mc-video-ddp"
 
     config = EasyDict(
         dict(
             device = device,
-            project = 'dit-3D-mc-video-ddp',
+            project = projectname,
             data=dict(
                 image_size=image_size,
                 data_path="./minecraft/MineRLBasaltFindCave-v0-100000",
@@ -132,12 +134,12 @@ def main(rank, world_size):
                 eval_freq=100,
                 learning_rate=5e-4,
                 iterations=200000,
-                epoch=500,
+                epochs=500,
                 clip_grad_norm=1.0,
                 checkpoint_freq=100,
                 accumulation_steps=3,
-                checkpoint_path="./checkpoint",
-                video_save_path="./videos",
+                checkpoint_path=f"./{projectname}/checkpoint",
+                video_save_path=f"./{projectname}/checkpoint",
             ),
         )
     )
@@ -185,38 +187,35 @@ def main(rank, world_size):
             pin_memory=True,
             drop_last=True,
         )
-        # def get_train_data(dataloader):
-        #     while True:
-        #         yield from dataloader
-        # data_generator = get_train_data(data_loader)
 
-        optimizer = torch.optim.Adam(
-            diffusion_model.parameters(), 
-            lr=config.parameter.learning_rate,
-            )
 
         if config.parameter.checkpoint_path is not None:
 
             if not os.path.exists(config.parameter.checkpoint_path):
                 log.warning(f"Checkpoint path {config.parameter.checkpoint_path} does not exist")
-                last_iteration = -1
+                iteration = 0
             else:
                 checkpoint_files = [f for f in os.listdir(config.parameter.checkpoint_path) if f.endswith(".pt")]
                 checkpoint_files = sorted(checkpoint_files, key=lambda x: int(x.split("_")[-1].split(".")[0]))
                 checkpoint = torch.load(os.path.join(config.parameter.checkpoint_path, checkpoint_files[-1]), map_location="cpu")
                 diffusion_model.load_state_dict(checkpoint["model"])
                 optimizer.load_state_dict(checkpoint["optimizer"])
-                last_iteration = checkpoint["iteration"]
+                iteration = checkpoint.get("iteration", 0)
+                epoch = checkpoint.get("epoch", 0)
         else:
-            last_iteration = -1
+            iteration = 0
+            epoch = 0
+            optimizer = torch.optim.Adam(
+            diffusion_model.parameters(), 
+            lr=config.parameter.learning_rate,
+            )
 
         gradient_sum=0
         loss_sum=0
         counter=0
-        iteration = 0
         accumulation_steps = config.parameter.accumulation_steps
 
-        def save_checkpoint(model, optimizer, iteration):
+        def save_checkpoint(model, optimizer, iteration,epoch):
             if not os.path.exists(config.parameter.checkpoint_path):
                 os.makedirs(config.parameter.checkpoint_path)
             torch.save(
@@ -224,25 +223,25 @@ def main(rank, world_size):
                     model=model.state_dict(),
                     optimizer=optimizer.state_dict(),
                     iteration=iteration,
+                    epoch=epoch,
                 ),f=os.path.join(config.parameter.checkpoint_path, f"checkpoint_{iteration}.pt"))
 
         history_iteration = [-1]
-        def save_checkpoint_on_exit(model, optimizer, iterations):
+        def save_checkpoint_on_exit(model, optimizer, iterations,epoch):
             def exit_handler(signal, frame):
                 log.info("Saving checkpoint when exit...")
-                save_checkpoint(model, optimizer, iteration=iterations[-1])
+                save_checkpoint(model, optimizer, iteration=iterations[-1],epoch)
                 log.info("Done.")
                 sys.exit(0)
             signal.signal(signal.SIGINT, exit_handler)
         if torch.distributed.get_rank() == 0:
-            save_checkpoint_on_exit(diffusion_model, optimizer, history_iteration)
+            save_checkpoint_on_exit(diffusion_model, optimizer, history_iteration,epoch)
 
         for  epoch  in track(range(config.parameter.epochs),description="Training"):
             sampler.set_epoch(epoch)
             for batch_data in data_loader:
                 batch_data = batch_data.to(config.device)
-                if iteration <= last_iteration:
-                    continue
+
 
                 if iteration > 0 and iteration % config.parameter.eval_freq == 0:
                     diffusion_model.eval()
@@ -294,7 +293,7 @@ def main(rank, world_size):
                 loss_sum+=loss.item()
                 log.info(f"iteration {iteration}, gradient {gradient_sum/counter}, loss {loss_sum/iteration}")
                 history_iteration.append(iteration)
-
+                iteration =iteration+1
                 if iteration == config.parameter.iterations-1:
                     diffusion_model.eval()
                     t_span=torch.linspace(0.0, 1.0, 1000)
@@ -324,12 +323,12 @@ def main(rank, world_size):
                     commit=True)
 
                 if (iteration+1) % config.parameter.checkpoint_freq == 0 and torch.distributed.get_rank() == 0:
-                    save_checkpoint(diffusion_model, optimizer, iteration)
+                    save_checkpoint(diffusion_model, optimizer, iteration,epoch)
                     torch.distributed.barrier()
                 else:
                     torch.distributed.barrier()
 
-            wandb.finish()
+        wandb.finish()
 
 
 

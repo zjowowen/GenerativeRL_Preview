@@ -16,7 +16,7 @@ from generative_rl.datasets.minecraft import MineRLVideoDataset
 from generative_rl.machine_learning.generative_models.diffusion_model.diffusion_model import DiffusionModel
 from generative_rl.utils.config import merge_two_dicts_into_newone
 from generative_rl.utils.log import log
-from generative_rl.utils import seed
+from generative_rl.utils import set_seed
 
 from diffusers.models import AutoencoderKL
 import torchvision
@@ -122,7 +122,7 @@ def center_crop_arr(pil_image, image_size):
 
 
 if __name__ == "__main__":
-    seed_value=seed()
+    seed_value=set_seed()
     with wandb.init(
         project=f"{config.project if hasattr(config, "project") else "dit-ode-3D-mc-video"}-{seed_value}",
         **config.wandb if hasattr(config, "wandb") else {}
