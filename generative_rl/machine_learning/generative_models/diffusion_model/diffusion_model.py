@@ -39,7 +39,6 @@ class DiffusionModel(nn.Module):
         self.x_size = config.x_size
         self.device = config.device
 
-        self.solver = get_solver(config.solver.type)(config.solver.args)
         self.gaussian_generator = gaussian_random_variable(config.x_size, config.device)
 
         self.path = GaussianConditionalProbabilityPath(config.path)
