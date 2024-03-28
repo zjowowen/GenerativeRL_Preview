@@ -22,7 +22,7 @@ from generative_rl.datasets.minecraft import MineRLVideoDataset
 from generative_rl.machine_learning.generative_models.diffusion_model.diffusion_model import DiffusionModel
 from generative_rl.utils.config import merge_two_dicts_into_newone
 from generative_rl.utils.log import log
-
+from  generative_rl.utils import seed
 from diffusers.models import AutoencoderKL
 import torchvision
 from torchvision.datasets import ImageFolder
@@ -54,7 +54,7 @@ def center_crop_arr(pil_image, image_size):
 
 
 def main(rank, world_size):
-
+    seed_value=seed()
     train_mode = "ddp"
     assert train_mode in ["single_card", "ddp"]
 
@@ -234,6 +234,7 @@ def main(rank, world_size):
             save_checkpoint_on_exit(diffusion_model, optimizer, history_iteration)
 
         for iteration in track(range(config.parameter.iterations), description="Training"):
+            sampler.set_epoch(iteration)
 
             if iteration <= last_iteration:
                 continue

@@ -11,13 +11,15 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from datetime import datetime
-
 from matplotlib import animation
 import torch
 import torch.nn as nn
 from generative_rl.machine_learning.generative_models.diffusion_model.diffusion_model import DiffusionModel
 from generative_rl.utils.log import log
 from generative_rl.utils.config import merge_two_dicts_into_newone
+from generative_rl.utils import seed
+
+
 
 
 sweep_config = EasyDict(
@@ -79,6 +81,7 @@ def train_func():
     origin_config = EasyDict(
         dict(
             device=device,
+            project_name="gvp_lossadding_lr",
             diffusion_model=dict(
                 device=device,
                 x_size=x_size,
@@ -303,8 +306,10 @@ def train_func():
                 commit=True
             )
 
+
 if __name__ == '__main__':
+    seed_value = seed()
     sweep_id = wandb.sweep(
-        sweep=sweep_config, project="gvp_lossadding_lr"
+        sweep=sweep_config, project=f"test_vpsede_swiss-{seed_value}"
     )
     wandb.agent(sweep_id, function=train_func)
