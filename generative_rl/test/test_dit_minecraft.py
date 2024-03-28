@@ -14,7 +14,7 @@ import torch.nn as nn
 
 from generative_rl.machine_learning.generative_models.diffusion_model.diffusion_model import DiffusionModel
 from generative_rl.utils.log import log
-from generative_rl.utils import seed
+from generative_rl.utils import set_seed
 from diffusers.models import AutoencoderKL
 import torchvision
 from torchvision.datasets import ImageFolder
@@ -109,7 +109,7 @@ def center_crop_arr(pil_image, image_size):
 
 
 if __name__ == "__main__":
-    seed_vale=seed()
+    seed_vale=set_seed()
     with wandb.init(
         project=f"{config.project if hasattr(config, "project") else "dit-minecraft"}-{seed_vale}",
         **config.wandb if hasattr(config, "wandb") else {}

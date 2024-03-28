@@ -12,7 +12,7 @@ from torchvision import transforms
 from PIL import Image
 import cv2
 import psutil
-from generative_rl.utils import seed
+from generative_rl.utils import set_seed
 
 image_size=64
 config = EasyDict(
@@ -109,7 +109,7 @@ def collect_data(env_id, i, data_path):
 
 
 if __name__ == "__main__":
-    seed()
+    set_seed()
     mp.set_start_method('spawn')
 
     if not os.path.exists(config.data.data_path):

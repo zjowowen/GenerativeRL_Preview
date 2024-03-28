@@ -17,7 +17,7 @@ import torch.nn as nn
 from generative_rl.machine_learning.generative_models.diffusion_model.diffusion_model import DiffusionModel
 from generative_rl.utils.log import log
 from generative_rl.utils.config import merge_two_dicts_into_newone
-from generative_rl.utils import seed
+from generative_rl.utils import set_seed
 
 
 
@@ -308,7 +308,7 @@ def train_func():
 
 
 if __name__ == '__main__':
-    seed_value = seed()
+    seed_value = set_seed()
     sweep_id = wandb.sweep(
         sweep=sweep_config, project=f"test_vpsede_swiss-{seed_value}"
     )
