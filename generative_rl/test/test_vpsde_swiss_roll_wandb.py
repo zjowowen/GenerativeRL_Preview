@@ -11,16 +11,19 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from datetime import datetime
-
 from matplotlib import animation
 import torch
 import torch.nn as nn
 from generative_rl.machine_learning.generative_models.diffusion_model.diffusion_model import DiffusionModel
 from generative_rl.utils.log import log
 from generative_rl.utils.config import merge_two_dicts_into_newone
+from generative_rl.utils import seed
+
+
+
 
 sweep_config = EasyDict(
-    name="base-sweep",
+    name="base-sweep-gvp-lossadding",
     metric=dict(
         name="loss",
         goal="minimize",
@@ -31,15 +34,14 @@ sweep_config = EasyDict(
             parameters=dict(
                 path=dict(
                     parameters=dict(
-                        type=dict(values=["linear_vp_sde", "linear", "gvp"], ),
+                        type=dict(values=["gvp"], ),
                     ),
                 ),
                 model=dict(
                     parameters=dict(
                         type=dict(
                             values=[
-                                "velocity_function", "score_function",
-                                "noise_function"
+                                "velocity_function",
                             ],
                         ),
                     ),
@@ -49,7 +51,13 @@ sweep_config = EasyDict(
         parameter=dict(
             parameters=dict(
                 training_loss_type=dict(
-                    values=["flow_matching", "score_matching"],
+                    values=["flow_matching"],
+                ),
+                lr=dict(
+                    values=[2e-3,3e-3,4e-3,5e-3],
+                ),
+                accumulation_steps=dict(
+                    values=[1, 2, 3, 4],
                 ),
             ),
         ),
@@ -59,7 +67,7 @@ sweep_config = EasyDict(
 
 def train_func():
     x_size = 2
-    device = torch.device('cuda:3') if torch.cuda.is_available(
+    device = torch.device('cuda:0') if torch.cuda.is_available(
     ) else torch.device('cpu')
     t_embedding_dim = 32
     t_encoder = dict(
@@ -73,6 +81,7 @@ def train_func():
     origin_config = EasyDict(
         dict(
             device=device,
+            project_name="gvp_lossadding_lr",
             diffusion_model=dict(
                 device=device,
                 x_size=x_size,
@@ -106,10 +115,11 @@ def train_func():
                 lr=5e-3,
                 data_num=10000,
                 weight_decay=1e-4,
-                iterations=10000,
+                iterations=1000,
                 batch_size=2048,
                 clip_grad_norm=1.0,
-                eval_freq=5000,
+                eval_freq=500,
+                accumulation_steps=3,
                 # checkpoint_freq=5000,
                 # checkpoint_path="./checkpoint",
                 video_save_path="./video",
@@ -117,7 +127,8 @@ def train_func():
             ),
         )
     )
-
+    
+    
     with wandb.init(
             project="swiss_roll_diffusion_model",
             config=origin_config,
@@ -126,7 +137,7 @@ def train_func():
         # wandb_run.config.update(config)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         config = EasyDict(wandb.config)
-        run_name = f"{config.diffusion_model.path.type}-{config.diffusion_model.model.type}-{config.parameter.training_loss_type}--{timestamp}"
+        run_name = f"{config.diffusion_model.path.type}-{config.diffusion_model.model.type}-{config.parameter.training_loss_type}--{config.parameter.accumulation_steps}--{config.parameter.lr}"
         wandb.run.name = run_name
         wandb.run.save()
         diffusion_model = DiffusionModel(config=config.diffusion_model
@@ -192,6 +203,7 @@ def train_func():
                 fps=fps,
                 dpi=dpi
             )
+
             wandb_run.log(
                 data=dict(
                     video=wandb.Video(
@@ -204,6 +216,7 @@ def train_func():
                 ),
                 commit=False
             )
+
             # clean up
             plt.close(fig)
             plt.clf()
@@ -241,50 +254,32 @@ def train_func():
             if iteration <= last_iteration:
                 continue
 
-            if iteration > 0 and iteration % config.parameter.eval_freq == 0:
-                diffusion_model.eval()
-                t_span = torch.linspace(0.0, 1.0, 1000)
-                x_t = diffusion_model.sample_forward_process(
-                    t_span=t_span, batch_size=500
-                ).cpu().detach()
-                x_t = [
-                    x.squeeze(0)
-                    for x in torch.split(x_t, split_size_or_sections=1, dim=0)
-                ]
-                render_video(
-                    x_t,
-                    config.parameter.video_save_path,
-                    iteration,
-                    fps=100,
-                    dpi=100
-                )
-
             batch_data = next(data_generator)
             batch_data = batch_data.to(config.device)
             # plot2d(batch_data.cpu().numpy())
             diffusion_model.train()
-            if config.parameter.training_loss_type == "flow_matching":
-                loss = diffusion_model.flow_matching_loss(batch_data)
-            elif config.parameter.training_loss_type == "score_matching":
-                loss = diffusion_model.score_matching_loss(batch_data)
-            else:
-                raise NotImplementedError("Unknown loss type")
-            optimizer.zero_grad()
+            with torch.cuda.amp.autocast():
+                if config.parameter.training_loss_type == "flow_matching":
+                    loss = diffusion_model.flow_matching_loss(batch_data)
+                elif config.parameter.training_loss_type == "score_matching":
+                    loss = diffusion_model.score_matching_loss(batch_data)
+                else:
+                    raise NotImplementedError("Unknown loss type")
             loss.backward()
+
             gradien_norm = torch.nn.utils.clip_grad_norm_(
                 diffusion_model.parameters(), config.parameter.clip_grad_norm
             )
-            optimizer.step()
+            if  (iteration+1) % config.parameter.accumulation_steps == 0:
+                optimizer.step()
+                optimizer.zero_grad() 
+            
             gradient_sum += gradien_norm.item()
             loss_sum += loss.item()
             counter += 1
-
-            log.info(
-                f"iteration {iteration}, gradient {gradient_sum/counter}, loss {loss_sum/counter}"
-            )
             history_iteration.append(iteration)
 
-            if iteration == config.parameter.iterations - 1:
+            if (iteration == config.parameter.iterations - 1) or (iteration > 0 and iteration % config.parameter.eval_freq == 0):
                 diffusion_model.eval()
                 t_span = torch.linspace(0.0, 1.0, 1000)
                 x_t = diffusion_model.sample_forward_process(
@@ -313,7 +308,8 @@ def train_func():
 
 
 if __name__ == '__main__':
+    seed_value = seed()
     sweep_id = wandb.sweep(
-        sweep=sweep_config, project="swiss_roll_diffusion_model"
+        sweep=sweep_config, project=f"test_vpsede_swiss-{seed_value}"
     )
     wandb.agent(sweep_id, function=train_func)

@@ -14,7 +14,7 @@ import torch.nn as nn
 
 from generative_rl.machine_learning.generative_models.diffusion_model.diffusion_model import DiffusionModel
 from generative_rl.utils.log import log
-
+from generative_rl.utils import seed
 from diffusers.models import AutoencoderKL
 import torchvision
 from torchvision.datasets import ImageFolder
@@ -109,9 +109,9 @@ def center_crop_arr(pil_image, image_size):
 
 
 if __name__ == "__main__":
-
+    seed_vale=seed()
     with wandb.init(
-        project=config.project if hasattr(config, "project") else "dit-minecraft",
+        project=f"{config.project if hasattr(config, "project") else "dit-minecraft"}-{seed_vale}",
         **config.wandb if hasattr(config, "wandb") else {}
     ) as wandb_run:
 
@@ -210,6 +210,7 @@ if __name__ == "__main__":
         save_checkpoint_on_exit(diffusion_model, optimizer, history_iteration)
 
         for iteration in track(range(config.parameter.iterations), description="Training"):
+            sampler.set_epoch(iteration)
 
             if iteration <= last_iteration:
                 continue
