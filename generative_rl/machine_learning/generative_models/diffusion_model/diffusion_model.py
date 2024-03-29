@@ -104,7 +104,7 @@ class DiffusionModel(nn.Module):
                     data_prediction_function=self.data_prediction_function,
                     x=x,
                     condition=condition,
-                    save_intermediate=True,
+                    save_intermediate=False,
                 )
             else:
                 with torch.no_grad():
@@ -114,7 +114,7 @@ class DiffusionModel(nn.Module):
                         data_prediction_function=self.data_prediction_function,
                         x=x,
                         condition=condition,
-                        save_intermediate=True,
+                        save_intermediate=False,
                     )
         elif isinstance(solver, ODESolver):
             #TODO: make it compatible with TensorDict

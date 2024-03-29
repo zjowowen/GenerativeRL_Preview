@@ -51,9 +51,15 @@ config = EasyDict(
                     x_size = action_size,
                     alpha = 1.0,
                     solver = dict(
-                        type = "ODESolver",
+                        # type = "ODESolver",
+                        # args = dict(
+                        #     library="torchdyn",
+                        # ),
+                        type = "DPMSolver",
                         args = dict(
-                            library="torchdyn",
+                            order=2,
+                            device=device,
+                            steps=17,
                         ),
                     ),
                     path = dict(

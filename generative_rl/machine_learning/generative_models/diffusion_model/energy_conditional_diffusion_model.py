@@ -13,6 +13,8 @@ from generative_rl.machine_learning.generative_models.intrinsic_model import Int
 from generative_rl.machine_learning.generative_models.diffusion_process import DiffusionProcess
 from generative_rl.machine_learning.generative_models.model_functions.score_function import ScoreFunction
 from generative_rl.machine_learning.generative_models.model_functions.velocity_function import VelocityFunction
+from generative_rl.machine_learning.generative_models.model_functions.data_prediction_function import DataPredictionFunction
+from generative_rl.machine_learning.generative_models.model_functions.noise_function import NoiseFunction
 
 class EnergyGuidance(nn.Module):
     """
@@ -76,7 +78,6 @@ class EnergyGuidance(nn.Module):
             guidance = guidance_scale * torch.autograd.grad(torch.sum(x_t), x)[0]
         return guidance.detach()
 
-
 class EnergyConditionalDiffusionModel(nn.Module):
     """
     Overview:
@@ -116,6 +117,8 @@ class EnergyConditionalDiffusionModel(nn.Module):
         self.diffusion_process = DiffusionProcess(self.path)
         self.score_function_ = ScoreFunction(self.model_type, self.diffusion_process)
         self.velocity_function_ = VelocityFunction(self.model_type, self.diffusion_process)
+        self.noise_function_ = NoiseFunction(self.model_type, self.diffusion_process)
+        self.data_prediction_function_ = DataPredictionFunction(self.model_type, self.diffusion_process)
 
         self.energy_model = energy_model
         self.energy_guidance = EnergyGuidance(self.config.energy_guidance)
@@ -164,9 +167,35 @@ class EnergyConditionalDiffusionModel(nn.Module):
         def score_function_with_energy_guidance(t, x, condition):
             return self.score_function_with_energy_guidance(t, x, condition, guidance_scale)
 
+        def noise_function_with_energy_guidance(t, x, condition):
+            return self.noise_function_with_energy_guidance(t, x, condition, guidance_scale)
+
+        def data_prediction_function_with_energy_guidance(t, x, condition):
+            return self.data_prediction_function_with_energy_guidance(t, x, condition, guidance_scale)
+        
+
         if isinstance(solver, DPMSolver):
-            #TODO
-            pass
+            #TODO: make it compatible with TensorDict
+            x = self.gaussian_generator(batch_size=batch_size)
+            if with_grad:
+                data = solver.integrate(
+                    diffusion_process=self.diffusion_process,
+                    noise_function=noise_function_with_energy_guidance,
+                    data_prediction_function=data_prediction_function_with_energy_guidance,
+                    x=x,
+                    condition=condition,
+                    save_intermediate=False,
+                )
+            else:
+                with torch.no_grad():
+                    data = solver.integrate(
+                        diffusion_process=self.diffusion_process,
+                        noise_function=noise_function_with_energy_guidance,
+                        data_prediction_function=data_prediction_function_with_energy_guidance,
+                        x=x,
+                        condition=condition,
+                        save_intermediate=False,
+                    )
         elif isinstance(solver, ODESolver):
             #TODO: make it compatible with TensorDict
             if not hasattr(self, "t_span"):
@@ -277,9 +306,35 @@ class EnergyConditionalDiffusionModel(nn.Module):
         def score_function_with_energy_guidance(t, x, condition):
             return self.score_function_with_energy_guidance(t, x, condition, guidance_scale)
 
+        def noise_function_with_energy_guidance(t, x, condition):
+            return self.noise_function_with_energy_guidance(t, x, condition, guidance_scale)
+
+        def data_prediction_function_with_energy_guidance(t, x, condition):
+            return self.data_prediction_function_with_energy_guidance(t, x, condition, guidance_scale)
+        
+
         if isinstance(solver, DPMSolver):
-            #TODO
-            pass
+            #TODO: make it compatible with TensorDict
+            x = self.gaussian_generator(batch_size=batch_size)
+            if with_grad:
+                data = solver.integrate(
+                    diffusion_process=self.diffusion_process,
+                    noise_function=noise_function_with_energy_guidance,
+                    data_prediction_function=data_prediction_function_with_energy_guidance,
+                    x=x,
+                    condition=condition,
+                    save_intermediate=True,
+                )
+            else:
+                with torch.no_grad():
+                    data = solver.integrate(
+                        diffusion_process=self.diffusion_process,
+                        noise_function=noise_function_with_energy_guidance,
+                        data_prediction_function=data_prediction_function_with_energy_guidance,
+                        x=x,
+                        condition=condition,
+                        save_intermediate=True,
+                    )
         elif isinstance(solver, ODESolver):
             #TODO: make it compatible with TensorDict
             x = self.gaussian_generator(batch_size=batch_size)
@@ -325,7 +380,7 @@ class EnergyConditionalDiffusionModel(nn.Module):
             t: torch.Tensor,
             x: Union[torch.Tensor, TensorDict],
             condition: Union[torch.Tensor, TensorDict] = None,
-        ) -> torch.Tensor:
+        ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
             Return score function of the model at time t given the initial state, which is the gradient of the log-likelihood.
@@ -345,7 +400,7 @@ class EnergyConditionalDiffusionModel(nn.Module):
             x: Union[torch.Tensor, TensorDict],
             condition: Union[torch.Tensor, TensorDict] = None,
             guidance_scale: float = 1.0
-        ) -> torch.Tensor:
+        ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
             The score function for energy guidance.
@@ -355,7 +410,7 @@ class EnergyConditionalDiffusionModel(nn.Module):
             - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
             - guidance_scale (:obj:`float`): The scale of guidance.
         Returns:
-            - score (:obj:`torch.Tensor`): The score function.
+            - score (:obj:`Union[torch.Tensor, TensorDict]`): The score function.
         """
 
         return self.score_function_.forward(self.model, t, x, condition) + self.energy_guidance.calculate_energy_guidance(t, x, condition, guidance_scale)
@@ -380,7 +435,7 @@ class EnergyConditionalDiffusionModel(nn.Module):
             t: torch.Tensor,
             x: Union[torch.Tensor, TensorDict],
             condition: Union[torch.Tensor, TensorDict] = None,
-        ) -> torch.Tensor:
+        ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
             Return velocity of the model at time t given the initial state.
@@ -408,6 +463,86 @@ class EnergyConditionalDiffusionModel(nn.Module):
         """
 
         return self.velocity_function_.flow_matching_loss(self.model, x, condition)
+
+    def noise_function(
+            self,
+            t: torch.Tensor,
+            x: Union[torch.Tensor, TensorDict],
+            condition: Union[torch.Tensor, TensorDict] = None,
+        ) -> Union[torch.Tensor, TensorDict]:
+        """
+        Overview:
+            Return noise function of the model at time t given the initial state.
+            .. math::
+                - \sigma(t) \nabla_{x_t} \log p_{\theta}(x_t)
+        Arguments:
+            - t (:obj:`torch.Tensor`): The input time.
+            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+        """
+
+        return self.noise_function_.forward(self.model, t, x, condition)
+    
+    def noise_function_with_energy_guidance(
+            self,
+            t: torch.Tensor,
+            x: Union[torch.Tensor, TensorDict],
+            condition: Union[torch.Tensor, TensorDict] = None,
+            guidance_scale: float = 1.0
+        ) -> Union[torch.Tensor, TensorDict]:
+        """
+        Overview:
+            The noise function for energy guidance.
+        Arguments:
+            - t (:obj:`torch.Tensor`): The input time.
+            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            - guidance_scale (:obj:`float`): The scale of guidance.
+        Returns:
+            - noise (:obj:`Union[torch.Tensor, TensorDict]`): The nose function.
+        """
+
+        return - self.score_function_with_energy_guidance(t, x, condition, guidance_scale) * self.diffusion_process.std(t, x)
+
+    def data_prediction_function(
+            self,
+            t: torch.Tensor,
+            x: Union[torch.Tensor, TensorDict],
+            condition: Union[torch.Tensor, TensorDict] = None,
+        ) -> Union[torch.Tensor, TensorDict]:
+        """
+        Overview:
+            Return data prediction function of the model at time t given the initial state.
+            .. math::
+                \frac{- \sigma(t) x_t + \sigma^2(t) \nabla_{x_t} \log p_{\theta}(x_t)}{s(t)}
+        Arguments:
+            - t (:obj:`torch.Tensor`): The input time.
+            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+        """
+
+        return self.data_prediction_function_.forward(self.model, t, x, condition)
+    
+    def data_prediction_function_with_energy_guidance(
+            self,
+            t: torch.Tensor,
+            x: Union[torch.Tensor, TensorDict],
+            condition: Union[torch.Tensor, TensorDict] = None,
+            guidance_scale: float = 1.0
+        ) -> Union[torch.Tensor, TensorDict]:
+        """
+        Overview:
+            The data prediction function for energy guidance.
+        Arguments:
+            - t (:obj:`torch.Tensor`): The input time.
+            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            - guidance_scale (:obj:`float`): The scale of guidance.
+        Returns:
+            - x (:obj:`torch.Tensor`): The score function.
+        """
+
+        return (- self.diffusion_process.std(t, x) * x + self.diffusion_process.covariance(t, x) * self.score_function_with_energy_guidance(t, x, condition, guidance_scale)) / self.diffusion_process.scale(t, x)
 
     def energy_guidance_loss(
             self,
