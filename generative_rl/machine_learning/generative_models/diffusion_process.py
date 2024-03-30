@@ -51,7 +51,7 @@ class DiffusionProcess:
             - drift (:obj:`Union[torch.Tensor, TensorDict]`): The output drift term.
         """
 
-        return torch.einsum("i...,i->i...", x, self.path.drift_coefficient(t))
+        return x * self.path.drift_coefficient(t, x)
     
     def drift_coefficient(
             self,
@@ -74,7 +74,7 @@ class DiffusionProcess:
         """
 
         if x is not None and len(x.shape) > len(t.shape):
-            return torch.einsum("i,i...->i...", self.path.drift_coefficient(t), torch.ones_like(x, device=x.device))
+            return self.path.drift_coefficient(t)[(..., ) + (None, ) * (len(x.shape)-len(t.shape))].expand(x.shape)
         else:
             return self.path.drift_coefficient(t)
 
@@ -99,7 +99,7 @@ class DiffusionProcess:
         """
 
         if x is not None and len(x.shape) > len(t.shape):
-            return torch.einsum("i,i...->i...", self.path.diffusion(t), torch.ones_like(x, device=x.device))
+            return self.path.diffusion(t)[(..., ) + (None, ) * (len(x.shape)-len(t.shape))].expand(x.shape)
         else:
             return self.path.diffusion(t)
 
@@ -124,7 +124,7 @@ class DiffusionProcess:
         """
 
         if x is not None and len(x.shape) > len(t.shape):
-            return torch.einsum("i,i...->i...", self.path.diffusion_squared(t), torch.ones_like(x, device=x.device))
+            return self.path.diffusion_squared(t)[(..., ) + (None, ) * (len(x.shape)-len(t.shape))].expand(x.shape)
         else:
             return self.path.diffusion_squared(t)
 
@@ -149,7 +149,7 @@ class DiffusionProcess:
         """
 
         if x is not None and len(x.shape) > len(t.shape):
-            return torch.einsum("i,i...->i...", self.path.scale(t), torch.ones_like(x, device=x.device))
+            return self.path.scale(t)[(..., ) + (None, ) * (len(x.shape)-len(t.shape))].expand(x.shape)
         else:
             return self.path.scale(t)
 
@@ -174,7 +174,7 @@ class DiffusionProcess:
         """
 
         if x is not None and len(x.shape) > len(t.shape):
-            return torch.einsum("i,i...->i...", self.path.log_scale(t), torch.ones_like(x, device=x.device))
+            return self.path.log_scale(t)[(..., ) + (None, ) * (len(x.shape)-len(t.shape))].expand(x.shape)
         else:
             return self.path.log_scale(t)
 
@@ -199,7 +199,7 @@ class DiffusionProcess:
         """
 
         if x is not None and len(x.shape) > len(t.shape):
-            return torch.einsum("i,i...->i...", self.path.std(t), torch.ones_like(x, device=x.device))
+            return self.path.std(t)[(..., ) + (None, ) * (len(x.shape)-len(t.shape))].expand(x.shape)
         else:
             return self.path.std(t)
 
@@ -224,7 +224,7 @@ class DiffusionProcess:
         """
 
         if x is not None and len(x.shape) > len(t.shape):
-            return torch.einsum("i,i...->i...", self.path.covariance(t), torch.ones_like(x, device=x.device))
+            return self.path.covariance(t)[(..., ) + (None, ) * (len(x.shape)-len(t.shape))].expand(x.shape)
         else:
             return self.path.covariance(t)
 
@@ -249,8 +249,12 @@ class DiffusionProcess:
         """
         if noise is None:
             noise = torch.randn_like(x).to(x.device)
-
-        return torch.einsum("i,i...->i...", self.path.d_scale_dt(t), x) + torch.einsum("i,i...->i...", self.path.d_std_dt(t), noise)
+        if len(x.shape) > len(t.shape):
+            d_scale_dt = self.path.d_scale_dt(t)[(..., ) + (None, ) * (len(x.shape)-len(t.shape))].expand(x.shape)
+            d_std_dt = self.path.d_std_dt(t)[(..., ) + (None, ) * (len(x.shape)-len(t.shape))].expand(x.shape)
+            return d_scale_dt * x + d_std_dt * noise
+        else:
+            return self.path.d_scale_dt(t) * x + self.path.d_std_dt(t) * noise
 
     def HalfLogSNR(
             self,
@@ -273,7 +277,7 @@ class DiffusionProcess:
         """
 
         if x is not None and len(x.shape) > len(t.shape):
-            return torch.einsum("i,i...->i...", self.path.HalfLogSNR(t), torch.ones_like(x, device=x.device))
+            return self.path.HalfLogSNR(t)[(..., ) + (None, ) * (len(x.shape)-len(t.shape))].expand(x.shape)
         else:
             return self.path.HalfLogSNR(t)
     

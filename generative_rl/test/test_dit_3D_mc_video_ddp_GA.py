@@ -188,6 +188,12 @@ def main(rank, world_size):
             drop_last=True,
         )
 
+        iteration = 0
+        epoch = 0
+        optimizer = torch.optim.Adam(
+            diffusion_model.parameters(), 
+            lr=config.parameter.learning_rate,
+        )
 
         if config.parameter.checkpoint_path is not None:
 
@@ -202,13 +208,6 @@ def main(rank, world_size):
                 optimizer.load_state_dict(checkpoint["optimizer"])
                 iteration = checkpoint.get("iteration", 0)
                 epoch = checkpoint.get("epoch", 0)
-        else:
-            iteration = 0
-            epoch = 0
-            optimizer = torch.optim.Adam(
-            diffusion_model.parameters(), 
-            lr=config.parameter.learning_rate,
-            )
 
         gradient_sum=0
         loss_sum=0
@@ -241,7 +240,6 @@ def main(rank, world_size):
             sampler.set_epoch(epoch)
             for batch_data in data_loader:
                 batch_data = batch_data.to(config.device)
-
 
                 if iteration > 0 and iteration % config.parameter.eval_freq == 0:
                     diffusion_model.eval()
@@ -291,28 +289,10 @@ def main(rank, world_size):
                     counter+=1
                                 
                 loss_sum+=loss.item()
-                log.info(f"iteration {iteration}, gradient {gradient_sum/counter}, loss {loss_sum/iteration}")
+                log.info(f"iteration {iteration}, gradient {gradient_sum/counter}, loss {loss_sum/counter}")
                 history_iteration.append(iteration)
                 iteration =iteration+1
-                if iteration == config.parameter.iterations-1:
-                    diffusion_model.eval()
-                    t_span=torch.linspace(0.0, 1.0, 1000)
-                    if config.parameter.train_mode == "ddp":
-                        x_t = diffusion_model.module.sample_forward_process(t_span=t_span, batch_size=1).detach()
-                    else:
-                        x_t = diffusion_model.sample_forward_process(t_span=t_span, batch_size=1).detach()
-                    video_x_1 = x_t[-1].squeeze(0).mul(0.5).add(0.5).mul(255).clamp(0, 255).permute(0, 2, 3, 1).to("cpu", torch.uint8)
-                    if not os.path.exists(config.parameter.video_save_path):
-                        os.makedirs(config.parameter.video_save_path)
-                    torchvision.io.write_video(filename=os.path.join(config.parameter.video_save_path, f"iteration_{iteration}.mp4"), video_array=video_x_1, fps=20)
-                    video_x_1 = video_x_1.permute(0, 3, 1, 2).numpy()
-                    video = wandb.Video(video_x_1, caption=f"iteration {iteration}")
-                    wandb_run.log(
-                        data=dict(
-                            video = video,
-                        ),
-                        commit=False)
-                    
+
                 wandb_run.log(
                     data=dict(
                         iteration=iteration,
