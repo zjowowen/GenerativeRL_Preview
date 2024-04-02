@@ -310,7 +310,13 @@ class ConcatenateMLP(nn.Module):
     def forward(self, *x):
         return self.model(torch.cat(x, dim=-1))
 
-from .transformers.dit import DiT, DiT_3D, DiTOde_3D
+def get_module(type: str):
+    if type.lower() in MODULES:
+        return MODULES[type.lower()]
+    else:
+        raise ValueError(f"Unknown module type: {type}")
+
+from .transformers.dit import DiT, DiT_3D, DiTOde_3D, Fourier_DiT_3D
 
 MODULES={
     "ConcatenateLayer".lower(): ConcatenateLayer,
@@ -320,10 +326,6 @@ MODULES={
     "DiT".lower(): DiT,
     "DiT_3D".lower(): DiT_3D,
     "DiTOde_3D".lower(): DiTOde_3D,
+    "Fourier_DiT_3D".lower(): Fourier_DiT_3D,
 }
 
-def get_module(type: str):
-    if type.lower() in MODULES:
-        return MODULES[type.lower()]
-    else:
-        raise ValueError(f"Unknown module type: {type}")

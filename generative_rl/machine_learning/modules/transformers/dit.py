@@ -926,3 +926,210 @@ class DiTOde_3D(nn.Module):
         x = self.final_layer(x, c)                # (N, total_patches, patch_size[0] * patch_size[1] * patch_size[2] * C)
         x = self.unpatchify(x)                   # (N, T, C, H, W)
         return x
+
+def meshgrid_3d_pos(
+        grid_num
+    ):
+    """
+    Overview:
+        Get 3D position for 3D data.
+    Arguments:
+        - grid_num (:obj:`List[int]`): The number of the grid in each dimension.
+    """
+    assert len(grid_num) == 3
+    grid_0 = np.arange(grid_num[0], dtype=np.float32)
+    grid_1 = np.arange(grid_num[1], dtype=np.float32)
+    grid_2 = np.arange(grid_num[2], dtype=np.float32)
+
+    grid = np.meshgrid(grid_1, grid_0, grid_2)  # here w goes first
+    grid = np.stack([grid[1], grid[0], grid[2]], axis=0) # grid is of shape (3, grid_num[0], grid_num[1], grid_num[2]) or (3, T, H, W)
+
+    return grid
+
+class euler_activation(nn.Module):
+
+    def __init__(self, shrink=1.0) -> None:
+        super().__init__()
+        self.shrink = nn.Parameter(torch.tensor(shrink), requires_grad=False)
+
+    def forward(self, x):
+        return torch.exp(x - self.shrink)
+
+class Fourier_DiT_3D(nn.Module):
+
+    def __init__(
+            self,
+            input_size: int,
+            hidden_size: int,
+            output_size: int,
+            frequency_size: List[int],
+        ) -> None:
+        super().__init__()
+
+        self.t_w = nn.Parameter(torch.tensor(30.0j)*torch.randn(*frequency_size, hidden_size), requires_grad=True)
+        self.t_modulation_w0 = nn.Linear(hidden_size, hidden_size, dtype=torch.complex64)
+        nn.init.normal_(self.t_modulation_w0.weight, mean=0, std=0.1)
+        nn.init.normal_(self.t_modulation_w0.bias, mean=0, std=0.1)
+        self.t_modulation_w1 = nn.Linear(hidden_size, 3*hidden_size, dtype=torch.complex64)
+        nn.init.normal_(self.t_modulation_w1.weight, mean=0, std=0.1)
+        nn.init.normal_(self.t_modulation_w1.bias, mean=0, std=0.1)
+
+        self.scale = nn.Parameter(torch.tensor(1.0 / hidden_size), requires_grad=False)
+
+        self.projection = nn.Linear(input_size, hidden_size, dtype=torch.complex64)
+        nn.init.normal_(self.projection.weight, mean=0, std=0.01)
+        nn.init.normal_(self.projection.bias, mean=0, std=0.01)
+        self.r0 = nn.Parameter(torch.randn(hidden_size, *frequency_size, hidden_size, dtype=torch.complex64), requires_grad=True)
+        nn.init.normal_(self.r0, mean=0, std=0.0001)
+        self.wr0 = nn.Linear(hidden_size, hidden_size, dtype=torch.complex64)
+        nn.init.normal_(self.wr0.weight, mean=0, std=0.1)
+        nn.init.normal_(self.wr0.bias, mean=0, std=0.1)
+
+        self.r1 = nn.Parameter(torch.randn(hidden_size, *frequency_size, hidden_size, dtype=torch.complex64), requires_grad=True)
+        nn.init.normal_(self.r1, mean=0, std=0.0001)
+        self.wr1 = nn.Linear(hidden_size, hidden_size, dtype=torch.complex64)
+        nn.init.normal_(self.wr1.weight, mean=0, std=0.1)
+        nn.init.normal_(self.wr1.bias, mean=0, std=0.1)
+
+        self.r2 = nn.Parameter(torch.randn(hidden_size, *frequency_size, hidden_size, dtype=torch.complex64), requires_grad=True)
+        nn.init.normal_(self.r2, mean=0, std=0.0001)
+        self.wr2 = nn.Linear(hidden_size, hidden_size, dtype=torch.complex64)
+        nn.init.normal_(self.wr2.weight, mean=0, std=0.1)
+        nn.init.normal_(self.wr2.bias, mean=0, std=0.1)
+
+        self.modulation = nn.Linear(hidden_size, 3 * hidden_size, dtype=torch.complex64)
+        nn.init.normal_(self.modulation.weight, mean=0, std=0.01)
+        nn.init.normal_(self.modulation.bias, mean=0, std=0.01)
+
+        self.w0 = nn.Parameter(torch.tensor(30.0j)*torch.randn(3, hidden_size), requires_grad=True)
+        self.w1 = nn.Linear(hidden_size, hidden_size, dtype=torch.complex64)
+        self.w2 = nn.Linear(hidden_size, hidden_size, dtype=torch.complex64)
+        self.w_end = nn.Linear(hidden_size, output_size, dtype=torch.complex64)
+        self.activation_fft = euler_activation(shrink=5.0)
+        self.activation = euler_activation()
+        nn.init.normal_(self.w1.weight, mean=0, std=0.01)
+        nn.init.normal_(self.w1.bias, mean=0, std=0.01)
+        nn.init.normal_(self.w2.weight, mean=0, std=0.01)
+        nn.init.normal_(self.w2.bias, mean=0, std=0.01)
+        nn.init.normal_(self.w_end.weight, mean=0, std=0.01)
+        nn.init.normal_(self.w_end.bias, mean=0, std=0.01)
+
+        x_pos = meshgrid_3d_pos(frequency_size)
+        x_pos = torch.tensor(x_pos, dtype=torch.float32)
+        # x_pos: (3, T, H, W)
+        x_pos = torch.einsum('Dthw->thwD', x_pos).unsqueeze(0).to(torch.complex64)
+        # x_pos: (1, T, H, W, 3)
+        self.x_pos = nn.Parameter(x_pos, requires_grad=False)
+        # self.x_pos: (1, T, H, W, 3)
+
+    def forward(
+            self,
+            t: torch.Tensor,
+            x: Union[torch.Tensor, TensorDict],
+            condition: Optional[Union[torch.Tensor, TensorDict]] = None,
+        ) -> Callable:
+
+        # t: (N,)
+        t_proj = torch.einsum('n,thwd->nthwd', t, self.t_w)
+        # t_proj: (N, T, H, W, D)
+        t_proj = self.activation(t_proj)
+        # t_proj: (N, T, H, W, D)
+        t_proj = self.t_modulation_w0(t_proj)
+        # t_proj: (N, T, H, W, D)
+        t_proj = self.activation(t_proj)
+        # t_proj: (N, T, H, W, D)
+        t_proj = self.t_modulation_w1(t_proj)
+        # t_proj: (N, T, H, W, 3D)
+        t_proj_1, t_proj_2, t_proj_3 = torch.chunk(t_proj, 3, dim=-1)
+        # t_proj_1, t_proj_2, t_proj_3: (N, T, H, W, D)
+
+        # x: (N, T, 3, H, W)
+        x = torch.einsum('ntdhw->nthwd', x).to(torch.complex64)
+        x_shape = x.shape
+        # x: (N, T, H, W, 3)
+        x = self.projection(x)
+        # x: (N, T, H, W, D)
+        
+
+        # x: (N, T, H, W, D)
+        x_fft = torch.einsum('nthwD->nDthw', x)
+        # x_fft: (N, D, T, H, W)
+        x_fft = torch.fft.fftn(x_fft, dim=[-3, -2, -1])
+        # x_fft: (N, D, T, H, W)
+        x_r_fft = torch.einsum('nDthw,Dthwk->nkthw', x_fft, self.r0) * self.scale
+        # x_fft_1: (N, K, T, H, W)
+        x_r = torch.fft.ifftn(x_r_fft, dim=[-3, -2, -1])
+        # x_r: (N, K, T, H, W)
+        x_r = torch.einsum('nkthw->nthwk', x_r)
+        # x_r: (N, T, H, W, K)
+        x_wr = self.wr0(x)
+        # x_wr: (N, T, H, W, K)
+        x = x_r + x_wr + t_proj_1
+        # x: (N, T, H, W, K)
+        x = self.activation_fft(x)
+
+        # x: (N, T, H, W, D)
+        x_fft = torch.einsum('nthwD->nDthw', x)
+        # x_fft: (N, D, T, H, W)
+        x_fft = torch.fft.fftn(x_fft, dim=[-3, -2, -1])
+        # x_fft: (N, D, T, H, W)
+        x_r_fft = torch.einsum('nDthw,Dthwk->nkthw', x_fft, self.r1) * self.scale
+        # x_fft_1: (N, K, T, H, W)
+        x_r = torch.fft.ifftn(x_r_fft, dim=[-3, -2, -1])
+        # x_r: (N, K, T, H, W)
+        x_r = torch.einsum('nkthw->nthwk', x_r)
+        # x_r: (N, T, H, W, K)
+        x_wr = self.wr1(x)
+        # x_wr: (N, T, H, W, K)
+        x = x_r + x_wr + t_proj_2
+        # x: (N, T, H, W, K)
+        x = self.activation_fft(x)
+
+        # x: (N, T, H, W, D)
+        x_fft = torch.einsum('nthwD->nDthw', x)
+        # x_fft: (N, D, T, H, W)
+        x_fft = torch.fft.fftn(x_fft, dim=[-3, -2, -1])
+        # x_fft: (N, D, T, H, W)
+        x_r_fft = torch.einsum('nDthw,Dthwk->nkthw', x_fft, self.r2) * self.scale
+        # x_fft_1: (N, K, T, H, W)
+        x_r = torch.fft.ifftn(x_r_fft, dim=[-3, -2, -1])
+        # x_r: (N, K, T, H, W)
+        x_r = torch.einsum('nkthw->nthwk', x_r)
+        # x_r: (N, T, H, W, K)
+        x_wr = self.wr2(x)
+        # x_wr: (N, T, H, W, K)
+        x = x_r + x_wr + t_proj_3
+        # x: (N, T, H, W, K)
+        x = self.activation_fft(x)
+
+        # x: (N, T, H, W, D)
+        x = self.modulation(x)
+        # x: (N, T, H, W, 3D)
+
+        x1, x2, x3 = torch.chunk(x, 3, dim=-1)
+        # x1, x2, x3: (N, T, H, W, D)
+
+        def forward_fn(x_pos: Union[torch.Tensor, TensorDict]):
+
+            # x_pos: (N, T, H, W, 3)
+            x_ = torch.einsum('nthwd,dD->nthwD', x_pos, self.w0)
+            # x_: (N, T, H, W, D)
+            x_ = self.activation(x_)
+            # x_: (N, T, H, W, D)
+            x_ = self.w1(x_+x1)
+            # x_: (N, T, H, W, D)
+            x_ = self.activation(x_)
+            # x_: (N, T, H, W, D)
+            x_ = self.w2(x_+x2)
+            # x_: (N, T, H, W, D)
+            x_ = self.activation(x_)
+            # x_: (N, T, H, W, D)
+            x_ = self.w_end(x_+x3)
+            # x_: (N, T, H, W, 3)
+            x_ = torch.einsum('nthwd->ntdhw', x_)
+            # x_: (N, T, 3, H, W)
+            return x_.real
+            
+        x_pos = self.x_pos.expand(x_shape)
+        # x_pos: (N, T, H, W, 3)
+        return forward_fn(x_pos=x_pos)

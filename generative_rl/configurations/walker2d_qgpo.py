@@ -15,17 +15,17 @@ t_encoder = dict(
 
 config = EasyDict(
     train = dict(
-        project = 'd4rl-halfcheetah-v2-qgpo',
+        project = 'd4rl-walker2d-v2-qgpo',
         simulator = dict(
             type = "GymEnvSimulator",
             args = dict(
-                env_id = 'HalfCheetah-v2',
+                env_id = 'Walker2d-v2',
             ),
         ),
         dataset = dict(
             type = "QGPOD4RLDataset",
             args = dict(
-                env_id = "halfcheetah-medium-expert-v2",
+                env_id = "walker2d-medium-expert-v2",
                 device = device,
             ),
         ),
@@ -127,7 +127,7 @@ config = EasyDict(
     deploy = dict(
         device = device,
         env = dict(
-            env_id = 'HalfCheetah-v2',
+            env_id = 'Walker2d-v2',
             seed = 0,
         ),
         num_deploy_steps = 1000,
