@@ -51,7 +51,10 @@ class DiffusionProcess:
             - drift (:obj:`Union[torch.Tensor, TensorDict]`): The output drift term.
         """
 
-        return x * self.path.drift_coefficient(t)
+        if len(x.shape) > len(t.shape):
+            return x * self.path.drift_coefficient(t)[(..., ) + (None, ) * (len(x.shape)-len(t.shape))].expand(x.shape)
+        else:
+            return x * self.path.drift_coefficient(t)
     
     def drift_coefficient(
             self,
