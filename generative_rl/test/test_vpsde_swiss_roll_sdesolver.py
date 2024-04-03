@@ -35,12 +35,17 @@ config = EasyDict(
             x_size = x_size,
             alpha = 1.0,
             solver = dict(
-                type = "ODESolver",
+                type = "SDESolver",
                 args = dict(
-                    library="torchdyn",
+                    library="torchsde",
                 ),
             ),
             path = dict(
+                type = "linear_vp_sde",
+                beta_0 = 0.1,
+                beta_1 = 20.0,
+            ),
+            reverse_path = dict(
                 type = "linear_vp_sde",
                 beta_0 = 0.1,
                 beta_1 = 20.0,
@@ -62,14 +67,13 @@ config = EasyDict(
         ),
         parameter = dict(
             training_loss_type = "score_matching",
-            lr=5e-3,
-            data_num=10000,
-            weight_decay=1e-4,
-            iterations=1000,
+            lr=5e-4,
+            data_num=100000,
+            iterations=1000000,
             batch_size=2048,
             clip_grad_norm=1.0,
-            eval_freq=500,
-            checkpoint_freq=100,
+            eval_freq=1000,
+            checkpoint_freq=1000,
             checkpoint_path="./checkpoint",
             video_save_path="./video",
             device=device,
@@ -94,7 +98,6 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(
         diffusion_model.parameters(), 
         lr=config.parameter.lr,
-        weight_decay=config.parameter.weight_decay,
         )
 
     if config.parameter.checkpoint_path is not None:

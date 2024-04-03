@@ -44,11 +44,19 @@ class DiffusionModel(nn.Module):
         self.gaussian_generator = gaussian_random_variable(config.x_size, config.device)
 
         self.path = GaussianConditionalProbabilityPath(config.path)
+        if hasattr(config, "reverse_path"):
+            self.reverse_path = GaussianConditionalProbabilityPath(config.reverse_path)
+        else:
+            self.reverse_path = None
         self.model_type = config.model.type
         assert self.model_type in ["score_function", "data_prediction_function", "velocity_function", "noise_function"], \
             "Unknown type of model {}".format(self.model_type)
         self.model = IntrinsicModel(config.model.args)
         self.diffusion_process = DiffusionProcess(self.path)
+        if self.reverse_path is not None:
+            self.reverse_diffusion_process = DiffusionProcess(self.reverse_path)
+        else:
+            self.reverse_diffusion_process = None
         self.score_function_ = ScoreFunction(self.model_type, self.diffusion_process)
         self.velocity_function_ = VelocityFunction(self.model_type, self.diffusion_process)
         self.noise_function_ = NoiseFunction(self.model_type, self.diffusion_process)
@@ -137,10 +145,11 @@ class DiffusionModel(nn.Module):
         elif isinstance(solver, SDESolver):
             #TODO: make it compatible with TensorDict
             #TODO: validate the implementation
+            assert self.reverse_diffusion_process is not None, "reverse_path must be specified in config"
             if not hasattr(self, "t_span"):
                 self.t_span = torch.linspace(0, self.diffusion_process.t_max, 2).to(self.device)
             x = self.gaussian_generator(batch_size=batch_size)
-            sde = self.diffusion_process.reverse_sde(function=self.model, function_type=self.model_type, condition=condition)
+            sde = self.diffusion_process.reverse_sde(function=self.model, function_type=self.model_type, condition=condition, reverse_diffusion_function=self.reverse_diffusion_process.diffusion, reverse_diffusion_squared_function=self.reverse_diffusion_process.diffusion_squared)
             if with_grad:
                 data = solver.integrate(
                     drift=sde.drift,
@@ -237,8 +246,11 @@ class DiffusionModel(nn.Module):
         elif isinstance(solver, SDESolver):
             #TODO: make it compatible with TensorDict
             #TODO: validate the implementation
+            assert self.reverse_diffusion_process is not None, "reverse_path must be specified in config"
+            if not hasattr(self, "t_span"):
+                self.t_span = torch.linspace(0, self.diffusion_process.t_max, 2).to(self.device)
             x = self.gaussian_generator(batch_size=batch_size)
-            sde = self.diffusion_process.reverse_sde(function=self.model, function_type=self.model_type, condition=condition)
+            sde = self.diffusion_process.reverse_sde(function=self.model, function_type=self.model_type, condition=condition, reverse_diffusion_function=self.reverse_diffusion_process.diffusion, reverse_diffusion_squared_function=self.reverse_diffusion_process.diffusion_squared)
             if with_grad:
                 data = solver.integrate(
                     drift=sde.drift,

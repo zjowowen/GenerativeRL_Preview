@@ -54,9 +54,9 @@ class SDESolver:
     def __init__(
         self,
         sde_solver="euler",
-        sde_noise_type="general",
+        sde_noise_type="diagonal",
         sde_type="ito",
-        dt=0.01,
+        dt=0.001,
         atol=1e-5,
         rtol=1e-5,
         library="torchsde",
@@ -105,16 +105,23 @@ class SDESolver:
 
         """
 
+        batch_size = x0.shape[0]
+        data_size = x0.shape[1:]
+
         self.nfe_drift = 0
         self.nfe_diffusion = 0
 
         def forward_drift(t, x):
             self.nfe_drift += 1
-            return drift(t, x)
+            x = x.reshape(batch_size, *data_size)
+            f = drift(t, x)
+            return f.reshape(batch_size, -1)
         
         def forward_diffusion(t, x):
             self.nfe_diffusion += 1
-            return diffusion(t, x)
+            x = x.reshape(batch_size, *data_size)
+            g = diffusion(t, x)
+            return g.reshape(batch_size, -1)
 
         sde = TorchSDE(
             drift=forward_drift,
@@ -123,6 +130,8 @@ class SDESolver:
             sde_type=self.sde_type
         )
 
+        x0 = x0.reshape(batch_size, -1)
+        
         trajectory = torchsde.sdeint(
             sde,
             x0,
@@ -135,6 +144,8 @@ class SDESolver:
             adaptive=adaptive,
             **self.kwargs,
         )
+
+        trajectory = trajectory.reshape(t_span.shape[0], batch_size, *data_size, -1)
 
         return trajectory
     

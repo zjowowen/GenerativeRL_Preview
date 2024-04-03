@@ -20,8 +20,6 @@ from generative_rl.utils.config import merge_two_dicts_into_newone
 from generative_rl.utils import set_seed
 
 
-
-
 sweep_config = EasyDict(
     name="base-sweep-gvp-lossadding",
     metric=dict(
