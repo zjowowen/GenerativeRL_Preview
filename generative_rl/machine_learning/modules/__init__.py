@@ -5,6 +5,11 @@ import torch.nn as nn
 from tensordict import TensorDict
 from generative_rl.machine_learning.activation import get_activation
 
+def get_module(type: str):
+    if type.lower() in MODULES:
+        return MODULES[type.lower()]
+    else:
+        raise ValueError(f"Unknown module type: {type}")
 
 def build_normalization(norm_type: str, dim: Optional[int] = None) -> nn.Module:
     """
@@ -246,7 +251,7 @@ class TemporalSpatialResidualNet(nn.Module):
         for i, block in enumerate(self.up_block):
             u = block(t_condition_embedding, torch.cat([u, d[-i-1]], dim=-1))
         return self.last_block(torch.cat([u, d[0]], dim=-1))
-
+    
 class ConcatenateLayer(nn.Module):
     def __init__(self):
         super().__init__()
@@ -310,11 +315,39 @@ class ConcatenateMLP(nn.Module):
     def forward(self, *x):
         return self.model(torch.cat(x, dim=-1))
 
-def get_module(type: str):
-    if type.lower() in MODULES:
-        return MODULES[type.lower()]
-    else:
-        raise ValueError(f"Unknown module type: {type}")
+from .ResNetBlock import MLPResNetBlock, MLPResNet
+
+def my_mlp(dims, activation=nn.ReLU, output_activation=None):
+        n_dims = len(dims)
+        assert n_dims >= 2, 'MLP requires at least two dims (input and output)'
+        layers = []
+        for i in range(n_dims - 2):
+            layers.append(nn.Linear(dims[i], dims[i+1]))
+            layers.append(activation())
+        layers.append(nn.Linear(dims[-2], dims[-1]))
+        if output_activation is not None:
+            layers.append(output_activation())
+        net = nn.Sequential(*layers)
+        net.to(dtype=torch.float32)
+        return net
+
+class ALLCONCATMLP(nn.Module):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.main = MLPResNet(**kwargs)
+        self.t_cond = my_mlp([64, 128, 128], output_activation=None, activation=nn.Mish)
+    
+    def forward(
+            self,
+            t: torch.Tensor,
+            x: torch.Tensor,
+            condition: torch.Tensor = None,
+        ) -> torch.Tensor:
+
+        embed = self.t_cond(t)
+        result = self.main(torch.cat([x, condition, embed], dim=-1))
+        return result
+
 
 from .transformers.dit import DiT, DiT_3D, DiTOde_3D, Fourier_DiT_3D
 
@@ -323,6 +356,7 @@ MODULES={
     "MultiLayerPerceptron".lower(): MultiLayerPerceptron,
     "ConcatenateMLP".lower(): ConcatenateMLP,
     "TemporalSpatialResidualNet".lower(): TemporalSpatialResidualNet,
+    "ALLCONCATMLP".lower(): ALLCONCATMLP,
     "DiT".lower(): DiT,
     "DiT_3D".lower(): DiT_3D,
     "DiTOde_3D".lower(): DiTOde_3D,
