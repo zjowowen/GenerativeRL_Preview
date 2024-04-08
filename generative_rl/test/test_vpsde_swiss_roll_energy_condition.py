@@ -23,24 +23,6 @@ from generative_rl.utils import set_seed
 
 x_size=2
 
-config_ref = EasyDict(
-    dict(
-        parameter = dict(
-            training_loss_type = "score_matching",
-            lr=5e-3,
-            data_num=10000,
-            weight_decay=1e-4,
-            iterations=1000,
-            batch_size=2048,
-            clip_grad_norm=1.0,
-            eval_freq=500,
-            checkpoint_freq=100,
-            checkpoint_path="./checkpoint",
-            video_save_path="./video",
-        ),
-))
-
-
 device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 t_embedding_dim = 32
 t_encoder = dict(
