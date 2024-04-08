@@ -145,7 +145,7 @@ class SDESolver:
             **self.kwargs,
         )
 
-        trajectory = trajectory.reshape(t_span.shape[0], batch_size, *data_size, -1)
+        trajectory = trajectory.reshape(t_span.shape[0], batch_size, *data_size)
 
         return trajectory
     
