@@ -559,7 +559,7 @@ class EnergyConditionalDiffusionModel(nn.Module):
     def energy_guidance_loss(
             self,
             x: Union[torch.Tensor, TensorDict],
-            condition: Union[torch.Tensor, TensorDict],
+            condition: Union[torch.Tensor, TensorDict] = None,
         ):
         """
         Overview:
@@ -575,9 +575,15 @@ class EnergyConditionalDiffusionModel(nn.Module):
         eps = 1e-3
         t_random = torch.rand((x.shape[0], ), device=self.device) * (1. - eps) + eps
         t_random = torch.stack([t_random] * x.shape[1], dim=1)
-        energy = self.energy_model(x, torch.stack([condition] * x.shape[1], axis=1)).detach().squeeze()
+        if condition is not None:
+            energy = self.energy_model(x, torch.stack([condition] * x.shape[1], axis=1)).detach().squeeze()
+        else:
+            energy = self.energy_model(x).detach().squeeze()
         x_t = self.diffusion_process.direct_sample(t_random, x, condition)
-        xt_energy_guidance = self.energy_guidance(t_random, x_t, torch.stack([condition] * x.shape[1], axis=1)).squeeze()
+        if condition is not None:
+            xt_energy_guidance = self.energy_guidance(t_random, x_t, torch.stack([condition] * x.shape[1], axis=1)).squeeze()
+        else:
+            xt_energy_guidance = self.energy_guidance(t_random, x_t).squeeze()
         log_xt_relative_energy = nn.LogSoftmax(dim=1)(xt_energy_guidance)
         x0_relative_energy = nn.Softmax(dim=1)(energy * self.alpha)
         loss = -torch.mean(torch.sum(x0_relative_energy * log_xt_relative_energy, axis=-1))

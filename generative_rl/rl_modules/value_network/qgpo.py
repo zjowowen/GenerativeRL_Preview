@@ -31,7 +31,7 @@ class QGPOCritic(nn.Module):
     def forward(
             self,
             action: Union[torch.Tensor, TensorDict],
-            state: Union[torch.Tensor, TensorDict],
+            state: Union[torch.Tensor, TensorDict] = None,
         ) -> torch.Tensor:
         """
         Overview:
@@ -46,7 +46,7 @@ class QGPOCritic(nn.Module):
     def compute_double_q(
             self,
             action: Union[torch.Tensor, TensorDict],
-            state: Union[torch.Tensor, TensorDict],
+            state: Union[torch.Tensor, TensorDict] = None,
         ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Overview:

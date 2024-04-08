@@ -209,3 +209,5 @@ if __name__ == "__main__":
 
         if (iteration+1) % config.parameter.checkpoint_freq == 0:
             save_checkpoint(diffusion_model, optimizer, iteration)
+
+

@@ -1,10 +1,8 @@
 from typing import Tuple, Union
 from easydict import EasyDict
-import copy
 import torch
 import torch.nn as nn
 from tensordict import TensorDict
-from generative_rl.machine_learning.modules import MLP
 from generative_rl.machine_learning.encoders import get_encoder
 from generative_rl.machine_learning.modules import get_module
 

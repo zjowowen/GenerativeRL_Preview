@@ -102,7 +102,7 @@ config = EasyDict(
             behaviour_policy = dict(
                 batch_size = 4096,
                 learning_rate = 1e-4,
-                iterations = 600000,
+                iterations = 6000,
             ),
             sample_per_state = 16,
             energy_guided_policy = dict(
@@ -120,7 +120,7 @@ config = EasyDict(
             ),
             evaluation = dict(
                 evaluation_interval = 10000,
-                guidance_scale = [0.0, 1.0, 2.0, 3.0, 5.0, 8.0, 10.0],
+                guidance_scale = [0.0, 1.0],
             ),
         ),
     ),
@@ -133,4 +133,3 @@ config = EasyDict(
         num_deploy_steps = 1000,
     ),
 )
-
