@@ -7,7 +7,7 @@ from easydict import EasyDict
 import torch
 import torch.nn as nn
 from tensordict import TensorDict
-from generative_rl.machine_learning.generative_models.diffusion_model.diffusion_model import DiffusionModel
+from generative_rl.machine_learning.generative_models.diffusion_model.srpo_conditional_diffusion_model import SRPOConditionalDiffusionModel
 from generative_rl.rl_modules.value_network.srpo import SRPOCritic 
 from generative_rl.machine_learning.modules import MLP,my_mlp
 
@@ -18,8 +18,12 @@ class Dirac_Policy(nn.Module):
 
     def forward(self, state):
         return self.net(state)
+    
     def select_actions(self, state):
         return self(state)
+    
+    def sample(self, size:None, state:None):
+        return self.forward(state)
 
 class SRPOPolicy(nn.Module):
     def __init__(self, config: EasyDict):
@@ -29,9 +33,8 @@ class SRPOPolicy(nn.Module):
 
         self.deter_policy = Dirac_Policy(**config.policy_model)
         self.critic = SRPOCritic(config.critic)
-        self.diffusion_model = DiffusionModel(config.diffusion_model)
-        self.q = []
-        self.q.append(SRPOCritic(config.critic))
+        self.diffusion_model = SRPOConditionalDiffusionModel(config=config.diffusion_model, value_model=self.critic,distribution= self.deter_policy  )
+        self.q = nn.ModuleList([SRPOCritic(config.critic)])
 
     def forward(self, state: Union[torch.Tensor, TensorDict]) -> Union[torch.Tensor, TensorDict]:
         """
@@ -42,73 +45,8 @@ class SRPOPolicy(nn.Module):
         Returns:
             - action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
-        return self.sample(state)
+        return self.deter_policy.select_actions(state)
     
-    def sample(
-            self,
-            state: Union[torch.Tensor, TensorDict],
-            batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
-            guidance_scale: Union[torch.Tensor, float] = torch.tensor(1.0),
-            solver_config: EasyDict = None,
-        ) -> Union[torch.Tensor, TensorDict]:
-        """
-        Overview:
-            Return the output of QGPO policy, which is the action conditioned on the state.
-        Arguments:
-            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - guidance_scale (:obj:`Union[torch.Tensor, float]`): The guidance scale.
-            - solver_config (:obj:`EasyDict`): The configuration for the ODE solver.
-        Returns:
-            - action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
-        """
-        return self.diffusion_model.sample(
-            t_span = torch.linspace(0.0, 1.0, 32).to(self.device),
-            condition=state,
-            batch_size=batch_size,
-            guidance_scale=guidance_scale,
-            with_grad=False,
-            solver_config=solver_config
-        )
-
-    def behaviour_policy_sample(
-            self,
-            state: Union[torch.Tensor, TensorDict],
-            batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
-            solver_config: EasyDict = None,
-        ) -> Union[torch.Tensor, TensorDict]:
-        """
-        Overview:
-            Return the output of behaviour policy, which is the action conditioned on the state.
-        Arguments:
-            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - solver_config (:obj:`EasyDict`): The configuration for the ODE solver.
-        Returns:
-            - action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
-        """
-        return self.diffusion_model.sample_without_energy_guidance(
-            t_span = torch.linspace(0.0, 1.0, 32).to(self.device),
-            condition=state,
-            batch_size=batch_size,
-            solver_config=solver_config
-        )
-    
-    def compute_q(
-            self,
-            state: Union[torch.Tensor, TensorDict],
-            action: Union[torch.Tensor, TensorDict],
-        ) -> torch.Tensor:
-        """
-        Overview:
-            Calculate the Q value.
-        Arguments:
-            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.
-        Returns:
-            - q (:obj:`torch.Tensor`): The Q value.
-        """
-
-        return self.critic(action, state)
-
     def behaviour_policy_loss(
             self,
             action: Union[torch.Tensor, TensorDict],
@@ -124,11 +62,9 @@ class SRPOPolicy(nn.Module):
         
         return self.diffusion_model.score_matching_loss(action, state)
 
-
     def v_loss(
             self,
             data,
-            discount_factor: float = 1.0,
         ) -> torch.Tensor:
         """
         Overview:
@@ -140,15 +76,14 @@ class SRPOPolicy(nn.Module):
             - next_state (:obj:`torch.Tensor`): The input next state.
             - done (:obj:`torch.Tensor`): The input done.
             - fake_next_action (:obj:`torch.Tensor`): The input fake next action.
-            - discount_factor (:obj:`float`): The discount factor.
         """
-
-        loss=self.q[0].v_loss(data)
-        return loss
+        v_loss, next_v =self.q[0].v_loss(data)
+        return v_loss,next_v
 
     def q_loss(
             self,
             data,
+            next_v,
             discount_factor: float = 1.0,
         ) -> torch.Tensor:
         """
@@ -164,5 +99,26 @@ class SRPOPolicy(nn.Module):
             - discount_factor (:obj:`float`): The discount factor.
         """
 
-        loss=self.q[0].q_loss(data)
+        loss=self.q[0].q_loss(data,next_v,discount_factor)
+        return loss
+
+    def srpo_actor_loss(
+            self,
+            data,
+        ) -> torch.Tensor:
+        """
+        Overview:
+            Calculate the Q loss.
+        Arguments:
+            - action (:obj:`torch.Tensor`): The input action.
+            - state (:obj:`torch.Tensor`): The input state.
+            - reward (:obj:`torch.Tensor`): The input reward.
+            - next_state (:obj:`torch.Tensor`): The input next state.
+            - done (:obj:`torch.Tensor`): The input done.
+            - fake_next_action (:obj:`torch.Tensor`): The input fake next action.
+            - discount_factor (:obj:`float`): The discount factor.
+        """
+        state = data['s']
+        action = self.deter_policy(state)
+        loss = self.diffusion_model.srpo_loss(action,state)
         return loss

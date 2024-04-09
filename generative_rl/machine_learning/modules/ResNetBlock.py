@@ -19,7 +19,6 @@ class MLPResNetBlock(nn.Module):
         self.fc1 = nn.Linear(features, features * 4)
         self.fc2 = nn.Linear(features * 4, features)
         self.residual = nn.Linear(features, features)
-
         self.dropout = nn.Dropout(dropout_rate) if dropout_rate is not None and dropout_rate > 0.0 else None
 
     def forward(self, x, training=False):

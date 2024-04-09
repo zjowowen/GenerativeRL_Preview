@@ -28,8 +28,6 @@ class SRPOCritic(nn.Module):
         self.q0 = TwinQ(adim, sdim, layers=layers)
         self.q0_target = copy.deepcopy(self.q0)
         self.vf = ValueFunction(sdim)
-        self.q_optimizer = torch.optim.Adam(self.q0.parameters(), lr=3e-4)
-        self.v_optimizer = torch.optim.Adam(self.vf.parameters(), lr=3e-4)
         self.discount = 0.99
         self.tau = 0.7
         # self.tau = 0.9 if "maze" in config.env else 0.7
@@ -49,23 +47,16 @@ class SRPOCritic(nn.Module):
         v = self.vf(s)
         adv = target_q - v
         v_loss = asymmetric_l2_loss(adv, self.tau)
-        return v_loss
+        return v_loss , next_v
         
 
-    def q_loss(self, data):
+    def q_loss(self, data,next_v,discount):
         # Update Q function
         s = data["s"]
         a = data["a"]
         r = data["r"]
-        s_ = data["s_"]
         d = data["d"]
-        with torch.no_grad():
-            next_v = self.vf(s_).detach()
-        targets = r + (1. - d.float()) * self.discount * next_v.detach()
+        targets = r + (1. - d.float()) * discount * next_v.detach()
         qs = self.q0.both(a, s)
-        
-        v = self.vf(s)
-
-        self.v = v.mean()
         q_loss = sum(torch.nn.functional.mse_loss(q, targets) for q in qs) / len(qs)
         return q_loss  

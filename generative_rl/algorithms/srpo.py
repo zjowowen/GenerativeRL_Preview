@@ -1,10 +1,13 @@
 from typing import Optional, Tuple, Union, List, Dict, Any, Callable
 from easydict import EasyDict
-
+import gym
+import d4rl
 from rich.progress import Progress
 from rich.progress import track
 import numpy as np
 import torch
+import os
+from datetime import datetime
 from torch.utils.data import DataLoader
 
 import wandb
@@ -66,12 +69,17 @@ class SRPO:
             - config (:obj:`EasyDict`): The training configuration.
         """
         set_seed(self.config.deploy.env["seed"])
-
+        
         config = merge_two_dicts_into_newone(
             self.config.train if hasattr(self.config, "train") else EasyDict(),
             config
         ) if config is not None else self.config.train
 
+        current_time = datetime.now()
+        formatted_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
+        directory_path = os.path.join(f"./{config.project}",formatted_time,)
+        os.makedirs(directory_path, exist_ok=True)
+        
         with wandb.init(
             project=config.project if hasattr(config, "project") else __class__.__name__,
             **config.wandb if hasattr(config, "wandb") else {}
@@ -130,19 +138,46 @@ class SRPO:
             #     fake_actions = torch.cat(fake_actions_sampled, dim=0)
             #     return fake_actions
 
-            # def evaluate(model, train_iter):
-            #     evaluation_results = dict()
-            #     for guidance_scale in config.parameter.evaluation.guidance_scale:
-            #         def policy(obs: np.ndarray) -> np.ndarray:
-            #             obs = torch.tensor(obs, dtype=torch.float32, device=config.model.QGPOPolicy.device).unsqueeze(0)
-            #             action = model.sample(
-            #                 state = obs,
-            #                 guidance_scale=guidance_scale).squeeze(0).cpu().detach().numpy()
-            #             return action
-            #         evaluation_results[f"evaluation/guidance_scale:[{guidance_scale}]/total_return"] = self.simulator.evaluate(policy=policy, )[0]["total_return"]
-            #         log.info(f"Train iter: {train_iter}, guidance_scale: {guidance_scale}, total_return: {evaluation_results[f'evaluation/guidance_scale:[{guidance_scale}]/total_return']}")
+            def pallaral_simple_eval_policy(policy_fn, env_name, seed, eval_episodes=20):
+                eval_envs = []
+                for i in range(eval_episodes):
+                    env = gym.make(env_name)
+                    eval_envs.append(env)
+                    env.seed(seed + 1001 + i)
+                    env.buffer_state = env.reset()
+                    env.buffer_return = 0.0
+                ori_eval_envs = [env for env in eval_envs]
+                import time
+                t = time.time()
+                while len(eval_envs) > 0:
+                    new_eval_envs = []
+                    states = np.stack([env.buffer_state for env in eval_envs])
+                    states = torch.Tensor(states).to("cuda")
+                    with torch.no_grad():
+                        actions = policy_fn(states).detach().cpu().numpy()
+                    for i, env in enumerate(eval_envs):
+                        state, reward, done, info = env.step(actions[i])
+                        env.buffer_return += reward
+                        env.buffer_state = state
+                        if not done:
+                            new_eval_envs.append(env)
+                    eval_envs = new_eval_envs
+                for i in range(eval_episodes):
+                    ori_eval_envs[i].buffer_return = d4rl.get_normalized_score(env_name, ori_eval_envs[i].buffer_return)
+                mean = np.mean([ori_eval_envs[i].buffer_return for i in range(eval_episodes)])
+                std = np.std([ori_eval_envs[i].buffer_return for i in range(eval_episodes)])
+                return mean, std
+            
+            def evaluate(model, train_iter):
+                evaluation_results = dict()
+                def policy(obs: np.ndarray) -> np.ndarray:
+                    obs = torch.tensor(obs, dtype=torch.float32, device=config.model.QGPOPolicy.device).unsqueeze(0)
+                    action = model.deter_policy.select_actions(obs).detach().cpu().numpy()
+                    return action
+                evaluation_results[f"evaluation/guidance_scale:[{guidance_scale}]/total_return"] = self.simulator.evaluate(policy=policy, )[0]["total_return"]
+                log.info(f"Train iter: {train_iter}, guidance_scale: {guidance_scale}, total_return: {evaluation_results[f'evaluation/guidance_scale:[{guidance_scale}]/total_return']}")
 
-            #     return evaluation_results
+                return evaluation_results
                 
 
             data_generator = get_train_data(DataLoader(
@@ -175,130 +210,118 @@ class SRPO:
                         behaviour_model_training_loss=behaviour_model_training_loss.item(),
                     ),
                     commit=True)
-
-
-            # self.dataset.fake_actions = generate_fake_action(
-            #     self.model["QGPOPolicy"],
-            #     self.dataset.states[:],
-            #     config.parameter.sample_per_state)
-            # self.dataset.fake_next_actions = generate_fake_action(
-            #     self.model["QGPOPolicy"],
-            #     self.dataset.next_states[:],
-            #     config.parameter.sample_per_state)
-
-            #TODO add notation
-
-
-            # data_generator = get_train_data(DataLoader(
-            #     self.dataset,
-            #     batch_size=config.parameter.energy_guided_policy.batch_size,
-            #     shuffle=True,
-            #     collate_fn=None,
-            # ))
-
-            q_optimizer = torch.optim.Adam(
-                self.model["SRPOPolicy"].critic.q.parameters(),
-                lr=config.parameter.critic.learning_rate, #关注这个值
+                
+                if train_iter == config.parameter.behaviour_policy.iterations-1:
+                    file_path = os.path.join(directory_path, f"checkpoint_diffusion_{train_iter+1}.pt")
+                    torch.save(
+                        dict(
+                            diffusion_model=self.model["SRPOPolicy"].diffusion_model.state_dict(),
+                            behaviour_model_optimizer=behaviour_model_optimizer.state_dict(),
+                            diffusion_iteration=train_iter+1,
+                        ),
+                        f=file_path,
             )
 
+
+            # make optimizer for more action
+            q_optimizer = torch.optim.Adam(
+                self.model["SRPOPolicy"].critic.q0.parameters(), 
+                lr=config.parameter.critic.learning_rate)
+            v_optimizer = torch.optim.Adam(
+                self.model["SRPOPolicy"].critic.vf.parameters(),
+                lr=config.parameter.critic.learning_rate)
+            
             data_generator = get_train_data(DataLoader(
                 self.dataset,
-                batch_size=config.parameter.critic_policy.batch_size,
+                batch_size=config.parameter.critic.batch_size,
                 shuffle=True,
                 collate_fn=None,
             ))
 
-            for train_iter in track(range(config.critic.stop_training_iterations), description="Critic training"):
+            for train_iter in track(range(config.parameter.critic.iterations), description="Critic training"):
                 data = next(data_generator)
-                v_loss = self.model["SRPOPolicy"].v_loss(
+                
+                v_loss ,next_v = self.model["SRPOPolicy"].v_loss(
                     data,
                 )
-                self.v_optimizer.zero_grad(set_to_none=True)
+                v_optimizer.zero_grad(set_to_none=True)
                 v_loss.backward()
-                self.v_optimizer.step()
+                v_optimizer.step()
 
                 q_loss = self.model["SRPOPolicy"].q_loss(
                     data,
+                    next_v,
+                    config.parameter.critic.discount_factor,
                 )
-                self.q_optimizer.zero_grad(set_to_none=True)
+                q_optimizer.zero_grad(set_to_none=True)
                 q_loss.backward()
-                self.q_optimizer.step()
+                q_optimizer.step()
                 
                 # Update target
-                for param, target_param in zip(self.model["SGPOPolicy"].critic.q0.parameters(), self.model["QGPOPolicy"].critic.q0_target.parameters()):
-                            target_param.data.copy_(
-                                config.parameter.critic.update_momentum * param.data + (1 - config.parameter.critic.update_momentum) * target_param.data
-                            )
-
-                wandb_run.log(data=dict(q_loss=q_loss.item()), commit=False)
-
-
-        self.q[0].update_q0(data)
-        
-        # evaluate iql policy part, can be deleted
-        with torch.no_grad():
-            target_q = self.q[0].q0_target(a, s).detach()
-            v = self.q[0].vf(s).detach()
-        adv = target_q - v
-        temp = 10.0 if "maze" in self.args.env else 3.0
-        exp_adv = torch.exp(temp * adv.detach()).clamp(max=100.0)
-
-        policy_out = self.deter_policy(s)
-        bc_losses = torch.sum((policy_out - a)**2, dim=1)
-        policy_loss = torch.mean(exp_adv.squeeze() * bc_losses)
-        self.deter_policy_optimizer.zero_grad(set_to_none=True)
-        policy_loss.backward()
-
-        self.deter_policy_optimizer.step()
-        self.deter_policy_lr_scheduler.step()
-        self.policy_loss = policy_loss
-
-
-            # with Progress() as progress:
-            #     critic_training = progress.add_task("Critic training", total=config.parameter.critic.stop_training_iterations)
-
-            #     for train_iter in  range(config.parameter.critic.stop_training_iterations):
-            #         data = next(data_generator)
-            #         q_loss = self.model["SRPOPolicy"].q_loss(
-            #             data['a'], data['s'], data['r'], data['s_'], data['d'], data['fake_a_'],
-            #             discount_factor=config.parameter.critic.discount_factor
-            #         )
-            #         q_optimizer.zero_grad()
-            #         q_loss.backward()
-            #         q_optimizer.step()
-        
-                        
-            #             # Update target
-            #             for param, target_param in zip(self.model["QGPOPolicy"].critic.parameters(), self.model["QGPOPolicy"].critic.q_target.parameters()):
-            #                 target_param.data.copy_(
-            #                     config.parameter.critic.update_momentum * param.data + (1 - config.parameter.critic.update_momentum) * target_param.data
-            #                 )
-
-            #             wandb_run.log(data=dict(q_loss=q_loss.item()), commit=False)
-            #             progress.update(critic_training, advance=1)
-
-            #         energy_guidance_loss = self.model["QGPOPolicy"].energy_guidance_loss(data['s'], data['fake_a'])
-            #         energy_guidance_optimizer.zero_grad()
-            #         energy_guidance_loss.backward()
-            #         energy_guidance_optimizer.step()
-
-            #         if train_iter == 0 or (train_iter + 1) % config.parameter.evaluation.evaluation_interval == 0:
-            #             evaluation_results = evaluate(self.model["QGPOPolicy"], train_iter=train_iter)
-            #             wandb_run.log(data=evaluation_results, commit=False)
-
-            #         wandb_run.log(
-            #             data=dict(
-            #                 train_iter=train_iter,
-            #                 energy_guidance_loss=energy_guidance_loss.item(),
-            #             ),
-            #             commit=True)
-            #         progress.update(energy_guidance_training, advance=1)
-
+                for param, target_param in zip(self.model["SRPOPolicy"].critic.q0.parameters(), self.model["SRPOPolicy"].critic.q0.parameters()):
+                    target_param.data.copy_(config.parameter.critic.tau * param.data + (1 - config.parameter.critic.tau) * target_param.data)
+                
+                wandb_run.log(
+                    data=dict(
+                        train_iter=train_iter,
+                        q_loss=q_loss.item(),
+                        v_loss=v_loss.item(),
+                    ),
+                    commit=True)
+                
+                if train_iter == config.parameter.critic.iterations-1:
+                    file_path = os.path.join(directory_path, f"checkpoint_policy_{train_iter+1}.pt")
+                    torch.save(
+                        dict(
+                            q_model=self.model["SRPOPolicy"].critic.q0.state_dict(),
+                            v_model=self.model["SRPOPolicy"].critic.vf.state_dict(),
+                            q_optimizer=q_optimizer.state_dict(),
+                            v_optimizer=v_optimizer.state_dict(),
+                            policy_iteration=train_iter+1,
+                        ),
+                        f=file_path,)
+                
+            SRPO_policy_optimizer = torch.optim.Adam(self.model["SRPOPolicy"].deter_policy.parameters(), lr=3e-4)
+            for train_iter in track(range(config.parameter.actor.iterations), description="actor training"):
+                data = next(data_generator)
+                actor_loss = self.model["SRPOPolicy"].srpo_actor_loss(data)
+                actor_loss = actor_loss.sum(-1).mean()
+                SRPO_policy_optimizer.zero_grad(set_to_none=True)
+                actor_loss.backward()
+                SRPO_policy_optimizer.step()
+                wandb_run.log(
+                    data=dict(
+                        train_iter=train_iter,
+                        actor_loss=actor_loss.item(),
+                    ),
+                    commit=True)
+                
+                if train_iter == 0 or (train_iter + 1) % config.parameter.evaluation.evaluation_interval == 0:
+                    mean, std = pallaral_simple_eval_policy(self.model["SRPOPolicy"],config.dataset.args.env_id,00)
+                    wandb_run.log(
+                        data=dict(
+                            train_iter=train_iter,
+                            rew=mean,
+                            std=std,
+                        ),
+                        commit=True)
+                
+                if train_iter == config.parameter.critic.iterations-1:
+                    file_path = os.path.join(directory_path, f"checkpoint_actor_{train_iter+1}.pt")
+                    torch.save(
+                        dict(
+                            actor_model=self.model["SRPOPolicy"].deter_policy.state_dict(),
+                            actor_optimizer=SRPO_policy_optimizer.state_dict(),
+                            policy_iteration=train_iter+1,
+                        ),
+                        f=file_path,)
+                
+                
             #---------------------------------------
             # Customized training code ↑
             #---------------------------------------
 
-                wandb.finish()
+        wandb.finish()
 
 
     def deploy(self, config:EasyDict = None) -> SRPOAgent:

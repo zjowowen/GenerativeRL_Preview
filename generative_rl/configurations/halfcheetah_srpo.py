@@ -52,6 +52,7 @@ config = EasyDict(
                     device = device,
                     x_size = action_size,
                     alpha = 1.0,
+                    beta =0.02,
                     solver = dict(
                         # type = "ODESolver",
                         # args = dict(
@@ -90,24 +91,29 @@ config = EasyDict(
             behaviour_policy = dict(
                 batch_size = 2048,
                 learning_rate = 3e-4,
-                iterations = 10000,
+                # iterations = 2000000,
+                iterations = 10,
             ),
             sample_per_state = 16,
 
             critic = dict(
                 batch_size = 256,
-                stop_training_iterations = 1500000,
+                # iterations = 1500000,
+                iterations = 10,
                 learning_rate = 3e-4,
                 discount_factor = 0.99,
-                update_momentum = 0.995,
+                tau = 0.9,
             ),
-            energy_guidance = dict(
-                iterations = 600000,
+            
+            actor = dict(
+                batch_size = 256,
+                # iterations = 1000000,
                 learning_rate = 3e-4,
+                iterations = 10,
             ),
+            
             evaluation = dict(
-                evaluation_interval = 10000,
-                guidance_scale = [0.0, 1.0, 2.0, 3.0, 5.0, 8.0, 10.0],
+                evaluation_interval = 1,
             ),
         ),
     ),
