@@ -270,6 +270,343 @@ class DiffusionModel(nn.Module):
             raise NotImplementedError("Solver type {} is not implemented".format(self.config.solver.type))
         return data
 
+    def sample_with_fixed_x(
+            self,
+            fixed_x: Union[torch.Tensor, TensorDict],
+            fixed_mask: Union[torch.Tensor, TensorDict],
+            t_span: torch.Tensor = None,
+            condition: Union[torch.Tensor, TensorDict] = None,
+            batch_size: Union[torch.Size, int, Tuple[int], List[int]]  = None,
+            with_grad: bool = False,
+            solver_config: EasyDict = None,
+        ):
+        """
+        Overview:
+            Sample from the diffusion model with fixed x.
+        Arguments:
+            - fixed_x (:obj:`Union[torch.Tensor, TensorDict]`): The fixed x.
+            - fixed_mask (:obj:`Union[torch.Tensor, TensorDict]`): The fixed mask.
+            - t_span (:obj:`torch.Tensor`): The time span.
+            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            - batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
+            - with_grad (:obj:`bool`): Whether to return the gradient.
+            - solver_config (:obj:`EasyDict`): The configuration of the solver.
+        Returns:
+            - x (:obj:`Union[torch.Tensor, TensorDict]`): The sampled result.
+        """
+
+        if t_span is not None:
+            self.t_span = t_span.to(self.device)
+
+        if batch_size is not None:
+            pass
+        elif condition is not None:
+            batch_size = condition.shape[0]
+        else:
+            batch_size = 1
+
+        if solver_config is not None:
+            solver = get_solver(solver_config.type)(**solver_config.args)
+        else:
+            assert hasattr(self, "solver"), "solver must be specified in config or solver_config"
+            solver = self.solver
+
+        if isinstance(solver, DPMSolver):
+            #TODO: make it compatible with DPM solver
+            assert False, "Not implemented"
+            #TODO: make it compatible with TensorDict
+            x = self.gaussian_generator(batch_size=batch_size)
+            if with_grad:
+                data = solver.integrate(
+                    diffusion_process=self.diffusion_process,
+                    noise_function=self.noise_function,
+                    data_prediction_function=self.data_prediction_function,
+                    x=x,
+                    condition=condition,
+                    save_intermediate=False,
+                )
+            else:
+                with torch.no_grad():
+                    data = solver.integrate(
+                        diffusion_process=self.diffusion_process,
+                        noise_function=self.noise_function,
+                        data_prediction_function=self.data_prediction_function,
+                        x=x,
+                        condition=condition,
+                        save_intermediate=False,
+                    )
+        elif isinstance(solver, ODESolver):
+            #TODO: make it compatible with TensorDict
+            if not hasattr(self, "t_span"):
+                self.t_span = torch.linspace(0, self.diffusion_process.t_max, 2).to(self.device)
+            # make fixed_x and fixed_mask compatible with batch_size
+            fixed_x = fixed_x.unsqueeze(0).expand(batch_size, -1)
+            fixed_mask = fixed_mask.unsqueeze(0).expand(batch_size, -1)
+
+            x = fixed_x * (1 - fixed_mask) + self.gaussian_generator(batch_size=batch_size) * fixed_mask
+            def drift_fixed_x(t, x):
+                xt_partially_fixed = self.diffusion_process.direct_sample(self.diffusion_process.t_max-t, fixed_x) * (1 - fixed_mask) + x * fixed_mask
+                return fixed_mask * self.diffusion_process.reverse_ode(function=self.model, function_type=self.model_type, condition=condition).drift(t, xt_partially_fixed)
+            if with_grad:
+                data = solver.integrate(
+                    drift=drift_fixed_x,
+                    x0=x,
+                    t_span=self.t_span,
+                )[-1]
+            else:
+                with torch.no_grad():
+                    data = solver.integrate(
+                        drift=drift_fixed_x,
+                        x0=x,
+                        t_span=self.t_span,
+                    )[-1]
+        elif isinstance(solver, SDESolver):
+            #TODO: make it compatible with TensorDict
+            #TODO: validate the implementation
+            assert self.reverse_diffusion_process is not None, "reverse_path must be specified in config"
+            if not hasattr(self, "t_span"):
+                self.t_span = torch.linspace(0, self.diffusion_process.t_max, 2).to(self.device)
+            # make fixed_x and fixed_mask compatible with batch_size
+            fixed_x = fixed_x.unsqueeze(0).expand(batch_size, -1)
+            fixed_mask = fixed_mask.unsqueeze(0).expand(batch_size, -1)
+
+            x = fixed_x * (1 - fixed_mask) + self.gaussian_generator(batch_size=batch_size) * fixed_mask
+            sde = self.diffusion_process.reverse_sde(
+                function=self.model,
+                function_type=self.model_type,
+                condition=condition,
+                reverse_diffusion_function=self.reverse_diffusion_process.diffusion,
+                reverse_diffusion_squared_function=self.reverse_diffusion_process.diffusion_squared,
+            )
+            def drift_fixed_x(t, x):
+                xt_partially_fixed = self.diffusion_process.direct_sample(self.diffusion_process.t_max-t, fixed_x) * (1 - fixed_mask) + x * fixed_mask
+                return fixed_mask * sde.drift(t, xt_partially_fixed)
+            def diffusion_fixed_x(t, x):
+                xt_partially_fixed = self.diffusion_process.direct_sample(self.diffusion_process.t_max-t, fixed_x) * (1 - fixed_mask) + x * fixed_mask
+                return fixed_mask * sde.diffusion(t, xt_partially_fixed)
+            if with_grad:
+                data = solver.integrate(
+                    drift=drift_fixed_x,
+                    diffusion=diffusion_fixed_x,
+                    x0=x,
+                    t_span=self.t_span,
+                )[-1]
+            else:
+                with torch.no_grad():
+                    data = solver.integrate(
+                        drift=drift_fixed_x,
+                        diffusion=diffusion_fixed_x,
+                        x0=x,
+                        t_span=self.t_span,
+                    )[-1]
+        else:
+            raise NotImplementedError("Solver type {} is not implemented".format(self.config.solver.type))
+        return data
+
+    def sample_forward_process_with_fixed_x(
+            self,
+            fixed_x: Union[torch.Tensor, TensorDict],
+            fixed_mask: Union[torch.Tensor, TensorDict],
+            t_span: torch.Tensor = None,
+            batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
+            condition: Union[torch.Tensor, TensorDict] = None,
+            with_grad: bool = False,
+            solver_config: EasyDict = None,
+        ):
+        """
+        Overview:
+            Sample from the diffusion model with fixed x.
+        Arguments:
+            - fixed_x (:obj:`Union[torch.Tensor, TensorDict]`): The fixed x.
+            - fixed_mask (:obj:`Union[torch.Tensor, TensorDict]`): The fixed mask.
+            - t_span (:obj:`torch.Tensor`): The time span.
+            - batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
+            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            - with_grad (:obj:`bool`): Whether to return the gradient.
+            - solver_config (:obj:`EasyDict`): The configuration of the solver.
+        Returns:
+            - x (:obj:`Union[torch.Tensor, TensorDict]`): The sampled result.
+        """
+
+        t_span = t_span.to(self.device)
+        
+        if batch_size is not None:
+            pass
+        elif condition is not None:
+            batch_size = condition.shape[0]
+        else:
+            batch_size = 1
+        
+        if solver_config is not None:
+            solver = get_solver(solver_config.type)(**solver_config.args)
+        else:
+            assert hasattr(self, "solver"), "solver must be specified in config or solver_config"
+            solver = self.solver
+
+        if isinstance(solver, DPMSolver):
+            #TODO: make it compatible with DPM solver
+            assert False, "Not implemented"
+            #TODO: make it compatible with TensorDict
+            x = self.gaussian_generator(batch_size=batch_size)
+            if with_grad:
+                data = solver.integrate(
+                    diffusion_process=self.diffusion_process,
+                    noise_function=self.noise_function,
+                    data_prediction_function=self.data_prediction_function,
+                    x=x,
+                    condition=condition,
+                    save_intermediate=True,
+                )
+            else:
+                with torch.no_grad():
+                    data = solver.integrate(
+                        diffusion_process=self.diffusion_process,
+                        noise_function=self.noise_function,
+                        data_prediction_function=self.data_prediction_function,
+                        x=x,
+                        condition=condition,
+                        save_intermediate=True,
+                    )
+        elif isinstance(solver, ODESolver):
+            #TODO: make it compatible with TensorDict
+            # make fixed_x and fixed_mask compatible with batch_size
+            fixed_x = fixed_x.unsqueeze(0).expand(batch_size, -1)
+            fixed_mask = fixed_mask.unsqueeze(0).expand(batch_size, -1)
+
+            x = fixed_x * (1 - fixed_mask) + self.gaussian_generator(batch_size=batch_size) * fixed_mask
+            def drift_fixed_x(t, x):
+                xt_partially_fixed = self.diffusion_process.direct_sample(self.diffusion_process.t_max-t, fixed_x) * (1 - fixed_mask) + x * fixed_mask
+                return fixed_mask * self.diffusion_process.reverse_ode(function=self.model, function_type=self.model_type, condition=condition).drift(t, xt_partially_fixed)
+            if with_grad:
+                data = solver.integrate(
+                    drift=drift_fixed_x,
+                    x0=x,
+                    t_span=t_span,
+                )
+            else:
+                with torch.no_grad():
+                    data = solver.integrate(
+                        drift=drift_fixed_x,
+                        x0=x,
+                        t_span=t_span,
+                    )
+        elif isinstance(solver, SDESolver):
+            #TODO: make it compatible with TensorDict
+            #TODO: validate the implementation
+            assert self.reverse_diffusion_process is not None, "reverse_path must be specified in config"
+            if not hasattr(self, "t_span"):
+                self.t_span = torch.linspace(0, self.diffusion_process.t_max, 2).to(self.device)
+            # make fixed_x and fixed_mask compatible with batch_size
+            fixed_x = fixed_x.unsqueeze(0).expand(batch_size, -1)
+            fixed_mask = fixed_mask.unsqueeze(0).expand(batch_size, -1)
+
+            x = fixed_x * (1 - fixed_mask) + self.gaussian_generator(batch_size=batch_size) * fixed_mask
+            sde = self.diffusion_process.reverse_sde(
+                function=self.model,
+                function_type=self.model_type,
+                condition=condition,
+                reverse_diffusion_function=self.reverse_diffusion_process.diffusion,
+                reverse_diffusion_squared_function=self.reverse_diffusion_process.diffusion_squared,
+            )
+            def drift_fixed_x(t, x):
+                xt_partially_fixed = self.diffusion_process.direct_sample(self.diffusion_process.t_max-t, fixed_x) * (1 - fixed_mask) + x * fixed_mask
+                return fixed_mask * sde.drift(t, xt_partially_fixed)
+            def diffusion_fixed_x(t, x):
+                xt_partially_fixed = self.diffusion_process.direct_sample(self.diffusion_process.t_max-t, fixed_x) * (1 - fixed_mask) + x * fixed_mask
+                return fixed_mask * sde.diffusion(t, xt_partially_fixed)
+            if with_grad:
+                data = solver.integrate(
+                    drift=drift_fixed_x,
+                    diffusion=diffusion_fixed_x,
+                    x0=x,
+                    t_span=t_span,
+                )
+            else:
+                with torch.no_grad():
+                    data = solver.integrate(
+                        drift=drift_fixed_x,
+                        diffusion=diffusion_fixed_x,
+                        x0=x,
+                        t_span=t_span,
+                    )
+
+        else:
+            raise NotImplementedError("Solver type {} is not implemented".format(self.config.solver.type))
+        return data
+
+    def forward_sample(
+            self,
+            x: Union[torch.Tensor, TensorDict],
+            t_span: torch.Tensor,
+            condition: Union[torch.Tensor, TensorDict] = None,
+            with_grad: bool = False,
+            solver_config: EasyDict = None,
+        ):
+        """
+        Overview:
+            Sample from the diffusion model given the sampled x.
+        Arguments:
+            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            - t_span (:obj:`torch.Tensor`): The time span.
+            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            - with_grad (:obj:`bool`): Whether to return the gradient.
+            - solver_config (:obj:`EasyDict`): The configuration of the solver.
+        """
+
+        #TODO: very important function
+        #TODO: validate these functions
+
+        t_span = t_span.to(self.device)
+
+        batch_size = x.shape[0]
+
+        if solver_config is not None:
+            solver = get_solver(solver_config.type)(**solver_config.args)
+        else:
+            assert hasattr(self, "solver"), "solver must be specified in config or solver_config"
+            solver = self.solver
+
+        if isinstance(solver, ODESolver):
+            #TODO: make it compatible with TensorDict
+
+            if with_grad:
+                data = solver.integrate(
+                    drift=self.diffusion_process.forward_reversed_ode(function=self.model, function_type=self.model_type, condition=condition).drift,
+                    x0=x,
+                    t_span=t_span,
+                )[-1]
+            else:
+                with torch.no_grad():
+                    data = solver.integrate(
+                        drift=self.diffusion_process.forward_reversed_ode(function=self.model, function_type=self.model_type, condition=condition).drift,
+                        x0=x,
+                        t_span=t_span,
+                    )[-1]
+        elif isinstance(solver, SDESolver):
+            #TODO: make it compatible with TensorDict
+            #TODO: validate the implementation
+            assert self.diffusion_process is not None, "path must be specified in config"
+
+            sde = self.diffusion_process.forward_reversed_sde(function=self.model, function_type=self.model_type, condition=condition, forward_diffusion_function=self.diffusion_process.diffusion, forward_diffusion_squared_function=self.diffusion_process.diffusion_squared)
+            if with_grad:
+                data = solver.integrate(
+                    drift=sde.drift,
+                    diffusion=sde.diffusion,
+                    x0=x,
+                    t_span=t_span,
+                )[-1]
+            else:
+                with torch.no_grad():
+                    data = solver.integrate(
+                        drift=sde.drift,
+                        diffusion=sde.diffusion,
+                        x0=x,
+                        t_span=t_span,
+                    )[-1]
+        else:
+            raise NotImplementedError("Solver type {} is not implemented".format(self.config.solver.type))
+        return data
+
     def score_function(
             self,
             t: torch.Tensor,

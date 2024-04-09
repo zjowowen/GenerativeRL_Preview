@@ -17,7 +17,7 @@ from easydict import EasyDict
 import torch
 import torch.nn as nn
 import torch.multiprocessing as mp
-
+import multiprocessing
 from generative_rl.datasets.minecraft import MineRLVideoDataset
 from generative_rl.machine_learning.generative_models.diffusion_model.diffusion_model import DiffusionModel
 from generative_rl.utils.config import merge_two_dicts_into_newone
@@ -236,7 +236,9 @@ def main(rank, world_size):
         if torch.distributed.get_rank() == 0:
             save_checkpoint_on_exit(diffusion_model, optimizer, history_iteration,epoch)
 
-        for  epoch  in track(range(config.parameter.epochs),description="Training"):
+        subprocess_list = []
+
+        for epoch in track(range(config.parameter.epochs),description="Training"):
             sampler.set_epoch(epoch)
             for batch_data in data_loader:
                 batch_data = batch_data.to(config.device)
@@ -251,7 +253,12 @@ def main(rank, world_size):
                     video_x_1 = x_t[-1].squeeze(0).mul(0.5).add(0.5).mul(255).clamp(0, 255).permute(0, 2, 3, 1).to("cpu", torch.uint8)
                     if not os.path.exists(config.parameter.video_save_path):
                         os.makedirs(config.parameter.video_save_path)
-                    torchvision.io.write_video(filename=os.path.join(config.parameter.video_save_path, f"iteration_{iteration}.mp4"), video_array=video_x_1, fps=20)
+                    # torchvision.io.write_video(filename=os.path.join(config.parameter.video_save_path, f"iteration_{iteration}.mp4"), video_array=video_x_1, fps=20)
+                    # write video in subprocess
+                    p = mp.Process(target=torchvision.io.write_video, args=(os.path.join(config.parameter.video_save_path, f"iteration_{iteration}.mp4"), video_x_1, 20))
+                    p.start()
+                    subprocess_list.append(p)
+
                     video_x_1 = video_x_1.permute(0, 3, 1, 2).numpy()
                     video = wandb.Video(video_x_1, caption=f"iteration {iteration}")
                     wandb_run.log(
@@ -307,6 +314,9 @@ def main(rank, world_size):
                     torch.distributed.barrier()
                 else:
                     torch.distributed.barrier()
+
+        for p in subprocess_list:
+            p.join()
 
         wandb.finish()
 

@@ -331,6 +331,158 @@ class DiffusionProcess:
 
         return SDE(drift=sde_drift, diffusion=sde_diffusion)
 
+    def forward_reversed_sde(
+            self,
+            function: Union[Callable, nn.Module],
+            function_type: str,
+            forward_diffusion_function: Union[Callable, nn.Module] = None,
+            forward_diffusion_squared_function: Union[Callable, nn.Module] = None,
+            condition: Union[torch.Tensor, TensorDict] = None,
+            T: torch.Tensor = torch.tensor(1.),
+        ) -> SDE:
+        """
+        Overview:
+            Return the forward of reversed time SDE of the diffusion process with the input condition.
+        Arguments:
+            - function (:obj:`Union[Callable, nn.Module]`): The input function.
+            - function_type (:obj:`str`): The type of the function.
+            - reverse_diffusion_function (:obj:`Union[Callable, nn.Module]`): The input reverse diffusion function.
+            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            - T (:obj:`torch.Tensor`): The maximum time.
+        Returns:
+            - reverse_sde (:obj:`SDE`): The reverse diffusion process.
+        """
+
+        #TODO: validate these functions
+
+        if function_type == "score_function":
+
+            def sde_drift(
+                    t: torch.Tensor,
+                    x: Union[torch.Tensor, TensorDict],
+            ) -> Union[torch.Tensor, TensorDict]:
+                return self.drift(t, x, condition) - 0.5 * (self.diffusion_squared(t, x, condition) - forward_diffusion_squared_function(t, x, condition)) * function(t, x, condition)
+            
+            def sde_diffusion(
+                    t: torch.Tensor,
+                    x: Union[torch.Tensor, TensorDict],
+            ) -> Union[torch.Tensor, TensorDict]:
+                return forward_diffusion_function(t, x, condition)
+            
+            return SDE(drift=sde_drift, diffusion=sde_diffusion)
+
+        elif function_type == "noise_function":
+
+            def sde_drift(
+                    t: torch.Tensor,
+                    x: Union[torch.Tensor, TensorDict],
+            ) -> Union[torch.Tensor, TensorDict]:
+                return self.drift(t, x, condition) + 0.5 * (self.diffusion_squared(t, x, condition) - forward_diffusion_squared_function(t, x, condition)) * function(t, x, condition) / self.std(t, x, condition)
+            
+            def sde_diffusion(
+                    t: torch.Tensor,
+                    x: Union[torch.Tensor, TensorDict],
+            ) -> Union[torch.Tensor, TensorDict]:
+                return forward_diffusion_function(t, x, condition)
+            
+            return SDE(drift=sde_drift, diffusion=sde_diffusion)
+
+        elif function_type == "velocity_function":
+
+            def sde_drift(
+                    t: torch.Tensor,
+                    x: Union[torch.Tensor, TensorDict],
+            ) -> Union[torch.Tensor, TensorDict]:
+                v = function(t, x, condition)
+                r = forward_diffusion_squared_function(t, x, condition) / (self.diffusion_squared(t, x, condition) + 1e-8)
+                return v - (v - self.drift(t, x, condition)) * r
+            
+            def sde_diffusion(
+                    t: torch.Tensor,
+                    x: Union[torch.Tensor, TensorDict],
+            ) -> Union[torch.Tensor, TensorDict]:
+                return forward_diffusion_function(t, x, condition)
+            
+            return SDE(drift=sde_drift, diffusion=sde_diffusion)
+
+        elif function_type == "data_prediction_function":
+
+            def sde_drift(
+                    t: torch.Tensor,
+                    x: Union[torch.Tensor, TensorDict],
+            ) -> Union[torch.Tensor, TensorDict]:
+                D = 0.5 * (self.diffusion_squared(t, x, condition) - forward_diffusion_squared_function(t, x, condition)) / self.covariance(t, x, condition)
+                return (self.drift_coefficient(t, x) + D) * x - self.scale(t, x, condition) * D * function(t, x, condition)
+            
+            def sde_diffusion(
+                    t: torch.Tensor,
+                    x: Union[torch.Tensor, TensorDict],
+            ) -> Union[torch.Tensor, TensorDict]:
+                return forward_diffusion_function(t, x, condition)
+            
+            return SDE(drift=sde_drift, diffusion=sde_diffusion)
+
+        else:
+            raise NotImplementedError("Unknown type of function {}".format(function_type))
+
+    def forward_reversed_ode(
+            self,
+            function: Union[Callable, nn.Module],
+            function_type: str,
+            condition: Union[torch.Tensor, TensorDict] = None,
+            T: torch.Tensor = torch.tensor(1.),
+        ) -> ODE:
+        """
+        Overview:
+            Return the forward of reversed time ODE of the diffusion process with the input condition.
+        """
+
+        #TODO: validate these functions
+
+        if function_type == "score_function":
+
+            def ode_drift(
+                    t: torch.Tensor,
+                    x: Union[torch.Tensor, TensorDict],
+            ) -> Union[torch.Tensor, TensorDict]:
+                return self.drift(t, x, condition) - 0.5 * self.diffusion_squared(t, x, condition) * function(t, x, condition)
+            
+            return ODE(drift=ode_drift)
+
+        elif function_type == "noise_function":
+
+            def ode_drift(
+                    t: torch.Tensor,
+                    x: Union[torch.Tensor, TensorDict],
+            ) -> Union[torch.Tensor, TensorDict]:
+                return self.drift(t, x, condition) + 0.5 * self.diffusion_squared(t, x, condition) * function(t, x, condition) / self.std(t, x, condition)
+            
+            return ODE(drift=ode_drift)
+
+        elif function_type == "velocity_function":
+
+            def ode_drift(
+                    t: torch.Tensor,
+                    x: Union[torch.Tensor, TensorDict],
+            ) -> Union[torch.Tensor, TensorDict]:
+                return function(t, x, condition)
+            
+            return ODE(drift=ode_drift)
+
+        elif function_type == "data_prediction_function":
+
+            def ode_drift(
+                    t: torch.Tensor,
+                    x: Union[torch.Tensor, TensorDict],
+            ) -> Union[torch.Tensor, TensorDict]:
+                D = 0.5 * self.diffusion_squared(t, x, condition) / self.covariance(t, x, condition)
+                return (self.drift_coefficient(t, x) + D) * x - self.scale(t, x, condition) * D * function(t, x, condition)
+            
+            return ODE(drift=ode_drift)
+        
+        else:
+            raise NotImplementedError("Unknown type of function {}".format(function_type))
+
     def reverse_sde(
             self,
             function: Union[Callable, nn.Module],
@@ -352,9 +504,6 @@ class DiffusionProcess:
         Returns:
             - reverse_sde (:obj:`SDE`): The reverse diffusion process.
         """
-
-        #TODO: support more types of functions
-        #TODO: support additional noise function
 
         if function_type == "score_function":
 
