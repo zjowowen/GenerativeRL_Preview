@@ -4,13 +4,44 @@ import torch
 from torch.utils.data import DataLoader
 import wandb
 
-from grl.rl_modules.policy.base import BasePolicy
 from grl.datasets import create_dataset
 from grl.rl_modules.simulators import create_simulator
 from grl.utils.config import merge_two_dicts_into_newone
 from grl.agents.base import BaseAgent
 
+class BasePolicy(torch.nn.Module):
+    """
+    Overview:
+        Base class for policies.
+    Interfaces:
+        ``__init__``, ``forward``
+    """
+    def __init__(self, config: EasyDict = None):
+        """
+        Overview:
+            Initialize the base policy.
+        Arguments:
+            - config (:obj:`EasyDict`): The configuration.
+        """
+        super().__init__()
+        self.config = config
+
+    def forward(self, data: torch.Tensor) -> torch.Tensor:
+        """
+        Overview:
+            Forward pass.
+        Arguments:
+            - data (:obj:`torch.Tensor`): The input data.
+        """
+        pass
+
 class BaseAlgorithm:
+    """
+    Overview:
+        Base class for algorithms.
+    Interfaces:
+        ``__init__``, ``train``, ``deploy``
+    """
 
     def __init__(
         self,

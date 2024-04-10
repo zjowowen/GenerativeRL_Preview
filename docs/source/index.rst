@@ -27,7 +27,7 @@ This library aims to provide a framework for combining the power of generative m
     api_doc/algorithms/index
     api_doc/datasets/index
     api_doc/generative_models/index
-    api_doc/neural_networks/index
+    api_doc/neural_network/index
     api_doc/numerical_methods/index
     api_doc/rl_modules/index
     api_doc/utils/index

@@ -1,9 +1,9 @@
-grl.neural_networks
+grl.neural_network
 =====================
 
-.. currentmodule:: grl.neural_networks
+.. currentmodule:: grl.neural_network
 
-.. automodule:: grl.neural_networks
+.. automodule:: grl.neural_network
 
 ConcatenateLayer
 -----------------
