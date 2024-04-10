@@ -36,18 +36,15 @@ jobs:
           sudo apt-get install -y make wget curl cloc graphviz
           dot -V
           python -m pip install -r requirements-doc.txt
+          python -m pip install .
       - name: Generate
         env:
           ENV_PROD: 'true'
           PLANTUML_HOST: http://localhost:18080
         run: |
-          git fetch --all --tags
-          git branch -av
-          git remote -v
-          git tag
-          plantumlcli -c
-          make pdocs
-          mv ./docs/build/html ./public
+          cd docs
+          make html
+          mv build/html ../public
       - name: Deploy to Github Page
         uses: JamesIves/github-pages-deploy-action@v4
         with:
