@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>grl.rl_modules &mdash; GenerativeRL v0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=2fea6348"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="grl.utils" href="../utils/index.html" />
+    <link rel="prev" title="grl.numerical_methods" href="../numerical_methods/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            GenerativeRL
+          </a>
+              <div class="version">
+                0.0.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/quick_start/index.html">Quick Start</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../agents/index.html">grl.agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithms/index.html">grl.algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../datasets/index.html">grl.datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../generative_models/index.html">grl.generative_models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../neural_network/index.html">grl.neural_network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../numerical_methods/index.html">grl.numerical_methods</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">grl.rl_modules</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#gymenvsimulator">GymEnvSimulator</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#grl.rl_modules.GymEnvSimulator"><code class="docutils literal notranslate"><span class="pre">GymEnvSimulator</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#oneshotvaluefunction">OneShotValueFunction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#grl.rl_modules.OneShotValueFunction"><code class="docutils literal notranslate"><span class="pre">OneShotValueFunction</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#vnetwork">VNetwork</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#grl.rl_modules.VNetwork"><code class="docutils literal notranslate"><span class="pre">VNetwork</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#doublevnetwork">DoubleVNetwork</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#grl.rl_modules.DoubleVNetwork"><code class="docutils literal notranslate"><span class="pre">DoubleVNetwork</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#qnetwork">QNetwork</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#grl.rl_modules.QNetwork"><code class="docutils literal notranslate"><span class="pre">QNetwork</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#doubleqnetwork">DoubleQNetwork</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#grl.rl_modules.DoubleQNetwork"><code class="docutils literal notranslate"><span class="pre">DoubleQNetwork</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../utils/index.html">grl.utils</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">GenerativeRL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">grl.rl_modules</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api_doc/rl_modules/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-grl.rl_modules">
+<span id="grl-rl-modules"></span><h1>grl.rl_modules<a class="headerlink" href="#module-grl.rl_modules" title="Link to this heading"></a></h1>
+<section id="gymenvsimulator">
+<h2>GymEnvSimulator<a class="headerlink" href="#gymenvsimulator" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="grl.rl_modules.GymEnvSimulator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.rl_modules.</span></span><span class="sig-name descname"><span class="pre">GymEnvSimulator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/simulators/gym_env_simulator.html#GymEnvSimulator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.GymEnvSimulator" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Overview:</dt><dd><p>A simple gym environment simulator in GenerativeRL.
+This simulator is used to collect episodes and steps using a given policy in a gym environment.
+It runs in single process and is suitable for small-scale experiments.</p>
+</dd>
+<dt>Interfaces:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code>, <code class="docutils literal notranslate"><span class="pre">collect_episodes</span></code>, <code class="docutils literal notranslate"><span class="pre">collect_steps</span></code>, <code class="docutils literal notranslate"><span class="pre">evaluate</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="oneshotvaluefunction">
+<h2>OneShotValueFunction<a class="headerlink" href="#oneshotvaluefunction" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="grl.rl_modules.OneShotValueFunction">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.rl_modules.</span></span><span class="sig-name descname"><span class="pre">OneShotValueFunction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">EasyDict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/value_network/one_shot_value_function.html#OneShotValueFunction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.OneShotValueFunction" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Overview:</dt><dd><p>Value network for one-shot cases.</p>
+</dd>
+<dt>Interfaces:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code>, <code class="docutils literal notranslate"><span class="pre">forward</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="vnetwork">
+<h2>VNetwork<a class="headerlink" href="#vnetwork" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="grl.rl_modules.VNetwork">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.rl_modules.</span></span><span class="sig-name descname"><span class="pre">VNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">EasyDict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/value_network/value_network.html#VNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.VNetwork" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="doublevnetwork">
+<h2>DoubleVNetwork<a class="headerlink" href="#doublevnetwork" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="grl.rl_modules.DoubleVNetwork">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.rl_modules.</span></span><span class="sig-name descname"><span class="pre">DoubleVNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">EasyDict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/value_network/value_network.html#DoubleVNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.DoubleVNetwork" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Overview:</dt><dd><p>Double value network, which has two value networks.</p>
+</dd>
+<dt>Interfaces:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code>, <code class="docutils literal notranslate"><span class="pre">forward</span></code>, <code class="docutils literal notranslate"><span class="pre">compute_double_v</span></code>, <code class="docutils literal notranslate"><span class="pre">compute_mininum_v</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="qnetwork">
+<h2>QNetwork<a class="headerlink" href="#qnetwork" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="grl.rl_modules.QNetwork">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.rl_modules.</span></span><span class="sig-name descname"><span class="pre">QNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">EasyDict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/value_network/q_network.html#QNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.QNetwork" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="doubleqnetwork">
+<h2>DoubleQNetwork<a class="headerlink" href="#doubleqnetwork" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="grl.rl_modules.DoubleQNetwork">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.rl_modules.</span></span><span class="sig-name descname"><span class="pre">DoubleQNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">EasyDict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/value_network/q_network.html#DoubleQNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.DoubleQNetwork" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Overview:</dt><dd><p>Double Q network, which has two Q networks.</p>
+</dd>
+<dt>Interfaces:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code>, <code class="docutils literal notranslate"><span class="pre">forward</span></code>, <code class="docutils literal notranslate"><span class="pre">compute_double_q</span></code>, <code class="docutils literal notranslate"><span class="pre">compute_mininum_q</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../numerical_methods/index.html" class="btn btn-neutral float-left" title="grl.numerical_methods" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../utils/index.html" class="btn btn-neutral float-right" title="grl.utils" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, OpenDILab Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
