@@ -12,6 +12,8 @@ on:
 jobs:
   doc:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Allows writing to the repository
     strategy:
       matrix:
         python-version: [ 3.9 ]
@@ -53,5 +55,4 @@ jobs:
           BRANCH: gh-pages # The branch the action should deploy to.
           FOLDER: public # The folder the action should deploy.
           CLEAN: true # Automatically remove deleted files from the deploy branch
-        permissions:
-          contents: write  # Allows writing to the repository
+
