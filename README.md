@@ -1,6 +1,10 @@
-# GenerativeRL
+# Generative Reinforcement Learning
+    
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-GenerativeRL is a Python library for solving reinforcement learning (RL) problems using generative models, such as diffusion models and flow models. This library aims to provide a framework for combining the power of generative models with the decision-making capabilities of reinforcement learning algorithms.
+English | [简体中文(Simplified Chinese)](https://github.com/zjowowen/GenerativeRL_Preview/blob/main/README.zh.md)
+
+GenerativeRL, short for Generative Reinforcement Learning, is a Python library for solving reinforcement learning (RL) problems using generative models, such as diffusion models and flow models. This library aims to provide a framework for combining the power of generative models with the decision-making capabilities of reinforcement learning algorithms.
 
 ## Features
 
@@ -13,6 +17,14 @@ GenerativeRL is a Python library for solving reinforcement learning (RL) problem
 
 ```bash
 pip install grl
+```
+
+Or, if you want to install from source:
+
+```bash
+git clone https://github.com/zjowowen/GenerativeRL_Preview.git
+cd generative-rl
+pip install -e .
 ```
 
 ## Quick Start

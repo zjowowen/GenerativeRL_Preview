@@ -200,6 +200,12 @@ class TemporalSpatialResBlock(nn.Module):
         return h2 + self.modify_x(x)
 
 class TemporalSpatialResidualNet(nn.Module):
+    """
+    Overview:
+        Temporal Spatial Residual Network using multiple TemporalSpatialResBlock.
+    Interface:
+        ``__init__``, ``forward``
+    """
 
     def __init__(
             self,
@@ -210,6 +216,19 @@ class TemporalSpatialResidualNet(nn.Module):
             condition_hidden_dim: int = None,
             t_condition_hidden_dim: int = None,
         ):
+        """
+        Overview:
+            Initiate the temporal spatial residual network.
+        Arguments:
+            - hidden_sizes (:obj:`List[int]`): The list of hidden sizes.
+            - output_dim (:obj:`int`): The number of channels in the output tensor.
+            - t_dim (:obj:`int`): The dimension of the temporal input.
+            - condition_dim (:obj:`int`, optional): The number of channels in the condition tensor. Default is None.
+            - condition_hidden_dim (:obj:`int`, optional): The number of channels in the hidden condition tensor. \
+                Default is None.
+            - t_condition_hidden_dim (:obj:`int`, optional): The number of channels in the hidden temporal condition tensor. \
+                Default is None.
+        """
         super().__init__()
         if condition_dim is None or condition_dim <= 0:
             condition_hidden_dim = 0
@@ -236,6 +255,14 @@ class TemporalSpatialResidualNet(nn.Module):
             x: torch.Tensor,
             condition: torch.Tensor = None,
         ) -> torch.Tensor:
+        """
+        Overview:
+            Return the output of the temporal spatial residual network.
+        Arguments:
+            - t (:obj:`torch.Tensor`): The temporal input tensor.
+            - x (:obj:`torch.Tensor`): The input tensor.
+            - condition (:obj:`torch.Tensor`, optional): The condition tensor. Default is None.
+        """
 
         if condition is not None:
             t_condition = torch.cat([t, self.pre_sort_condition(condition)], dim=-1)
@@ -253,13 +280,36 @@ class TemporalSpatialResidualNet(nn.Module):
         return self.last_block(torch.cat([u, d[0]], dim=-1))
 
 class ConcatenateLayer(nn.Module):
+    """
+    Overview:
+        Concatenate the input tensors along the last dimension.
+    Interface:
+        ``__init__``, ``forward``
+    """
     def __init__(self):
+        """
+        Overview:
+            Initiate the concatenate layer.
+        """
         super().__init__()
 
     def forward(self, *x: torch.Tensor) -> torch.Tensor:
+        """
+        Overview:
+            Return the concatenated tensor.
+        Arguments:
+            - x (:obj:`torch.Tensor`): The input tensor.
+        """
         return torch.cat(x, dim=-1)
 
 class MultiLayerPerceptron(nn.Module):
+    """
+    Overview:
+        Multi-layer perceptron using fully-connected layers with activation, dropout, and layernorm.
+        x -> fc1 -> act1 -> dropout -> layernorm -> ... -> fcn -> actn -> out
+    Interface:
+        ``__init__``, ``forward``
+    """
     def __init__(
             self,
             hidden_sizes: List[int],
@@ -271,6 +321,19 @@ class MultiLayerPerceptron(nn.Module):
             scale: float = None,
             shrink: float = None,
         ):
+        """
+        Overview:
+            Initiate the multi-layer perceptron.
+        Arguments:
+            - hidden_sizes (:obj:`List[int]`): The list of hidden sizes.
+            - output_size (:obj:`int`): The number of channels in the output tensor.
+            - activation (:obj:`Union[str, List[str]]`): The optional activation function.
+            - dropout (:obj:`float`, optional): Probability of an element to be zeroed in the dropout. Default is None.
+            - layernorm (:obj:`bool`, optional): Whether to use layernorm in the fully-connected block. Default is False.
+            - final_activation (:obj:`str`, optional): The optional activation function in the final layer. Default is None.
+            - scale (:obj:`float`, optional): The scale of the output tensor. Default is None.
+            - shrink (:obj:`float`, optional): The shrinkage factor of the output tensor. Default is None.
+        """
         super().__init__()
 
         self.model = nn.Sequential()
@@ -304,18 +367,40 @@ class MultiLayerPerceptron(nn.Module):
             else:
                 self.model[-1].weight.data.normal_(0, shrink)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Overview:
+            Return the output of the multi-layer perceptron.
+        Arguments:
+            - x (:obj:`torch.Tensor`): The input tensor.
+        """
         return self.scale*self.model(x)
 
 class ConcatenateMLP(nn.Module):
+    """
+    Overview:
+        Concatenate the input tensors along the last dimension and then pass through a multi-layer perceptron.
+    Interface:
+        ``__init__``, ``forward``
+    """
     def __init__(self, **kwargs):
+        """
+        Overview:
+            Initiate the concatenate MLP.
+        Arguments:
+            - **kwargs: The keyword arguments for the multi-layer perceptron.
+        """
         super().__init__()
         self.model = MultiLayerPerceptron(**kwargs)
 
     def forward(self, *x):
+        """
+        Overview:
+            Return the output of the concatenate MLP.
+        Arguments:
+            - x (:obj:`torch.Tensor`): The input tensor.
+        """
         return self.model(torch.cat(x, dim=-1))
-
-
 
 from .transformers.dit import DiT, DiT_3D
 
