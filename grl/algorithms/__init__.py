@@ -1,0 +1,1 @@
+from .qgpo import QGPOAlgorithm
