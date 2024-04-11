@@ -4,7 +4,7 @@ import copy
 import torch
 import torch.nn as nn
 from tensordict import TensorDict
-from generative_rl.machine_learning.modules import MLP,my_mlp
+from generative_rl.machine_learning.modules import MLP
 from generative_rl.machine_learning.encoders import get_encoder
 from generative_rl.machine_learning.modules import get_module
 
@@ -97,7 +97,6 @@ class DoubleQNetwork(nn.Module):
 
         return torch.min(*self.compute_double_q(action, state))
 
-
     def forward(
             self,
             action: Union[torch.Tensor, TensorDict],
@@ -114,4 +113,3 @@ class DoubleQNetwork(nn.Module):
         """
 
         return self.compute_mininum_q(action, state)
-
