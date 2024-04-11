@@ -29,12 +29,19 @@ from grl.generative_models.diffusion_model.srpo_conditional_diffusion_model impo
 class Dirac_Policy(nn.Module):
     def __init__(self, action_dim, state_dim, layer=2):
         super().__init__()
-        self.net = MultiLayerPerceptron(
-            hidden_sizes=[state_dim, [256] * layer],
-            action_sizes=action_dim,
-            activation="nn.RELU",
-            output_activation="nn.Tanh",
+        self.net = grl.neural_network(
+            [state_dim] + [256] * layer + [action_dim], output_activation=nn.Tanh
         )
+        self.net = MultiLayerPerceptron()
+        # self.net = MLP(
+        #     in_channels=state_dim,
+        #     hidden_channels=256,
+        #     out_channels=action_dim,
+        #     layer_num=layer+1,
+        #     activation=nn.ReLU,
+        #     output_activation=nn.Tanh,
+        #     output_norm=False,
+        # )
 
     def forward(self, state):
         return self.net(state)
@@ -53,11 +60,8 @@ def asymmetric_l2_loss(u, tau):
 class ValueFunction(nn.Module):
     def __init__(self, state_dim):
         super().__init__()
-        self.v = MultiLayerPerceptron(
-            hidden_sizes=[state_dim, 256, 256],
-            output_size=1,
-            activation="nn.F.RELU",
-        )
+        dims = [state_dim, 256, 256, 1]
+        self.v = grl.neural_network(dims)
 
     def forward(self, state):
         return self.v(state)
