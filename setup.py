@@ -1,9 +1,9 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='generative_rl',
+    name='GenerativeRL',
     version='0.0.1',
-    description='PyTorch implementations of deep generative reinforcement learning algorithms',
+    description='PyTorch implementations of generative reinforcement learning algorithms',
     author='zjowowen',
 
     packages=find_packages(
