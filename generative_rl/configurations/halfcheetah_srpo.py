@@ -44,6 +44,16 @@ config = EasyDict(
                     sdim=state_size,
                     layers=2,
                     update_momentum=0.95,
+                    DoubleQNetwork=dict(
+                        backbone=dict(
+                            type="ConcatenateMLP",
+                            args=dict(
+                                hidden_sizes=[action_size + state_size, 256, 256],
+                                output_size=1,
+                                activation="relu",
+                            ),
+                        ),
+                    ),
                 ),
                 diffusion_model=dict(
                     device=device,

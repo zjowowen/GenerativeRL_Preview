@@ -251,7 +251,7 @@ class TemporalSpatialResidualNet(nn.Module):
         for i, block in enumerate(self.up_block):
             u = block(t_condition_embedding, torch.cat([u, d[-i-1]], dim=-1))
         return self.last_block(torch.cat([u, d[0]], dim=-1))
-    
+
 class ConcatenateLayer(nn.Module):
     def __init__(self):
         super().__init__()
@@ -336,7 +336,15 @@ class ALLCONCATMLP(nn.Module):
         super().__init__()
         self.main = MLPResNet(**kwargs)
         self.t_cond = my_mlp([64, 128, 128], output_activation=None, activation=nn.Mish)
-    
+        # self.t1_cond = MLP(
+        #     in_channels=64,
+        #     hidden_channels=128,
+        #     out_channels=128,
+        #     layer_num=2,
+        #     activation=nn.Mish,
+        #     output_activation=None,
+        #     output_norm=False,
+        # )
     def forward(
             self,
             t: torch.Tensor,
@@ -362,4 +370,3 @@ MODULES={
     "DiTOde_3D".lower(): DiTOde_3D,
     "Fourier_DiT_3D".lower(): Fourier_DiT_3D,
 }
-

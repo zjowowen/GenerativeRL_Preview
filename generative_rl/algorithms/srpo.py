@@ -84,7 +84,6 @@ class SRPO:
             formatted_time,
         )
         os.makedirs(directory_path, exist_ok=True)
-0
         with wandb.init(
             project=(
                 config.project if hasattr(config, "project") else __class__.__name__

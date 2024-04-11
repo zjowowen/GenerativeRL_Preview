@@ -4,7 +4,7 @@ import copy
 import torch
 import torch.nn as nn
 from tensordict import TensorDict
-from generative_rl.rl_modules.value_network.q_network import DoubleQNetwork,TwinQ
+from generative_rl.rl_modules.value_network.q_network import DoubleQNetwork
 from generative_rl.machine_learning.modules import MLP,my_mlp
 
 def asymmetric_l2_loss(u, tau):
@@ -30,16 +30,13 @@ class ValueFunction(nn.Module):
 class SRPOCritic(nn.Module):
     def __init__(self, config) -> None:
         super().__init__()
-        adim = config.adim
-        sdim = config.sdim
-        layers = config.layers
-        self.q0 = TwinQ(adim, sdim, layers=layers)
-        self.q0_target = copy.deepcopy(self.q0)
-        self.vf = ValueFunction(sdim)
+        # self.q0 = TwinQ(adim, sdim, layers=layers)
+        # self.q0_target = copy.deepcopy(self.q0).requires_grad_(False)
+        self.q0 = DoubleQNetwork(config.DoubleQNetwork)
+        self.q0_target = copy.deepcopy(self.q0).requires_grad_(False)
+        self.vf = ValueFunction(config.sdim)
         self.discount = 0.99
         self.tau = 0.7
-        # self.tau = 0.9 if "maze" in config.env else 0.7
-
 
     def v_loss(self, data):
         s = data["s"]
@@ -50,13 +47,11 @@ class SRPOCritic(nn.Module):
         with torch.no_grad():
             target_q = self.q0_target(a, s).detach()
             next_v = self.vf(s_).detach()
-
         # Update value function
         v = self.vf(s)
         adv = target_q - v
         v_loss = asymmetric_l2_loss(adv, self.tau)
-        return v_loss , next_v
-        
+        return v_loss, next_v
 
     def q_loss(self, data,next_v,discount):
         # Update Q function
