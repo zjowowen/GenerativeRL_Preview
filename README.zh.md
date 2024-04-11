@@ -2,7 +2,7 @@
     
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-[英语（English)](https://github.com/zjowowen/GenerativeRL_Preview/blob/main/README.md) | 简体中文
+[英语 (English)](https://github.com/zjowowen/GenerativeRL_Preview/blob/main/README.md) | 简体中文
 
 GenerativeRL 是一个使用生成式模型解决强化学习问题的算法库，支持扩散模型和流模型等不同类型的生成式模型。这个库旨在提供一个框架，将生成式模型的能力与强化学习算法的决策能力相结合。
 
