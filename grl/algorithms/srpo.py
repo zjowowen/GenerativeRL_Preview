@@ -11,7 +11,7 @@ from datetime import datetime
 from torch.utils.data import DataLoader
 import torch.nn as nn
 import wandb
-
+from tensordict import TensorDict
 from grl.datasets import create_dataset
 from grl.datasets.d4rl import D4RLDataset
 from grl.rl_modules.simulators import create_simulator
@@ -31,9 +31,9 @@ class Dirac_Policy(nn.Module):
         super().__init__()
         self.net = MultiLayerPerceptron(
             hidden_sizes=[state_dim, [256] * layer],
-            action_sizes=action_dim,
-            activation="nn.RELU",
-            output_activation="nn.Tanh",
+            output_size=action_dim,
+            activation="relu",
+            output_activation="tanh",
         )
 
     def forward(self, state):
@@ -56,7 +56,7 @@ class ValueFunction(nn.Module):
         self.v = MultiLayerPerceptron(
             hidden_sizes=[state_dim, 256, 256],
             output_size=1,
-            activation="nn.F.RELU",
+            activation="relu",
         )
 
     def forward(self, state):
@@ -320,23 +320,6 @@ class SRPOAlgorithm:
                 while True:
                     yield from dataloader
 
-            # def generate_fake_action(model, states, sample_per_state):
-            #     # model.eval()
-            #     fake_actions_sampled = []
-            #     for states in track(np.array_split(states, states.shape[0] // 4096 + 1), description="Generate fake actions"):
-            #         #TODO: mkae it batchsize
-            #         fake_actions_per_state = []
-            #         for _ in range(sample_per_state):
-            #             fake_actions_per_state.append(
-            #                 model.sample(
-            #                     state = states,
-            #                     guidance_scale = 0.0,
-            #                 )
-            #             )
-            #         fake_actions_sampled.append(torch.stack(fake_actions_per_state, dim=1))
-            #     fake_actions = torch.cat(fake_actions_sampled, dim=0)
-            #     return fake_actions
-
             def pallaral_simple_eval_policy(
                 policy_fn, env_name, seed, eval_episodes=20
             ):
@@ -375,27 +358,6 @@ class SRPOAlgorithm:
                     [ori_eval_envs[i].buffer_return for i in range(eval_episodes)]
                 )
                 return mean, std
-
-            def evaluate(model, train_iter):
-                evaluation_results = dict()
-
-                def policy(obs: np.ndarray) -> np.ndarray:
-                    obs = torch.tensor(
-                        obs, dtype=torch.float32, device=config.model.QGPOPolicy.device
-                    ).unsqueeze(0)
-                    action = (
-                        model.deter_policy.select_actions(obs).detach().cpu().numpy()
-                    )
-                    return action
-
-                evaluation_results[
-                    f"evaluation/guidance_scale:[{guidance_scale}]/total_return"
-                ] = self.simulator.evaluate(policy=policy,)[0]["total_return"]
-                log.info(
-                    f"Train iter: {train_iter}, guidance_scale: {guidance_scale}, total_return: {evaluation_results[f'evaluation/guidance_scale:[{guidance_scale}]/total_return']}"
-                )
-
-                return evaluation_results
 
             data_generator = get_train_data(
                 DataLoader(
