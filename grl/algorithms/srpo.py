@@ -1,3 +1,4 @@
+import copy
 from typing import Optional, Tuple, Union, List, Dict, Any, Callable
 from easydict import EasyDict
 import gym
@@ -30,10 +31,10 @@ class Dirac_Policy(nn.Module):
     def __init__(self, action_dim, state_dim, layer=2):
         super().__init__()
         self.net = MultiLayerPerceptron(
-            hidden_sizes=[state_dim, [256] * layer],
+            hidden_sizes = [state_dim] + [256 for _ in range(layer)],
             output_size=action_dim,
             activation="relu",
-            output_activation="tanh",
+            final_activation="tanh",
         )
 
     def forward(self, state):
