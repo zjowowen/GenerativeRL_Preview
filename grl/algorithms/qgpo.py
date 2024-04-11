@@ -317,11 +317,12 @@ class QGPOAlgorithm:
             # Customized model initialization code ↓
             #---------------------------------------
 
-            self.model["QGPOPolicy"] = QGPOPolicy(config.model.QGPOPolicy) if hasattr(config.model, "QGPOPolicy") else self.model.get("QGPOPolicy", None)
-            self.model["QGPOPolicy"].to(config.model.QGPOPolicy.device)
-            if torch.__version__ >= "2.0.0":
-                self.model["QGPOPolicy"] = torch.compile(self.model["QGPOPolicy"])
-            
+            if hasattr(config.model, "QGPOPolicy"):
+                self.model["QGPOPolicy"] = QGPOPolicy(config.model.QGPOPolicy)
+                self.model["QGPOPolicy"].to(config.model.QGPOPolicy.device)
+                if torch.__version__ >= "2.0.0":
+                    self.model["QGPOPolicy"] = torch.compile(self.model["QGPOPolicy"])
+
             #---------------------------------------
             # Customized model initialization code ↑
             #---------------------------------------
@@ -480,9 +481,8 @@ class QGPOAlgorithm:
         else:
             config = self.config.deploy
 
+        assert "QGPOPolicy" in self.model, "The model must be trained first."
         return QGPOAgent(
             config=config,
-            model=torch.nn.ModuleDict({
-                "QGPOPolicy": self.model,
-            })
+            model=copy.deepcopy(self.model),
         )

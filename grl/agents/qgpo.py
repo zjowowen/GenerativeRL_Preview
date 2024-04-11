@@ -29,6 +29,11 @@ class QGPOAgent:
         self.device = config.device
         self.model = model.to(self.device)
 
+        if hasattr(self.config, "guidance_scale"):
+            self.guidance_scale = self.config.guidance_scale
+        else:
+            self.guidance_scale = 1.0
+
 
     def act(
             self,
@@ -60,7 +65,10 @@ class QGPOAgent:
             # Customized inference code ↓
             #---------------------------------------
 
-            action = self.model(obs)
+            obs = obs.unsqueeze(0)
+            action = self.model["QGPOPolicy"].sample(
+                            state = obs,
+                            guidance_scale=self.guidance_scale).squeeze(0).cpu().detach().numpy()
 
             #---------------------------------------
             # Customized inference code ↑

@@ -44,10 +44,10 @@ def qgpo_pipeline(config):
 
     agent = qgpo.deploy()
     env = gym.make(config.deploy.env.env_id)
-    env.reset()
+    observation = env.reset()
     for _ in range(config.deploy.num_deploy_steps):
         env.render()
-        env.step(agent.act(env.observation))
+        observation, reward, done, _ = env.step(agent.act(observation))
 
 if __name__ == '__main__':
     log.info("config: \n{}".format(config))
