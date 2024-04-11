@@ -110,10 +110,10 @@
 
     <span class="n">agent</span> <span class="o">=</span> <span class="n">qgpo</span><span class="o">.</span><span class="n">deploy</span><span class="p">()</span>
     <span class="n">env</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">make</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">deploy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">env_id</span><span class="p">)</span>
-    <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+    <span class="n">observation</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">deploy</span><span class="o">.</span><span class="n">num_deploy_steps</span><span class="p">):</span>
         <span class="n">env</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
-        <span class="n">env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">agent</span><span class="o">.</span><span class="n">act</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">observation</span><span class="p">))</span>
+        <span class="n">observation</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">agent</span><span class="o">.</span><span class="n">act</span><span class="p">(</span><span class="n">observation</span><span class="p">))</span>
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
     <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;config: </span><span class="se">\n</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">config</span><span class="p">))</span>

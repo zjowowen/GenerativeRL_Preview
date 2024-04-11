@@ -121,6 +121,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">device</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;guidance_scale&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">guidance_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">guidance_scale</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">guidance_scale</span> <span class="o">=</span> <span class="mf">1.0</span>
+
 
     <span class="k">def</span> <span class="nf">act</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
@@ -152,7 +157,10 @@
             <span class="c1"># Customized inference code ↓</span>
             <span class="c1">#---------------------------------------</span>
 
-            <span class="n">action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
+            <span class="n">obs</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;QGPOPolicy&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+                            <span class="n">state</span> <span class="o">=</span> <span class="n">obs</span><span class="p">,</span>
+                            <span class="n">guidance_scale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">guidance_scale</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
 
             <span class="c1">#---------------------------------------</span>
             <span class="c1"># Customized inference code ↑</span>
