@@ -15,7 +15,15 @@ class Dirac_Policy(nn.Module):
     def __init__(self, action_dim, state_dim, layer=2):
         super().__init__()
         self.net = my_mlp([state_dim] + [256]*layer + [action_dim], output_activation=nn.Tanh)
-
+        # self.net = MLP(
+                #     in_channels=state_dim,
+                #     hidden_channels=256,
+                #     out_channels=action_dim,
+                #     layer_num=layer+1,
+                #     activation=nn.ReLU,
+                #     output_activation=nn.Tanh,
+                #     output_norm=False,
+                # )
     def forward(self, state):
         return self.net(state)
     

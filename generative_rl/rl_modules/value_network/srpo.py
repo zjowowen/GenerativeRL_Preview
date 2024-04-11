@@ -15,7 +15,15 @@ class ValueFunction(nn.Module):
         super().__init__()
         dims = [state_dim, 256, 256, 1]
         self.v = my_mlp(dims)
-
+        # self.v = MLP(
+        #     in_channels=state_dim,
+        #     hidden_channels=256,
+        #     out_channels=1,
+        #     layer_num=3,
+        #     activation=nn.ReLU,
+        #     output_activation=None,
+        #     output_norm=False,
+        # )
     def forward(self, state):
         return self.v(state)
 

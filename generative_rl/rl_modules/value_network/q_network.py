@@ -120,15 +120,30 @@ class TwinQ(nn.Module):
     def __init__(self, action_dim, state_dim, layers=2):
         super().__init__()
         dims = [state_dim + action_dim] +[256]*layers +[1]
-        # dims = [state_dim + action_dim, 256, 256, 1] # 
+        # dims = [state_dim + action_dim, 256, 256, 1] #
         self.q1 = my_mlp(dims)
         self.q2 = my_mlp(dims)
-
+        # self.q1 = MLP(
+        #     in_channels=state_dim,
+        #     hidden_channels=256,
+        #     out_channels=action_dim,
+        #     layer_num=layer + 1,
+        #     activation=nn.ReLU,
+        #     output_activation=nn.Tanh,
+        #     output_norm=False,
+        # )
+        # self.q2 = MLP(
+        #     in_channels=state_dim,
+        #     hidden_channels=256,
+        #     out_channels=action_dim,
+        #     layer_num=layer + 1,
+        #     activation=nn.ReLU,
+        #     output_activation=nn.Tanh,
+        #     output_norm=False,
+        # )
     def both(self, action, condition=None):
         as_ = torch.cat([action, condition], -1) if condition is not None else action
         return self.q1(as_), self.q2(as_)
 
     def forward(self, action, condition=None):
         return torch.min(*self.both(action, condition))
-    
-
