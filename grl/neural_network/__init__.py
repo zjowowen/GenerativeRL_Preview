@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 from tensordict import TensorDict
 from grl.neural_network.activation import get_activation
+from grl.neural_network.ResNetBlock import MLPResNet
 
 def get_module(type: str):
     if type.lower() in MODULES:
@@ -402,12 +403,33 @@ class ConcatenateMLP(nn.Module):
         """
         return self.model(torch.cat(x, dim=-1))
 
+class ALLCONCATMLP(nn.Module):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.main = MLPResNet(**kwargs)
+        self.t_cond = MultiLayerPerceptron(
+            hidden_sizes = [64, 128],
+            output_size=128,
+            activation="mish",
+        )
+    def forward(
+            self,
+            t: torch.Tensor,
+            x: torch.Tensor,
+            condition: torch.Tensor = None,
+        ) -> torch.Tensor:
+
+        embed = self.t_cond(t)
+        result = self.main(torch.cat([x, condition, embed], dim=-1))
+        return result
+    
 from .transformers.dit import DiT, DiT_3D
 
 MODULES={
     "ConcatenateLayer".lower(): ConcatenateLayer,
     "MultiLayerPerceptron".lower(): MultiLayerPerceptron,
     "ConcatenateMLP".lower(): ConcatenateMLP,
+    "ALLCONCATMLP".lower(): ALLCONCATMLP,
     "TemporalSpatialResidualNet".lower(): TemporalSpatialResidualNet,
     "DiT".lower(): DiT,
     "DiT_3D".lower(): DiT_3D,

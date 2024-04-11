@@ -295,8 +295,8 @@ class SRPOAlgorithm:
             if hasattr(config.model, "SRPOPolicy"):
                 self.model["SRPOPolicy"] = SRPOPolicy(config.model.SRPOPolicy)
                 self.model["SRPOPolicy"].to(config.model.SRPOPolicy.device)
-                if torch.__version__ >= "2.0.0":
-                    self.model["SRPOPolicy"] = torch.compile(self.model["SRPOPolicy"])
+                # if torch.__version__ >= "2.0.0":
+                #     self.model["SRPOPolicy"] = torch.compile(self.model["SRPOPolicy"])
             # ---------------------------------------
             # test model ↓
             # ---------------------------------------
