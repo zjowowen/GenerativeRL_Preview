@@ -1,11 +1,13 @@
 from .minecraft import MineRLVideoDataset, MineRLImageDataset
 from .qgpo import QGPOD4RLDataset, QGPODataset
+from .d4rl import D4RLDataset
 
 DATASETS = {
     "MineRLVideoDataset".lower(): MineRLVideoDataset,
     "MineRLImageDataset".lower(): MineRLImageDataset,
     "QGPOD4RLDataset".lower(): QGPOD4RLDataset,
     "QGPODataset".lower(): QGPODataset,
+    "D4RLDataset".lower(): D4RLDataset,
 }
 
 def get_dataset(type: str):

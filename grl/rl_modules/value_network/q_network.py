@@ -95,7 +95,6 @@ class DoubleQNetwork(nn.Module):
 
         return torch.min(*self.compute_double_q(action, state))
 
-
     def forward(
             self,
             action: Union[torch.Tensor, TensorDict],

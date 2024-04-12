@@ -21,6 +21,7 @@ class Lambda(nn.Module):
 
 
 ACTIVATIONS = {
+    "mish": nn.Mish(),
     "tanh": nn.Tanh(),
     "relu": nn.ReLU(),
     "softplus": nn.Softplus(),
