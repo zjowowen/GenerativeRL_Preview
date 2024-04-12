@@ -22,7 +22,7 @@ from grl.agents.srpo import SRPOAgent
 from grl.utils import set_seed
 from grl.rl_modules.value_network.q_network import DoubleQNetwork
 from grl.neural_network import MultiLayerPerceptron
-from grl.generative_models.diffusion_model.srpo_conditional_diffusion_model import (
+from grl.generative_models.sro import (
     SRPOConditionalDiffusionModel,
 )
 
@@ -31,7 +31,7 @@ class Dirac_Policy(nn.Module):
     def __init__(self, action_dim, state_dim, layer=2):
         super().__init__()
         self.net = MultiLayerPerceptron(
-            hidden_sizes = [state_dim] + [256 for _ in range(layer)],
+            hidden_sizes=[state_dim] + [256 for _ in range(layer)],
             output_size=action_dim,
             activation="relu",
             final_activation="tanh",
@@ -70,10 +70,8 @@ class SRPOCritic(nn.Module):
         self.q0 = DoubleQNetwork(config.DoubleQNetwork)
         self.q0_target = copy.deepcopy(self.q0).requires_grad_(False)
         self.vf = ValueFunction(config.sdim)
-        self.discount = 0.99
-        self.tau = 0.7
 
-    def v_loss(self, data):
+    def v_loss(self, data, tau):
         s = data["s"]
         a = data["a"]
         r = data["r"]
@@ -85,7 +83,7 @@ class SRPOCritic(nn.Module):
         # Update value function
         v = self.vf(s)
         adv = target_q - v
-        v_loss = asymmetric_l2_loss(adv, self.tau)
+        v_loss = asymmetric_l2_loss(adv, tau)
         return v_loss, next_v
 
     def q_loss(self, data, next_v, discount):
@@ -108,12 +106,11 @@ class SRPOPolicy(nn.Module):
 
         self.deter_policy = Dirac_Policy(**config.policy_model)
         self.critic = SRPOCritic(config.critic)
-        self.diffusion_model = SRPOConditionalDiffusionModel(
+        self.sro = SRPOConditionalDiffusionModel(
             config=config.diffusion_model,
             value_model=self.critic,
-            distribution=self.deter_policy,
+            distribution_model=self.deter_policy,
         )
-        self.q = nn.ModuleList([SRPOCritic(config.critic)])
 
     def forward(
         self, state: Union[torch.Tensor, TensorDict]
@@ -141,11 +138,12 @@ class SRPOPolicy(nn.Module):
             - state (:obj:`torch.Tensor`): The input state.
         """
 
-        return self.diffusion_model.score_matching_loss(action, state)
+        return self.sro.score_matching_loss(action, state)
 
     def v_loss(
         self,
         data,
+        tau=0.9,
     ) -> torch.Tensor:
         """
         Overview:
@@ -158,7 +156,7 @@ class SRPOPolicy(nn.Module):
             - done (:obj:`torch.Tensor`): The input done.
             - fake_next_action (:obj:`torch.Tensor`): The input fake next action.
         """
-        v_loss, next_v = self.q[0].v_loss(data)
+        v_loss, next_v = self.critic.v_loss(data, tau)
         return v_loss, next_v
 
     def q_loss(
@@ -180,7 +178,7 @@ class SRPOPolicy(nn.Module):
             - discount_factor (:obj:`float`): The discount factor.
         """
 
-        loss = self.q[0].q_loss(data, next_v, discount_factor)
+        loss = self.critic.q_loss(data, next_v, discount_factor)
         return loss
 
     def srpo_actor_loss(
@@ -200,8 +198,7 @@ class SRPOPolicy(nn.Module):
             - discount_factor (:obj:`float`): The discount factor.
         """
         state = data["s"]
-        action = self.deter_policy(state)
-        loss = self.diffusion_model.srpo_loss(action, state)
+        loss = self.sro.srpo_loss(state)
         return loss
 
 
@@ -370,7 +367,7 @@ class SRPOAlgorithm:
             )
 
             behaviour_model_optimizer = torch.optim.Adam(
-                self.model["SRPOPolicy"].diffusion_model.model.parameters(),
+                self.model["SRPOPolicy"].sro.diffusion_model.model.parameters(),
                 lr=config.parameter.behaviour_policy.learning_rate,
             )
 
@@ -399,94 +396,94 @@ class SRPOAlgorithm:
             #         commit=True,
             #     )
 
-            #     if train_iter == config.parameter.behaviour_policy.iterations - 1:
-            #         file_path = os.path.join(
-            #             directory_path, f"checkpoint_diffusion_{train_iter+1}.pt"
+            # if train_iter == config.parameter.behaviour_policy.iterations - 1:
+            #     file_path = os.path.join(
+            #         directory_path, f"checkpoint_diffusion_{train_iter+1}.pt"
+            #     )
+            #     torch.save(
+            #         dict(
+            #             diffusion_model=self.model[
+            #                 "SRPOPolicy"
+            #             ].diffusion_model.state_dict(),
+            #             behaviour_model_optimizer=behaviour_model_optimizer.state_dict(),
+            #             diffusion_iteration=train_iter + 1,
+            #         ),
+            #         f=file_path,
+            # )
+
+            # q_optimizer = torch.optim.Adam(
+            #     self.model["SRPOPolicy"].critic.q0.parameters(),
+            #     lr=config.parameter.critic.learning_rate,
+            # )
+            # v_optimizer = torch.optim.Adam(
+            #     self.model["SRPOPolicy"].critic.vf.parameters(),
+            #     lr=config.parameter.critic.learning_rate,
+            # )
+
+            # data_generator = get_train_data(
+            #     DataLoader(
+            #         self.dataset,
+            #         batch_size=config.parameter.critic.batch_size,
+            #         shuffle=True,
+            #         collate_fn=None,
+            #     )
+            # )
+
+            # for train_iter in track(
+            #     range(config.parameter.critic.iterations), description="Critic training"
+            # ):
+            #     data = next(data_generator)
+
+            #     v_loss, next_v = self.model["SRPOPolicy"].v_loss(
+            #         data,
+            #         config.parameter.critic.tau,
+            #     )
+            #     v_optimizer.zero_grad(set_to_none=True)
+            #     v_loss.backward()
+            #     v_optimizer.step()
+
+            #     q_loss = self.model["SRPOPolicy"].q_loss(
+            #         data,
+            #         next_v,
+            #         config.parameter.critic.discount_factor,
+            #     )
+            #     q_optimizer.zero_grad(set_to_none=True)
+            #     q_loss.backward()
+            #     q_optimizer.step()
+
+            #     # Update target
+            #     for param, target_param in zip(
+            #         self.model["SRPOPolicy"].critic.q0.parameters(),
+            #         self.model["SRPOPolicy"].critic.q0_target .parameters(),
+            #     ):
+            #         target_param.data.copy_(
+            #             config.parameter.critic.tau * param.data
+            #             + (1 - config.parameter.critic.tau) * target_param.data
             #         )
-            #         torch.save(
-            #             dict(
-            #                 diffusion_model=self.model[
-            #                     "SRPOPolicy"
-            #                 ].diffusion_model.state_dict(),
-            #                 behaviour_model_optimizer=behaviour_model_optimizer.state_dict(),
-            #                 diffusion_iteration=train_iter + 1,
-            #             ),
-            #             f=file_path,
-            #         )
 
-            # make optimizer for more action
-            q_optimizer = torch.optim.Adam(
-                self.model["SRPOPolicy"].critic.q0.parameters(),
-                lr=config.parameter.critic.learning_rate,
-            )
-            v_optimizer = torch.optim.Adam(
-                self.model["SRPOPolicy"].critic.vf.parameters(),
-                lr=config.parameter.critic.learning_rate,
-            )
+            #     wandb_run.log(
+            #         data=dict(
+            #             train_iter=train_iter,
+            #             q_loss=q_loss.item(),
+            #             v_loss=v_loss.item(),
+            #         ),
+            #         commit=True,
+            #     )
 
-            data_generator = get_train_data(
-                DataLoader(
-                    self.dataset,
-                    batch_size=config.parameter.critic.batch_size,
-                    shuffle=True,
-                    collate_fn=None,
-                )
-            )
-
-            for train_iter in track(
-                range(config.parameter.critic.iterations), description="Critic training"
-            ):
-                data = next(data_generator)
-
-                v_loss, next_v = self.model["SRPOPolicy"].v_loss(
-                    data,
-                )
-                v_optimizer.zero_grad(set_to_none=True)
-                v_loss.backward()
-                v_optimizer.step()
-
-                q_loss = self.model["SRPOPolicy"].q_loss(
-                    data,
-                    next_v,
-                    config.parameter.critic.discount_factor,
-                )
-                q_optimizer.zero_grad(set_to_none=True)
-                q_loss.backward()
-                q_optimizer.step()
-
-                # Update target
-                for param, target_param in zip(
-                    self.model["SRPOPolicy"].critic.q0.parameters(),
-                    self.model["SRPOPolicy"].critic.q0.parameters(),
-                ):
-                    target_param.data.copy_(
-                        config.parameter.critic.tau * param.data
-                        + (1 - config.parameter.critic.tau) * target_param.data
-                    )
-
-                wandb_run.log(
-                    data=dict(
-                        train_iter=train_iter,
-                        q_loss=q_loss.item(),
-                        v_loss=v_loss.item(),
-                    ),
-                    commit=True,
-                )
-
-                if train_iter == config.parameter.critic.iterations - 1:
-                    file_path = os.path.join(
-                        directory_path, f"checkpoint_policy_{train_iter+1}.pt"
-                    )
-                    torch.save(
-                        dict(
-                            q_model=self.model["SRPOPolicy"].critic.q0.state_dict(),
-                            v_model=self.model["SRPOPolicy"].critic.vf.state_dict(),
-                            q_optimizer=q_optimizer.state_dict(),
-                            v_optimizer=v_optimizer.state_dict(),
-                            policy_iteration=train_iter + 1,
-                        ),
-                        f=file_path,
-                    )
+            # if train_iter == config.parameter.critic.iterations - 1:
+            #     file_path = os.path.join(
+            #         directory_path, f"checkpoint_policy_{train_iter+1}.pt"
+            #     )
+            #     torch.save(
+            #         dict(
+            #             q_model=self.model["SRPOPolicy"].critic.q0.state_dict(),
+            #             v_model=self.model["SRPOPolicy"].critic.vf.state_dict(),
+            #             q_optimizer=q_optimizer.state_dict(),
+            #             v_optimizer=v_optimizer.state_dict(),
+            #             policy_iteration=train_iter + 1,
+            #         ),
+            #         f=file_path,
+            #     )
 
             SRPO_policy_optimizer = torch.optim.Adam(
                 self.model["SRPOPolicy"].deter_policy.parameters(), lr=3e-4
