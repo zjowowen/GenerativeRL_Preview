@@ -110,6 +110,12 @@ extensions = [
     'sphinx.ext.graphviz',
     'enum_tools.autoenum',
     "sphinx_multiversion",
+    "sphinx.ext.coverage",
+    "sphinx.ext.intersphinx",
+    'sphinx.ext.napoleon',
+    "sphinx_autodoc_typehints",
+    "nbsphinx",
+    "m2r2",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -157,3 +163,25 @@ smv_outputdir_format = '{ref.name}'  # Use the branch/tag name
 if not os.environ.get("ENV_PROD"):
     todo_include_todos = True
     todo_emit_warnings = True
+
+latex_engine = 'xelatex'
+latex_use_xindy = False
+latex_elements = {
+    'fontpkg': r'''
+\setmainfont{DejaVu Serif}
+\setsansfont{DejaVu Sans}
+\setmonofont{DejaVu Sans Mono}
+''',
+    'preamble': r'''
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[titles]{tocloft}
+\cftsetpnumwidth {1.25cm}\cftsetrmarg{1.5cm}
+\setlength{\cftchapnumwidth}{0.75cm}
+\setlength{\cftsecindent}{\cftchapnumwidth}
+\setlength{\cftsecnumwidth}{1.25cm}
+''',
+    'fncychap': r'\usepackage[Bjornstrup]{fncychap}',
+    'printindex': r'\footnotesize\raggedright\printindex',
+}
+latex_show_urls = 'footnote'
