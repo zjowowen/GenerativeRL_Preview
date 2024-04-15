@@ -349,7 +349,7 @@ class MultiLayerPerceptron(nn.Module):
             if dropout is not None and dropout > 0:
                 self.model.add_module('dropout', nn.Dropout(dropout))
             if layernorm:
-                self.model.add_module('layernorm', nn.LayerNorm(hidden_sizes[i]))
+                self.model.add_module('layernorm', nn.LayerNorm(hidden_sizes[i+1]))
 
         self.model.add_module('linear'+str(len(hidden_sizes)-1), nn.Linear(hidden_sizes[-1], output_size))
 
