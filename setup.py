@@ -17,9 +17,7 @@ setup(
         'matplotlib',
         'wandb',
         'rich',
-        'mujoco_py',
         'easydict',
-        'Cython<3.0',
         'tqdm',
         'torchdyn',
         'torchode',
@@ -30,5 +28,15 @@ setup(
         'av',
         'moviepy',
         'imageio[ffmpeg]',
-    ]
+    ],
+    extras_require={
+        'd4rl': [
+            'gym==0.23.1',
+            'mujoco_py',
+            'Cython<3.0',
+        ],
+        'DI-engine': [
+            'DI-engine',
+        ]
+    }
 )
