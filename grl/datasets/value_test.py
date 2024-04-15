@@ -8,6 +8,7 @@ from torch import nn, einsum, Tensor
 from torch.nn import Module, ModuleList
 from torch.utils.data import Dataset, DataLoader
 from tensordict import TensorDict
+import torchvision.transforms as transforms
 import gym
 from rich.progress import track
 from einops import rearrange
@@ -30,7 +31,7 @@ ACTIONS_FILENAME = "actions.memmap.npy"
 REWARDS_FILENAME = "rewards.memmap.npy"
 DONES_FILENAME = "dones.memmap.npy"
 
-DEFAULT_REPLAY_MEMORIES_FOLDER = "./replay_memories_data"
+DEFAULT_REPLAY_MEMORIES_FOLDER = "./value_function_memories_data"
 
 
 # helpers
@@ -90,7 +91,6 @@ class ReplayMemoryDataset(Dataset):
     def __getitem__(self, idx):
         episode_index, timestep_index = self.indices[idx]
         timestep_slice = slice(timestep_index, (timestep_index + self.num_timesteps))
-
         states = self.states[episode_index, timestep_slice].copy()
         actions = self.actions[episode_index, timestep_slice].copy()
         rewards = self.rewards[episode_index, timestep_slice].copy()
@@ -107,7 +107,7 @@ class SampleData:
         self,
         env,
         memories_dataset_folder: str = DEFAULT_REPLAY_MEMORIES_FOLDER,
-        num_episodes: int = 30,
+        num_episodes: int = 10,
         max_num_steps_per_episode: int = 13000,
     ):
         super().__init__()
@@ -127,8 +127,16 @@ class SampleData:
         dones_path = mem_path / DONES_FILENAME
 
         prec_shape = (num_episodes, max_num_steps_per_episode)
-        state_shape = (32, 32, 3)
-
+        state_shape = (3, 32, 32)
+        self.transform = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Resize((32, 32)),
+                transforms.Normalize(
+                    mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], inplace=True
+                ),
+            ]
+        )
         self.states = open_memmap(
             str(states_path),
             dtype="float32",
@@ -153,16 +161,13 @@ class SampleData:
         for episode in range(self.num_episodes):
             print(f"episode {episode}")
             curr_state, log = self.env.reset()
-            curr_state = cv2.resize(curr_state, (32, 32), interpolation=cv2.INTER_AREA)
-
+            curr_state = self.transform(curr_state)
             for step in track(range(self.max_num_steps_per_episode)):
                 last_step = step == (self.max_num_steps_per_episode - 1)
 
                 action = self.env.action_space.sample()
                 next_state, reward, termiuted, tuned, log = self.env.step(action)
-                next_state = cv2.resize(
-                    next_state, (32, 32), interpolation=cv2.INTER_AREA
-                )
+                next_state = self.transform(next_state)
                 done = termiuted | tuned | last_step
                 # store memories using memmap, for later reflection and learning
                 self.states[episode, step] = curr_state
@@ -186,15 +191,3 @@ class SampleData:
         del self.dones
         self.memories_dataset_folder.resolve()
         print(f"completed")
-
-
-env = gym.make(
-    "ALE/Othello-v5",
-    obs_type="rgb",  # ram | rgb | grayscale
-    frameskip=4,  # frame skip
-    mode=None,  # game mode, see Machado et al. 2018
-    difficulty=None,  # game difficulty, see Machado et al. 2018
-    repeat_action_probability=0.25,  # Sticky action probability
-    full_action_space=False,  # Use all actions
-    render_mode="rgb_array",  # None | human | rgb_array
-)

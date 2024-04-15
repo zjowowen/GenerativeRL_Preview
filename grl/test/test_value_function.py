@@ -19,8 +19,12 @@ import torch.nn as nn
 from grl.generative_models.diffusion_model.diffusion_model import DiffusionModel
 from grl.utils.log import log
 from grl.utils import set_seed
-from grl.datasets.value_test import ReplayMemoryDataset
+from grl.datasets.value_test import ReplayMemoryDataset, SampleData
+import gym
 import wandb
+import torchvision
+from torchvision.datasets import ImageFolder
+from torchvision import transforms
 
 
 def get_train_data(dataloader):
@@ -88,7 +92,7 @@ config = EasyDict(
         parameter=dict(
             training_loss_type="flow_matching",
             train_mode=train_mode,
-            batch_size=2,
+            batch_size=4,
             eval_freq=1000,
             learning_rate=5e-4,
             weight_decay=1e-4,
@@ -98,8 +102,8 @@ config = EasyDict(
             checkpoint_path="./checkpoint",
             video_save_path="./videos",
             dataset=dict(
-                dataset_folder="./replay_memories_data",
-                num_timesteps=2,
+                dataset_folder="./value_function_memories_data",
+                num_timesteps=video_length,
             ),
         ),
     )
@@ -107,6 +111,41 @@ config = EasyDict(
 
 if __name__ == "__main__":
     seed_value = set_seed()
+    if not os.path.exists("value_function_memories_data/actions.memmap.npy"):
+        env = gym.make(
+            "ALE/Othello-v5",
+            obs_type="rgb",  # ram | rgb | grayscale
+            frameskip=4,  # frame skip
+            mode=None,  # game mode, see Machado et al. 2018
+            difficulty=None,  # game difficulty, see Machado et al. 2018
+            repeat_action_probability=0.25,  # Sticky action probability
+            full_action_space=False,  # Use all actions
+            render_mode="rgb_array",  # None | human | rgb_array
+        )
+        value_test = SampleData(env)
+        value_test.start_smple()
+    transform = transforms.Compose(
+        [
+            transforms.ToTensor(),
+            transforms.Normalize(
+                mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], inplace=True
+            ),
+        ]
+    )
+    data_generator0 = get_train_data(
+        DataLoader(
+            ReplayMemoryDataset(**config.parameter.dataset),
+            batch_size=config.parameter.batch_size,
+            shuffle=True,
+        )
+    )
+    data_generator1 = get_train_data(
+        DataLoader(
+            ReplayMemoryDataset(**config.parameter.dataset),
+            batch_size=12,
+            shuffle=True,
+        )
+    )
     with wandb.init(
         project=f"{config.project if hasattr(config, 'project') else 'fourier-dit-3D-mc-video'}",
         **config.wandb if hasattr(config, "wandb") else {},
@@ -117,16 +156,7 @@ if __name__ == "__main__":
         diffusion_model = DiffusionModel(config=config.diffusion_model).to(
             config.diffusion_model.device
         )
-
         diffusion_model = torch.compile(diffusion_model)
-
-        data_generator = get_train_data(
-            DataLoader(
-                ReplayMemoryDataset(**config.parameter.dataset),
-                batch_size=config.parameter.batch_size,
-                shuffle=True,
-            )
-        )
         optimizer = torch.optim.Adam(
             diffusion_model.parameters(),
             lr=config.parameter.learning_rate,
@@ -237,64 +267,53 @@ if __name__ == "__main__":
             if iteration > 0 and iteration % config.parameter.eval_freq == 0:
                 diffusion_model.eval()
                 t_span = torch.linspace(0.0, 1.0, 1000)
-                data = next(data_generator)
-                next_state = data[4].to(device).permute(0, 1, 4, 2, 3)
-                next_state = next_state.unsqueeze(1)
-                next_state_padded = next_state.expand(-1, 5, -1, -1, -1)
-                fixed_x = next_state
-                fixed_mask = torch.tensor([0.0, 1.0]).to(config.device)
-                fixed_mask = fixed_mask.repeat(fixed_x[0], 1)
+                data = next(data_generator1)[4].to(device)
+                fixed_x = data.unsqueeze(1).expand(-1, 2, -1, -1, -1)
+                fixed_mask = torch.ones(
+                    fixed_x.shape, dtype=torch.float32, device=fixed_x.device
+                )
+                fixed_mask[:, 0, :, :, :] = 0
                 x_t = (
                     diffusion_model.sample_forward_process_with_fixed_x(
                         fixed_x=fixed_x,
                         fixed_mask=fixed_mask,
                         t_span=t_span,
-                        batch_size=500,
+                        batch_size=12,
                     )
                     .cpu()
                     .detach()
                 )
-                x_t = [
-                    x.squeeze(0)
-                    for x in torch.split(x_t, split_size_or_sections=1, dim=0)
-                ]
-                # render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
-                p1 = mp.Process(
-                    target=render_video,
-                    args=(
-                        x_t,
-                        config.parameter.video_save_path,
-                        iteration,
-                        100,
-                        100,
-                        "fixed_x",
+                video_x_1 = (
+                    x_t[-1][0]
+                    .squeeze(0)
+                    .mul(0.5)
+                    .add(0.5)
+                    .mul(255)
+                    .clamp(0, 255)
+                    .permute(0, 2, 3, 1)
+                    .to("cpu", torch.uint8)
+                )
+                if not os.path.exists(config.parameter.video_save_path):
+                    os.makedirs(config.parameter.video_save_path)
+                torchvision.io.write_video(
+                    filename=os.path.join(
+                        config.parameter.video_save_path, f"iteration_{iteration}.mp4"
                     ),
+                    video_array=video_x_1,
+                    fps=20,
                 )
-                p1.start()
-                subprocess_list.append(p1)
-                x_t = (
-                    diffusion_model.sample_forward_process(
-                        t_span=t_span, batch_size=500
-                    )
-                    .cpu()
-                    .detach()
+                video_x_1 = video_x_1.permute(0, 3, 1, 2).numpy()
+                video = wandb.Video(video_x_1, caption=f"iteration {iteration}")
+                wandb_run.log(
+                    data=dict(
+                        video=video,
+                    ),
+                    commit=False,
                 )
-                x_t = [
-                    x.squeeze(0)
-                    for x in torch.split(x_t, split_size_or_sections=1, dim=0)
-                ]
-                # render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
-                p2 = mp.Process(
-                    target=render_video,
-                    args=(x_t, config.parameter.video_save_path, iteration, 100, 100),
-                )
-                p2.start()
-                subprocess_list.append(p2)
 
-            batch_data = next(data_generator)
+            batch_data = next(data_generator0)
             s = batch_data[0].to(config.device)
             s = s.to(config.device)
-            s = s.permute(0, 1, 4, 2, 3)
 
             # plot2d(batch_data.cpu().numpy())
             diffusion_model.train()
@@ -322,66 +341,47 @@ if __name__ == "__main__":
             if iteration == config.parameter.iterations - 1:
                 diffusion_model.eval()
                 t_span = torch.linspace(0.0, 1.0, 1000)
-                data = next(data_generator)
-                next_state = data[4].to(device).permute(0, 3, 1, 2)
-                next_state = next_state.unsqueeze(1)
-                next_state_padded = next_state.expand(-1, 5, -1, -1, -1)
-                fixed_x = next_state_padded
-                b, n, c, h, w = fixed_x.shape
+                data = next(data_generator1)[4].to(device)
+                fixed_x = data.unsqueeze(1).expand(-1, 2, -1, -1, -1)
                 fixed_mask = torch.ones(
-                    (b, n, c, h, w), dtype=torch.float32, device=fixed_x.device
+                    fixed_x.shape, dtype=torch.float32, device=fixed_x.device
                 )
                 fixed_mask[:, 0, :, :, :] = 0
-                x_t = (
-                    diffusion_model.sample_forward_process_with_fixed_x(
-                        fixed_x=fixed_x,
-                        fixed_mask=fixed_mask,
-                        t_span=t_span,
-                        batch_size=500,
-                    )
-                    .cpu()
-                    .detach()
+                x_t = diffusion_model.sample_forward_process_with_fixed_x(
+                    fixed_x=fixed_x,
+                    fixed_mask=fixed_mask,
+                    t_span=t_span,
+                    batch_size=12,
                 )
-                x_t = [
-                    x.squeeze(0)
-                    for x in torch.split(x_t, split_size_or_sections=1, dim=0)
-                ]
-                # render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
-                p1 = mp.Process(
-                    target=render_video,
-                    args=(
-                        x_t,
-                        config.parameter.video_save_path,
-                        iteration,
-                        100,
-                        100,
-                        "fixed_x",
+                video_x_1 = (
+                    x_t[-1][0]
+                    .squeeze(0)
+                    .mul(0.5)
+                    .add(0.5)
+                    .mul(255)
+                    .clamp(0, 255)
+                    .permute(0, 2, 3, 1)
+                    .to("cpu", torch.uint8)
+                )
+                if not os.path.exists(config.parameter.video_save_path):
+                    os.makedirs(config.parameter.video_save_path)
+                torchvision.io.write_video(
+                    filename=os.path.join(
+                        config.parameter.video_save_path, f"iteration_{iteration}.mp4"
                     ),
+                    video_array=video_x_1,
+                    fps=20,
                 )
-                p1.start()
-                subprocess_list.append(p1)
-                x_t = (
-                    diffusion_model.sample_forward_process(
-                        t_span=t_span, batch_size=500
-                    )
-                    .cpu()
-                    .detach()
+                video_x_1 = video_x_1.permute(0, 3, 1, 2).numpy()
+                video = wandb.Video(video_x_1, caption=f"iteration {iteration}")
+                wandb_run.log(
+                    data=dict(
+                        video=video,
+                    ),
+                    commit=False,
                 )
-                x_t = [
-                    x.squeeze(0)
-                    for x in torch.split(x_t, split_size_or_sections=1, dim=0)
-                ]
-                # render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
-                p2 = mp.Process(
-                    target=render_video,
-                    args=(x_t, config.parameter.video_save_path, iteration, 100, 100),
-                )
-                p2.start()
-                subprocess_list.append(p2)
 
             if (iteration + 1) % config.parameter.checkpoint_freq == 0:
                 save_checkpoint(diffusion_model, optimizer, iteration)
 
-        for p in subprocess_list:
-            p.join()
     wandb_run.finish()
