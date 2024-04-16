@@ -20,6 +20,7 @@
         <script src="../../_static/documentation_options.js?v=2fea6348"></script>
         <script src="../../_static/doctools.js?v=888ff710"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -122,7 +123,7 @@
 <h2>GymEnvSimulator<a class="headerlink" href="#gymenvsimulator" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="grl.rl_modules.GymEnvSimulator">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.rl_modules.</span></span><span class="sig-name descname"><span class="pre">GymEnvSimulator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/simulators/gym_env_simulator.html#GymEnvSimulator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.GymEnvSimulator" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.rl_modules.</span></span><span class="sig-name descname"><span class="pre">GymEnvSimulator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/simulators/gym_env_simulator.html#GymEnvSimulator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.GymEnvSimulator" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
 <dt>Overview:</dt><dd><p>A simple gym environment simulator in GenerativeRL.
 This simulator is used to collect episodes and steps using a given policy in a gym environment.
@@ -138,7 +139,7 @@ It runs in single process and is suitable for small-scale experiments.</p>
 <h2>OneShotValueFunction<a class="headerlink" href="#oneshotvaluefunction" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="grl.rl_modules.OneShotValueFunction">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.rl_modules.</span></span><span class="sig-name descname"><span class="pre">OneShotValueFunction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">EasyDict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/value_network/one_shot_value_function.html#OneShotValueFunction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.OneShotValueFunction" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.rl_modules.</span></span><span class="sig-name descname"><span class="pre">OneShotValueFunction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/value_network/one_shot_value_function.html#OneShotValueFunction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.OneShotValueFunction" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
 <dt>Overview:</dt><dd><p>Value network for one-shot cases.</p>
 </dd>
@@ -152,7 +153,7 @@ It runs in single process and is suitable for small-scale experiments.</p>
 <h2>VNetwork<a class="headerlink" href="#vnetwork" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="grl.rl_modules.VNetwork">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.rl_modules.</span></span><span class="sig-name descname"><span class="pre">VNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">EasyDict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/value_network/value_network.html#VNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.VNetwork" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.rl_modules.</span></span><span class="sig-name descname"><span class="pre">VNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/value_network/value_network.html#VNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.VNetwork" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </section>
@@ -160,7 +161,7 @@ It runs in single process and is suitable for small-scale experiments.</p>
 <h2>DoubleVNetwork<a class="headerlink" href="#doublevnetwork" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="grl.rl_modules.DoubleVNetwork">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.rl_modules.</span></span><span class="sig-name descname"><span class="pre">DoubleVNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">EasyDict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/value_network/value_network.html#DoubleVNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.DoubleVNetwork" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.rl_modules.</span></span><span class="sig-name descname"><span class="pre">DoubleVNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/value_network/value_network.html#DoubleVNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.DoubleVNetwork" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
 <dt>Overview:</dt><dd><p>Double value network, which has two value networks.</p>
 </dd>
@@ -174,7 +175,7 @@ It runs in single process and is suitable for small-scale experiments.</p>
 <h2>QNetwork<a class="headerlink" href="#qnetwork" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="grl.rl_modules.QNetwork">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.rl_modules.</span></span><span class="sig-name descname"><span class="pre">QNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">EasyDict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/value_network/q_network.html#QNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.QNetwork" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.rl_modules.</span></span><span class="sig-name descname"><span class="pre">QNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/value_network/q_network.html#QNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.QNetwork" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </section>
@@ -182,7 +183,7 @@ It runs in single process and is suitable for small-scale experiments.</p>
 <h2>DoubleQNetwork<a class="headerlink" href="#doubleqnetwork" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="grl.rl_modules.DoubleQNetwork">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.rl_modules.</span></span><span class="sig-name descname"><span class="pre">DoubleQNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">EasyDict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/value_network/q_network.html#DoubleQNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.DoubleQNetwork" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.rl_modules.</span></span><span class="sig-name descname"><span class="pre">DoubleQNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/value_network/q_network.html#DoubleQNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.DoubleQNetwork" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
 <dt>Overview:</dt><dd><p>Double Q network, which has two Q networks.</p>
 </dd>
