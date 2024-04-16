@@ -168,15 +168,19 @@
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
         <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Return the drift coefficient term of the Gaussian conditional probability path.</span>
 <span class="sd">            The drift term is given by the following:</span>
+
 <span class="sd">            .. math::</span>
 <span class="sd">                f(t)</span>
+<span class="sd">            </span>
 <span class="sd">            which satisfies the following SDE:</span>
+
 <span class="sd">            .. math::</span>
 <span class="sd">                \mathrm{d}x=f(t)x(t)\mathrm{d}t+g(t)w_{t}</span>
+
 <span class="sd">        Arguments:</span>
 <span class="sd">            - t (:obj:`torch.Tensor`): The input time.</span>
 <span class="sd">        Returns:</span>
@@ -198,12 +202,14 @@
             <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
             <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Return the drift term of the Gaussian conditional probability path.</span>
 <span class="sd">            The drift term is given by the following:</span>
+
 <span class="sd">            .. math::</span>
 <span class="sd">                f(x,t)</span>
+
 <span class="sd">        Arguments:</span>
 <span class="sd">            - t (:obj:`torch.Tensor`): The input time.</span>
 <span class="sd">            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.</span>
@@ -225,12 +231,14 @@
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
         <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Return the diffusion term of the Gaussian conditional probability path.</span>
 <span class="sd">            The diffusion term is given by the following:</span>
+
 <span class="sd">            .. math::</span>
 <span class="sd">                g(x,t)</span>
+
 <span class="sd">        Arguments:</span>
 <span class="sd">            - t (:obj:`torch.Tensor`): The input time.</span>
 <span class="sd">            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.</span>
@@ -253,12 +261,14 @@
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
         <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Return the diffusion term of the Gaussian conditional probability path.</span>
 <span class="sd">            The diffusion term is given by the following:</span>
+
 <span class="sd">            .. math::</span>
 <span class="sd">                g^2(x,t)</span>
+
 <span class="sd">        Arguments:</span>
 <span class="sd">            - t (:obj:`torch.Tensor`): The input time.</span>
 <span class="sd">            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.</span>
@@ -278,11 +288,13 @@
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Diffusion term for type </span><span class="si">{}</span><span class="s2"> is not implemented&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">))</span> 
 
     <span class="k">def</span> <span class="nf">scale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Compute the scale factor of the Gaussian conditional probability path, which is</span>
+
 <span class="sd">            .. math::</span>
 <span class="sd">                s(t)</span>
+
 <span class="sd">        Arguments:</span>
 <span class="sd">            - t (:obj:`torch.Tensor`): The input time.</span>
 <span class="sd">        Returns:</span>
@@ -301,11 +313,13 @@
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Scale factor for type </span><span class="si">{}</span><span class="s2"> is not implemented&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">log_scale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Compute the log scale factor of the Gaussian conditional probability path, which is</span>
+
 <span class="sd">            .. math::</span>
 <span class="sd">                \log(s(t))</span>
+
 <span class="sd">        Arguments:</span>
 <span class="sd">            - t (:obj:`torch.Tensor`): The input time.</span>
 <span class="sd">        Returns:</span>
@@ -327,11 +341,13 @@
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
         <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Compute the time derivative of the log scale factor of the Gaussian conditional probability path, which is</span>
+
 <span class="sd">            .. math::</span>
 <span class="sd">                \log(s&#39;(t))</span>
+
 <span class="sd">        Arguments:</span>
 <span class="sd">            - t (:obj:`torch.Tensor`): The input time.</span>
 <span class="sd">        Returns:</span>
@@ -351,11 +367,13 @@
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
         <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Compute the time derivative of the scale factor of the Gaussian conditional probability path, which is</span>
+
 <span class="sd">            .. math::</span>
 <span class="sd">                s&#39;(t)</span>
+
 <span class="sd">        Arguments:</span>
 <span class="sd">            - t (:obj:`torch.Tensor`): The input time.</span>
 <span class="sd">        Returns:</span>
@@ -372,17 +390,23 @@
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Time derivative of the scale factor for type </span><span class="si">{}</span><span class="s2"> is not implemented&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">std</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Compute the standard deviation of the Gaussian conditional probability path, which is</span>
+
 <span class="sd">            .. math::</span>
 <span class="sd">                \sqrt(\Sigma(t))</span>
+
 <span class="sd">            or</span>
+
 <span class="sd">            .. math::</span>
 <span class="sd">                \sigma(t)</span>
+
 <span class="sd">            or</span>
+
 <span class="sd">            .. math::</span>
 <span class="sd">                s(t)e^{-\lambda(t)}</span>
+
 <span class="sd">        Arguments:</span>
 <span class="sd">            - t (:obj:`torch.Tensor`): The input time.</span>
 <span class="sd">        Returns:</span>
@@ -399,11 +423,13 @@
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Standard deviation for type </span><span class="si">{}</span><span class="s2"> is not implemented&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">d_std_dt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Compute the time derivative of the standard deviation of the Gaussian conditional probability path, which is</span>
+
 <span class="sd">            .. math::</span>
 <span class="sd">                \frac{\mathrm{d}\sigma(t)}{\mathrm{d}t}</span>
+
 <span class="sd">        Arguments:</span>
 <span class="sd">            - t (:obj:`torch.Tensor`): The input time.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -418,17 +444,23 @@
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Time derivative of standard deviation for type </span><span class="si">{}</span><span class="s2"> is not implemented&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">covariance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Compute the covariance matrix of the Gaussian conditional probability path, which is</span>
+
 <span class="sd">            .. math::</span>
 <span class="sd">                \Sigma(t)</span>
+
 <span class="sd">            or</span>
+
 <span class="sd">            .. math::</span>
 <span class="sd">                \sigma^2(t)I</span>
+
 <span class="sd">            or</span>
+
 <span class="sd">            .. math::</span>
 <span class="sd">                s^2(t)e^{-2\lambda(t)}I</span>
+
 <span class="sd">        Arguments:</span>
 <span class="sd">            - t (:obj:`torch.Tensor`): The input time.</span>
 <span class="sd">        Returns:</span>
@@ -445,11 +477,13 @@
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Covariance for type </span><span class="si">{}</span><span class="s2"> is not implemented&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">d_covariance_dt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Compute the time derivative of the covariance matrix of the Gaussian conditional probability path, which is</span>
+
 <span class="sd">            .. math::</span>
 <span class="sd">                \frac{\mathrm{d}\Sigma(t)}{\mathrm{d}t}</span>
+
 <span class="sd">        Arguments:</span>
 <span class="sd">            - t (:obj:`torch.Tensor`): The input time.</span>
 <span class="sd">        Returns:</span>
@@ -466,11 +500,13 @@
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Time derivative of covariance for type </span><span class="si">{}</span><span class="s2"> is not implemented&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">HalfLogSNR</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Compute the half-logSNR of the Gaussian conditional probability path, which is</span>
+
 <span class="sd">            .. math::</span>
 <span class="sd">                \log(s(t))-\log(\sigma(t))</span>
+
 <span class="sd">        Arguments:</span>
 <span class="sd">            - t (:obj:`torch.Tensor`): The input time.</span>
 <span class="sd">        Returns:</span>
@@ -483,14 +519,17 @@
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Half-logSNR for type </span><span class="si">{}</span><span class="s2"> is not implemented&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">))</span>
         
     <span class="k">def</span> <span class="nf">InverseHalfLogSNR</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">HalfLogSNR</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Compute the inverse function of the half-logSNR of the Gaussian conditional probability path.</span>
 <span class="sd">            Since the half-logSNR is an invertible function, we can compute the time t from the half-logSNR.</span>
 <span class="sd">            For linear VP SDE, the inverse function is</span>
+
 <span class="sd">            .. math::</span>
 <span class="sd">                t(\lambda)=\frac{1}{\beta_1-\beta_0}(\sqrt{\beta_0^2+2(\beta_1-\beta_0)\log{(e^{-2\lambda}+1)}}-\beta_0)</span>
+
 <span class="sd">            or,</span>
+
 <span class="sd">            .. math::</span>
 <span class="sd">                t(\lambda)=\frac{2(\beta_1-\beta_0)\log{(e^{-2\lambda}+1)}}{\sqrt{\beta_0^2+2(\beta_1-\beta_0)\log{(e^{-2\lambda}+1)}}+\beta_0}</span>
 
