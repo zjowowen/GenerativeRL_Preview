@@ -146,15 +146,6 @@
 <dt>Interfaces:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code>, <code class="docutils literal notranslate"><span class="pre">train</span></code>, <code class="docutils literal notranslate"><span class="pre">deploy</span></code></p>
 </dd>
 </dl>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>config</strong> (<em>EasyDict</em>) – </p></li>
-<li><p><strong>dataset</strong> (<em>Dataset</em>) – </p></li>
-<li><p><strong>model</strong> (<em>Module</em><em> | </em><em>ModuleDict</em>) – </p></li>
-</ul>
-</dd>
-</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="grl.algorithms.BaseAlgorithm.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">simulator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/algorithms/base.html#BaseAlgorithm.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.algorithms.BaseAlgorithm.__init__" title="Link to this definition"></a></dt>
@@ -206,11 +197,6 @@ deploy (<code class="xref py py-obj docutils literal notranslate"><span class="p
 <dt>Overview:</dt><dd><p>Critic network for QGPO algorithm.</p>
 </dd>
 <dt>Interfaces:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code>, <code class="docutils literal notranslate"><span class="pre">forward</span></code></p>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config</strong> (<em>EasyDict</em>) – </p>
 </dd>
 </dl>
 <dl class="py method">
@@ -304,20 +290,10 @@ q2 (<code class="xref py py-obj docutils literal notranslate"><span class="pre">
 <dl class="py class">
 <dt class="sig sig-object py" id="grl.algorithms.QGPOPolicy">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.algorithms.</span></span><span class="sig-name descname"><span class="pre">QGPOPolicy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/algorithms/qgpo.html#QGPOPolicy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.algorithms.QGPOPolicy" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config</strong> (<em>EasyDict</em>) – </p>
-</dd>
-</dl>
-<dl class="py method">
+<dd><dl class="py method">
 <dt class="sig sig-object py" id="grl.algorithms.QGPOPolicy.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/algorithms/qgpo.html#QGPOPolicy.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.algorithms.QGPOPolicy.__init__" title="Link to this definition"></a></dt>
 <dd><p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config</strong> (<em>EasyDict</em>) – </p>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -349,7 +325,6 @@ q2 (<code class="xref py py-obj docutils literal notranslate"><span class="pre">
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>state</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input state.</p></li>
 <li><p><strong>solver_config</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">EasyDict</span></code>) – The configuration for the ODE solver.</p></li>
-<li><p><strong>batch_size</strong> (<em>Size</em><em> | </em><em>int</em><em> | </em><em>Tuple</em><em>[</em><em>int</em><em>] </em><em>| </em><em>List</em><em>[</em><em>int</em><em>] </em><em>| </em><em>None</em>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -462,7 +437,6 @@ q2 (<code class="xref py py-obj docutils literal notranslate"><span class="pre">
 <li><p><strong>state</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input state.</p></li>
 <li><p><strong>guidance_scale</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">float]</span></code>) – The guidance scale.</p></li>
 <li><p><strong>solver_config</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">EasyDict</span></code>) – The configuration for the ODE solver.</p></li>
-<li><p><strong>batch_size</strong> (<em>Size</em><em> | </em><em>int</em><em> | </em><em>Tuple</em><em>[</em><em>int</em><em>] </em><em>| </em><em>List</em><em>[</em><em>int</em><em>] </em><em>| </em><em>None</em>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -482,16 +456,7 @@ q2 (<code class="xref py py-obj docutils literal notranslate"><span class="pre">
 <dl class="py class">
 <dt class="sig sig-object py" id="grl.algorithms.QGPOAlgorithm">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.algorithms.</span></span><span class="sig-name descname"><span class="pre">QGPOAlgorithm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">simulator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/algorithms/qgpo.html#QGPOAlgorithm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.algorithms.QGPOAlgorithm" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>config</strong> (<em>EasyDict</em>) – </p></li>
-<li><p><strong>dataset</strong> (<a class="reference internal" href="../datasets/index.html#grl.datasets.QGPODataset" title="grl.datasets.qgpo.QGPODataset"><em>QGPODataset</em></a>) – </p></li>
-<li><p><strong>model</strong> (<em>Module</em><em> | </em><em>ModuleDict</em>) – </p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py method">
+<dd><dl class="py method">
 <dt class="sig sig-object py" id="grl.algorithms.QGPOAlgorithm.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">simulator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/algorithms/qgpo.html#QGPOAlgorithm.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.algorithms.QGPOAlgorithm.__init__" title="Link to this definition"></a></dt>
 <dd><dl class="simple">

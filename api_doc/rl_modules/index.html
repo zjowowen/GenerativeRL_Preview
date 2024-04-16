@@ -164,11 +164,6 @@ It runs in single process and is suitable for small-scale experiments.</p>
 <dt>Interfaces:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code>, <code class="docutils literal notranslate"><span class="pre">collect_episodes</span></code>, <code class="docutils literal notranslate"><span class="pre">collect_steps</span></code>, <code class="docutils literal notranslate"><span class="pre">evaluate</span></code></p>
 </dd>
 </dl>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>env_id</strong> (<em>str</em>) – </p>
-</dd>
-</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="grl.rl_modules.GymEnvSimulator.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/simulators/gym_env_simulator.html#GymEnvSimulator.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.GymEnvSimulator.__init__" title="Link to this definition"></a></dt>
@@ -179,9 +174,6 @@ It runs in single process and is suitable for small-scale experiments.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>env_id</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">str</span></code>) – The id of the gym environment to simulate.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -237,13 +229,6 @@ Last observation will be stored in this method. The collected information of ste
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>]</span></p>
 </dd>
-<dt class="field-even">Parameters<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p><strong>policy</strong> (<em>Callable</em><em> | </em><em>Module</em>) – </p></li>
-<li><p><strong>num_episodes</strong> (<em>int</em><em> | </em><em>None</em>) – </p></li>
-<li><p><strong>render_args</strong> (<em>Dict</em><em> | </em><em>None</em>) – </p></li>
-</ul>
-</dd>
 </dl>
 <dl class="simple">
 <dt>Overview:</dt><dd><p>Evaluate the given policy using the environment. The environment will be reset at the beginning of each episode.
@@ -264,11 +249,6 @@ No history will be stored in this method. The evaluation resultswill be returned
 <dt>Overview:</dt><dd><p>Value network for one-shot cases.</p>
 </dd>
 <dt>Interfaces:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code>, <code class="docutils literal notranslate"><span class="pre">forward</span></code></p>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config</strong> (<em>EasyDict</em>) – </p>
 </dd>
 </dl>
 <dl class="py method">
@@ -361,20 +341,10 @@ v2 (<code class="xref py py-obj docutils literal notranslate"><span class="pre">
 <dl class="py class">
 <dt class="sig sig-object py" id="grl.rl_modules.VNetwork">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.rl_modules.</span></span><span class="sig-name descname"><span class="pre">VNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/value_network/value_network.html#VNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.VNetwork" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config</strong> (<em>EasyDict</em>) – </p>
-</dd>
-</dl>
-<dl class="py method">
+<dd><dl class="py method">
 <dt class="sig sig-object py" id="grl.rl_modules.VNetwork.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/value_network/value_network.html#VNetwork.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.VNetwork.__init__" title="Link to this definition"></a></dt>
 <dd><p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config</strong> (<em>EasyDict</em>) – </p>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -414,20 +384,10 @@ v2 (<code class="xref py py-obj docutils literal notranslate"><span class="pre">
 <dt>Interfaces:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code>, <code class="docutils literal notranslate"><span class="pre">forward</span></code>, <code class="docutils literal notranslate"><span class="pre">compute_double_v</span></code>, <code class="docutils literal notranslate"><span class="pre">compute_mininum_v</span></code></p>
 </dd>
 </dl>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config</strong> (<em>EasyDict</em>) – </p>
-</dd>
-</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="grl.rl_modules.DoubleVNetwork.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/value_network/value_network.html#DoubleVNetwork.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.DoubleVNetwork.__init__" title="Link to this definition"></a></dt>
 <dd><p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config</strong> (<em>EasyDict</em>) – </p>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -508,20 +468,10 @@ v2 (<code class="xref py py-obj docutils literal notranslate"><span class="pre">
 <dl class="py class">
 <dt class="sig sig-object py" id="grl.rl_modules.QNetwork">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.rl_modules.</span></span><span class="sig-name descname"><span class="pre">QNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/value_network/q_network.html#QNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.QNetwork" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config</strong> (<em>EasyDict</em>) – </p>
-</dd>
-</dl>
-<dl class="py method">
+<dd><dl class="py method">
 <dt class="sig sig-object py" id="grl.rl_modules.QNetwork.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/value_network/q_network.html#QNetwork.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.QNetwork.__init__" title="Link to this definition"></a></dt>
 <dd><p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config</strong> (<em>EasyDict</em>) – </p>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -561,20 +511,10 @@ v2 (<code class="xref py py-obj docutils literal notranslate"><span class="pre">
 <dt>Interfaces:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code>, <code class="docutils literal notranslate"><span class="pre">forward</span></code>, <code class="docutils literal notranslate"><span class="pre">compute_double_q</span></code>, <code class="docutils literal notranslate"><span class="pre">compute_mininum_q</span></code></p>
 </dd>
 </dl>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config</strong> (<em>EasyDict</em>) – </p>
-</dd>
-</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="grl.rl_modules.DoubleQNetwork.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/rl_modules/value_network/q_network.html#DoubleQNetwork.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.rl_modules.DoubleQNetwork.__init__" title="Link to this definition"></a></dt>
 <dd><p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config</strong> (<em>EasyDict</em>) – </p>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="py method">

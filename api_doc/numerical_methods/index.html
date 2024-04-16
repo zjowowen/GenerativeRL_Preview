@@ -171,20 +171,10 @@ The ODE is defined as:</p>
 <dt>Interfaces:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code></p>
 </dd>
 </dl>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>drift</strong> (<em>Module</em><em> | </em><em>Callable</em>) – </p>
-</dd>
-</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="grl.numerical_methods.ODE.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">drift</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/numerical_methods/ode.html#ODE.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.numerical_methods.ODE.__init__" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>drift</strong> (<em>Module</em><em> | </em><em>Callable</em><em> | </em><em>None</em>) – </p>
-</dd>
-</dl>
-</dd></dl>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -204,26 +194,10 @@ The SDE is defined as:</p>
 <dt>Interfaces:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code></p>
 </dd>
 </dl>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>drift</strong> (<em>Module</em><em> | </em><em>Callable</em>) – </p></li>
-<li><p><strong>diffusion</strong> (<em>Module</em><em> | </em><em>Callable</em>) – </p></li>
-</ul>
-</dd>
-</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="grl.numerical_methods.SDE.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">drift</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diffusion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/numerical_methods/sde.html#SDE.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.numerical_methods.SDE.__init__" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>drift</strong> (<em>Module</em><em> | </em><em>Callable</em><em> | </em><em>None</em>) – </p></li>
-<li><p><strong>diffusion</strong> (<em>Module</em><em> | </em><em>Callable</em><em> | </em><em>None</em>) – </p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -237,22 +211,6 @@ The SDE is defined as:</p>
 <dt>Overview:</dt><dd><p>The DPM-Solver for sampling from the diffusion process.</p>
 </dd>
 <dt>Interface:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code>, <code class="docutils literal notranslate"><span class="pre">integrate</span></code></p>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>order</strong> (<em>int</em>) – </p></li>
-<li><p><strong>device</strong> (<em>str</em>) – </p></li>
-<li><p><strong>atol</strong> (<em>float</em>) – </p></li>
-<li><p><strong>rtol</strong> (<em>float</em>) – </p></li>
-<li><p><strong>steps</strong> (<em>int</em>) – </p></li>
-<li><p><strong>type</strong> (<em>str</em>) – </p></li>
-<li><p><strong>method</strong> (<em>str</em>) – </p></li>
-<li><p><strong>solver_type</strong> (<em>str</em>) – </p></li>
-<li><p><strong>skip_type</strong> (<em>str</em>) – </p></li>
-<li><p><strong>denoise</strong> (<em>bool</em>) – </p></li>
-</ul>
 </dd>
 </dl>
 <dl class="py method">
@@ -462,11 +420,6 @@ General VE SDE;
 OPT-Flow;</p>
 </dd>
 </dl>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config</strong> (<em>EasyDict</em>) – </p>
-</dd>
-</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="grl.numerical_methods.GaussianConditionalProbabilityPath.HalfLogSNR">
 <span class="sig-name descname"><span class="pre">HalfLogSNR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/numerical_methods/probability_path.html#GaussianConditionalProbabilityPath.HalfLogSNR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.numerical_methods.GaussianConditionalProbabilityPath.HalfLogSNR" title="Link to this definition"></a></dt>
@@ -526,9 +479,6 @@ For linear VP SDE, the inverse function is</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>config</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">EasyDict</span></code>) – The configuration of the Gaussian conditional probability path.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
 </dd>
 </dl>
 </dd></dl>

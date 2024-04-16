@@ -200,20 +200,6 @@ x -&gt; fc1 -&gt; act1 -&gt; dropout -&gt; layernorm -&gt; … -&gt; fcn -&gt; a
 <dt>Interface:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code>, <code class="docutils literal notranslate"><span class="pre">forward</span></code></p>
 </dd>
 </dl>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>hidden_sizes</strong> (<em>List</em><em>[</em><em>int</em><em>]</em>) – </p></li>
-<li><p><strong>output_size</strong> (<em>int</em>) – </p></li>
-<li><p><strong>activation</strong> (<em>str</em><em> | </em><em>List</em><em>[</em><em>str</em><em>]</em>) – </p></li>
-<li><p><strong>dropout</strong> (<em>float</em>) – </p></li>
-<li><p><strong>layernorm</strong> (<em>bool</em>) – </p></li>
-<li><p><strong>final_activation</strong> (<em>str</em>) – </p></li>
-<li><p><strong>scale</strong> (<em>float</em>) – </p></li>
-<li><p><strong>shrink</strong> (<em>float</em>) – </p></li>
-</ul>
-</dd>
-</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="grl.neural_network.MultiLayerPerceptron.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hidden_sizes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dropout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layernorm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">final_activation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shrink</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/neural_network.html#MultiLayerPerceptron.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.neural_network.MultiLayerPerceptron.__init__" title="Link to this definition"></a></dt>
@@ -311,18 +297,6 @@ x -&gt; fc1 -&gt; act1 -&gt; dropout -&gt; layernorm -&gt; … -&gt; fcn -&gt; a
 <dt>Interface:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code>, <code class="docutils literal notranslate"><span class="pre">forward</span></code></p>
 </dd>
 </dl>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>hidden_sizes</strong> (<em>List</em><em>[</em><em>int</em><em>]</em>) – </p></li>
-<li><p><strong>output_dim</strong> (<em>int</em>) – </p></li>
-<li><p><strong>t_dim</strong> (<em>int</em>) – </p></li>
-<li><p><strong>condition_dim</strong> (<em>int</em>) – </p></li>
-<li><p><strong>condition_hidden_dim</strong> (<em>int</em>) – </p></li>
-<li><p><strong>t_condition_hidden_dim</strong> (<em>int</em>) – </p></li>
-</ul>
-</dd>
-</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="grl.neural_network.TemporalSpatialResidualNet.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hidden_sizes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition_hidden_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_condition_hidden_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/neural_network.html#TemporalSpatialResidualNet.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.neural_network.TemporalSpatialResidualNet.__init__" title="Link to this definition"></a></dt>
@@ -379,22 +353,6 @@ This is the official implementation of Github repo:
 <a class="reference external" href="https://github.com/facebookresearch/DiT/blob/main/models.py">https://github.com/facebookresearch/DiT/blob/main/models.py</a></p>
 </dd>
 <dt>Interfaces:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code>, <code class="docutils literal notranslate"><span class="pre">forward</span></code></p>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>input_size</strong> (<em>int</em>) – </p></li>
-<li><p><strong>patch_size</strong> (<em>int</em>) – </p></li>
-<li><p><strong>in_channels</strong> (<em>int</em>) – </p></li>
-<li><p><strong>hidden_size</strong> (<em>int</em>) – </p></li>
-<li><p><strong>depth</strong> (<em>int</em>) – </p></li>
-<li><p><strong>num_heads</strong> (<em>int</em>) – </p></li>
-<li><p><strong>mlp_ratio</strong> (<em>float</em>) – </p></li>
-<li><p><strong>class_dropout_prob</strong> (<em>float</em>) – </p></li>
-<li><p><strong>num_classes</strong> (<em>int</em>) – </p></li>
-<li><p><strong>learn_sigma</strong> (<em>bool</em>) – </p></li>
-</ul>
 </dd>
 </dl>
 <dl class="py method">
@@ -505,21 +463,6 @@ imgs (<code class="xref py py-obj docutils literal notranslate"><span class="pre
 <dt>Overview:</dt><dd><p>Transformer backbone for Diffusion model for data of 3D shape.</p>
 </dd>
 <dt>Interfaces:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code>, <code class="docutils literal notranslate"><span class="pre">forward</span></code></p>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>patch_block_size</strong> (<em>List</em><em>[</em><em>int</em><em>] </em><em>| </em><em>Tuple</em><em>[</em><em>int</em><em>]</em>) – </p></li>
-<li><p><strong>patch_size</strong> (<em>int</em><em> | </em><em>List</em><em>[</em><em>int</em><em>] </em><em>| </em><em>Tuple</em><em>[</em><em>int</em><em>]</em>) – </p></li>
-<li><p><strong>in_channels</strong> (<em>int</em><em> | </em><em>List</em><em>[</em><em>int</em><em>] </em><em>| </em><em>Tuple</em><em>[</em><em>int</em><em>]</em>) – </p></li>
-<li><p><strong>hidden_size</strong> (<em>int</em>) – </p></li>
-<li><p><strong>depth</strong> (<em>int</em>) – </p></li>
-<li><p><strong>num_heads</strong> (<em>int</em>) – </p></li>
-<li><p><strong>mlp_ratio</strong> (<em>float</em>) – </p></li>
-<li><p><strong>learn_sigma</strong> (<em>bool</em>) – </p></li>
-<li><p><strong>convolved</strong> (<em>bool</em>) – </p></li>
-</ul>
 </dd>
 </dl>
 <dl class="py method">
