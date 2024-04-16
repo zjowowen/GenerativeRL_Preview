@@ -1,6 +1,8 @@
-from typing import List, Tuple, Union, Callable, Dict, Any
-from easydict import EasyDict
+from typing import Any, Callable, Dict, List, Tuple, Union
+
 import torch
+from easydict import EasyDict
+
 
 class BaseSimulator:
     """

@@ -1,7 +1,8 @@
-from grl_pipelines.configurations.halfcheetah_srpo import config
+import gym
+
 from grl.algorithms.srpo import SRPOAlgorithm
 from grl.utils.log import log
-import gym
+from grl_pipelines.configurations.halfcheetah_srpo import config
 
 
 def srpo_pipeline(config):

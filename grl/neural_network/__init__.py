@@ -1,10 +1,13 @@
 from typing import Callable, List, Optional, Union
-from easydict import EasyDict
+
 import torch
 import torch.nn as nn
+from easydict import EasyDict
 from tensordict import TensorDict
+
 from grl.neural_network.activation import get_activation
 from grl.neural_network.ResNetBlock import MLPResNet
+
 
 def get_module(type: str):
     if type.lower() in MODULES:

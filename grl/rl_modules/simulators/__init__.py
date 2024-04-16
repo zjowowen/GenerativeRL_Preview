@@ -1,5 +1,6 @@
 from .gym_env_simulator import GymEnvSimulator
 
+
 def get_simulator(type: str):
     if type.lower() not in SIMULATORS:
         raise KeyError(f'Invalid simulator type: {type}')

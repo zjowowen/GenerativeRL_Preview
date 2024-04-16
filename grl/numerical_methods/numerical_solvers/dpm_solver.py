@@ -3,11 +3,14 @@
 # wich is based on https://github.com/LuChengTHU/dpm-solver
 #############################################################
 
-from typing import Union, Tuple, List, Dict, Any, Callable
+from typing import Any, Callable, Dict, List, Tuple, Union
+
 import torch
-from torch import nn
 from tensordict import TensorDict
+from torch import nn
+
 from grl.generative_models.diffusion_process import DiffusionProcess
+
 
 class DPMSolver:
     """

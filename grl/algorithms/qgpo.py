@@ -2,26 +2,28 @@
 # This QGPO model is a modification implementation from https://github.com/ChenDRAG/CEP-energy-guided-diffusion
 #############################################################
 
-from typing import Optional, Tuple, Union, List, Dict, Any, Callable
-from easydict import EasyDict
 import copy
-from rich.progress import Progress
-from rich.progress import track
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
-from tensordict import TensorDict
 import wandb
+from easydict import EasyDict
+from rich.progress import Progress, track
+from tensordict import TensorDict
+from torch.utils.data import DataLoader
 
+from grl.agents.qgpo import QGPOAgent
 from grl.datasets import create_dataset
 from grl.datasets.qgpo import QGPODataset
+from grl.generative_models.diffusion_model.energy_conditional_diffusion_model import \
+    EnergyConditionalDiffusionModel
 from grl.rl_modules.simulators import create_simulator
+from grl.rl_modules.value_network.q_network import DoubleQNetwork
 from grl.utils.config import merge_two_dicts_into_newone
 from grl.utils.log import log
-from grl.agents.qgpo import QGPOAgent
-from grl.generative_models.diffusion_model.energy_conditional_diffusion_model import EnergyConditionalDiffusionModel
-from grl.rl_modules.value_network.q_network import DoubleQNetwork
+
 
 class QGPOCritic(nn.Module):
     """

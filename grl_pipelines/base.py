@@ -1,9 +1,9 @@
-from grl_pipelines.configurations.base import config
 from grl.algorithms.base import BaseAlgorithm
+from grl.datasets import create_dataset
 from grl.rl_modules.simulators import create_simulator
 from grl.rl_modules.simulators.base import BaseEnv
-from grl.datasets import create_dataset
 from grl.utils.log import log
+from grl_pipelines.configurations.base import config
 
 
 def base_pipeline(config):

@@ -1,25 +1,26 @@
+import multiprocessing as mp
 import os
 import signal
 import sys
-from easydict import EasyDict
-import multiprocessing as mp
-from rich.progress import Progress
-from rich.progress import track
 
-import numpy as np
-from sklearn.datasets import make_swiss_roll
 import matplotlib
+import numpy as np
+from easydict import EasyDict
+from rich.progress import Progress, track
+from sklearn.datasets import make_swiss_roll
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-
-from matplotlib import animation
-from easydict import EasyDict
 import torch
-from grl.generative_models.diffusion_model.energy_conditional_diffusion_model import EnergyConditionalDiffusionModel
-from grl.rl_modules.value_network.one_shot_value_function import OneShotValueFunction
-from grl.utils.log import log
-from grl.utils import set_seed
+from easydict import EasyDict
+from matplotlib import animation
 
+from grl.generative_models.diffusion_model.energy_conditional_diffusion_model import \
+    EnergyConditionalDiffusionModel
+from grl.rl_modules.value_network.one_shot_value_function import \
+    OneShotValueFunction
+from grl.utils import set_seed
+from grl.utils.log import log
 
 x_size=2
 

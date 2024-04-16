@@ -1,7 +1,8 @@
-from typing import Tuple, List, Dict, Any, Union
-from easydict import EasyDict
-import torch
+from typing import Any, Dict, List, Tuple, Union
+
 import numpy as np
+import torch
+from easydict import EasyDict
 
 
 class SRPOAgent:

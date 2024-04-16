@@ -1,6 +1,6 @@
-from .minecraft import MineRLVideoDataset, MineRLImageDataset
-from .qgpo import QGPOD4RLDataset, QGPODataset
 from .d4rl import D4RLDataset
+from .minecraft import MineRLImageDataset, MineRLVideoDataset
+from .qgpo import QGPOD4RLDataset, QGPODataset
 
 DATASETS = {
     "MineRLVideoDataset".lower(): MineRLVideoDataset,

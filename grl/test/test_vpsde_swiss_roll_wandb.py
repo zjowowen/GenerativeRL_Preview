@@ -1,24 +1,27 @@
-import wandb
 import os
 import signal
 import sys
+
+import matplotlib
+import numpy as np
+import wandb
 from easydict import EasyDict
 from rich.progress import track
-import numpy as np
 from sklearn.datasets import make_swiss_roll
-import matplotlib
 
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 from datetime import datetime
-from matplotlib import animation
+
+import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
-from grl.generative_models.diffusion_model.diffusion_model import DiffusionModel
-from grl.utils.log import log
-from grl.utils.config import merge_two_dicts_into_newone
-from grl.utils import set_seed
+from matplotlib import animation
 
+from grl.generative_models.diffusion_model.diffusion_model import \
+    DiffusionModel
+from grl.utils import set_seed
+from grl.utils.config import merge_two_dicts_into_newone
+from grl.utils.log import log
 
 sweep_config = EasyDict(
     name="base-sweep-gvp-lossadding",

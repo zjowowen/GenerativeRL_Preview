@@ -5,7 +5,6 @@ Overview:
 
 import torch
 
-
 data_size = 1
 data_size = 2
 data_size = [2, 2]

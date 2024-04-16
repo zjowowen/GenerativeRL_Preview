@@ -1,8 +1,10 @@
-from typing import Union, Callable
-from easydict import EasyDict
+from typing import Callable, Union
+
 import torch
-from torch import nn
+from easydict import EasyDict
 from tensordict import TensorDict
+from torch import nn
+
 
 class SDE:
     """

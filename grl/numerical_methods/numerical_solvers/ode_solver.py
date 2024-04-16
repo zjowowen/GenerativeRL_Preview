@@ -1,11 +1,13 @@
-from typing import Union, Tuple, List, Dict, Any, Callable
+from typing import Any, Callable, Dict, List, Tuple, Union
+
 import torch
-from torch import nn
-from tensordict import TensorDict
 import torchode
+from tensordict import TensorDict
+from torch import nn
 from torchdyn.core import NeuralODE
-from torchdyn.numerics import odeint as torchdyn_odeint
 from torchdyn.numerics import Euler
+from torchdyn.numerics import odeint as torchdyn_odeint
+
 
 class ODESolver:
     """

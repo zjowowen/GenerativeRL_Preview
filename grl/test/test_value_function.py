@@ -1,30 +1,33 @@
-import os
 import multiprocessing as mp
+import os
 import signal
 import sys
+
+import matplotlib
+import numpy as np
 from easydict import EasyDict
 from rich.progress import track
-import numpy as np
 from sklearn.datasets import make_swiss_roll
-import matplotlib
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader, Dataset
 
 matplotlib.use("Agg")
+import gym
 import matplotlib.pyplot as plt
-from grl.utils.config import merge_two_dicts_into_newone
-from matplotlib import animation
-from easydict import EasyDict
 import torch
 import torch.nn as nn
-from grl.generative_models.diffusion_model.diffusion_model import DiffusionModel
-from grl.utils.log import log
-from grl.utils import set_seed
-from grl.datasets.value_test import ReplayMemoryDataset, SampleData
-import gym
-import wandb
 import torchvision
-from torchvision.datasets import ImageFolder
+import wandb
+from easydict import EasyDict
+from matplotlib import animation
 from torchvision import transforms
+from torchvision.datasets import ImageFolder
+
+from grl.datasets.value_test import ReplayMemoryDataset, SampleData
+from grl.generative_models.diffusion_model.diffusion_model import \
+    DiffusionModel
+from grl.utils import set_seed
+from grl.utils.config import merge_two_dicts_into_newone
+from grl.utils.log import log
 
 
 def get_train_data(dataloader):

@@ -1,10 +1,13 @@
-from typing import Any, Dict, List, Tuple, Union
-from easydict import EasyDict
 import copy
+from typing import Any, Dict, List, Tuple, Union
+
 import torch
 import torch.nn as nn
+from easydict import EasyDict
 from tensordict import TensorDict
+
 from grl.rl_modules.value_network.value_network import DoubleVNetwork
+
 
 class OneShotValueFunction(nn.Module):
     """

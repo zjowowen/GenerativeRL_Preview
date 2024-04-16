@@ -1,17 +1,17 @@
+import multiprocessing as mp
 import os
+import random
 import time
-from easydict import EasyDict
+
+import cv2
 import gym
 import minerl
-import random
-
-import multiprocessing as mp
-
-from torchvision.datasets import ImageFolder
-from torchvision import transforms
-from PIL import Image
-import cv2
 import psutil
+from easydict import EasyDict
+from PIL import Image
+from torchvision import transforms
+from torchvision.datasets import ImageFolder
+
 from grl.utils import set_seed
 
 image_size=64

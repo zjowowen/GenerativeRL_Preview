@@ -1,8 +1,10 @@
 
-from typing import Union, Tuple, List, Dict, Any
+from typing import Any, Dict, List, Tuple, Union
+
 import torch
-from torch import nn
 import torchsde
+from torch import nn
+
 
 class TorchSDE(nn.Module):
     """

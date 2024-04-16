@@ -1,7 +1,9 @@
-from typing import List, Tuple, Union, Callable, Dict
-from easydict import EasyDict
+from typing import Callable, Dict, List, Tuple, Union
+
 import gym
 import torch
+from easydict import EasyDict
+
 
 class GymEnvSimulator:
     """

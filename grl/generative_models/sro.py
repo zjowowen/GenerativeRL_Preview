@@ -1,15 +1,14 @@
-from typing import Union, List, Tuple, Dict, Any, Callable
-from easydict import EasyDict
+from typing import Any, Callable, Dict, List, Tuple, Union
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from grl.generative_models.diffusion_model.diffusion_model import DiffusionModel
-from typing import Union, Callable
 from easydict import EasyDict
-import torch
-import torch.nn as nn
-from torch.distributions import Distribution
 from tensordict import TensorDict
+from torch.distributions import Distribution
+
+from grl.generative_models.diffusion_model.diffusion_model import \
+    DiffusionModel
 
 
 class SRPOConditionalDiffusionModel(nn.Module):

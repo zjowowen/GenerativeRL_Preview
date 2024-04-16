@@ -1,21 +1,12 @@
 import sys
 from pathlib import Path
 
-from numpy.lib.format import open_memmap
-
 import torch
-from torch import nn, einsum, Tensor
-from torch.nn import Module, ModuleList
-from torch.utils.data import Dataset, DataLoader
-from tensordict import TensorDict
 import torchvision.transforms as transforms
-import gym
-from rich.progress import track
-from torchtyping import TensorType
 from beartype import beartype
-from beartype.typing import Iterator, Tuple, Union
+from numpy.lib.format import open_memmap
 from rich.progress import track
-import cv2
+from torch.utils.data import DataLoader, Dataset
 
 # just force training on 64 bit systems
 

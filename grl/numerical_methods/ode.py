@@ -1,7 +1,9 @@
-from typing import Union, Callable
+from typing import Callable, Union
+
 import torch
-from torch import nn
 from tensordict import TensorDict
+from torch import nn
+
 
 class ODE:
     """

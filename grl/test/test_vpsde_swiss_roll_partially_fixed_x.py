@@ -1,22 +1,25 @@
-import os
 import multiprocessing as mp
+import os
 import signal
 import sys
+
+import matplotlib
+import numpy as np
 from easydict import EasyDict
 from rich.progress import track
-import numpy as np
 from sklearn.datasets import make_swiss_roll
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-
-from matplotlib import animation
-from easydict import EasyDict
 import torch
 import torch.nn as nn
-from grl.generative_models.diffusion_model.diffusion_model import DiffusionModel
-from grl.utils.log import log
+from easydict import EasyDict
+from matplotlib import animation
+
+from grl.generative_models.diffusion_model.diffusion_model import \
+    DiffusionModel
 from grl.utils import set_seed
+from grl.utils.log import log
 
 x_size=2
 device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')

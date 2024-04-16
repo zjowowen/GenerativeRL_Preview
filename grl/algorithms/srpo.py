@@ -1,30 +1,29 @@
 import copy
-from typing import Optional, Tuple, Union, List, Dict, Any, Callable
-from easydict import EasyDict
-import gym
-import d4rl
-from rich.progress import Progress
-from rich.progress import track
-import numpy as np
-import torch
 import os
 from datetime import datetime
-from torch.utils.data import DataLoader
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
+import d4rl
+import gym
+import numpy as np
+import torch
 import torch.nn as nn
 import wandb
+from easydict import EasyDict
+from rich.progress import Progress, track
 from tensordict import TensorDict
+from torch.utils.data import DataLoader
+
+from grl.agents.srpo import SRPOAgent
 from grl.datasets import create_dataset
 from grl.datasets.d4rl import D4RLDataset
+from grl.generative_models.sro import SRPOConditionalDiffusionModel
+from grl.neural_network import MultiLayerPerceptron
 from grl.rl_modules.simulators import create_simulator
+from grl.rl_modules.value_network.q_network import DoubleQNetwork
+from grl.utils import set_seed
 from grl.utils.config import merge_two_dicts_into_newone
 from grl.utils.log import log
-from grl.agents.srpo import SRPOAgent
-from grl.utils import set_seed
-from grl.rl_modules.value_network.q_network import DoubleQNetwork
-from grl.neural_network import MultiLayerPerceptron
-from grl.generative_models.sro import (
-    SRPOConditionalDiffusionModel,
-)
 
 
 class Dirac_Policy(nn.Module):

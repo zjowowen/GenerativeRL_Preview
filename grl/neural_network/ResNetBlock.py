@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class MLPResNetBlock(nn.Module):
     """MLPResNet block."""
     def __init__(self, features, act, dropout_rate=None, use_layer_norm=False):

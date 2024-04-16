@@ -1,7 +1,9 @@
-from grl_pipelines.configurations.walker2d_qgpo import config
+import gym
+
 from grl.algorithms.qgpo import QGPOAlgorithm
 from grl.utils.log import log
-import gym
+from grl_pipelines.configurations.walker2d_qgpo import config
+
 
 def qgpo_pipeline(config):
 

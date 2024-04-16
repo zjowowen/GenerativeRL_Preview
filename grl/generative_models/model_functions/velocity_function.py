@@ -1,9 +1,12 @@
-from typing import Union, Callable
-from easydict import EasyDict
+from typing import Callable, Union
+
 import torch
 import torch.nn as nn
+from easydict import EasyDict
 from tensordict import TensorDict
+
 from grl.generative_models.diffusion_process import DiffusionProcess
+
 
 class VelocityFunction:
     """

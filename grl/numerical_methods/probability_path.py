@@ -1,6 +1,7 @@
 from typing import Union
-from easydict import EasyDict
+
 import torch
+from easydict import EasyDict
 from tensordict import TensorDict
 
 

@@ -1,13 +1,16 @@
-from typing import Union, Callable
-from easydict import EasyDict
+from typing import Callable, Union
+
 import torch
 import torch.nn as nn
-from torch.distributions import Distribution
+from easydict import EasyDict
 from tensordict import TensorDict
+from torch.distributions import Distribution
 
-from grl.numerical_methods.probability_path import GaussianConditionalProbabilityPath
-from grl.numerical_methods.sde import SDE
 from grl.numerical_methods.ode import ODE
+from grl.numerical_methods.probability_path import \
+    GaussianConditionalProbabilityPath
+from grl.numerical_methods.sde import SDE
+
 
 class DiffusionProcess:
     """

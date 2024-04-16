@@ -1,13 +1,15 @@
-from typing import Optional, Tuple, Union, List, Dict, Any, Callable
-from easydict import EasyDict
-import torch
-from torch.utils.data import DataLoader
-import wandb
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
+import torch
+import wandb
+from easydict import EasyDict
+from torch.utils.data import DataLoader
+
+from grl.agents.base import BaseAgent
 from grl.datasets import create_dataset
 from grl.rl_modules.simulators import create_simulator
 from grl.utils.config import merge_two_dicts_into_newone
-from grl.agents.base import BaseAgent
+
 
 class BasePolicy(torch.nn.Module):
     """
