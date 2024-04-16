@@ -107,12 +107,14 @@
 <span class="sd">    Interfaces:</span>
 <span class="sd">        ``__init__``, ``collect_episodes``, ``collect_steps``, ``evaluate``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="GymEnvSimulator.__init__">
+<a class="viewcode-back" href="../../../../api_doc/rl_modules/index.html#grl.rl_modules.GymEnvSimulator.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Initialize the GymEnvSimulator according to the given configuration.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - env_id (:obj:`str`): The id of the gym environment to simulate.</span>
+<span class="sd">            env_id (:obj:`str`): The id of the gym environment to simulate.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">env_id</span> <span class="o">=</span> <span class="n">env_id</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">make</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env_id</span><span class="p">)</span>
@@ -126,8 +128,11 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">last_state_done</span><span class="o">=</span><span class="kc">False</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">observation_space</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span><span class="o">.</span><span class="n">observation_space</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">action_space</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span><span class="o">.</span><span class="n">action_space</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">action_space</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span><span class="o">.</span><span class="n">action_space</span></div>
 
+
+<div class="viewcode-block" id="GymEnvSimulator.collect_episodes">
+<a class="viewcode-back" href="../../../../api_doc/rl_modules/index.html#grl.rl_modules.GymEnvSimulator.collect_episodes">[docs]</a>
     <span class="k">def</span> <span class="nf">collect_episodes</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">policy</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">],</span>
@@ -139,9 +144,9 @@
 <span class="sd">            Collect several episodes using the given policy. The environment will be reset at the beginning of each episode.</span>
 <span class="sd">            No history will be stored in this method. The collected information of steps will be returned as a list of dictionaries.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - policy (:obj:`Union[Callable, torch.nn.Module]`): The policy to collect episodes.</span>
-<span class="sd">            - num_episodes (:obj:`int`): The number of episodes to collect.</span>
-<span class="sd">            - num_steps (:obj:`int`): The number of steps to collect.</span>
+<span class="sd">            policy (:obj:`Union[Callable, torch.nn.Module]`): The policy to collect episodes.</span>
+<span class="sd">            num_episodes (:obj:`int`): The number of episodes to collect.</span>
+<span class="sd">            num_steps (:obj:`int`): The number of steps to collect.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="n">num_episodes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">num_steps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">num_episodes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -223,8 +228,11 @@
                                 <span class="p">)</span>
                             <span class="p">)</span>
                             <span class="n">obs</span> <span class="o">=</span> <span class="n">next_obs</span>
-            <span class="k">return</span> <span class="n">data_list</span>
+            <span class="k">return</span> <span class="n">data_list</span></div>
 
+
+<div class="viewcode-block" id="GymEnvSimulator.collect_steps">
+<a class="viewcode-back" href="../../../../api_doc/rl_modules/index.html#grl.rl_modules.GymEnvSimulator.collect_steps">[docs]</a>
     <span class="k">def</span> <span class="nf">collect_steps</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">policy</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">],</span>
@@ -236,9 +244,9 @@
 <span class="sd">            Collect several steps using the given policy. The environment will not be reset until the end of the episode.</span>
 <span class="sd">            Last observation will be stored in this method. The collected information of steps will be returned as a list of dictionaries.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - policy (:obj:`Union[Callable, torch.nn.Module]`): The policy to collect steps.</span>
-<span class="sd">            - num_episodes (:obj:`int`): The number of episodes to collect.</span>
-<span class="sd">            - num_steps (:obj:`int`): The number of steps to collect.</span>
+<span class="sd">            policy (:obj:`Union[Callable, torch.nn.Module]`): The policy to collect steps.</span>
+<span class="sd">            num_episodes (:obj:`int`): The number of episodes to collect.</span>
+<span class="sd">            num_steps (:obj:`int`): The number of steps to collect.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="n">num_episodes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">num_steps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">num_episodes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -331,8 +339,11 @@
                         <span class="k">else</span><span class="p">:</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">last_state_obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">last_state_done</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="k">return</span> <span class="n">data_list</span>
+            <span class="k">return</span> <span class="n">data_list</span></div>
 
+
+<div class="viewcode-block" id="GymEnvSimulator.evaluate">
+<a class="viewcode-back" href="../../../../api_doc/rl_modules/index.html#grl.rl_modules.GymEnvSimulator.evaluate">[docs]</a>
     <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">policy</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">],</span>
@@ -424,6 +435,7 @@
             <span class="p">)</span> 
 
         <span class="k">return</span> <span class="n">eval_results</span></div>
+</div>
 
 </pre></div>
 

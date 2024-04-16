@@ -110,20 +110,25 @@
 <span class="sd">        ``__init__``, ``forward``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+<div class="viewcode-block" id="OneShotValueFunction.__init__">
+<a class="viewcode-back" href="../../../../api_doc/rl_modules/index.html#grl.rl_modules.OneShotValueFunction.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">EasyDict</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Initialization of one-shot value network.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - config (:obj:`EasyDict`): The configuration dict.</span>
+<span class="sd">            config (:obj:`EasyDict`): The configuration dict.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">v_alpha</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">v_alpha</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="n">DoubleVNetwork</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">DoubleVNetwork</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">v_target</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_target</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span></div>
 
+
+<div class="viewcode-block" id="OneShotValueFunction.forward">
+<a class="viewcode-back" href="../../../../api_doc/rl_modules/index.html#grl.rl_modules.OneShotValueFunction.forward">[docs]</a>
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">state</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
@@ -133,12 +138,15 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Return the output of one-shot value network.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.</span>
-<span class="sd">            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.</span>
+<span class="sd">            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.</span>
+<span class="sd">            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">condition</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">condition</span><span class="p">)</span></div>
 
+
+<div class="viewcode-block" id="OneShotValueFunction.compute_double_v">
+<a class="viewcode-back" href="../../../../api_doc/rl_modules/index.html#grl.rl_modules.OneShotValueFunction.compute_double_v">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_double_v</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">state</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
@@ -148,14 +156,17 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Return the output of two value networks.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.</span>
-<span class="sd">            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.</span>
+<span class="sd">            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.</span>
+<span class="sd">            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.</span>
 <span class="sd">        Returns:</span>
-<span class="sd">            - v1 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the first value network.</span>
-<span class="sd">            - v2 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the second value network.</span>
+<span class="sd">            v1 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the first value network.</span>
+<span class="sd">            v2 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the second value network.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="o">.</span><span class="n">compute_double_v</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="n">condition</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="o">.</span><span class="n">compute_double_v</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="n">condition</span><span class="p">)</span></div>
 
+
+<div class="viewcode-block" id="OneShotValueFunction.v_loss">
+<a class="viewcode-back" href="../../../../api_doc/rl_modules/index.html#grl.rl_modules.OneShotValueFunction.v_loss">[docs]</a>
     <span class="k">def</span> <span class="nf">v_loss</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">state</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
@@ -166,11 +177,11 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Calculate the v loss.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.</span>
-<span class="sd">            - value (:obj:`Union[torch.Tensor, TensorDict]`): The input value.</span>
-<span class="sd">            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.</span>
+<span class="sd">            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.</span>
+<span class="sd">            value (:obj:`Union[torch.Tensor, TensorDict]`): The input value.</span>
+<span class="sd">            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.</span>
 <span class="sd">        Returns:</span>
-<span class="sd">            - v_loss (:obj:`torch.Tensor`): The v loss.</span>
+<span class="sd">            v_loss (:obj:`torch.Tensor`): The v loss.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Update value function</span>
@@ -178,6 +189,7 @@
         <span class="n">v0</span><span class="p">,</span> <span class="n">v1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="o">.</span><span class="n">compute_double_v</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="n">condition</span><span class="p">)</span>
         <span class="n">v_loss</span> <span class="o">=</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">mse_loss</span><span class="p">(</span><span class="n">v0</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">mse_loss</span><span class="p">(</span><span class="n">v1</span><span class="p">,</span> <span class="n">targets</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span>
         <span class="k">return</span> <span class="n">v_loss</span></div>
+</div>
 
 </pre></div>
 

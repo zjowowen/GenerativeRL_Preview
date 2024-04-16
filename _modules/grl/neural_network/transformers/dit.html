@@ -101,14 +101,15 @@
 
 <span class="kn">from</span> <span class="nn">grl.neural_network.encoders</span> <span class="kn">import</span> <span class="n">ExponentialFourierProjectionTimeEncoder</span>
 
+
 <span class="k">def</span> <span class="nf">modulate</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">shift</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">scale</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Overview:</span>
 <span class="sd">        Modulate the input tensor x with the shift and scale tensors.</span>
 <span class="sd">    Arguments:</span>
-<span class="sd">        - x (:obj:`torch.Tensor`): The input tensor.</span>
-<span class="sd">        - shift (:obj:`torch.Tensor`): The shift tensor.</span>
-<span class="sd">        - scale (:obj:`torch.Tensor`): The scale tensor.</span>
+<span class="sd">        x (:obj:`torch.Tensor`): The input tensor.</span>
+<span class="sd">        shift (:obj:`torch.Tensor`): The shift tensor.</span>
+<span class="sd">        scale (:obj:`torch.Tensor`): The scale tensor.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">scale</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span> <span class="o">+</span> <span class="n">shift</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 
@@ -127,9 +128,9 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Initialize the label embedder.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - num_classes (:obj:`int`): The number of classes.</span>
-<span class="sd">            - hidden_size (:obj:`int`): The hidden size.</span>
-<span class="sd">            - dropout_prob (:obj:`float`, defaults to 0.1): The dropout probability.</span>
+<span class="sd">            num_classes (:obj:`int`): The number of classes.</span>
+<span class="sd">            hidden_size (:obj:`int`): The hidden size.</span>
+<span class="sd">            dropout_prob (:obj:`float`, defaults to 0.1): The dropout probability.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="n">use_cfg_embedding</span> <span class="o">=</span> <span class="n">dropout_prob</span> <span class="o">&gt;</span> <span class="mi">0</span>
@@ -146,8 +147,8 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Drops labels to enable classifier-free guidance.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - labels (:obj:`torch.Tensor`): The input labels.</span>
-<span class="sd">            - force_drop_ids (:obj:`torch.Tensor`, optional): The force drop ids.</span>
+<span class="sd">            labels (:obj:`torch.Tensor`): The input labels.</span>
+<span class="sd">            force_drop_ids (:obj:`torch.Tensor`, optional): The force drop ids.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">force_drop_ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">drop_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">labels</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">labels</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout_prob</span>
@@ -166,9 +167,9 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Embeds the input labels.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - labels (:obj:`torch.Tensor`): The input labels.</span>
-<span class="sd">            - train (:obj:`bool`, defaults to True): Whether to train the model.</span>
-<span class="sd">            - force_drop_ids (:obj:`torch.Tensor`, optional): The force drop ids.</span>
+<span class="sd">            labels (:obj:`torch.Tensor`): The input labels.</span>
+<span class="sd">            train (:obj:`bool`, defaults to True): Whether to train the model.</span>
+<span class="sd">            force_drop_ids (:obj:`torch.Tensor`, optional): The force drop ids.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">use_dropout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout_prob</span> <span class="o">&gt;</span> <span class="mi">0</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">train</span> <span class="ow">and</span> <span class="n">use_dropout</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">force_drop_ids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
@@ -184,8 +185,8 @@
 <span class="sd">    Overview:</span>
 <span class="sd">        Get 3D positional embeddings for 3D data.</span>
 <span class="sd">    Arguments:</span>
-<span class="sd">        - embed_dim (:obj:`int`): The output dimension of embeddings for each grid.</span>
-<span class="sd">        - grid_num (:obj:`List[int]`): The number of the grid in each dimension.</span>
+<span class="sd">        embed_dim (:obj:`int`): The output dimension of embeddings for each grid.</span>
+<span class="sd">        grid_num (:obj:`List[int]`): The number of the grid in each dimension.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid_num</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span>
     <span class="n">grid_num_sum</span> <span class="o">=</span> <span class="n">grid_num</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">grid_num</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">grid_num</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
@@ -217,14 +218,14 @@
 <span class="sd">    Overview:</span>
 <span class="sd">        Get 2D positional embeddings for 2D data.</span>
 <span class="sd">    Arguments:</span>
-<span class="sd">        - embed_dim (:obj:`int`): The output dimension for each position.</span>
-<span class="sd">        - grid_size (:obj:`int`): The size of the grid.</span>
-<span class="sd">        - cls_token (:obj:`bool`, defaults to False): Whether to include the class token.</span>
-<span class="sd">        - extra_tokens (:obj:`int`, defaults to 0): The number of extra tokens.</span>
+<span class="sd">        embed_dim (:obj:`int`): The output dimension for each position.</span>
+<span class="sd">        grid_size (:obj:`int`): The size of the grid.</span>
+<span class="sd">        cls_token (:obj:`bool`, defaults to False): Whether to include the class token.</span>
+<span class="sd">        extra_tokens (:obj:`int`, defaults to 0): The number of extra tokens.</span>
 <span class="sd">    Returns:</span>
-<span class="sd">        - pos_embed (:obj:`np.ndarray`): The positional embeddings.</span>
+<span class="sd">        pos_embed (:obj:`np.ndarray`): The positional embeddings.</span>
 <span class="sd">    Shapes:</span>
-<span class="sd">        - pos_embed (:obj:`np.ndarray`): [grid_size*grid_size, embed_dim] or [1+grid_size*grid_size, embed_dim] (w/ or w/o cls_token)</span>
+<span class="sd">        pos_embed (:obj:`np.ndarray`): [grid_size*grid_size, embed_dim] or [1+grid_size*grid_size, embed_dim] (w/ or w/o cls_token)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">grid_h</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">grid_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
     <span class="n">grid_w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">grid_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
@@ -252,10 +253,10 @@
 <span class="sd">    Overview:</span>
 <span class="sd">        Get positional embeddings for 1D data.</span>
 <span class="sd">    Arguments:</span>
-<span class="sd">        - embed_dim (:obj:`int`): The output dimension for each position.</span>
-<span class="sd">        - pos (:obj:`np.ndarray`): The input positions.</span>
+<span class="sd">        embed_dim (:obj:`int`): The output dimension for each position.</span>
+<span class="sd">        pos (:obj:`np.ndarray`): The input positions.</span>
 <span class="sd">    Returns:</span>
-<span class="sd">        - emb (:obj:`np.ndarray`): The positional embeddings.</span>
+<span class="sd">        emb (:obj:`np.ndarray`): The positional embeddings.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="n">embed_dim</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span>
     <span class="n">omega</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">embed_dim</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
@@ -278,10 +279,10 @@
 <span class="sd">    Overview:</span>
 <span class="sd">        Get positional embeddings for 1D data.</span>
 <span class="sd">    Arguments:</span>
-<span class="sd">        - embed_dim (:obj:`int`): The output dimension for each position.</span>
-<span class="sd">        - pos (:obj:`np.ndarray`): The input positions.</span>
+<span class="sd">        embed_dim (:obj:`int`): The output dimension for each position.</span>
+<span class="sd">        pos (:obj:`np.ndarray`): The input positions.</span>
 <span class="sd">    Returns:</span>
-<span class="sd">        - emb (:obj:`np.ndarray`): The positional embeddings.</span>
+<span class="sd">        emb (:obj:`np.ndarray`): The positional embeddings.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="n">embed_dim</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span>
     <span class="n">omega</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">embed_dim</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
@@ -304,7 +305,7 @@
 <span class="sd">    Overview:</span>
 <span class="sd">        Get 3D position for 3D data.</span>
 <span class="sd">    Arguments:</span>
-<span class="sd">        - grid_num (:obj:`List[int]`): The number of the grid in each dimension.</span>
+<span class="sd">        grid_num (:obj:`List[int]`): The number of the grid in each dimension.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid_num</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span>
     <span class="n">grid_0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">grid_num</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
@@ -336,10 +337,10 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Initialize the DiT block.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - hidden_size (:obj:`int`): The hidden size.</span>
-<span class="sd">            - num_heads (:obj:`int`): The number of attention heads.</span>
-<span class="sd">            - mlp_ratio (:obj:`float`, defaults to 4.0): The hidden size of the MLP with respect to the hidden size of Attention.</span>
-<span class="sd">            - block_kwargs (:obj:`dict`): The keyword arguments for the attention block.</span>
+<span class="sd">            hidden_size (:obj:`int`): The hidden size.</span>
+<span class="sd">            num_heads (:obj:`int`): The number of attention heads.</span>
+<span class="sd">            mlp_ratio (:obj:`float`, defaults to 4.0): The hidden size of the MLP with respect to the hidden size of Attention.</span>
+<span class="sd">            block_kwargs (:obj:`dict`): The keyword arguments for the attention block.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">norm1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">elementwise_affine</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
@@ -373,9 +374,9 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Initialize the final layer.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - hidden_size (:obj:`int`): The hidden size.</span>
-<span class="sd">            - patch_size (:obj:`int`): The patch size.</span>
-<span class="sd">            - out_channels (:obj:`int`): The number of output channels.</span>
+<span class="sd">            hidden_size (:obj:`int`): The hidden size.</span>
+<span class="sd">            patch_size (:obj:`int`): The patch size.</span>
+<span class="sd">            out_channels (:obj:`int`): The number of output channels.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">norm_final</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">elementwise_affine</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
@@ -402,6 +403,8 @@
 <span class="sd">    Interfaces:</span>
 <span class="sd">        ``__init__``, ``forward``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="DiT.__init__">
+<a class="viewcode-back" href="../../../../api_doc/neural_network/index.html#grl.neural_network.DiT.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">input_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
@@ -419,16 +422,16 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Initialize the DiT model.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - input_size (:obj:`int`, defaults to 32): The input size.</span>
-<span class="sd">            - patch_size (:obj:`int`, defaults to 2): The patch size.</span>
-<span class="sd">            - in_channels (:obj:`int`, defaults to 4): The number of input channels.</span>
-<span class="sd">            - hidden_size (:obj:`int`, defaults to 1152): The hidden size.</span>
-<span class="sd">            - depth (:obj:`int`, defaults to 28): The depth.</span>
-<span class="sd">            - num_heads (:obj:`int`, defaults to 16): The number of attention heads.</span>
-<span class="sd">            - mlp_ratio (:obj:`float`, defaults to 4.0): The hidden size of the MLP with respect to the hidden size of Attention.</span>
-<span class="sd">            - class_dropout_prob (:obj:`float`, defaults to 0.1): The class dropout probability.</span>
-<span class="sd">            - num_classes (:obj:`int`, defaults to 1000): The number of classes.</span>
-<span class="sd">            - learn_sigma (:obj:`bool`, defaults to True): Whether to learn sigma.</span>
+<span class="sd">            input_size (:obj:`int`, defaults to 32): The input size.</span>
+<span class="sd">            patch_size (:obj:`int`, defaults to 2): The patch size.</span>
+<span class="sd">            in_channels (:obj:`int`, defaults to 4): The number of input channels.</span>
+<span class="sd">            hidden_size (:obj:`int`, defaults to 1152): The hidden size.</span>
+<span class="sd">            depth (:obj:`int`, defaults to 28): The depth.</span>
+<span class="sd">            num_heads (:obj:`int`, defaults to 16): The number of attention heads.</span>
+<span class="sd">            mlp_ratio (:obj:`float`, defaults to 4.0): The hidden size of the MLP with respect to the hidden size of Attention.</span>
+<span class="sd">            class_dropout_prob (:obj:`float`, defaults to 0.1): The class dropout probability.</span>
+<span class="sd">            num_classes (:obj:`int`, defaults to 1000): The number of classes.</span>
+<span class="sd">            learn_sigma (:obj:`bool`, defaults to True): Whether to learn sigma.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">learn_sigma</span> <span class="o">=</span> <span class="n">learn_sigma</span>
@@ -448,8 +451,11 @@
             <span class="n">DiTBlock</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">num_heads</span><span class="p">,</span> <span class="n">mlp_ratio</span><span class="o">=</span><span class="n">mlp_ratio</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">depth</span><span class="p">)</span>
         <span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">final_layer</span> <span class="o">=</span> <span class="n">FinalLayer</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">patch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_channels</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">initialize_weights</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initialize_weights</span><span class="p">()</span></div>
 
+
+<div class="viewcode-block" id="DiT.initialize_weights">
+<a class="viewcode-back" href="../../../../api_doc/neural_network/index.html#grl.neural_network.DiT.initialize_weights">[docs]</a>
     <span class="k">def</span> <span class="nf">initialize_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
@@ -488,19 +494,22 @@
         <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">final_layer</span><span class="o">.</span><span class="n">adaLN_modulation</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">final_layer</span><span class="o">.</span><span class="n">adaLN_modulation</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">final_layer</span><span class="o">.</span><span class="n">linear</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-        <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">final_layer</span><span class="o">.</span><span class="n">linear</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">final_layer</span><span class="o">.</span><span class="n">linear</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
 
+
+<div class="viewcode-block" id="DiT.unpatchify">
+<a class="viewcode-back" href="../../../../api_doc/neural_network/index.html#grl.neural_network.DiT.unpatchify">[docs]</a>
     <span class="k">def</span> <span class="nf">unpatchify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Unpatchify the input tensor.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - x (:obj:`torch.Tensor`): The input tensor.</span>
+<span class="sd">            x (:obj:`torch.Tensor`): The input tensor.</span>
 <span class="sd">        Returns:</span>
-<span class="sd">            - imgs (:obj:`torch.Tensor`): The output tensor.</span>
+<span class="sd">            imgs (:obj:`torch.Tensor`): The output tensor.</span>
 <span class="sd">        Shapes:</span>
-<span class="sd">            - x (:obj:`torch.Tensor`): (N, T, patch_size**2 * C)</span>
-<span class="sd">            - imgs (:obj:`torch.Tensor`): (N, H, W, C)</span>
+<span class="sd">            x (:obj:`torch.Tensor`): (N, T, patch_size**2 * C)</span>
+<span class="sd">            imgs (:obj:`torch.Tensor`): (N, H, W, C)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_channels</span>
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_embedder</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -510,8 +519,11 @@
         <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">c</span><span class="p">))</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;nhwpqc-&gt;nchpwq&#39;</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
         <span class="n">imgs</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">c</span><span class="p">,</span> <span class="n">h</span> <span class="o">*</span> <span class="n">p</span><span class="p">,</span> <span class="n">h</span> <span class="o">*</span> <span class="n">p</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">imgs</span>
+        <span class="k">return</span> <span class="n">imgs</span></div>
 
+
+<div class="viewcode-block" id="DiT.forward">
+<a class="viewcode-back" href="../../../../api_doc/neural_network/index.html#grl.neural_network.DiT.forward">[docs]</a>
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
@@ -522,9 +534,9 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Forward pass of DiT.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - t (:obj:`torch.Tensor`): Tensor of diffusion timesteps.</span>
-<span class="sd">            - x (:obj:`torch.Tensor`): Tensor of spatial inputs (images or latent representations of images).</span>
-<span class="sd">            - condition (:obj:`Union[torch.Tensor, TensorDict]`, optional): The input condition, such as class labels.</span>
+<span class="sd">            t (:obj:`torch.Tensor`): Tensor of diffusion timesteps.</span>
+<span class="sd">            x (:obj:`torch.Tensor`): Tensor of spatial inputs (images or latent representations of images).</span>
+<span class="sd">            condition (:obj:`Union[torch.Tensor, TensorDict]`, optional): The input condition, such as class labels.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_embedder</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_embed</span>  <span class="c1"># (N, T, D), where T = H * W / patch_size ** 2</span>
@@ -541,8 +553,11 @@
             <span class="n">x</span> <span class="o">=</span> <span class="n">block</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>                      <span class="c1"># (N, T, D)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">final_layer</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>                <span class="c1"># (N, T, patch_size ** 2 * out_channels)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unpatchify</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>                   <span class="c1"># (N, out_channels, H, W)</span>
-        <span class="k">return</span> <span class="n">x</span>
+        <span class="k">return</span> <span class="n">x</span></div>
 
+
+<div class="viewcode-block" id="DiT.forward_with_cfg">
+<a class="viewcode-back" href="../../../../api_doc/neural_network/index.html#grl.neural_network.DiT.forward_with_cfg">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_with_cfg</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
@@ -553,10 +568,10 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Forward pass of DiT, but also batches the unconditional forward pass for classifier-free guidance.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - t (:obj:`torch.Tensor`): Tensor of diffusion timesteps.</span>
-<span class="sd">            - x (:obj:`torch.Tensor`): Tensor of spatial inputs (images or latent representations of images).</span>
-<span class="sd">            - condition (:obj:`Union[torch.Tensor, TensorDict]`, optional): The input condition, such as class labels.</span>
-<span class="sd">            - cfg_scale (:obj:`float`, defaults to 1.0): The scale for classifier-free guidance.</span>
+<span class="sd">            t (:obj:`torch.Tensor`): Tensor of diffusion timesteps.</span>
+<span class="sd">            x (:obj:`torch.Tensor`): Tensor of spatial inputs (images or latent representations of images).</span>
+<span class="sd">            condition (:obj:`Union[torch.Tensor, TensorDict]`, optional): The input condition, such as class labels.</span>
+<span class="sd">            cfg_scale (:obj:`float`, defaults to 1.0): The scale for classifier-free guidance.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># https://github.com/openai/glide-text2im/blob/main/notebooks/text2im.ipynb</span>
         <span class="n">half</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span>
@@ -571,6 +586,7 @@
         <span class="n">half_eps</span> <span class="o">=</span> <span class="n">uncond_eps</span> <span class="o">+</span> <span class="n">cfg_scale</span> <span class="o">*</span> <span class="p">(</span><span class="n">cond_eps</span> <span class="o">-</span> <span class="n">uncond_eps</span><span class="p">)</span>
         <span class="n">eps</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">half_eps</span><span class="p">,</span> <span class="n">half_eps</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">eps</span><span class="p">,</span> <span class="n">rest</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+</div>
 
 
 <span class="k">class</span> <span class="nc">FinalLayer_3D</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -590,9 +606,9 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Initialize the final layer.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - hidden_size (:obj:`int`): The hidden size.</span>
-<span class="sd">            - patch_size (:obj:`Union[int, List[int], Tuple[int]]`): The patch size of each token in attention layer.</span>
-<span class="sd">            - out_channels (:obj:`Union[int, List[int], Tuple[int]]`): The number of output channels.</span>
+<span class="sd">            hidden_size (:obj:`int`): The hidden size.</span>
+<span class="sd">            patch_size (:obj:`Union[int, List[int], Tuple[int]]`): The patch size of each token in attention layer.</span>
+<span class="sd">            out_channels (:obj:`Union[int, List[int], Tuple[int]]`): The number of output channels.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">patch_size</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">))</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">patch_size</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">patch_size</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
@@ -624,10 +640,10 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Forward pass of the final layer.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - x (:obj:`torch.Tensor`): The input tensor of shape (N, total_patches, hidden_size).</span>
-<span class="sd">            - c (:obj:`torch.Tensor`): The conditioning tensor.</span>
+<span class="sd">            x (:obj:`torch.Tensor`): The input tensor of shape (N, total_patches, hidden_size).</span>
+<span class="sd">            c (:obj:`torch.Tensor`): The conditioning tensor.</span>
 <span class="sd">        Returns:</span>
-<span class="sd">            - x (:obj:`torch.Tensor`): The output tensor of shape (N, total_patches, patch_size[0] * patch_size[1] * patch_size[2] * **out_channels).</span>
+<span class="sd">            x (:obj:`torch.Tensor`): The output tensor of shape (N, total_patches, patch_size[0] * patch_size[1] * patch_size[2] * **out_channels).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">shift</span><span class="p">,</span> <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adaLN_modulation</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">modulate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">norm_final</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">shift</span><span class="p">,</span> <span class="n">scale</span><span class="p">)</span>
@@ -656,12 +672,12 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Initialize the patchify layer.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - channel_size (:obj:`Union[int, List[int]]`): The number of input channels, defaults to 3.</span>
-<span class="sd">            - data_size (:obj:`List[int]`): The input size of data, defaults to [32, 32, 32].</span>
-<span class="sd">            - patch_size (:obj:`List[int]`): The patch size of each token for attention layer, defaults to [2, 2, 2].</span>
-<span class="sd">            - hidden_size (:obj:`int`): The hidden size of attention layer, defaults to 768.</span>
-<span class="sd">            - bias (:obj:`bool`): Whether to use bias, defaults to False.</span>
-<span class="sd">            - convolved (:obj:`bool`): Whether to use fully connected layer for all channels, defaults to False.</span>
+<span class="sd">            channel_size (:obj:`Union[int, List[int]]`): The number of input channels, defaults to 3.</span>
+<span class="sd">            data_size (:obj:`List[int]`): The input size of data, defaults to [32, 32, 32].</span>
+<span class="sd">            patch_size (:obj:`List[int]`): The patch size of each token for attention layer, defaults to [2, 2, 2].</span>
+<span class="sd">            hidden_size (:obj:`int`): The hidden size of attention layer, defaults to 768.</span>
+<span class="sd">            bias (:obj:`bool`): Whether to use bias, defaults to False.</span>
+<span class="sd">            convolved (:obj:`bool`): Whether to use fully connected layer for all channels, defaults to False.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data_size</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">))</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data_size</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
@@ -687,9 +703,9 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Forward pass of the patchify layer.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - x (:obj:`torch.Tensor`): The input tensor of shape (B, C, T, H, W).</span>
+<span class="sd">            x (:obj:`torch.Tensor`): The input tensor of shape (B, C, T, H, W).</span>
 <span class="sd">        Returns:</span>
-<span class="sd">            - x (:obj:`torch.Tensor`): The output tensor of shape (B, T&#39; * H&#39;* W&#39;, hidden_size). \</span>
+<span class="sd">            x (:obj:`torch.Tensor`): The output tensor of shape (B, T&#39; * H&#39;* W&#39;, hidden_size). \</span>
 <span class="sd">            where T&#39; = T // patch_size[0], H&#39; = H // patch_size[1], W&#39; = W // patch_size[2].</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -708,6 +724,8 @@
 <span class="sd">    Interfaces:</span>
 <span class="sd">        ``__init__``, ``forward``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="DiT_3D.__init__">
+<a class="viewcode-back" href="../../../../api_doc/neural_network/index.html#grl.neural_network.DiT_3D.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">patch_block_size</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">],</span>
@@ -724,15 +742,15 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Initialize the DiT model.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - patch_block_size (:obj:`Union[List[int], Tuple[int]]`): The size of patch block, defaults to [10, 32, 32].</span>
-<span class="sd">            - patch_size (:obj:`Union[int, List[int], Tuple[int]]`): The patch size of each token in attention layer, defaults to 2.</span>
-<span class="sd">            - in_channels (:obj:`Union[int, List[int], Tuple[int]]`): The number of input channels, defaults to 4.</span>
-<span class="sd">            - hidden_size (:obj:`int`): The hidden size of attention layer, defaults to 1152.</span>
-<span class="sd">            - depth (:obj:`int`): The depth of transformer, defaults to 28.</span>
-<span class="sd">            - num_heads (:obj:`int`): The number of attention heads, defaults to 16.</span>
-<span class="sd">            - mlp_ratio (:obj:`float`): The hidden size of the MLP with respect to the hidden size of Attention, defaults to 4.0.</span>
-<span class="sd">            - learn_sigma (:obj:`bool`): Whether to learn sigma, defaults to True.</span>
-<span class="sd">            - convolved (:obj:`bool`): Whether to use fully connected layer for all channels, defaults to False.</span>
+<span class="sd">            patch_block_size (:obj:`Union[List[int], Tuple[int]]`): The size of patch block, defaults to [10, 32, 32].</span>
+<span class="sd">            patch_size (:obj:`Union[int, List[int], Tuple[int]]`): The patch size of each token in attention layer, defaults to 2.</span>
+<span class="sd">            in_channels (:obj:`Union[int, List[int], Tuple[int]]`): The number of input channels, defaults to 4.</span>
+<span class="sd">            hidden_size (:obj:`int`): The hidden size of attention layer, defaults to 1152.</span>
+<span class="sd">            depth (:obj:`int`): The depth of transformer, defaults to 28.</span>
+<span class="sd">            num_heads (:obj:`int`): The number of attention heads, defaults to 16.</span>
+<span class="sd">            mlp_ratio (:obj:`float`): The hidden size of the MLP with respect to the hidden size of Attention, defaults to 4.0.</span>
+<span class="sd">            learn_sigma (:obj:`bool`): Whether to learn sigma, defaults to True.</span>
+<span class="sd">            convolved (:obj:`bool`): Whether to use fully connected layer for all channels, defaults to False.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
@@ -761,8 +779,11 @@
             <span class="n">DiTBlock</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">num_heads</span><span class="p">,</span> <span class="n">mlp_ratio</span><span class="o">=</span><span class="n">mlp_ratio</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">depth</span><span class="p">)</span>
         <span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">final_layer</span> <span class="o">=</span> <span class="n">FinalLayer_3D</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">patch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_channels</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">initialize_weights</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initialize_weights</span><span class="p">()</span></div>
 
+
+<div class="viewcode-block" id="DiT_3D.initialize_weights">
+<a class="viewcode-back" href="../../../../api_doc/neural_network/index.html#grl.neural_network.DiT_3D.initialize_weights">[docs]</a>
     <span class="k">def</span> <span class="nf">initialize_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
@@ -795,24 +816,30 @@
         <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">final_layer</span><span class="o">.</span><span class="n">adaLN_modulation</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">final_layer</span><span class="o">.</span><span class="n">adaLN_modulation</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">final_layer</span><span class="o">.</span><span class="n">linear</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-        <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">final_layer</span><span class="o">.</span><span class="n">linear</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">final_layer</span><span class="o">.</span><span class="n">linear</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
 
+
+<div class="viewcode-block" id="DiT_3D.unpatchify">
+<a class="viewcode-back" href="../../../../api_doc/neural_network/index.html#grl.neural_network.DiT_3D.unpatchify">[docs]</a>
     <span class="k">def</span> <span class="nf">unpatchify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Unpatchify the output tensor of attention layer.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            x: (N, total_patches = T&#39; * H&#39; * W&#39;, patch_size[0] * patch_size[1] * patch_size[2] * C)</span>
+<span class="sd">            x (:obj:`torch.Tensor`): The input tensor of shape (N, total_patches = T&#39; * H&#39; * W&#39;, patch_size[0] * patch_size[1] * patch_size[2] * C)</span>
 <span class="sd">        Returns:</span>
-<span class="sd">            x: (N, T, C, H, W)</span>
+<span class="sd">            x (:obj:`torch.Tensor`): The output tensor of shape (N, T, C, H, W).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_grid_num</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_grid_num</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_grid_num</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">out_channels</span><span class="p">)))</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;nthwpqr...-&gt;ntp...hqwr&#39;</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_grid_num</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">out_channels</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_grid_num</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_grid_num</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
 
-        <span class="k">return</span> <span class="n">x</span>
+        <span class="k">return</span> <span class="n">x</span></div>
 
+
+<div class="viewcode-block" id="DiT_3D.forward">
+<a class="viewcode-back" href="../../../../api_doc/neural_network/index.html#grl.neural_network.DiT_3D.forward">[docs]</a>
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
@@ -823,9 +850,9 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Forward pass of DiT for 3D data.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - t (:obj:`torch.Tensor`): Tensor of diffusion timesteps.</span>
-<span class="sd">            - x (:obj:`torch.Tensor`): Tensor of inputs with spatial information (originally at t=0 it is tensor of videos or latent representations of videos).</span>
-<span class="sd">            - condition (:obj:`Union[torch.Tensor, TensorDict]`, optional): The input condition, such as class labels.</span>
+<span class="sd">            t (:obj:`torch.Tensor`): Tensor of diffusion timesteps.</span>
+<span class="sd">            x (:obj:`torch.Tensor`): Tensor of inputs with spatial information (originally at t=0 it is tensor of videos or latent representations of videos).</span>
+<span class="sd">            condition (:obj:`Union[torch.Tensor, TensorDict]`, optional): The input condition, such as class labels.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># x is of shape (N, T, C, H, W), reshape to (N, C, T, H, W)</span>
@@ -847,6 +874,7 @@
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">final_layer</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>                <span class="c1"># (N, total_patches, patch_size[0] * patch_size[1] * patch_size[2] * C)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unpatchify</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>                   <span class="c1"># (N, T, C, H, W)</span>
         <span class="k">return</span> <span class="n">x</span></div>
+</div>
 
 </pre></div>
 

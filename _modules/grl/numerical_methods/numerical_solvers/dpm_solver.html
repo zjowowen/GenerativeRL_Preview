@@ -100,8 +100,6 @@
 <span class="kn">from</span> <span class="nn">tensordict</span> <span class="kn">import</span> <span class="n">TensorDict</span>
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
 
-<span class="kn">from</span> <span class="nn">grl.generative_models.diffusion_process</span> <span class="kn">import</span> <span class="n">DiffusionProcess</span>
-
 
 <div class="viewcode-block" id="DPMSolver">
 <a class="viewcode-back" href="../../../../api_doc/numerical_methods/index.html#grl.numerical_methods.DPMSolver">[docs]</a>
@@ -113,6 +111,8 @@
 <span class="sd">        ``__init__``, ``integrate``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+<div class="viewcode-block" id="DPMSolver.__init__">
+<a class="viewcode-back" href="../../../../api_doc/numerical_methods/index.html#grl.numerical_methods.DPMSolver.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">order</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -130,18 +130,18 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Initialize the DPM-Solver.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - order (:obj:`int`): The order of the DPM-Solver, which should be 1, 2, or 3.</span>
-<span class="sd">            - device (:obj:`str`): The device for the computation.</span>
-<span class="sd">            - denoise (:obj:`bool`): Whether to denoise at the final step.</span>
-<span class="sd">            - atol (:obj:`float`): The absolute tolerance for the adaptive solver.</span>
-<span class="sd">            - rtol (:obj:`float`): The relative tolerance for the adaptive solver.</span>
-<span class="sd">            - steps (:obj:`int`): The total number of function evaluations (NFE).</span>
-<span class="sd">            - type (:obj:`str`): The type for the DPM-Solver, which should be &#39;dpm_solver&#39; or &#39;dpm_solver++&#39;.</span>
-<span class="sd">            - method (:obj:`str`): The method for the DPM-Solver, which should be &#39;singlestep&#39;, &#39;multistep&#39;, &#39;singlestep_fixed&#39;, or &#39;adaptive&#39;.</span>
-<span class="sd">            - solver_type (:obj:`str`): The type for the high-order solvers, which should be &#39;dpm_solver&#39; or &#39;taylor&#39;. </span>
+<span class="sd">            order (:obj:`int`): The order of the DPM-Solver, which should be 1, 2, or 3.</span>
+<span class="sd">            device (:obj:`str`): The device for the computation.</span>
+<span class="sd">            denoise (:obj:`bool`): Whether to denoise at the final step.</span>
+<span class="sd">            atol (:obj:`float`): The absolute tolerance for the adaptive solver.</span>
+<span class="sd">            rtol (:obj:`float`): The relative tolerance for the adaptive solver.</span>
+<span class="sd">            steps (:obj:`int`): The total number of function evaluations (NFE).</span>
+<span class="sd">            type (:obj:`str`): The type for the DPM-Solver, which should be &#39;dpm_solver&#39; or &#39;dpm_solver++&#39;.</span>
+<span class="sd">            method (:obj:`str`): The method for the DPM-Solver, which should be &#39;singlestep&#39;, &#39;multistep&#39;, &#39;singlestep_fixed&#39;, or &#39;adaptive&#39;.</span>
+<span class="sd">            solver_type (:obj:`str`): The type for the high-order solvers, which should be &#39;dpm_solver&#39; or &#39;taylor&#39;. </span>
 <span class="sd">                The type slightly impacts the performance. We recommend to use &#39;dpm_solver&#39; type.</span>
-<span class="sd">            - skip_type (:obj:`str`): The type for the spacing of the time steps, which should be &#39;logSNR&#39;, &#39;time_uniform&#39;, or &#39;time_quadratic&#39;.</span>
-<span class="sd">            - denoise (:obj:`bool`): Whether to denoise at the final step.</span>
+<span class="sd">            skip_type (:obj:`str`): The type for the spacing of the time steps, which should be &#39;logSNR&#39;, &#39;time_uniform&#39;, or &#39;time_quadratic&#39;.</span>
+<span class="sd">            denoise (:obj:`bool`): Whether to denoise at the final step.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="nb">type</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;dpm_solver&#39;</span><span class="p">,</span> <span class="s1">&#39;dpm_solver++&#39;</span><span class="p">]</span>
@@ -166,13 +166,16 @@
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">skip_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;logSNR&#39;</span><span class="p">,</span> <span class="s1">&#39;time_uniform&#39;</span><span class="p">,</span> <span class="s1">&#39;time_quadratic&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">denoise</span> <span class="o">=</span> <span class="n">denoise</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">nfe</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nfe</span> <span class="o">=</span> <span class="mi">0</span></div>
+
 
         <span class="c1">#TODO: support dynamic thresholding for dpm_solver++</span>
 
+<div class="viewcode-block" id="DPMSolver.integrate">
+<a class="viewcode-back" href="../../../../api_doc/numerical_methods/index.html#grl.numerical_methods.DPMSolver.integrate">[docs]</a>
     <span class="k">def</span> <span class="nf">integrate</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
-            <span class="n">diffusion_process</span><span class="p">:</span> <span class="n">DiffusionProcess</span><span class="p">,</span>
+            <span class="n">diffusion_process</span><span class="p">,</span>
             <span class="n">noise_function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
             <span class="n">data_prediction_function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
             <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
@@ -184,15 +187,15 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Integrate the diffusion process by the DPM-Solver.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - diffusion_process (:obj:`DiffusionProcess`): The diffusion process.</span>
-<span class="sd">            - noise_function (:obj:`Callable`): The noise prediction model.</span>
-<span class="sd">            - data_prediction_function (:obj:`Callable`): The data prediction model.</span>
-<span class="sd">            - x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `t_start`.</span>
-<span class="sd">            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The condition for the data prediction model.</span>
-<span class="sd">            - steps (:obj:`int`): The total number of function evaluations (NFE).</span>
-<span class="sd">            - save_intermediate (:obj:`bool`): If true, also return the intermediate model values.</span>
+<span class="sd">            diffusion_process (:obj:`DiffusionProcess`): The diffusion process.</span>
+<span class="sd">            noise_function (:obj:`Callable`): The noise prediction model.</span>
+<span class="sd">            data_prediction_function (:obj:`Callable`): The data prediction model.</span>
+<span class="sd">            x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `t_start`.</span>
+<span class="sd">            condition (:obj:`Union[torch.Tensor, TensorDict]`): The condition for the data prediction model.</span>
+<span class="sd">            steps (:obj:`int`): The total number of function evaluations (NFE).</span>
+<span class="sd">            save_intermediate (:obj:`bool`): If true, also return the intermediate model values.</span>
 <span class="sd">        Returns:</span>
-<span class="sd">            - x_end (:obj:`torch.Tensor`): The approximated solution at time `t_end`.</span>
+<span class="sd">            x_end (:obj:`torch.Tensor`): The approximated solution at time `t_end`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">steps</span> <span class="o">=</span> <span class="n">steps</span> <span class="k">if</span> <span class="n">steps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">20</span>
@@ -202,8 +205,8 @@
 <span class="sd">            Overview:</span>
 <span class="sd">                Convert the model to the noise prediction model or the data prediction model.</span>
 <span class="sd">            Arguments:</span>
-<span class="sd">                - x (:obj:`Union[torch.Tensor, TensorDict]`): The input tensor.</span>
-<span class="sd">                - t (:obj:`torch.Tensor`): The time tensor.</span>
+<span class="sd">                x (:obj:`Union[torch.Tensor, TensorDict]`): The input tensor.</span>
+<span class="sd">                t (:obj:`torch.Tensor`): The time tensor.</span>
 <span class="sd">            &quot;&quot;&quot;</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_dpm_solver_plus_plus</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">data_prediction_function</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">condition</span><span class="p">)</span>
@@ -216,11 +219,11 @@
 <span class="sd">                Compute the intermediate time steps for sampling.</span>
 
 <span class="sd">            Arguments:</span>
-<span class="sd">                - t_T (:obj:`float`): The starting time of the sampling (default is T).</span>
-<span class="sd">                - t_0 (:obj:`float`): The ending time of the sampling (default is epsilon).</span>
-<span class="sd">                - N (:obj:`int`): The total number of the spacing of the time steps.</span>
+<span class="sd">                t_T (:obj:`float`): The starting time of the sampling (default is T).</span>
+<span class="sd">                t_0 (:obj:`float`): The ending time of the sampling (default is epsilon).</span>
+<span class="sd">                N (:obj:`int`): The total number of the spacing of the time steps.</span>
 <span class="sd">            Returns:</span>
-<span class="sd">                - t (:obj:`torch.Tensor`): A pytorch tensor of the time steps, with the shape (N + 1,).</span>
+<span class="sd">                t (:obj:`torch.Tensor`): A pytorch tensor of the time steps, with the shape (N + 1,).</span>
 <span class="sd">            &quot;&quot;&quot;</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">skip_type</span> <span class="o">==</span> <span class="s1">&#39;logSNR&#39;</span><span class="p">:</span>
                 <span class="n">lambda_T</span> <span class="o">=</span> <span class="n">diffusion_process</span><span class="o">.</span><span class="n">HalfLogSNR</span><span class="p">(</span><span class="n">t_T</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
@@ -243,26 +246,26 @@
 <span class="sd">            Overview:</span>
 <span class="sd">                Get the order of each step for sampling by the singlestep DPM-Solver.</span>
 <span class="sd">            Arguments:</span>
-<span class="sd">                - steps (:obj:`int`): The total number of function evaluations (NFE).</span>
-<span class="sd">                - order (:obj:`int`): The max order for the solver (2 or 3).</span>
+<span class="sd">                steps (:obj:`int`): The total number of function evaluations (NFE).</span>
+<span class="sd">                order (:obj:`int`): The max order for the solver (2 or 3).</span>
 <span class="sd">            Returns:</span>
-<span class="sd">                - orders (:obj:`List[int]`): A list of the solver order of each step.</span>
+<span class="sd">                orders (:obj:`List[int]`): A list of the solver order of each step.</span>
 <span class="sd">                </span>
 <span class="sd">            .. note::</span>
 <span class="sd">                We combine both DPM-Solver-1,2,3 to use all the function evaluations, which is named as &quot;DPM-Solver-fast&quot;.</span>
 <span class="sd">                Given a fixed number of function evaluations by `steps`, the sampling procedure by DPM-Solver-fast is:</span>
-<span class="sd">                    - If order == 1:</span>
+<span class="sd">                    If order == 1:</span>
 <span class="sd">                        We take `steps` of DPM-Solver-1 (i.e. DDIM).</span>
-<span class="sd">                    - If order == 2:</span>
-<span class="sd">                        - Denote K = (steps // 2). We take K or (K + 1) intermediate time steps for sampling.</span>
-<span class="sd">                        - If steps % 2 == 0, we use K steps of DPM-Solver-2.</span>
-<span class="sd">                        - If steps % 2 == 1, we use K steps of DPM-Solver-2 and 1 step of DPM-Solver-1.</span>
-<span class="sd">                    - If order == 3:</span>
-<span class="sd">                        - Denote K = (steps // 3 + 1). We take K intermediate time steps for sampling.</span>
-<span class="sd">                        - If steps % 3 == 0, we use (K - 2) steps of DPM-Solver-3, \</span>
+<span class="sd">                    If order == 2:</span>
+<span class="sd">                        Denote K = (steps // 2). We take K or (K + 1) intermediate time steps for sampling.</span>
+<span class="sd">                        If steps % 2 == 0, we use K steps of DPM-Solver-2.</span>
+<span class="sd">                        If steps % 2 == 1, we use K steps of DPM-Solver-2 and 1 step of DPM-Solver-1.</span>
+<span class="sd">                    If order == 3:</span>
+<span class="sd">                        Denote K = (steps // 3 + 1). We take K intermediate time steps for sampling.</span>
+<span class="sd">                        If steps % 3 == 0, we use (K - 2) steps of DPM-Solver-3, \</span>
 <span class="sd">                            and 1 step of DPM-Solver-2 and 1 step of DPM-Solver-1.</span>
-<span class="sd">                        - If steps % 3 == 1, we use (K - 1) steps of DPM-Solver-3 and 1 step of DPM-Solver-1.</span>
-<span class="sd">                        - If steps % 3 == 2, we use (K - 1) steps of DPM-Solver-3 and 1 step of DPM-Solver-2</span>
+<span class="sd">                        If steps % 3 == 1, we use (K - 1) steps of DPM-Solver-3 and 1 step of DPM-Solver-1.</span>
+<span class="sd">                        If steps % 3 == 2, we use (K - 1) steps of DPM-Solver-3 and 1 step of DPM-Solver-2</span>
 <span class="sd">            &quot;&quot;&quot;</span>
             <span class="k">if</span> <span class="n">order</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
                 <span class="n">K</span> <span class="o">=</span> <span class="n">steps</span> <span class="o">//</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">1</span>
@@ -307,11 +310,11 @@
 <span class="sd">                Denoise at the final step, which is equivalent to solve the ODE \</span>
 <span class="sd">                from lambda_s to infty by first-order discretization.</span>
 <span class="sd">            Arguments:</span>
-<span class="sd">                - x (:obj:`Union[torch.Tensor, TensorDict]`): The input tensor.</span>
-<span class="sd">                - s (:obj:`torch.Tensor`): The time tensor.</span>
-<span class="sd">                - condition (:obj:`Union[torch.Tensor, TensorDict]`): The condition for the data prediction model.</span>
+<span class="sd">                x (:obj:`Union[torch.Tensor, TensorDict]`): The input tensor.</span>
+<span class="sd">                s (:obj:`torch.Tensor`): The time tensor.</span>
+<span class="sd">                condition (:obj:`Union[torch.Tensor, TensorDict]`): The condition for the data prediction model.</span>
 <span class="sd">            Returns:</span>
-<span class="sd">                - x (:obj:`Union[torch.Tensor, TensorDict]`): The denoised output.</span>
+<span class="sd">                x (:obj:`Union[torch.Tensor, TensorDict]`): The denoised output.</span>
 <span class="sd">            &quot;&quot;&quot;</span>
             <span class="k">return</span> <span class="n">data_prediction_function</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">condition</span><span class="p">)</span>
 
@@ -320,14 +323,14 @@
 <span class="sd">            Overview:</span>
 <span class="sd">                DPM-Solver-1 (equivalent to DDIM) from time `s` to time `t`.</span>
 <span class="sd">            Arguments:</span>
-<span class="sd">                - x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.</span>
-<span class="sd">                - s (:obj:`torch.Tensor`): The starting time, with the shape (x.shape[0],).</span>
-<span class="sd">                - t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).</span>
-<span class="sd">                - model_s (:obj:`Union[torch.Tensor, TensorDict]`): The model function evaluated at time `s`.</span>
+<span class="sd">                x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.</span>
+<span class="sd">                s (:obj:`torch.Tensor`): The starting time, with the shape (x.shape[0],).</span>
+<span class="sd">                t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).</span>
+<span class="sd">                model_s (:obj:`Union[torch.Tensor, TensorDict]`): The model function evaluated at time `s`.</span>
 <span class="sd">                    If `model_s` is None, we evaluate the model by `x` and `s`; otherwise we directly use it.</span>
-<span class="sd">                - return_intermediate (:obj:`bool`): If true, also return the model value at time `s`.</span>
+<span class="sd">                return_intermediate (:obj:`bool`): If true, also return the model value at time `s`.</span>
 <span class="sd">            Returns:</span>
-<span class="sd">                - x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.</span>
+<span class="sd">                x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.</span>
 <span class="sd">            &quot;&quot;&quot;</span>
 
             <span class="n">lambda_s</span> <span class="o">=</span> <span class="n">diffusion_process</span><span class="o">.</span><span class="n">HalfLogSNR</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
@@ -367,15 +370,15 @@
 <span class="sd">            Overview:</span>
 <span class="sd">                Singlestep solver DPM-Solver-2 from time `s` to time `t`.</span>
 <span class="sd">            Arguments:</span>
-<span class="sd">                - x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.</span>
-<span class="sd">                - s (:obj:`torch.Tensor`): The starting time, with the shape (x.shape[0],).</span>
-<span class="sd">                - t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).</span>
-<span class="sd">                - r1 (:obj:`float`): The hyperparameter of the second-order solver.</span>
-<span class="sd">                - model_s (:obj:`Union[torch.Tensor, TensorDict]`): The model function evaluated at time `s`.</span>
+<span class="sd">                x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.</span>
+<span class="sd">                s (:obj:`torch.Tensor`): The starting time, with the shape (x.shape[0],).</span>
+<span class="sd">                t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).</span>
+<span class="sd">                r1 (:obj:`float`): The hyperparameter of the second-order solver.</span>
+<span class="sd">                model_s (:obj:`Union[torch.Tensor, TensorDict]`): The model function evaluated at time `s`.</span>
 <span class="sd">                    If `model_s` is None, we evaluate the model by `x` and `s`; otherwise we directly use it.</span>
-<span class="sd">                - return_intermediate (:obj:`bool`): If true, also return the model value at time `s` and `s1` (the intermediate time).</span>
+<span class="sd">                return_intermediate (:obj:`bool`): If true, also return the model value at time `s` and `s1` (the intermediate time).</span>
 <span class="sd">            Returns:</span>
-<span class="sd">                - x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.</span>
+<span class="sd">                x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.</span>
 <span class="sd">            &quot;&quot;&quot;</span>
 
             <span class="k">if</span> <span class="n">r1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -436,18 +439,18 @@
 <span class="sd">            Overview:</span>
 <span class="sd">                Singlestep solver DPM-Solver-3 from time `s` to time `t`.</span>
 <span class="sd">            Arguments:</span>
-<span class="sd">                - x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.</span>
-<span class="sd">                - s (:obj:`torch.Tensor`): The starting time, with the shape (x.shape[0],).</span>
-<span class="sd">                - t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).</span>
-<span class="sd">                - r1 (:obj:`float`): The hyperparameter of the third-order solver.</span>
-<span class="sd">                - r2 (:obj:`float`): The hyperparameter of the third-order solver.</span>
-<span class="sd">                - model_s (:obj:`Union[torch.Tensor, TensorDict]`): The model function evaluated at time `s`.</span>
+<span class="sd">                x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.</span>
+<span class="sd">                s (:obj:`torch.Tensor`): The starting time, with the shape (x.shape[0],).</span>
+<span class="sd">                t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).</span>
+<span class="sd">                r1 (:obj:`float`): The hyperparameter of the third-order solver.</span>
+<span class="sd">                r2 (:obj:`float`): The hyperparameter of the third-order solver.</span>
+<span class="sd">                model_s (:obj:`Union[torch.Tensor, TensorDict]`): The model function evaluated at time `s`.</span>
 <span class="sd">                    If `model_s` is None, we evaluate the model by `x` and `s`; otherwise we directly use it.</span>
-<span class="sd">                - model_s1 (:obj:`Union[torch.Tensor, TensorDict]`): The model function evaluated at time `s1` (the intermediate time given by `r1`).</span>
+<span class="sd">                model_s1 (:obj:`Union[torch.Tensor, TensorDict]`): The model function evaluated at time `s1` (the intermediate time given by `r1`).</span>
 <span class="sd">                    If `model_s1` is None, we evaluate the model at `s1`; otherwise we directly use it.</span>
-<span class="sd">                - return_intermediate (:obj:`bool`): If true, also return the model value at time `s`, `s1` and `s2` (the intermediate times).</span>
+<span class="sd">                return_intermediate (:obj:`bool`): If true, also return the model value at time `s`, `s1` and `s2` (the intermediate times).</span>
 <span class="sd">            Returns:</span>
-<span class="sd">                - x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.</span>
+<span class="sd">                x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.</span>
 <span class="sd">            &quot;&quot;&quot;</span>
 
             <span class="k">if</span> <span class="n">r1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -526,12 +529,12 @@
 <span class="sd">            Overview:</span>
 <span class="sd">                Multistep solver DPM-Solver-2 from time `t_prev_list[-1]` to time `t`.</span>
 <span class="sd">            Arguments:</span>
-<span class="sd">                - x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.</span>
-<span class="sd">                - model_prev_list (:obj:`List[Union[torch.Tensor, TensorDict]]`): The previous computed model values.</span>
-<span class="sd">                - t_prev_list (:obj:`List[torch.Tensor]`): The previous times, each time has the shape (x.shape[0],).</span>
-<span class="sd">                - t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).</span>
+<span class="sd">                x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.</span>
+<span class="sd">                model_prev_list (:obj:`List[Union[torch.Tensor, TensorDict]]`): The previous computed model values.</span>
+<span class="sd">                t_prev_list (:obj:`List[torch.Tensor]`): The previous times, each time has the shape (x.shape[0],).</span>
+<span class="sd">                t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).</span>
 <span class="sd">            Returns:</span>
-<span class="sd">                - x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.</span>
+<span class="sd">                x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.</span>
 <span class="sd">            &quot;&quot;&quot;</span>
 
             <span class="n">model_prev_1</span><span class="p">,</span> <span class="n">model_prev_0</span> <span class="o">=</span> <span class="n">model_prev_list</span>
@@ -566,12 +569,12 @@
 <span class="sd">            Overview:</span>
 <span class="sd">                Multistep solver DPM-Solver-3 from time `t_prev_list[-1]` to time `t`.</span>
 <span class="sd">            Arguments:</span>
-<span class="sd">                - x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.</span>
-<span class="sd">                - model_prev_list (:obj:`List[Union[torch.Tensor, TensorDict]]`): The previous computed model values.</span>
-<span class="sd">                - t_prev_list (:obj:`List[torch.Tensor]`): The previous times, each time has the shape (x.shape[0],).</span>
-<span class="sd">                - t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).</span>
+<span class="sd">                x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.</span>
+<span class="sd">                model_prev_list (:obj:`List[Union[torch.Tensor, TensorDict]]`): The previous computed model values.</span>
+<span class="sd">                t_prev_list (:obj:`List[torch.Tensor]`): The previous times, each time has the shape (x.shape[0],).</span>
+<span class="sd">                t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).</span>
 <span class="sd">            Returns:</span>
-<span class="sd">                - x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.</span>
+<span class="sd">                x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.</span>
 <span class="sd">            &quot;&quot;&quot;</span>
 
             <span class="n">model_prev_2</span><span class="p">,</span> <span class="n">model_prev_1</span><span class="p">,</span> <span class="n">model_prev_0</span> <span class="o">=</span> <span class="n">model_prev_list</span>
@@ -607,15 +610,15 @@
 <span class="sd">            Overview:</span>
 <span class="sd">                Singlestep DPM-Solver with the order `order` from time `s` to time `t`.</span>
 <span class="sd">            Arguments:</span>
-<span class="sd">                - x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.</span>
-<span class="sd">                - s (:obj:`torch.Tensor`): The starting time, with the shape (x.shape[0],).</span>
-<span class="sd">                - t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).</span>
-<span class="sd">                - order (:obj:`int`): The order of DPM-Solver. We only support order == 1 or 2 or 3.</span>
-<span class="sd">                - return_intermediate (:obj:`bool`): If true, also return the model value at time `s`, `s1` and `s2` (the intermediate times).</span>
-<span class="sd">                - r1 (:obj:`float`): The hyperparameter of the second-order or third-order solver.</span>
-<span class="sd">                - r2 (:obj:`float`): The hyperparameter of the third-order solver.</span>
+<span class="sd">                x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.</span>
+<span class="sd">                s (:obj:`torch.Tensor`): The starting time, with the shape (x.shape[0],).</span>
+<span class="sd">                t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).</span>
+<span class="sd">                order (:obj:`int`): The order of DPM-Solver. We only support order == 1 or 2 or 3.</span>
+<span class="sd">                return_intermediate (:obj:`bool`): If true, also return the model value at time `s`, `s1` and `s2` (the intermediate times).</span>
+<span class="sd">                r1 (:obj:`float`): The hyperparameter of the second-order or third-order solver.</span>
+<span class="sd">                r2 (:obj:`float`): The hyperparameter of the third-order solver.</span>
 <span class="sd">            Returns:</span>
-<span class="sd">                - x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.</span>
+<span class="sd">                x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.</span>
 <span class="sd">            &quot;&quot;&quot;</span>
             <span class="k">if</span> <span class="n">order</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">dpm_solver_first_update</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">return_intermediate</span><span class="o">=</span><span class="n">return_intermediate</span><span class="p">)</span>
@@ -631,13 +634,13 @@
 <span class="sd">            Overview:</span>
 <span class="sd">                Multistep DPM-Solver with the order `order` from time `t_prev_list[-1]` to time `t`.</span>
 <span class="sd">            Arguments:</span>
-<span class="sd">                - x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.</span>
-<span class="sd">                - model_prev_list (:obj:`List[Union[torch.Tensor, TensorDict]]`): The previous computed model values.</span>
-<span class="sd">                - t_prev_list (:obj:`List[torch.Tensor]`): The previous times, each time has the shape (x.shape[0],).</span>
-<span class="sd">                - t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).</span>
-<span class="sd">                - order (:obj:`int`): The order of DPM-Solver. We only support order == 1 or 2 or 3.</span>
+<span class="sd">                x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.</span>
+<span class="sd">                model_prev_list (:obj:`List[Union[torch.Tensor, TensorDict]]`): The previous computed model values.</span>
+<span class="sd">                t_prev_list (:obj:`List[torch.Tensor]`): The previous times, each time has the shape (x.shape[0],).</span>
+<span class="sd">                t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).</span>
+<span class="sd">                order (:obj:`int`): The order of DPM-Solver. We only support order == 1 or 2 or 3.</span>
 <span class="sd">            Returns:</span>
-<span class="sd">                - x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.</span>
+<span class="sd">                x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.</span>
 <span class="sd">            &quot;&quot;&quot;</span>
 
             <span class="k">if</span> <span class="n">order</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -656,17 +659,17 @@
 <span class="sd">            Overview:</span>
 <span class="sd">                The adaptive step size solver based on singlestep DPM-Solver.</span>
 <span class="sd">            Arguments:</span>
-<span class="sd">                - x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `t_T`.</span>
-<span class="sd">                - t_T (:obj:`float`): The starting time of the sampling (default is T).</span>
-<span class="sd">                - t_0 (:obj:`float`): The ending time of the sampling (default is epsilon).</span>
-<span class="sd">                - h_init (:obj:`float`): The initial step size (for logSNR).</span>
-<span class="sd">                - theta (:obj:`float`): The safety hyperparameter for adapting the step size.</span>
-<span class="sd">                - t_err (:obj:`float`): The tolerance for the time.</span>
-<span class="sd">                - save_intermediate (:obj:`bool`): If true, also return the intermediate values.</span>
+<span class="sd">                x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `t_T`.</span>
+<span class="sd">                t_T (:obj:`float`): The starting time of the sampling (default is T).</span>
+<span class="sd">                t_0 (:obj:`float`): The ending time of the sampling (default is epsilon).</span>
+<span class="sd">                h_init (:obj:`float`): The initial step size (for logSNR).</span>
+<span class="sd">                theta (:obj:`float`): The safety hyperparameter for adapting the step size.</span>
+<span class="sd">                t_err (:obj:`float`): The tolerance for the time.</span>
+<span class="sd">                save_intermediate (:obj:`bool`): If true, also return the intermediate values.</span>
 <span class="sd">            Returns:</span>
-<span class="sd">                - x_0 (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t_0`.</span>
+<span class="sd">                x_0 (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t_0`.</span>
 <span class="sd">            References:</span>
-<span class="sd">                - [1] A. Jolicoeur-Martineau, K. Li, R. Piché-Taillefer, T. Kachman, and I. Mitliagkas, \</span>
+<span class="sd">                [1] A. Jolicoeur-Martineau, K. Li, R. Piché-Taillefer, T. Kachman, and I. Mitliagkas, \</span>
 <span class="sd">                    &quot;Gotta go fast when generating data with score-based models,&quot; \</span>
 <span class="sd">                    arXiv preprint arXiv:2105.14080, 2021.</span>
 <span class="sd">            &quot;&quot;&quot;</span>
@@ -787,6 +790,7 @@
             <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">x_list</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">x</span></div>
+</div>
 
 
 </pre></div>

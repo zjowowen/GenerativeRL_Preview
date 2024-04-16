@@ -110,6 +110,8 @@
 <span class="sd">        ``__init__``, ``integrate``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+<div class="viewcode-block" id="ODESolver.__init__">
+<a class="viewcode-back" href="../../../../api_doc/numerical_methods/index.html#grl.numerical_methods.ODESolver.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">ode_solver</span><span class="o">=</span><span class="s2">&quot;euler&quot;</span><span class="p">,</span>
@@ -123,12 +125,12 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Initialize the ODE solver using torchode or torchdyn library.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - ode_solver (:obj:`str`): The ODE solver to use.</span>
-<span class="sd">            - dt (:obj:`float`): The time step.</span>
-<span class="sd">            - atol (:obj:`float`): The absolute tolerance.</span>
-<span class="sd">            - rtol (:obj:`float`): The relative tolerance.</span>
-<span class="sd">            - library (:obj:`str`): The library to use for the ODE solver. Currently, it supports &#39;torchdyn&#39; and &#39;torchode&#39;.</span>
-<span class="sd">            - **kwargs: Additional arguments for the ODE solver.</span>
+<span class="sd">            ode_solver (:obj:`str`): The ODE solver to use.</span>
+<span class="sd">            dt (:obj:`float`): The time step.</span>
+<span class="sd">            atol (:obj:`float`): The absolute tolerance.</span>
+<span class="sd">            rtol (:obj:`float`): The relative tolerance.</span>
+<span class="sd">            library (:obj:`str`): The library to use for the ODE solver. Currently, it supports &#39;torchdyn&#39; and &#39;torchode&#39;.</span>
+<span class="sd">            **kwargs: Additional arguments for the ODE solver.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ode_solver</span> <span class="o">=</span> <span class="n">ode_solver</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="n">dt</span>
@@ -136,8 +138,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">rtol</span> <span class="o">=</span> <span class="n">rtol</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nfe</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span> <span class="o">=</span> <span class="n">kwargs</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">library</span> <span class="o">=</span> <span class="n">library</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">library</span> <span class="o">=</span> <span class="n">library</span></div>
 
+
+<div class="viewcode-block" id="ODESolver.integrate">
+<a class="viewcode-back" href="../../../../api_doc/numerical_methods/index.html#grl.numerical_methods.ODESolver.integrate">[docs]</a>
     <span class="k">def</span> <span class="nf">integrate</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">drift</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span>
@@ -148,13 +153,11 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Integrate the ODE.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - drift (:obj:`Union[nn.Module, Callable]`): The drift term of the ODE.</span>
-<span class="sd">            - x0 (:obj:`Union[torch.Tensor, TensorDict]`): The input initial state.</span>
-<span class="sd">            - t_span (:obj:`torch.Tensor`): The time at which to evaluate the ODE. \</span>
-<span class="sd">            The first element is the initial time, and the last element is the final time.</span>
-<span class="sd">            For example, t = torch.tensor([0.0, 1.0]).</span>
+<span class="sd">            drift (:obj:`Union[nn.Module, Callable]`): The drift term of the ODE.</span>
+<span class="sd">            x0 (:obj:`Union[torch.Tensor, TensorDict]`): The input initial state.</span>
+<span class="sd">            t_span (:obj:`torch.Tensor`): The time at which to evaluate the ODE. The first element is the initial time, and the last element is the final time. For example, t = torch.tensor([0.0, 1.0]).</span>
 <span class="sd">        Returns:</span>
-<span class="sd">            - trajectory (:obj:`Union[torch.Tensor, TensorDict]`): The output trajectory of the ODE, which has the same data type as x0 and the shape of (len(t_span), *x0.shape).</span>
+<span class="sd">            trajectory (:obj:`Union[torch.Tensor, TensorDict]`): The output trajectory of the ODE, which has the same data type as x0 and the shape of (len(t_span), *x0.shape).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">nfe</span> <span class="o">=</span> <span class="mi">0</span>
@@ -165,7 +168,8 @@
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">library</span> <span class="o">==</span> <span class="s2">&quot;torchode&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">odeint_by_torchode</span><span class="p">(</span><span class="n">drift</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;library </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">library</span><span class="si">}</span><span class="s2"> is not supported&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;library </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">library</span><span class="si">}</span><span class="s2"> is not supported&quot;</span><span class="p">)</span></div>
+
 
     <span class="k">def</span> <span class="nf">forward_ode_drift_by_torchdyn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nfe</span> <span class="o">+=</span> <span class="mi">1</span>

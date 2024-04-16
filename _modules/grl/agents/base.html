@@ -100,6 +100,8 @@
 <a class="viewcode-back" href="../../../api_doc/agents/index.html#grl.agents.BaseAgent">[docs]</a>
 <span class="k">class</span> <span class="nc">BaseAgent</span><span class="p">:</span>
 
+<div class="viewcode-block" id="BaseAgent.__init__">
+<a class="viewcode-back" href="../../../api_doc/agents/index.html#grl.agents.BaseAgent.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">config</span><span class="p">:</span><span class="n">EasyDict</span><span class="p">,</span>
@@ -109,14 +111,17 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Initialize the agent.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - config (:obj:`EasyDict`): The configuration.</span>
-<span class="sd">            - model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The model.</span>
+<span class="sd">            config (:obj:`EasyDict`): The configuration.</span>
+<span class="sd">            model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The model.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">device</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span></div>
 
+
+<div class="viewcode-block" id="BaseAgent.act">
+<a class="viewcode-back" href="../../../api_doc/agents/index.html#grl.agents.BaseAgent.act">[docs]</a>
     <span class="k">def</span> <span class="nf">act</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">obs</span><span class="p">:</span><span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Dict</span><span class="p">],</span>
@@ -126,10 +131,10 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Given an observation, return an action.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - obs (:obj:`Union[np.ndarray, torch.Tensor, Dict]`): The observation.</span>
-<span class="sd">            - return_as_torch_tensor (:obj:`bool`): Whether to return the action as a torch tensor.</span>
+<span class="sd">            obs (:obj:`Union[np.ndarray, torch.Tensor, Dict]`): The observation.</span>
+<span class="sd">            return_as_torch_tensor (:obj:`bool`): Whether to return the action as a torch tensor.</span>
 <span class="sd">        Returns:</span>
-<span class="sd">            - action (:obj:`Union[np.ndarray, torch.Tensor, Dict]`): The action.</span>
+<span class="sd">            action (:obj:`Union[np.ndarray, torch.Tensor, Dict]`): The action.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
@@ -169,6 +174,7 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;action must be a dict, torch.Tensor, or np.ndarray&quot;</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">action</span></div>
+</div>
 
 </pre></div>
 

@@ -115,10 +115,10 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Initialize the SDE object.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - drift (:obj:`nn.Module`): The function that defines the drift of the SDE.</span>
-<span class="sd">            - diffusion (:obj:`nn.Module`): The function that defines the diffusion of the SDE.</span>
-<span class="sd">            - noise_type (:obj:`str`): The type of noise of the SDE. It can be &#39;diagonal&#39;, &#39;general&#39;, &#39;scalar&#39; or &#39;additive&#39;.</span>
-<span class="sd">            - sde_type (:obj:`str`): The type of the SDE. It can be &#39;ito&#39; or &#39;stratonovich&#39;.</span>
+<span class="sd">            drift (:obj:`nn.Module`): The function that defines the drift of the SDE.</span>
+<span class="sd">            diffusion (:obj:`nn.Module`): The function that defines the diffusion of the SDE.</span>
+<span class="sd">            noise_type (:obj:`str`): The type of noise of the SDE. It can be &#39;diagonal&#39;, &#39;general&#39;, &#39;scalar&#39; or &#39;additive&#39;.</span>
+<span class="sd">            sde_type (:obj:`str`): The type of the SDE. It can be &#39;ito&#39; or &#39;stratonovich&#39;.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">drift</span> <span class="o">=</span> <span class="n">drift</span>
@@ -146,6 +146,8 @@
 <a class="viewcode-back" href="../../../../api_doc/numerical_methods/index.html#grl.numerical_methods.SDESolver">[docs]</a>
 <span class="k">class</span> <span class="nc">SDESolver</span><span class="p">:</span>
 
+<div class="viewcode-block" id="SDESolver.__init__">
+<a class="viewcode-back" href="../../../../api_doc/numerical_methods/index.html#grl.numerical_methods.SDESolver.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">sde_solver</span><span class="o">=</span><span class="s2">&quot;euler&quot;</span><span class="p">,</span>
@@ -161,14 +163,14 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Initialize the SDE solver using torchsde library.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - sde_solver (:obj:`str`): The SDE solver to use.</span>
-<span class="sd">            - sde_noise_type (:obj:`str`): The type of noise of the SDE. It can be &#39;diagonal&#39;, &#39;general&#39;, &#39;scalar&#39; or &#39;additive&#39;.</span>
-<span class="sd">            - sde_type (:obj:`str`): The type of the SDE. It can be &#39;ito&#39; or &#39;stratonovich&#39;.</span>
-<span class="sd">            - dt (:obj:`float`): The time step.</span>
-<span class="sd">            - atol (:obj:`float`): The absolute tolerance.</span>
-<span class="sd">            - rtol (:obj:`float`): The relative tolerance.</span>
-<span class="sd">            - library (:obj:`str`): The library to use for the ODE solver. Currently, it supports &#39;torchsde&#39;.</span>
-<span class="sd">            - **kwargs: Additional arguments for the ODE solver.</span>
+<span class="sd">            sde_solver (:obj:`str`): The SDE solver to use.</span>
+<span class="sd">            sde_noise_type (:obj:`str`): The type of noise of the SDE. It can be &#39;diagonal&#39;, &#39;general&#39;, &#39;scalar&#39; or &#39;additive&#39;.</span>
+<span class="sd">            sde_type (:obj:`str`): The type of the SDE. It can be &#39;ito&#39; or &#39;stratonovich&#39;.</span>
+<span class="sd">            dt (:obj:`float`): The time step.</span>
+<span class="sd">            atol (:obj:`float`): The absolute tolerance.</span>
+<span class="sd">            rtol (:obj:`float`): The relative tolerance.</span>
+<span class="sd">            library (:obj:`str`): The library to use for the ODE solver. Currently, it supports &#39;torchsde&#39;.</span>
+<span class="sd">            **kwargs: Additional arguments for the ODE solver.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sde_solver</span> <span class="o">=</span> <span class="n">sde_solver</span>
@@ -180,8 +182,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">nfe_drift</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nfe_diffusion</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span> <span class="o">=</span> <span class="n">kwargs</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">library</span> <span class="o">=</span> <span class="n">library</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">library</span> <span class="o">=</span> <span class="n">library</span></div>
 
+
+<div class="viewcode-block" id="SDESolver.integrate">
+<a class="viewcode-back" href="../../../../api_doc/numerical_methods/index.html#grl.numerical_methods.SDESolver.integrate">[docs]</a>
     <span class="k">def</span> <span class="nf">integrate</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">drift</span><span class="p">,</span>
@@ -195,8 +200,8 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Integrate the SDE.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - drift (:obj:`nn.Module`): The function that defines the ODE.</span>
-<span class="sd">            - diffusion (:obj:`nn.Module`): The function that defines the ODE.</span>
+<span class="sd">            drift (:obj:`nn.Module`): The function that defines the ODE.</span>
+<span class="sd">            diffusion (:obj:`nn.Module`): The function that defines the ODE.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -243,6 +248,7 @@
         <span class="n">trajectory</span> <span class="o">=</span> <span class="n">trajectory</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">t_span</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">batch_size</span><span class="p">,</span> <span class="o">*</span><span class="n">data_size</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">trajectory</span></div>
+</div>
 
     
 </pre></div>

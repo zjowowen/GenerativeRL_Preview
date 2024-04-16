@@ -104,6 +104,8 @@
 <a class="viewcode-back" href="../../../../api_doc/rl_modules/index.html#grl.rl_modules.QNetwork">[docs]</a>
 <span class="k">class</span> <span class="nc">QNetwork</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 
+<div class="viewcode-block" id="QNetwork.__init__">
+<a class="viewcode-back" href="../../../../api_doc/rl_modules/index.html#grl.rl_modules.QNetwork.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">EasyDict</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
@@ -118,9 +120,12 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;state_encoder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
         <span class="c1">#TODO</span>
         <span class="c1"># specific backbone network</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;backbone&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">type</span><span class="p">)(</span><span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;backbone&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">type</span><span class="p">)(</span><span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">args</span><span class="p">)</span></div>
 
 
+
+<div class="viewcode-block" id="QNetwork.forward">
+<a class="viewcode-back" href="../../../../api_doc/rl_modules/index.html#grl.rl_modules.QNetwork.forward">[docs]</a>
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">action</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
@@ -130,14 +135,15 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Return output of Q networks.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.</span>
-<span class="sd">            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.</span>
+<span class="sd">            action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.</span>
+<span class="sd">            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.</span>
 <span class="sd">        Returns:</span>
-<span class="sd">            - q (:obj:`Union[torch.Tensor, TensorDict]`): The output of Q network.</span>
+<span class="sd">            q (:obj:`Union[torch.Tensor, TensorDict]`): The output of Q network.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">action_embedding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;action_encoder&quot;</span><span class="p">](</span><span class="n">action</span><span class="p">)</span>
         <span class="n">state_embedding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;state_encoder&quot;</span><span class="p">](</span><span class="n">state</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;backbone&quot;</span><span class="p">](</span><span class="n">action_embedding</span><span class="p">,</span> <span class="n">state_embedding</span><span class="p">)</span></div>
+</div>
 
 
 
@@ -151,13 +157,18 @@
 <span class="sd">        ``__init__``, ``forward``, ``compute_double_q``, ``compute_mininum_q``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+<div class="viewcode-block" id="DoubleQNetwork.__init__">
+<a class="viewcode-back" href="../../../../api_doc/rl_modules/index.html#grl.rl_modules.DoubleQNetwork.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">EasyDict</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;q1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">QNetwork</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;q2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">QNetwork</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;q2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">QNetwork</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></div>
 
+
+<div class="viewcode-block" id="DoubleQNetwork.compute_double_q">
+<a class="viewcode-back" href="../../../../api_doc/rl_modules/index.html#grl.rl_modules.DoubleQNetwork.compute_double_q">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_double_q</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">action</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
@@ -167,15 +178,18 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Return the output of two Q networks.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.</span>
-<span class="sd">            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.</span>
+<span class="sd">            action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.</span>
+<span class="sd">            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.</span>
 <span class="sd">        Returns:</span>
-<span class="sd">            - q1 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the first Q network.</span>
-<span class="sd">            - q2 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the second Q network.</span>
+<span class="sd">            q1 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the first Q network.</span>
+<span class="sd">            q2 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the second Q network.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;q1&quot;</span><span class="p">](</span><span class="n">action</span><span class="p">,</span> <span class="n">state</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;q2&quot;</span><span class="p">](</span><span class="n">action</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;q1&quot;</span><span class="p">](</span><span class="n">action</span><span class="p">,</span> <span class="n">state</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;q2&quot;</span><span class="p">](</span><span class="n">action</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span></div>
 
+
+<div class="viewcode-block" id="DoubleQNetwork.compute_mininum_q">
+<a class="viewcode-back" href="../../../../api_doc/rl_modules/index.html#grl.rl_modules.DoubleQNetwork.compute_mininum_q">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_mininum_q</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">action</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
@@ -185,14 +199,17 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Return the minimum output of two Q networks.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.</span>
-<span class="sd">            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.</span>
+<span class="sd">            action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.</span>
+<span class="sd">            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.</span>
 <span class="sd">        Returns:</span>
-<span class="sd">            - minimum_q (:obj:`Union[torch.Tensor, TensorDict]`): The minimum output of Q network.</span>
+<span class="sd">            minimum_q (:obj:`Union[torch.Tensor, TensorDict]`): The minimum output of Q network.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">compute_double_q</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">state</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">compute_double_q</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">state</span><span class="p">))</span></div>
 
+
+<div class="viewcode-block" id="DoubleQNetwork.forward">
+<a class="viewcode-back" href="../../../../api_doc/rl_modules/index.html#grl.rl_modules.DoubleQNetwork.forward">[docs]</a>
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">action</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
@@ -202,13 +219,14 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Return the minimum output of two Q networks.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            - action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.</span>
-<span class="sd">            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.</span>
+<span class="sd">            action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.</span>
+<span class="sd">            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.</span>
 <span class="sd">        Returns:</span>
-<span class="sd">            - minimum_q (:obj:`Union[torch.Tensor, TensorDict]`): The minimum output of Q network.</span>
+<span class="sd">            minimum_q (:obj:`Union[torch.Tensor, TensorDict]`): The minimum output of Q network.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_mininum_q</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span></div>
+</div>
 
 </pre></div>
 
