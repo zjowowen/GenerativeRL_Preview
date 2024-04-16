@@ -6,33 +6,39 @@ from tensordict import TensorDict
 
 
 class GaussianConditionalProbabilityPath:
-    """
+    r"""
     Overview:
         Gaussian conditional probability path.
 
         General case:
+
         .. math::
             p(x(t)|x(0))=\mathcal{N}(x(t);\mu(t,x(0)),\sigma^2(t,x(0))I)
 
         If written in the form of SDE:
+
         .. math::
             \mathrm{d}x=f(x,t)\mathrm{d}t+g(t)w_{t}
         
         where :math:`f(x,t)` is the drift term, :math:`g(t)` is the diffusion term, and :math:`w_{t}` is the Wiener process.
 
         For diffusion model:
+
         .. math::
             p(x(t)|x(0))=\mathcal{N}(x(t);s(t)x(0),\sigma^2(t)I)
         
         or,
+
         .. math::
             p(x(t)|x(0))=\mathcal{N}(x(t);s(t)x(0),s^2(t)e^{-2\lambda(t)}I)
     
         If written in the form of SDE:
+
         .. math::
             \mathrm{d}x=\frac{s'(t)}{s(t)}x(t)\mathrm{d}t+s^2(t)\sqrt{2(\frac{s'(t)}{s(t)}-\lambda'(t))}e^{-\lambda(t)}\mathrm{d}w_{t}
         
         or,
+
         .. math::
             \mathrm{d}x=f(t)x(t)\mathrm{d}t+g(t)w_{t}
             
@@ -44,10 +50,12 @@ class GaussianConditionalProbabilityPath:
             :math:`\lambda(t)=\log(s(t))-\log(\sigma(t))`.
 
         For VP SDE:
+
         .. math::
             p(x(t)|x(0))=\mathcal{N}(x(t);x(0)e^{-\frac{1}{2}\int_{0}^{t}{\beta(s)\mathrm{d}s}},(1-e^{-\int_{0}^{t}{\beta(s)\mathrm{d}s}})I)
     
         For Linear VP SDE:
+
         .. math::
             p(x(t)|x(0))=\mathcal{N}(x(t);x(0)e^{-\frac{\beta(1)-\beta(0)}{4}t^2-\frac{\beta(0)}{2}t},(1-e^{-\frac{\beta(1)-\beta(0)}{2}t^2-\beta(0)t})I)
 
@@ -63,7 +71,7 @@ class GaussianConditionalProbabilityPath:
         Overview:
             Initialize the Gaussian conditional probability path.
         Arguments:
-            - config (:obj:`EasyDict`): The configuration of the Gaussian conditional probability path.
+            config (:obj:`EasyDict`): The configuration of the Gaussian conditional probability path.
         """
         self.config = config
         self.type = config.type
@@ -89,9 +97,9 @@ class GaussianConditionalProbabilityPath:
                 \mathrm{d}x=f(t)x(t)\mathrm{d}t+g(t)w_{t}
 
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
+            t (:obj:`torch.Tensor`): The input time.
         Returns:
-            - drift (:obj:`Union[torch.Tensor, TensorDict]`): The output drift term.
+            drift (:obj:`Union[torch.Tensor, TensorDict]`): The output drift term.
         """
 
         if self.type == "linear_vp_sde":
@@ -118,10 +126,10 @@ class GaussianConditionalProbabilityPath:
                 f(x,t)
 
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
         Returns:
-            - drift (:obj:`Union[torch.Tensor, TensorDict]`): The output drift term.
+            drift (:obj:`Union[torch.Tensor, TensorDict]`): The output drift term.
         """
 
         if self.type == "linear_vp_sde":
@@ -147,10 +155,10 @@ class GaussianConditionalProbabilityPath:
                 g(x,t)
 
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
         Returns:
-            - diffusion (:obj:`Union[torch.Tensor, TensorDict]`): The output diffusion term.
+            diffusion (:obj:`Union[torch.Tensor, TensorDict]`): The output diffusion term.
         """
 
         if self.type == "linear_vp_sde":
@@ -177,10 +185,10 @@ class GaussianConditionalProbabilityPath:
                 g^2(x,t)
 
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
         Returns:
-            - diffusion (:obj:`Union[torch.Tensor, TensorDict]`): The output diffusion term.
+            diffusion (:obj:`Union[torch.Tensor, TensorDict]`): The output diffusion term.
         """
 
         if self.type == "linear_vp_sde":
@@ -203,9 +211,9 @@ class GaussianConditionalProbabilityPath:
                 s(t)
 
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
+            t (:obj:`torch.Tensor`): The input time.
         Returns:
-            - scale (:obj:`torch.Tensor`): The scale factor.
+            scale (:obj:`torch.Tensor`): The scale factor.
         """
 
         #TODO: implement the scale factor for other Gaussian conditional probability path
@@ -228,9 +236,9 @@ class GaussianConditionalProbabilityPath:
                 \log(s(t))
 
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
+            t (:obj:`torch.Tensor`): The input time.
         Returns:
-            - log_scale (:obj:`torch.Tensor`): The log scale factor.
+            log_scale (:obj:`torch.Tensor`): The log scale factor.
         """
 
         #TODO: implement the scale factor for other Gaussian conditional probability path
@@ -256,9 +264,9 @@ class GaussianConditionalProbabilityPath:
                 \log(s'(t))
 
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
+            t (:obj:`torch.Tensor`): The input time.
         Returns:
-            - d_log_scale_dt (:obj:`Union[torch.Tensor, TensorDict]`): The time derivative of the log scale factor.
+            d_log_scale_dt (:obj:`Union[torch.Tensor, TensorDict]`): The time derivative of the log scale factor.
         """
 
         if self.type == "linear_vp_sde":
@@ -282,9 +290,9 @@ class GaussianConditionalProbabilityPath:
                 s'(t)
 
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
+            t (:obj:`torch.Tensor`): The input time.
         Returns:
-            - d_scale_dt (:obj:`Union[torch.Tensor, TensorDict]`): The time derivative of the scale factor.
+            d_scale_dt (:obj:`Union[torch.Tensor, TensorDict]`): The time derivative of the scale factor.
         """
 
         if self.type == "linear_vp_sde":
@@ -302,7 +310,7 @@ class GaussianConditionalProbabilityPath:
             Compute the standard deviation of the Gaussian conditional probability path, which is
 
             .. math::
-                \sqrt(\Sigma(t))
+                \sqrt{\Sigma(t)}
 
             or
 
@@ -315,9 +323,9 @@ class GaussianConditionalProbabilityPath:
                 s(t)e^{-\lambda(t)}
 
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
+            t (:obj:`torch.Tensor`): The input time.
         Returns:
-            - std (:obj:`torch.Tensor`): The standard deviation.
+            std (:obj:`torch.Tensor`): The standard deviation.
         """
 
         if self.type == "linear_vp_sde":
@@ -338,7 +346,7 @@ class GaussianConditionalProbabilityPath:
                 \frac{\mathrm{d}\sigma(t)}{\mathrm{d}t}
 
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
+            t (:obj:`torch.Tensor`): The input time.
         """
 
         if self.type == "linear_vp_sde":
@@ -369,9 +377,9 @@ class GaussianConditionalProbabilityPath:
                 s^2(t)e^{-2\lambda(t)}I
 
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
+            t (:obj:`torch.Tensor`): The input time.
         Returns:
-            - covariance (:obj:`torch.Tensor`): The covariance matrix.
+            covariance (:obj:`torch.Tensor`): The covariance matrix.
         """
 
         if self.type == "linear_vp_sde":
@@ -392,9 +400,9 @@ class GaussianConditionalProbabilityPath:
                 \frac{\mathrm{d}\Sigma(t)}{\mathrm{d}t}
 
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
+            t (:obj:`torch.Tensor`): The input time.
         Returns:
-            - d_covariance_dt (:obj:`torch.Tensor`): The time derivative of the covariance matrix.
+            d_covariance_dt (:obj:`torch.Tensor`): The time derivative of the covariance matrix.
         """
 
         if self.type == "linear_vp_sde":
@@ -415,9 +423,9 @@ class GaussianConditionalProbabilityPath:
                 \log(s(t))-\log(\sigma(t))
 
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
+            t (:obj:`torch.Tensor`): The input time.
         Returns:
-            - HalfLogSNR (:obj:`torch.Tensor`): The half-logSNR.
+            HalfLogSNR (:obj:`torch.Tensor`): The half-logSNR.
         """
 
         if self.type == "linear_vp_sde":
@@ -440,10 +448,10 @@ class GaussianConditionalProbabilityPath:
             .. math::
                 t(\lambda)=\frac{2(\beta_1-\beta_0)\log{(e^{-2\lambda}+1)}}{\sqrt{\beta_0^2+2(\beta_1-\beta_0)\log{(e^{-2\lambda}+1)}}+\beta_0}
 
-            Arguments:
-            - HalfLogSNR (:obj:`torch.Tensor`): The input half-logSNR.
+        Arguments:
+            HalfLogSNR (:obj:`torch.Tensor`): The input half-logSNR.
         Returns:
-            - t (:obj:`torch.Tensor`): The time.
+            t (:obj:`torch.Tensor`): The time.
         """
 
         if self.type == "linear_vp_sde":

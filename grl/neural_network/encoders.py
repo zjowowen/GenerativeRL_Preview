@@ -1,4 +1,5 @@
 import math
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -9,7 +10,7 @@ def get_encoder(type: str):
     Overview:
         Get the encoder module by the encoder type.
     Arguments:
-        - type (:obj:`str`): The encoder type.
+        type (:obj:`str`): The encoder type.
     """
 
     if type.lower() in ENCODERS:
@@ -39,8 +40,8 @@ class GaussianFourierProjectionTimeEncoder(nn.Module):
         Overview:
             Initialize the Gaussian Fourier Projection Time Encoder according to arguments.
         Arguments:
-            - embed_dim (:obj:`int`): The dimension of the output embedding vector.
-            - scale (:obj:`float`): The scale of the Gaussian random features.
+            embed_dim (:obj:`int`): The dimension of the output embedding vector.
+            scale (:obj:`float`): The scale of the Gaussian random features.
         """
         super().__init__()
         # Randomly sample weights during initialization. These weights are fixed
@@ -52,12 +53,12 @@ class GaussianFourierProjectionTimeEncoder(nn.Module):
         Overview:
             Return the output embedding vector of the input time step.
         Arguments:
-            - x (:obj:`torch.Tensor`): Input time step tensor.
+            x (:obj:`torch.Tensor`): Input time step tensor.
         Returns:
-            - output (:obj:`torch.Tensor`): Output embedding vector.
+            output (:obj:`torch.Tensor`): Output embedding vector.
         Shapes:
-            - x (:obj:`torch.Tensor`): :math:`(B,)`, where B is batch size.
-            - output (:obj:`torch.Tensor`): :math:`(B, embed_dim)`, where B is batch size, embed_dim is the \
+            x (:obj:`torch.Tensor`): :math:`(B,)`, where B is batch size.
+            output (:obj:`torch.Tensor`): :math:`(B, embed_dim)`, where B is batch size, embed_dim is the \
                 dimension of the output embedding vector.
         Examples:
             >>> encoder = GaussianFourierProjectionTimeEncoder(128)
@@ -89,10 +90,10 @@ class GaussianFourierProjectionEncoder(nn.Module):
         Overview:
             Initialize the Gaussian Fourier Projection Time Encoder according to arguments.
         Arguments:
-            - embed_dim (:obj:`int`): The dimension of the output embedding vector.
-            - x_shape (:obj:`tuple`): The shape of the input tensor.
-            - flatten (:obj:`bool`): Whether to flatten the output tensor afyer applying the encoder.
-            - scale (:obj:`float`): The scale of the Gaussian random features.
+            embed_dim (:obj:`int`): The dimension of the output embedding vector.
+            x_shape (:obj:`tuple`): The shape of the input tensor.
+            flatten (:obj:`bool`): Whether to flatten the output tensor afyer applying the encoder.
+            scale (:obj:`float`): The scale of the Gaussian random features.
         """
         super().__init__()
         # Randomly sample weights during initialization. These weights are fixed
@@ -106,12 +107,12 @@ class GaussianFourierProjectionEncoder(nn.Module):
         Overview:
             Return the output embedding vector of the input time step.
         Arguments:
-            - x (:obj:`torch.Tensor`): Input time step tensor.
+            x (:obj:`torch.Tensor`): Input time step tensor.
         Returns:
-            - output (:obj:`torch.Tensor`): Output embedding vector.
+            output (:obj:`torch.Tensor`): Output embedding vector.
         Shapes:
-            - x (:obj:`torch.Tensor`): :math:`(B, D)`, where B is batch size.
-            - output (:obj:`torch.Tensor`): :math:`(B, D * embed_dim)` if flatten is True, otherwise :math:`(B, D, embed_dim)`.
+            x (:obj:`torch.Tensor`): :math:`(B, D)`, where B is batch size.
+            output (:obj:`torch.Tensor`): :math:`(B, D * embed_dim)` if flatten is True, otherwise :math:`(B, D, embed_dim)`.
                 where B is batch size, embed_dim is the dimension of the output embedding vector, D is the shape of the input tensor.
         Examples:
             >>> encoder = GaussianFourierProjectionTimeEncoder(128)
@@ -153,8 +154,8 @@ class ExponentialFourierProjectionTimeEncoder(nn.Module):
         Overview:
             Initialize the timestep embedder.
         Arguments:
-            - hidden_size (:obj:`int`): The hidden size.
-            - frequency_embedding_size (:obj:`int`): The size of the frequency embedding.
+            hidden_size (:obj:`int`): The hidden size.
+            frequency_embedding_size (:obj:`int`): The size of the frequency embedding.
         """
         super().__init__()
         self.mlp = nn.Sequential(
@@ -171,9 +172,9 @@ class ExponentialFourierProjectionTimeEncoder(nn.Module):
         Overview:
             Create sinusoidal timestep embeddings.
         Arguments:
-            - t (:obj:`torch.Tensor`): a 1-D Tensor of N indices, one per batch element. These may be fractional.
-            - embed_dim (:obj:`int`): the dimension of the output.
-            - max_period (:obj:`int`): controls the minimum frequency of the embeddings.
+            t (:obj:`torch.Tensor`): a 1-D Tensor of N indices, one per batch element. These may be fractional.
+            embed_dim (:obj:`int`): the dimension of the output.
+            max_period (:obj:`int`): controls the minimum frequency of the embeddings.
         """
 
         # https://github.com/openai/glide-text2im/blob/main/glide_text2im/nn.py
@@ -194,7 +195,7 @@ class ExponentialFourierProjectionTimeEncoder(nn.Module):
         Overview:
             Return the output embedding vector of the input time step.
         Arguments:
-            - t (:obj:`torch.Tensor`): Input time step tensor.
+            t (:obj:`torch.Tensor`): Input time step tensor.
         """
         t_freq = self.timestep_embedding(t, self.frequency_embedding_size)
         t_emb = self.mlp(t_freq)

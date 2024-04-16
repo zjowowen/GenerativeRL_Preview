@@ -30,12 +30,12 @@ class ODESolver:
         Overview:
             Initialize the ODE solver using torchode or torchdyn library.
         Arguments:
-            - ode_solver (:obj:`str`): The ODE solver to use.
-            - dt (:obj:`float`): The time step.
-            - atol (:obj:`float`): The absolute tolerance.
-            - rtol (:obj:`float`): The relative tolerance.
-            - library (:obj:`str`): The library to use for the ODE solver. Currently, it supports 'torchdyn' and 'torchode'.
-            - **kwargs: Additional arguments for the ODE solver.
+            ode_solver (:obj:`str`): The ODE solver to use.
+            dt (:obj:`float`): The time step.
+            atol (:obj:`float`): The absolute tolerance.
+            rtol (:obj:`float`): The relative tolerance.
+            library (:obj:`str`): The library to use for the ODE solver. Currently, it supports 'torchdyn' and 'torchode'.
+            **kwargs: Additional arguments for the ODE solver.
         """
         self.ode_solver = ode_solver
         self.dt = dt
@@ -55,13 +55,11 @@ class ODESolver:
         Overview:
             Integrate the ODE.
         Arguments:
-            - drift (:obj:`Union[nn.Module, Callable]`): The drift term of the ODE.
-            - x0 (:obj:`Union[torch.Tensor, TensorDict]`): The input initial state.
-            - t_span (:obj:`torch.Tensor`): The time at which to evaluate the ODE. \
-            The first element is the initial time, and the last element is the final time.
-            For example, t = torch.tensor([0.0, 1.0]).
+            drift (:obj:`Union[nn.Module, Callable]`): The drift term of the ODE.
+            x0 (:obj:`Union[torch.Tensor, TensorDict]`): The input initial state.
+            t_span (:obj:`torch.Tensor`): The time at which to evaluate the ODE. The first element is the initial time, and the last element is the final time. For example, t = torch.tensor([0.0, 1.0]).
         Returns:
-            - trajectory (:obj:`Union[torch.Tensor, TensorDict]`): The output trajectory of the ODE, which has the same data type as x0 and the shape of (len(t_span), *x0.shape).
+            trajectory (:obj:`Union[torch.Tensor, TensorDict]`): The output trajectory of the ODE, which has the same data type as x0 and the shape of (len(t_span), *x0.shape).
         """
 
         self.nfe = 0

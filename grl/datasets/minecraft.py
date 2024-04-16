@@ -21,8 +21,8 @@ class MineRLVideoDataset(torch.utils.data.Dataset):
         Overview:
             Initialize the dataset.
         Arguments:
-            - config (:obj:`EasyDict`): The configuration.
-            - transform (:obj:`torchvision.transforms.Compose`): The transformation.
+            config (:obj:`EasyDict`): The configuration.
+            transform (:obj:`torchvision.transforms.Compose`): The transformation.
         """
         self.config = config
         self.data_path = config.data_path
@@ -75,8 +75,8 @@ class MineRLImageDataset(torch.utils.data.Dataset):
         Overview:
             Initialize the dataset.
         Arguments:
-            - config (:obj:`EasyDict`): The configuration.
-            - transform (:obj:`torchvision.transforms.Compose`): The transformation.
+            config (:obj:`EasyDict`): The configuration.
+            transform (:obj:`torchvision.transforms.Compose`): The transformation.
         """
         self.config = config
         self.data_path = config.data_path

@@ -36,10 +36,10 @@ class VNetwork(nn.Module):
         Overview:
             Return output of value networks.
         Arguments:
-            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         Returns:
-            - value (:obj:`Union[torch.Tensor, TensorDict]`): The output of value network.
+            value (:obj:`Union[torch.Tensor, TensorDict]`): The output of value network.
         """
         
         state_embedding = self.model["state_encoder"](state)
@@ -74,11 +74,11 @@ class DoubleVNetwork(nn.Module):
         Overview:
             Return the output of two value networks.
         Arguments:
-            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         Returns:
-            - v1 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the first value network.
-            - v2 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the second value network.
+            v1 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the first value network.
+            v2 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the second value network.
         """
 
         return self.model["v1"](state, condition), self.model["v2"](state, condition)
@@ -92,10 +92,10 @@ class DoubleVNetwork(nn.Module):
         Overview:
             Return the minimum output of two value networks.
         Arguments:
-            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         Returns:
-            - minimum_v (:obj:`Union[torch.Tensor, TensorDict]`): The minimum output of value network.
+            minimum_v (:obj:`Union[torch.Tensor, TensorDict]`): The minimum output of value network.
         """
 
         return torch.min(*self.compute_double_v(state, condition=condition))
@@ -109,10 +109,10 @@ class DoubleVNetwork(nn.Module):
         Overview:
             Return the minimum output of two value networks.
         Arguments:
-            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         Returns:
-            - minimum_v (:obj:`Union[torch.Tensor, TensorDict]`): The minimum output of value network.
+            minimum_v (:obj:`Union[torch.Tensor, TensorDict]`): The minimum output of value network.
         """
 
         return self.compute_mininum_v(state, condition=condition)

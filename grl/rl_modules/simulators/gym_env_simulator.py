@@ -19,7 +19,7 @@ class GymEnvSimulator:
         Overview:
             Initialize the GymEnvSimulator according to the given configuration.
         Arguments:
-            - env_id (:obj:`str`): The id of the gym environment to simulate.
+            env_id (:obj:`str`): The id of the gym environment to simulate.
         """
         self.env_id = env_id
         self.collect_env = gym.make(self.env_id)
@@ -46,9 +46,9 @@ class GymEnvSimulator:
             Collect several episodes using the given policy. The environment will be reset at the beginning of each episode.
             No history will be stored in this method. The collected information of steps will be returned as a list of dictionaries.
         Arguments:
-            - policy (:obj:`Union[Callable, torch.nn.Module]`): The policy to collect episodes.
-            - num_episodes (:obj:`int`): The number of episodes to collect.
-            - num_steps (:obj:`int`): The number of steps to collect.
+            policy (:obj:`Union[Callable, torch.nn.Module]`): The policy to collect episodes.
+            num_episodes (:obj:`int`): The number of episodes to collect.
+            num_steps (:obj:`int`): The number of steps to collect.
         """
         assert num_episodes is not None or num_steps is not None
         if num_episodes is not None:
@@ -143,9 +143,9 @@ class GymEnvSimulator:
             Collect several steps using the given policy. The environment will not be reset until the end of the episode.
             Last observation will be stored in this method. The collected information of steps will be returned as a list of dictionaries.
         Arguments:
-            - policy (:obj:`Union[Callable, torch.nn.Module]`): The policy to collect steps.
-            - num_episodes (:obj:`int`): The number of episodes to collect.
-            - num_steps (:obj:`int`): The number of steps to collect.
+            policy (:obj:`Union[Callable, torch.nn.Module]`): The policy to collect steps.
+            num_episodes (:obj:`int`): The number of episodes to collect.
+            num_steps (:obj:`int`): The number of steps to collect.
         """
         assert num_episodes is not None or num_steps is not None
         if num_episodes is not None:

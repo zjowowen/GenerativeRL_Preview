@@ -3,6 +3,7 @@
 def test_activation():
     import torch
     from torch import nn
+
     from grl.neural_network.activation import Swish, get_activation
 
     assert type(get_activation("mish")) == nn.Mish

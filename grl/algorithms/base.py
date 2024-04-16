@@ -23,7 +23,7 @@ class BasePolicy(torch.nn.Module):
         Overview:
             Initialize the base policy.
         Arguments:
-            - config (:obj:`EasyDict`): The configuration.
+            config (:obj:`EasyDict`): The configuration.
         """
         super().__init__()
         self.config = config
@@ -33,7 +33,7 @@ class BasePolicy(torch.nn.Module):
         Overview:
             Forward pass.
         Arguments:
-            - data (:obj:`torch.Tensor`): The input data.
+            data (:obj:`torch.Tensor`): The input data.
         """
         pass
 
@@ -56,12 +56,12 @@ class BaseAlgorithm:
         Overview:
             Initialize the base algorithm.
         Arguments:
-            - config (:obj:`EasyDict`): The configuration , which must contain the following keys:
-                - train (:obj:`EasyDict`): The training configuration.
-                - deploy (:obj:`EasyDict`): The deployment configuration.
-            - simulator (:obj:`object`): The environment.
-            - dataset (:obj:`torch.utils.data.Dataset`): The dataset.
-            - model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The model.
+            config (:obj:`EasyDict`): The configuration , which must contain the following keys:
+                train (:obj:`EasyDict`): The training configuration.
+                deploy (:obj:`EasyDict`): The deployment configuration.
+            simulator (:obj:`object`): The environment.
+            dataset (:obj:`torch.utils.data.Dataset`): The dataset.
+            model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The model.
         Interface:
             ``__init__``, ``train``, ``deploy``
         """
@@ -88,7 +88,7 @@ class BaseAlgorithm:
             Train the model using the given configuration. \
             A weight-and-bias run will be created automatically when this function is called.
         Arguments:
-            - config (:obj:`EasyDict`): The training configuration.
+            config (:obj:`EasyDict`): The training configuration.
         """
 
         if config is not None:

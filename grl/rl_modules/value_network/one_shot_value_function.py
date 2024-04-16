@@ -22,7 +22,7 @@ class OneShotValueFunction(nn.Module):
         Overview:
             Initialization of one-shot value network.
         Arguments:
-            - config (:obj:`EasyDict`): The configuration dict.
+            config (:obj:`EasyDict`): The configuration dict.
         """
 
         super().__init__()
@@ -40,8 +40,8 @@ class OneShotValueFunction(nn.Module):
         Overview:
             Return the output of one-shot value network.
         Arguments:
-            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         """
 
         return self.v(state, condition)
@@ -55,11 +55,11 @@ class OneShotValueFunction(nn.Module):
         Overview:
             Return the output of two value networks.
         Arguments:
-            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         Returns:
-            - v1 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the first value network.
-            - v2 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the second value network.
+            v1 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the first value network.
+            v2 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the second value network.
         """
         return self.v.compute_double_v(state, condition=condition)
 
@@ -73,11 +73,11 @@ class OneShotValueFunction(nn.Module):
         Overview:
             Calculate the v loss.
         Arguments:
-            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - value (:obj:`Union[torch.Tensor, TensorDict]`): The input value.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            value (:obj:`Union[torch.Tensor, TensorDict]`): The input value.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         Returns:
-            - v_loss (:obj:`torch.Tensor`): The v loss.
+            v_loss (:obj:`torch.Tensor`): The v loss.
         """
 
         # Update value function

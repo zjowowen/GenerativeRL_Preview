@@ -31,9 +31,9 @@ class BaseSimulator:
             Collect several episodes using the given policy. The environment will be reset at the beginning of each episode.
             No history will be stored in this method. The collected information of steps will be returned as a list of dictionaries.
         Arguments:
-            - policy (:obj:`Union[Callable, torch.nn.Module]`): The policy to collect episodes.
-            - num_episodes (:obj:`int`): The number of episodes to collect.
-            - num_steps (:obj:`int`): The number of steps to collect.
+            policy (:obj:`Union[Callable, torch.nn.Module]`): The policy to collect episodes.
+            num_episodes (:obj:`int`): The number of episodes to collect.
+            num_steps (:obj:`int`): The number of steps to collect.
         """
 
         pass
@@ -49,9 +49,9 @@ class BaseSimulator:
             Collect several steps using the given policy. The environment will not be reset until the end of the episode.
             Last observation will be stored in this method. The collected information of steps will be returned as a list of dictionaries.
         Arguments:
-            - policy (:obj:`Union[Callable, torch.nn.Module]`): The policy to collect steps.
-            - num_episodes (:obj:`int`): The number of episodes to collect.
-            - num_steps (:obj:`int`): The number of steps to collect.
+            policy (:obj:`Union[Callable, torch.nn.Module]`): The policy to collect steps.
+            num_episodes (:obj:`int`): The number of episodes to collect.
+            num_steps (:obj:`int`): The number of steps to collect.
         """
         pass
 

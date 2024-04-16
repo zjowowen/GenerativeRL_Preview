@@ -23,10 +23,10 @@ class MLPResNetBlock(nn.Module):
         Overview:
             Initialize the MLPResNetBlock according to arguments.
         Arguments:
-            - hidden_dim (:obj:`int`): The dimension of the hidden layer.
-            - activations (:obj:`nn.Module`): The activation function.
-            - dropout_rate (:obj:`float`, optional): The dropout rate. Default: None.
-            - use_layer_norm (:obj:`bool`, optional): Whether to use layer normalization. Default: False.
+            hidden_dim (:obj:`int`): The dimension of the hidden layer.
+            activations (:obj:`nn.Module`): The activation function.
+            dropout_rate (:obj:`float`, optional): The dropout rate. Default: None.
+            use_layer_norm (:obj:`bool`, optional): Whether to use layer normalization. Default: False.
         """
 
         super(MLPResNetBlock, self).__init__()
@@ -48,11 +48,11 @@ class MLPResNetBlock(nn.Module):
         Overview:
             Return the output tensor of the input tensor.
         Arguments:
-            - x (:obj:`torch.Tensor`): Input tensor.
+            x (:obj:`torch.Tensor`): Input tensor.
         Returns:
-            - x (:obj:`torch.Tensor`): Output tensor.
+            x (:obj:`torch.Tensor`): Output tensor.
         Shapes:
-            - x (:obj:`torch.Tensor`): :math:`(B, D)`, where B is batch size and D is the dimension of the input tensor.
+            x (:obj:`torch.Tensor`): :math:`(B, D)`, where B is batch size and D is the dimension of the input tensor.
         """
         residual = x
         if self.dropout is not None:
@@ -93,13 +93,13 @@ class MLPResNet(nn.Module):
             Initialize the MLPResNet.
             #TODO: add more details about the network.
         Arguments:
-            - num_blocks (:obj:`int`): The number of blocks.
-            - input_dim (:obj:`int`): The dimension of the input tensor.
-            - output_dim (:obj:`int`): The dimension of the output tensor.
-            - dropout_rate (:obj:`float`, optional): The dropout rate. Default: None.
-            - use_layer_norm (:obj:`bool`, optional): Whether to use layer normalization. Default: False.
-            - hidden_dim (:obj:`int`, optional): The dimension of the hidden layer. Default: 256.
-            - activations (:obj:`nn.Module`, optional): The activation function. Default: nn.ReLU().
+            num_blocks (:obj:`int`): The number of blocks.
+            input_dim (:obj:`int`): The dimension of the input tensor.
+            output_dim (:obj:`int`): The dimension of the output tensor.
+            dropout_rate (:obj:`float`, optional): The dropout rate. Default: None.
+            use_layer_norm (:obj:`bool`, optional): Whether to use layer normalization. Default: False.
+            hidden_dim (:obj:`int`, optional): The dimension of the hidden layer. Default: 256.
+            activations (:obj:`nn.Module`, optional): The activation function. Default: nn.ReLU().
         """
         super(MLPResNet, self).__init__()
         self.num_blocks = num_blocks
@@ -121,11 +121,11 @@ class MLPResNet(nn.Module):
         Overview:
             Return the output tensor of the input tensor.
         Arguments:
-            - x (:obj:`torch.Tensor`): Input tensor.
+            x (:obj:`torch.Tensor`): Input tensor.
         Returns:
-            - x (:obj:`torch.Tensor`): Output tensor.
+            x (:obj:`torch.Tensor`): Output tensor.
         Shapes:
-            - x (:obj:`torch.Tensor`): :math:`(B, D)`, where B is batch size and D is the dimension of the input tensor.
+            x (:obj:`torch.Tensor`): :math:`(B, D)`, where B is batch size and D is the dimension of the input tensor.
         """
         x = self.fc(x)
 

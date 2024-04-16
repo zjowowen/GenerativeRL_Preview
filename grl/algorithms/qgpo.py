@@ -38,7 +38,7 @@ class QGPOCritic(nn.Module):
         Overview:
             Initialization of QGPO critic network.
         Arguments:
-            - config (:obj:`EasyDict`): The configuration dict.
+            config (:obj:`EasyDict`): The configuration dict.
         """
 
         super().__init__()
@@ -56,8 +56,8 @@ class QGPOCritic(nn.Module):
         Overview:
             Return the output of QGPO critic.
         Arguments:
-            - action (:obj:`torch.Tensor`): The input action.
-            - state (:obj:`torch.Tensor`): The input state.
+            action (:obj:`torch.Tensor`): The input action.
+            state (:obj:`torch.Tensor`): The input state.
         """
 
         return self.q(action, state)
@@ -71,11 +71,11 @@ class QGPOCritic(nn.Module):
         Overview:
             Return the output of two Q networks.
         Arguments:
-            - action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.
-            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.
+            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
         Returns:
-            - q1 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the first Q network.
-            - q2 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the second Q network.
+            q1 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the first Q network.
+            q2 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the second Q network.
         """
         return self.q.compute_double_q(action, state)
 
@@ -93,13 +93,13 @@ class QGPOCritic(nn.Module):
         Overview:
             Calculate the Q loss.
         Arguments:
-            - action (:obj:`torch.Tensor`): The input action.
-            - state (:obj:`torch.Tensor`): The input state.
-            - reward (:obj:`torch.Tensor`): The input reward.
-            - next_state (:obj:`torch.Tensor`): The input next state.
-            - done (:obj:`torch.Tensor`): The input done.
-            - fake_next_action (:obj:`torch.Tensor`): The input fake next action.
-            - discount_factor (:obj:`float`): The discount factor.
+            action (:obj:`torch.Tensor`): The input action.
+            state (:obj:`torch.Tensor`): The input state.
+            reward (:obj:`torch.Tensor`): The input reward.
+            next_state (:obj:`torch.Tensor`): The input next state.
+            done (:obj:`torch.Tensor`): The input done.
+            fake_next_action (:obj:`torch.Tensor`): The input fake next action.
+            discount_factor (:obj:`float`): The discount factor.
         """
         with torch.no_grad():
             softmax = nn.Softmax(dim=1)
@@ -126,9 +126,9 @@ class QGPOPolicy(nn.Module):
         Overview:
             Return the output of QGPO policy, which is the action conditioned on the state.
         Arguments:
-            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
         Returns:
-            - action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
+            action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
         return self.sample(state)
     
@@ -143,11 +143,11 @@ class QGPOPolicy(nn.Module):
         Overview:
             Return the output of QGPO policy, which is the action conditioned on the state.
         Arguments:
-            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - guidance_scale (:obj:`Union[torch.Tensor, float]`): The guidance scale.
-            - solver_config (:obj:`EasyDict`): The configuration for the ODE solver.
+            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            guidance_scale (:obj:`Union[torch.Tensor, float]`): The guidance scale.
+            solver_config (:obj:`EasyDict`): The configuration for the ODE solver.
         Returns:
-            - action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
+            action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
         return self.diffusion_model.sample(
             t_span = torch.linspace(0.0, 1.0, 32).to(self.device),
@@ -168,10 +168,10 @@ class QGPOPolicy(nn.Module):
         Overview:
             Return the output of behaviour policy, which is the action conditioned on the state.
         Arguments:
-            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - solver_config (:obj:`EasyDict`): The configuration for the ODE solver.
+            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            solver_config (:obj:`EasyDict`): The configuration for the ODE solver.
         Returns:
-            - action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
+            action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
         return self.diffusion_model.sample_without_energy_guidance(
             t_span = torch.linspace(0.0, 1.0, 32).to(self.device),
@@ -189,10 +189,10 @@ class QGPOPolicy(nn.Module):
         Overview:
             Calculate the Q value.
         Arguments:
-            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.
+            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.
         Returns:
-            - q (:obj:`torch.Tensor`): The Q value.
+            q (:obj:`torch.Tensor`): The Q value.
         """
 
         return self.critic(action, state)
@@ -206,8 +206,8 @@ class QGPOPolicy(nn.Module):
         Overview:
             Calculate the behaviour policy loss.
         Arguments:
-            - action (:obj:`torch.Tensor`): The input action.
-            - state (:obj:`torch.Tensor`): The input state.
+            action (:obj:`torch.Tensor`): The input action.
+            state (:obj:`torch.Tensor`): The input state.
         """
         
         return self.diffusion_model.score_matching_loss(action, state)
@@ -221,8 +221,8 @@ class QGPOPolicy(nn.Module):
         Overview:
             Calculate the energy guidance loss of QGPO.
         Arguments:
-            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - fake_next_action (:obj:`Union[torch.Tensor, TensorDict]`): The input fake next action.
+            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            fake_next_action (:obj:`Union[torch.Tensor, TensorDict]`): The input fake next action.
         """
 
         return self.diffusion_model.energy_guidance_loss(fake_next_action, state)
@@ -241,13 +241,13 @@ class QGPOPolicy(nn.Module):
         Overview:
             Calculate the Q loss.
         Arguments:
-            - action (:obj:`torch.Tensor`): The input action.
-            - state (:obj:`torch.Tensor`): The input state.
-            - reward (:obj:`torch.Tensor`): The input reward.
-            - next_state (:obj:`torch.Tensor`): The input next state.
-            - done (:obj:`torch.Tensor`): The input done.
-            - fake_next_action (:obj:`torch.Tensor`): The input fake next action.
-            - discount_factor (:obj:`float`): The discount factor.
+            action (:obj:`torch.Tensor`): The input action.
+            state (:obj:`torch.Tensor`): The input state.
+            reward (:obj:`torch.Tensor`): The input reward.
+            next_state (:obj:`torch.Tensor`): The input next state.
+            done (:obj:`torch.Tensor`): The input done.
+            fake_next_action (:obj:`torch.Tensor`): The input fake next action.
+            discount_factor (:obj:`float`): The discount factor.
         """
         return self.critic.q_loss(action, state, reward, next_state, done, fake_next_action, discount_factor)
 
@@ -264,12 +264,12 @@ class QGPOAlgorithm:
         Overview:
             Initialize the QGPO algorithm.
         Arguments:
-            - config (:obj:`EasyDict`): The configuration , which must contain the following keys:
-                - train (:obj:`EasyDict`): The training configuration.
-                - deploy (:obj:`EasyDict`): The deployment configuration.
-            - simulator (:obj:`object`): The environment simulator.
-            - dataset (:obj:`QGPODataset`): The dataset.
-            - model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The model.
+            config (:obj:`EasyDict`): The configuration , which must contain the following keys:
+                train (:obj:`EasyDict`): The training configuration.
+                deploy (:obj:`EasyDict`): The deployment configuration.
+            simulator (:obj:`object`): The environment simulator.
+            dataset (:obj:`QGPODataset`): The dataset.
+            model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The model.
         Interface:
             ``__init__``, ``train``, ``deploy``
         """
@@ -296,7 +296,7 @@ class QGPOAlgorithm:
             Train the model using the given configuration. \
             A weight-and-bias run will be created automatically when this function is called.
         Arguments:
-            - config (:obj:`EasyDict`): The training configuration.
+            config (:obj:`EasyDict`): The training configuration.
         """
         
         config = merge_two_dicts_into_newone(

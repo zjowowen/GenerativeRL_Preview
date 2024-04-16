@@ -118,9 +118,9 @@ class SRPOPolicy(nn.Module):
         Overview:
             Return the output of QGPO policy, which is the action conditioned on the state.
         Arguments:
-            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
         Returns:
-            - action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
+            action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
         return self.deter_policy.select_actions(state)
 
@@ -133,8 +133,8 @@ class SRPOPolicy(nn.Module):
         Overview:
             Calculate the behaviour policy loss.
         Arguments:
-            - action (:obj:`torch.Tensor`): The input action.
-            - state (:obj:`torch.Tensor`): The input state.
+            action (:obj:`torch.Tensor`): The input action.
+            state (:obj:`torch.Tensor`): The input state.
         """
 
         return self.sro.score_matching_loss(action, state)
@@ -148,12 +148,12 @@ class SRPOPolicy(nn.Module):
         Overview:
             Calculate the Q loss.
         Arguments:
-            - action (:obj:`torch.Tensor`): The input action.
-            - state (:obj:`torch.Tensor`): The input state.
-            - reward (:obj:`torch.Tensor`): The input reward.
-            - next_state (:obj:`torch.Tensor`): The input next state.
-            - done (:obj:`torch.Tensor`): The input done.
-            - fake_next_action (:obj:`torch.Tensor`): The input fake next action.
+            action (:obj:`torch.Tensor`): The input action.
+            state (:obj:`torch.Tensor`): The input state.
+            reward (:obj:`torch.Tensor`): The input reward.
+            next_state (:obj:`torch.Tensor`): The input next state.
+            done (:obj:`torch.Tensor`): The input done.
+            fake_next_action (:obj:`torch.Tensor`): The input fake next action.
         """
         v_loss, next_v = self.critic.v_loss(data, tau)
         return v_loss, next_v
@@ -168,13 +168,13 @@ class SRPOPolicy(nn.Module):
         Overview:
             Calculate the Q loss.
         Arguments:
-            - action (:obj:`torch.Tensor`): The input action.
-            - state (:obj:`torch.Tensor`): The input state.
-            - reward (:obj:`torch.Tensor`): The input reward.
-            - next_state (:obj:`torch.Tensor`): The input next state.
-            - done (:obj:`torch.Tensor`): The input done.
-            - fake_next_action (:obj:`torch.Tensor`): The input fake next action.
-            - discount_factor (:obj:`float`): The discount factor.
+            action (:obj:`torch.Tensor`): The input action.
+            state (:obj:`torch.Tensor`): The input state.
+            reward (:obj:`torch.Tensor`): The input reward.
+            next_state (:obj:`torch.Tensor`): The input next state.
+            done (:obj:`torch.Tensor`): The input done.
+            fake_next_action (:obj:`torch.Tensor`): The input fake next action.
+            discount_factor (:obj:`float`): The discount factor.
         """
 
         loss = self.critic.q_loss(data, next_v, discount_factor)
@@ -188,13 +188,13 @@ class SRPOPolicy(nn.Module):
         Overview:
             Calculate the Q loss.
         Arguments:
-            - action (:obj:`torch.Tensor`): The input action.
-            - state (:obj:`torch.Tensor`): The input state.
-            - reward (:obj:`torch.Tensor`): The input reward.
-            - next_state (:obj:`torch.Tensor`): The input next state.
-            - done (:obj:`torch.Tensor`): The input done.
-            - fake_next_action (:obj:`torch.Tensor`): The input fake next action.
-            - discount_factor (:obj:`float`): The discount factor.
+            action (:obj:`torch.Tensor`): The input action.
+            state (:obj:`torch.Tensor`): The input state.
+            reward (:obj:`torch.Tensor`): The input reward.
+            next_state (:obj:`torch.Tensor`): The input next state.
+            done (:obj:`torch.Tensor`): The input done.
+            fake_next_action (:obj:`torch.Tensor`): The input fake next action.
+            discount_factor (:obj:`float`): The discount factor.
         """
         state = data["s"]
         loss = self.sro.srpo_loss(state)
@@ -214,12 +214,12 @@ class SRPOAlgorithm:
         Overview:
             Initialize the QGPO algorithm.
         Arguments:
-            - config (:obj:`EasyDict`): The configuration , which must contain the following keys:
-                - train (:obj:`EasyDict`): The training configuration.
-                - deploy (:obj:`EasyDict`): The deployment configuration.
-            - simulator (:obj:`object`): The environment simulator.
-            - dataset (:obj:`QGPODataset`): The dataset.
-            - model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The model.
+            config (:obj:`EasyDict`): The configuration , which must contain the following keys:
+                train (:obj:`EasyDict`): The training configuration.
+                deploy (:obj:`EasyDict`): The deployment configuration.
+            simulator (:obj:`object`): The environment simulator.
+            dataset (:obj:`QGPODataset`): The dataset.
+            model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The model.
         Interface:
             ``__init__``, ``train``, ``deploy``
         """
@@ -243,7 +243,7 @@ class SRPOAlgorithm:
             Train the model using the given configuration. \
             A weight-and-bias run will be created automatically when this function is called.
         Arguments:
-            - config (:obj:`EasyDict`): The training configuration.
+            config (:obj:`EasyDict`): The training configuration.
         """
         set_seed(self.config.deploy.env["seed"])
 

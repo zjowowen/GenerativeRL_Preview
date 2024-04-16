@@ -14,10 +14,10 @@ def gaussian_random_variable(
     Overview:
         A random Gaussian tensor generator.
     Arguments:
-        - data_size (:obj:`Union[int, Tuple[int], List[int], Dict[Any, Any]]`): The data size.
-        - device (:obj:`torch.device`): The device.
+        data_size (:obj:`Union[int, Tuple[int], List[int], Dict[Any, Any]]`): The data size.
+        device (:obj:`torch.device`): The device.
     Returns:
-        - generate (:obj:`Callable`): The random Gaussian tensor generator.
+        generate (:obj:`Callable`): The random Gaussian tensor generator.
     .. note::
         If data_size is a dictionary, the return value will be a TensorDict.
 
@@ -79,8 +79,8 @@ def gaussian_random_variable(
             Overview:
                 Generate a dict of random Gaussian tensor generators according to the given data size if it is a dictionary.
             Arguments:
-                - data_size (:obj:`Dict[Any, Any]`): The data size.
-                - device (:obj:`torch.device`): The device.
+                data_size (:obj:`Dict[Any, Any]`): The data size.
+                device (:obj:`torch.device`): The device.
             """
             data_dict = {}
             for k, v in data_size.items():
@@ -103,9 +103,9 @@ def gaussian_random_variable(
             Overview:
                 Generate a random Gaussian tensor according to the given batch size.
             Arguments:
-                - batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
-                - generator_dict (:obj:`Dict[str, Any]`): The generator dictionary.
-                - device (:obj:`torch.device`): The device.
+                batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
+                generator_dict (:obj:`Dict[str, Any]`): The generator dictionary.
+                device (:obj:`torch.device`): The device.
             """
             
             generated_data = TensorDict({}, batch_size=batch_size if batch_size is not None else {}, device=device)

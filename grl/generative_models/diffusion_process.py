@@ -27,8 +27,8 @@ class DiffusionProcess:
         Overview:
             Initialize the diffusion process.
         Arguments:
-            - path (:obj:`GaussianConditionalProbabilityPath`): The Gaussian conditional probability path.
-            - t_max (:obj:`float`): The maximum time.
+            path (:obj:`GaussianConditionalProbabilityPath`): The Gaussian conditional probability path.
+            t_max (:obj:`float`): The maximum time.
         """
         super().__init__()
         self.path = path
@@ -44,14 +44,16 @@ class DiffusionProcess:
         Overview:
             Return the drift term of the diffusion process.
             The drift term is given by the following:
+
             .. math::
                 f(x,t)
+
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.            
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.            
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         Returns:
-            - drift (:obj:`Union[torch.Tensor, TensorDict]`): The output drift term.
+            drift (:obj:`Union[torch.Tensor, TensorDict]`): The output drift term.
         """
 
         if len(x.shape) > len(t.shape):
@@ -69,14 +71,16 @@ class DiffusionProcess:
         Overview:
             Return the drift coefficient of the diffusion process.
             The drift coefficient is given by the following:
+
             .. math::
                 f(t)
+
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         Returns:
-            - drift_coefficient (:obj:`Union[torch.Tensor, TensorDict]`): The output drift coefficient.
+            drift_coefficient (:obj:`Union[torch.Tensor, TensorDict]`): The output drift coefficient.
         """
 
         if x is not None and len(x.shape) > len(t.shape):
@@ -94,14 +98,16 @@ class DiffusionProcess:
         Overview:
             Return the diffusion term of the diffusion process.
             The diffusion term is given by the following:
+
             .. math::
                 g(x,t)
+
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         Returns:
-            - diffusion (:obj:`Union[torch.Tensor, TensorDict]`): The output diffusion term.
+            diffusion (:obj:`Union[torch.Tensor, TensorDict]`): The output diffusion term.
         """
 
         if x is not None and len(x.shape) > len(t.shape):
@@ -119,14 +125,16 @@ class DiffusionProcess:
         Overview:
             Return the square of the diffusion term of the diffusion process.
             The square of the diffusion term is given by the following:
+
             .. math::
                 g^2(x,t)
+
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         Returns:
-            - diffusion_squared (:obj:`Union[torch.Tensor, TensorDict]`): The output square of the diffusion term.
+            diffusion_squared (:obj:`Union[torch.Tensor, TensorDict]`): The output square of the diffusion term.
         """
 
         if x is not None and len(x.shape) > len(t.shape):
@@ -144,14 +152,16 @@ class DiffusionProcess:
         Overview:
             Return the scale of the diffusion process.
             The scale is given by the following:
+
             .. math::
                 s(t)
+
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         Returns:
-            - scale (:obj:`Union[torch.Tensor, TensorDict]`): The output scale.
+            scale (:obj:`Union[torch.Tensor, TensorDict]`): The output scale.
         """
 
         if x is not None and len(x.shape) > len(t.shape):
@@ -169,14 +179,16 @@ class DiffusionProcess:
         Overview:
             Return the log scale of the diffusion process.
             The log scale is given by the following:
+
             .. math::
                 \log(s(t))
+
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         Returns:
-            - log_scale (:obj:`Union[torch.Tensor, TensorDict]`): The output log scale.
+            log_scale (:obj:`Union[torch.Tensor, TensorDict]`): The output log scale.
         """
 
         if x is not None and len(x.shape) > len(t.shape):
@@ -194,14 +206,16 @@ class DiffusionProcess:
         Overview:
             Return the standard deviation of the diffusion process.
             The standard deviation is given by the following:
+
             .. math::
                 \sigma(t)
+
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         Returns:
-            - std (:obj:`Union[torch.Tensor, TensorDict]`): The output standard deviation.
+            std (:obj:`Union[torch.Tensor, TensorDict]`): The output standard deviation.
         """
 
         if x is not None and len(x.shape) > len(t.shape):
@@ -219,14 +233,16 @@ class DiffusionProcess:
         Overview:
             Return the covariance of the diffusion process.
             The covariance is given by the following:
+
             .. math::
                 \Sigma(t)
+
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         Returns:
-            - covariance (:obj:`Union[torch.Tensor, TensorDict]`): The output covariance.
+            covariance (:obj:`Union[torch.Tensor, TensorDict]`): The output covariance.
         """
 
         if x is not None and len(x.shape) > len(t.shape):
@@ -245,13 +261,15 @@ class DiffusionProcess:
         Overview:
             Return the velocity of the diffusion process.
             The velocity is given by the following:
+
             .. math::
                 v(t,x):=\frac{\mathrm{d}(x_t|x_0)}{\mathrm{d}t}
+
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
-            - noise (:obj:`Union[torch.Tensor, TensorDict]`): The input noise.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            noise (:obj:`Union[torch.Tensor, TensorDict]`): The input noise.
         """
         if noise is None:
             noise = torch.randn_like(x).to(x.device)
@@ -272,14 +290,16 @@ class DiffusionProcess:
         Overview:
             Return the half log signal-to-noise ratio of the diffusion process.
             The half log signal-to-noise ratio is given by the following:
+
             .. math::
                 \log(s(t))-\log(\sigma(t))
+
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         Returns:
-            - HalfLogSNR (:obj:`torch.Tensor`): The half-logSNR.
+            HalfLogSNR (:obj:`torch.Tensor`): The half-logSNR.
         """
 
         if x is not None and len(x.shape) > len(t.shape):
@@ -298,11 +318,11 @@ class DiffusionProcess:
             Return the inverse function of half log signal-to-noise ratio of the diffusion process, \
             which is the time at which the half log signal-to-noise ratio is given.
         Arguments:
-            - HalfLogSNR (:obj:`torch.Tensor`): The input half-logSNR.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            HalfLogSNR (:obj:`torch.Tensor`): The input half-logSNR.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         Returns:
-            - t (:obj:`torch.Tensor`): The output time.
+            t (:obj:`torch.Tensor`): The output time.
         """
 
         if x is not None:
@@ -315,9 +335,9 @@ class DiffusionProcess:
         Overview:
             Return the SDE of diffusion process with the input condition.
         Arguments:
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         Returns:
-            - sde (:obj:`SDE`): The SDE of diffusion process.
+            sde (:obj:`SDE`): The SDE of diffusion process.
         """
         
         def sde_drift(
@@ -347,13 +367,13 @@ class DiffusionProcess:
         Overview:
             Return the forward of reversed time SDE of the diffusion process with the input condition.
         Arguments:
-            - function (:obj:`Union[Callable, nn.Module]`): The input function.
-            - function_type (:obj:`str`): The type of the function.
-            - reverse_diffusion_function (:obj:`Union[Callable, nn.Module]`): The input reverse diffusion function.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
-            - T (:obj:`torch.Tensor`): The maximum time.
+            function (:obj:`Union[Callable, nn.Module]`): The input function.
+            function_type (:obj:`str`): The type of the function.
+            reverse_diffusion_function (:obj:`Union[Callable, nn.Module]`): The input reverse diffusion function.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            T (:obj:`torch.Tensor`): The maximum time.
         Returns:
-            - reverse_sde (:obj:`SDE`): The reverse diffusion process.
+            reverse_sde (:obj:`SDE`): The reverse diffusion process.
         """
 
         #TODO: validate these functions
@@ -499,13 +519,13 @@ class DiffusionProcess:
         Overview:
             Return the reversed time SDE of the diffusion process with the input condition.
         Arguments:
-            - function (:obj:`Union[Callable, nn.Module]`): The input function.
-            - function_type (:obj:`str`): The type of the function.
-            - reverse_diffusion_function (:obj:`Union[Callable, nn.Module]`): The input reverse diffusion function.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
-            - T (:obj:`torch.Tensor`): The maximum time.
+            function (:obj:`Union[Callable, nn.Module]`): The input function.
+            function_type (:obj:`str`): The type of the function.
+            reverse_diffusion_function (:obj:`Union[Callable, nn.Module]`): The input reverse diffusion function.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            T (:obj:`torch.Tensor`): The maximum time.
         Returns:
-            - reverse_sde (:obj:`SDE`): The reverse diffusion process.
+            reverse_sde (:obj:`SDE`): The reverse diffusion process.
         """
 
         if function_type == "score_function":
@@ -644,11 +664,11 @@ class DiffusionProcess:
         Overview:
             Return the sample of the state at time t given the initial state.
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state at time 0.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state at time 0.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         Returns:
-            - sample (:obj:`Union[torch.Tensor, TensorDict]`): The output sample.
+            sample (:obj:`Union[torch.Tensor, TensorDict]`): The output sample.
         """
         return self.forward(x, t, condition).sample()
 
@@ -662,25 +682,14 @@ class DiffusionProcess:
         Overview:
             Return the sample of the state at time t given the initial state by using gaussian conditional probability path of diffusion process.
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state at time 0.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state at time 0.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         """
 
         #TODO: make it compatible with TensorDict
 
         return self.scale(t, x) * x + self.std(t, x) * torch.randn_like(x).to(x.device)
-
-        # scale = self.path.scale(t)
-        # std = self.path.std(t)
-        # if len(x.shape) > len(scale.shape):
-        #     while len(x.shape)>len(scale.shape):
-        #         scale = scale.unsqueeze(-1)
-        #         std = std.unsqueeze(-1)
-        #     scale = scale.expand(x.shape)
-        #     std = std.expand(x.shape)
-
-        # return x * scale + std * torch.randn_like(x)
 
     def direct_sample_and_return_noise(
             self,
@@ -692,16 +701,14 @@ class DiffusionProcess:
         Overview:
             Return the sample of the state at time t given the initial state by using gaussian conditional probability path of diffusion process and the noise.
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state at time 0.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state at time 0.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         Returns:
-            - sample (:obj:`Union[torch.Tensor, TensorDict]`): The output sample.
-            - noise (:obj:`Union[torch.Tensor, TensorDict]`): The output noise.
+            sample (:obj:`Union[torch.Tensor, TensorDict]`): The output sample.
+            noise (:obj:`Union[torch.Tensor, TensorDict]`): The output noise.
         """
 
         noise = torch.randn_like(x).to(x.device)
 
         return self.scale(t, x) * x + self.std(t, x) * noise, noise
-
-        # return x * self.path.scale(t) + self.path.std(t) * noise, noise

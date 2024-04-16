@@ -37,10 +37,10 @@ class QNetwork(nn.Module):
         Overview:
             Return output of Q networks.
         Arguments:
-            - action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.
-            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.
+            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
         Returns:
-            - q (:obj:`Union[torch.Tensor, TensorDict]`): The output of Q network.
+            q (:obj:`Union[torch.Tensor, TensorDict]`): The output of Q network.
         """
         action_embedding = self.model["action_encoder"](action)
         state_embedding = self.model["state_encoder"](state)
@@ -71,11 +71,11 @@ class DoubleQNetwork(nn.Module):
         Overview:
             Return the output of two Q networks.
         Arguments:
-            - action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.
-            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.
+            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
         Returns:
-            - q1 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the first Q network.
-            - q2 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the second Q network.
+            q1 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the first Q network.
+            q2 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the second Q network.
         """
 
         return self.model["q1"](action, state), self.model["q2"](action, state)
@@ -89,10 +89,10 @@ class DoubleQNetwork(nn.Module):
         Overview:
             Return the minimum output of two Q networks.
         Arguments:
-            - action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.
-            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.
+            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
         Returns:
-            - minimum_q (:obj:`Union[torch.Tensor, TensorDict]`): The minimum output of Q network.
+            minimum_q (:obj:`Union[torch.Tensor, TensorDict]`): The minimum output of Q network.
         """
 
         return torch.min(*self.compute_double_q(action, state))
@@ -106,10 +106,10 @@ class DoubleQNetwork(nn.Module):
         Overview:
             Return the minimum output of two Q networks.
         Arguments:
-            - action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.
-            - state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.
+            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
         Returns:
-            - minimum_q (:obj:`Union[torch.Tensor, TensorDict]`): The minimum output of Q network.
+            minimum_q (:obj:`Union[torch.Tensor, TensorDict]`): The minimum output of Q network.
         """
 
         return self.compute_mininum_q(action, state)

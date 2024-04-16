@@ -31,8 +31,8 @@ class SRPOConditionalDiffusionModel(nn.Module):
         Overview:
             Initialization of Energy Conditional Diffusion Model.
         Arguments:
-            - config (:obj:`EasyDict`): The configuration.
-            - energy_model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The energy model.
+            config (:obj:`EasyDict`): The configuration.
+            energy_model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The energy model.
         """
 
         super().__init__()
@@ -51,8 +51,8 @@ class SRPOConditionalDiffusionModel(nn.Module):
         Overview:
             The loss function for training unconditional diffusion model.
         Arguments:
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         """
 
         return self.diffusion_model.score_matching_loss(x, condition)

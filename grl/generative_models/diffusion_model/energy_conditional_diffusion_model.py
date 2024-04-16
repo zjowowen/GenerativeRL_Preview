@@ -34,8 +34,9 @@ class EnergyGuidance(nn.Module):
         """
         Overview:
             Initialization of Energy Guidance.
+
         Arguments:
-            - config (:obj:`EasyDict`): The configuration.
+            config (:obj:`EasyDict`): The configuration.
         """
         super().__init__()
         self.config = config
@@ -50,10 +51,11 @@ class EnergyGuidance(nn.Module):
         """
         Overview:
             Return output of Energy Guidance.
+
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input.        
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input.        
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         """
 
         return self.model(t, x, condition)
@@ -68,13 +70,14 @@ class EnergyGuidance(nn.Module):
         """
         Overview:
             Calculate the guidance for sampling.
+
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input.        
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
-            - guidance_scale (:obj:`float`): The scale of guidance.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input.        
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            guidance_scale (:obj:`float`): The scale of guidance.
         Returns:
-            - guidance (:obj:`Union[torch.Tensor, TensorDict]`): The guidance for sampling.
+            guidance (:obj:`Union[torch.Tensor, TensorDict]`): The guidance for sampling.
         """
 
         # TODO: make it compatible with TensorDict
@@ -89,22 +92,23 @@ class EnergyConditionalDiffusionModel(nn.Module):
     Overview:
         Energy Conditional Diffusion Model.
     Interfaces:
-        ``__init__``, ``sample``, ``sample_without_energy_guidance``, ``sample_forward_process``, ``score_function``,
-        ``score_function_with_energy_guidance``, ``score_matching_loss``, ``velocity_function``, ``flow_matching_loss``,
+        ``__init__``, ``sample``, ``sample_without_energy_guidance``, ``sample_forward_process``, ``score_function``, \
+        ``score_function_with_energy_guidance``, ``score_matching_loss``, ``velocity_function``, ``flow_matching_loss``, \
         ``energy_guidance_loss``
     """
 
     def __init__(
             self,
             config: EasyDict,
-            energy_model: Union[torch.nn.Module, torch.nn.ModuleDict],
+            energy_model: Union[torch.nn.Module, torch.nn.ModuleDict]
             ) -> None:
         """
         Overview:
             Initialization of Energy Conditional Diffusion Model.
+
         Arguments:
-            - config (:obj:`EasyDict`): The configuration.
-            - energy_model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The energy model.
+            config (:obj:`EasyDict`): The configuration.
+            energy_model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The energy model.
         """
 
         super().__init__()
@@ -152,14 +156,15 @@ class EnergyConditionalDiffusionModel(nn.Module):
         """
         Overview:
             Sample from the diffusion model.
+
         Arguments:
-            - t_span (:obj:`torch.Tensor`): The time span.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
-            - batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
-            - with_grad (:obj:`bool`): Whether to return the gradient.
-            - solver_config (:obj:`EasyDict`): The configuration of the solver.
+            t_span (:obj:`torch.Tensor`): The time span.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
+            with_grad (:obj:`bool`): Whether to return the gradient.
+            solver_config (:obj:`EasyDict`): The configuration of the solver.
         Returns:
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The sampled result.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The sampled result.
         """
 
         if t_span is not None:
@@ -265,13 +270,14 @@ class EnergyConditionalDiffusionModel(nn.Module):
         """
         Overview:
             Sample from the diffusion model without energy guidance.
+
         Arguments:
-            - t_span (:obj:`torch.Tensor`): The time span.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
-            - batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
-            - solver_config (:obj:`EasyDict`): The configuration of the solver.
+            t_span (:obj:`torch.Tensor`): The time span.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
+            solver_config (:obj:`EasyDict`): The configuration of the solver.
         Returns:
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The sampled result.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The sampled result.
         """
 
         return self.sample(
@@ -293,14 +299,15 @@ class EnergyConditionalDiffusionModel(nn.Module):
         """
         Overview:
             Sample from the diffusion model.
+
         Arguments:
-            - t_span (:obj:`torch.Tensor`): The time span.
-            - batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
-            - with_grad (:obj:`bool`): Whether to return the gradient.
-            - solver_config (:obj:`EasyDict`): The configuration of the solver.
+            t_span (:obj:`torch.Tensor`): The time span.
+            batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            with_grad (:obj:`bool`): Whether to return the gradient.
+            solver_config (:obj:`EasyDict`): The configuration of the solver.
         Returns:
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The sampled result.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The sampled result.
         """
 
         t_span = t_span.to(self.device)
@@ -399,15 +406,17 @@ class EnergyConditionalDiffusionModel(nn.Module):
             x: Union[torch.Tensor, TensorDict],
             condition: Union[torch.Tensor, TensorDict] = None,
         ) -> Union[torch.Tensor, TensorDict]:
-        """
+        r"""
         Overview:
             Return score function of the model at time t given the initial state, which is the gradient of the log-likelihood.
+
             .. math::
                 \nabla_{x_t} \log p_{\theta}(x_t)
+
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         """
 
         return self.score_function_.forward(self.model, t, x, condition)
@@ -422,13 +431,14 @@ class EnergyConditionalDiffusionModel(nn.Module):
         """
         Overview:
             The score function for energy guidance.
+
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
-            - guidance_scale (:obj:`float`): The scale of guidance.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            guidance_scale (:obj:`float`): The scale of guidance.
         Returns:
-            - score (:obj:`Union[torch.Tensor, TensorDict]`): The score function.
+            score (:obj:`Union[torch.Tensor, TensorDict]`): The score function.
         """
 
         return self.score_function_.forward(self.model, t, x, condition) + self.energy_guidance.calculate_energy_guidance(t, x, condition, guidance_scale)
@@ -441,9 +451,10 @@ class EnergyConditionalDiffusionModel(nn.Module):
         """
         Overview:
             The loss function for training unconditional diffusion model.
+
         Arguments:
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         """
 
         return self.score_function_.score_matching_loss(self.model, x, condition)
@@ -454,15 +465,17 @@ class EnergyConditionalDiffusionModel(nn.Module):
             x: Union[torch.Tensor, TensorDict],
             condition: Union[torch.Tensor, TensorDict] = None,
         ) -> Union[torch.Tensor, TensorDict]:
-        """
+        r"""
         Overview:
             Return velocity of the model at time t given the initial state.
+
             .. math::
                 v_{\theta}(t, x)
+
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state at time t.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state at time t.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         """
 
         return self.velocity_function_.forward(self.model, t, x, condition)
@@ -475,9 +488,10 @@ class EnergyConditionalDiffusionModel(nn.Module):
         """
         Overview:
             Return the flow matching loss function of the model given the initial state and the condition.
+
         Arguments:
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         """
 
         return self.velocity_function_.flow_matching_loss(self.model, x, condition)
@@ -488,15 +502,17 @@ class EnergyConditionalDiffusionModel(nn.Module):
             x: Union[torch.Tensor, TensorDict],
             condition: Union[torch.Tensor, TensorDict] = None,
         ) -> Union[torch.Tensor, TensorDict]:
-        """
+        r"""
         Overview:
             Return noise function of the model at time t given the initial state.
+
             .. math::
                 - \sigma(t) \nabla_{x_t} \log p_{\theta}(x_t)
+
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         """
 
         return self.noise_function_.forward(self.model, t, x, condition)
@@ -511,13 +527,15 @@ class EnergyConditionalDiffusionModel(nn.Module):
         """
         Overview:
             The noise function for energy guidance.
+
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
-            - guidance_scale (:obj:`float`): The scale of guidance.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            guidance_scale (:obj:`float`): The scale of guidance.
+
         Returns:
-            - noise (:obj:`Union[torch.Tensor, TensorDict]`): The nose function.
+            noise (:obj:`Union[torch.Tensor, TensorDict]`): The nose function.
         """
 
         return - self.score_function_with_energy_guidance(t, x, condition, guidance_scale) * self.diffusion_process.std(t, x)
@@ -528,15 +546,17 @@ class EnergyConditionalDiffusionModel(nn.Module):
             x: Union[torch.Tensor, TensorDict],
             condition: Union[torch.Tensor, TensorDict] = None,
         ) -> Union[torch.Tensor, TensorDict]:
-        """
+        r"""
         Overview:
             Return data prediction function of the model at time t given the initial state.
+
             .. math::
                 \frac{- \sigma(t) x_t + \sigma^2(t) \nabla_{x_t} \log p_{\theta}(x_t)}{s(t)}
+
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         """
 
         return self.data_prediction_function_.forward(self.model, t, x, condition)
@@ -551,13 +571,15 @@ class EnergyConditionalDiffusionModel(nn.Module):
         """
         Overview:
             The data prediction function for energy guidance.
+
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
-            - guidance_scale (:obj:`float`): The scale of guidance.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            guidance_scale (:obj:`float`): The scale of guidance.
+
         Returns:
-            - x (:obj:`torch.Tensor`): The score function.
+            x (:obj:`torch.Tensor`): The score function.
         """
 
         return (- self.diffusion_process.std(t, x) * x + self.diffusion_process.covariance(t, x) * self.score_function_with_energy_guidance(t, x, condition, guidance_scale)) / self.diffusion_process.scale(t, x)
@@ -571,9 +593,10 @@ class EnergyConditionalDiffusionModel(nn.Module):
         Overview:
             The loss function for training Energy Guidance, CEP guidance method, as proposed in the paper \
             "Contrastive Energy Prediction for Exact Energy-Guided Diffusion Sampling in Offline Reinforcement Learning"
+
         Arguments:
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         """
         #TODO: check math correctness
         #TODO: make it compatible with TensorDict

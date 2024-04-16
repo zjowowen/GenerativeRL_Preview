@@ -37,8 +37,9 @@ class DiffusionModel(nn.Module):
         """
         Overview:
             Initialization of Diffusion Model.
+
         Arguments:
-            - config (:obj:`EasyDict`): The configuration.
+            config (:obj:`EasyDict`): The configuration.
         """
 
         super().__init__()
@@ -81,14 +82,16 @@ class DiffusionModel(nn.Module):
         """
         Overview:
             Sample from the diffusion model.
+
         Arguments:
-            - t_span (:obj:`torch.Tensor`): The time span.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
-            - batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
-            - with_grad (:obj:`bool`): Whether to return the gradient.
-            - solver_config (:obj:`EasyDict`): The configuration of the solver.
+            t_span (:obj:`torch.Tensor`): The time span.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
+            with_grad (:obj:`bool`): Whether to return the gradient.
+            solver_config (:obj:`EasyDict`): The configuration of the solver.
+
         Returns:
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The sampled result.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The sampled result.
         """
 
         if t_span is not None:
@@ -185,14 +188,16 @@ class DiffusionModel(nn.Module):
         """
         Overview:
             Sample from the diffusion model.
+
         Arguments:
-            - t_span (:obj:`torch.Tensor`): The time span.
-            - batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
-            - with_grad (:obj:`bool`): Whether to return the gradient.
-            - solver_config (:obj:`EasyDict`): The configuration of the solver.
+            t_span (:obj:`torch.Tensor`): The time span.
+            batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            with_grad (:obj:`bool`): Whether to return the gradient.
+            solver_config (:obj:`EasyDict`): The configuration of the solver.
+
         Returns:
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The sampled result.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The sampled result.
         """
 
         t_span = t_span.to(self.device)
@@ -288,16 +293,18 @@ class DiffusionModel(nn.Module):
         """
         Overview:
             Sample from the diffusion model with fixed x.
+
         Arguments:
-            - fixed_x (:obj:`Union[torch.Tensor, TensorDict]`): The fixed x.
-            - fixed_mask (:obj:`Union[torch.Tensor, TensorDict]`): The fixed mask.
-            - t_span (:obj:`torch.Tensor`): The time span.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
-            - batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
-            - with_grad (:obj:`bool`): Whether to return the gradient.
-            - solver_config (:obj:`EasyDict`): The configuration of the solver.
+            fixed_x (:obj:`Union[torch.Tensor, TensorDict]`): The fixed x.
+            fixed_mask (:obj:`Union[torch.Tensor, TensorDict]`): The fixed mask.
+            t_span (:obj:`torch.Tensor`): The time span.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
+            with_grad (:obj:`bool`): Whether to return the gradient.
+            solver_config (:obj:`EasyDict`): The configuration of the solver.
+
         Returns:
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The sampled result.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The sampled result.
         """
 
         if t_span is not None:
@@ -421,16 +428,18 @@ class DiffusionModel(nn.Module):
         """
         Overview:
             Sample from the diffusion model with fixed x.
+
         Arguments:
-            - fixed_x (:obj:`Union[torch.Tensor, TensorDict]`): The fixed x.
-            - fixed_mask (:obj:`Union[torch.Tensor, TensorDict]`): The fixed mask.
-            - t_span (:obj:`torch.Tensor`): The time span.
-            - batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
-            - with_grad (:obj:`bool`): Whether to return the gradient.
-            - solver_config (:obj:`EasyDict`): The configuration of the solver.
+            fixed_x (:obj:`Union[torch.Tensor, TensorDict]`): The fixed x.
+            fixed_mask (:obj:`Union[torch.Tensor, TensorDict]`): The fixed mask.
+            t_span (:obj:`torch.Tensor`): The time span.
+            batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            with_grad (:obj:`bool`): Whether to return the gradient.
+            solver_config (:obj:`EasyDict`): The configuration of the solver.
+
         Returns:
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The sampled result.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The sampled result.
         """
 
         t_span = t_span.to(self.device)
@@ -550,12 +559,13 @@ class DiffusionModel(nn.Module):
         """
         Overview:
             Sample from the diffusion model given the sampled x.
+
         Arguments:
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - t_span (:obj:`torch.Tensor`): The time span.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
-            - with_grad (:obj:`bool`): Whether to return the gradient.
-            - solver_config (:obj:`EasyDict`): The configuration of the solver.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            t_span (:obj:`torch.Tensor`): The time span.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            with_grad (:obj:`bool`): Whether to return the gradient.
+            solver_config (:obj:`EasyDict`): The configuration of the solver.
         """
 
         #TODO: very important function
@@ -618,15 +628,17 @@ class DiffusionModel(nn.Module):
             x: Union[torch.Tensor, TensorDict],
             condition: Union[torch.Tensor, TensorDict] = None,
         ) -> Union[torch.Tensor, TensorDict]:
-        """
+        r"""
         Overview:
             Return score function of the model at time t given the initial state, which is the gradient of the log-likelihood.
+
             .. math::
                 \nabla_{x_t} \log p_{\theta}(x_t)
+
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         """
 
         return self.score_function_.forward(self.model, t, x, condition)
@@ -639,9 +651,10 @@ class DiffusionModel(nn.Module):
         """
         Overview:
             The loss function for training unconditional diffusion model.
+
         Arguments:
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         """
 
         return self.score_function_.score_matching_loss(self.model, x, condition)
@@ -652,15 +665,17 @@ class DiffusionModel(nn.Module):
             x: Union[torch.Tensor, TensorDict],
             condition: Union[torch.Tensor, TensorDict] = None,
         ) -> Union[torch.Tensor, TensorDict]:
-        """
+        r"""
         Overview:
             Return velocity of the model at time t given the initial state.
+
             .. math::
                 v_{\theta}(t, x)
+
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state at time t.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state at time t.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         """
 
         return self.velocity_function_.forward(self.model, t, x, condition)
@@ -674,8 +689,8 @@ class DiffusionModel(nn.Module):
         Overview:
             Return the flow matching loss function of the model given the initial state and the condition.
         Arguments:
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         """
 
         return self.velocity_function_.flow_matching_loss(self.model, x, condition)
@@ -686,15 +701,17 @@ class DiffusionModel(nn.Module):
             x: Union[torch.Tensor, TensorDict],
             condition: Union[torch.Tensor, TensorDict] = None,
         ) -> Union[torch.Tensor, TensorDict]:
-        """
+        r"""
         Overview:
             Return noise function of the model at time t given the initial state.
+
             .. math::
                 - \sigma(t) \nabla_{x_t} \log p_{\theta}(x_t)
+
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         """
 
         return self.noise_function_.forward(self.model, t, x, condition)
@@ -705,15 +722,17 @@ class DiffusionModel(nn.Module):
             x: Union[torch.Tensor, TensorDict],
             condition: Union[torch.Tensor, TensorDict] = None,
         ) -> Union[torch.Tensor, TensorDict]:
-        """
+        r"""
         Overview:
             Return data prediction function of the model at time t given the initial state.
+
             .. math::
                 \frac{- \sigma(t) x_t + \sigma^2(t) \nabla_{x_t} \log p_{\theta}(x_t)}{s(t)}
+
         Arguments:
-            - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            t (:obj:`torch.Tensor`): The input time.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         """
 
         return self.data_prediction_function_.forward(self.model, t, x, condition)

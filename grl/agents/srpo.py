@@ -22,8 +22,8 @@ class SRPOAgent:
         Overview:
             Initialize the agent.
         Arguments:
-            - config (:obj:`EasyDict`): The configuration.
-            - model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The model.
+            config (:obj:`EasyDict`): The configuration.
+            model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The model.
         """
 
         self.config = config
@@ -40,10 +40,10 @@ class SRPOAgent:
         Overview:
             Given an observation, return an action.
         Arguments:
-            - obs (:obj:`Union[np.ndarray, torch.Tensor, Dict]`): The observation.
-            - return_as_torch_tensor (:obj:`bool`): Whether to return the action as a torch tensor.
+            obs (:obj:`Union[np.ndarray, torch.Tensor, Dict]`): The observation.
+            return_as_torch_tensor (:obj:`bool`): Whether to return the action as a torch tensor.
         Returns:
-            - action (:obj:`Union[np.ndarray, torch.Tensor, Dict]`): The action.
+            action (:obj:`Union[np.ndarray, torch.Tensor, Dict]`): The action.
         """
 
         if isinstance(obs, np.ndarray):
