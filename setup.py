@@ -23,6 +23,7 @@ setup(
         'torchode',
         'torchsde',
         'scipy',
+        'beartype',
         'diffusers',
         'timm',
         'av',
