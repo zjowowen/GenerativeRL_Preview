@@ -11,7 +11,6 @@ from tensordict import TensorDict
 import torchvision.transforms as transforms
 import gym
 from rich.progress import track
-from einops import rearrange
 from torchtyping import TensorType
 from beartype import beartype
 from beartype.typing import Iterator, Tuple, Union
@@ -79,10 +78,7 @@ class ReplayMemoryDataset(Dataset):
         timestep_indices = torch.stack(
             torch.meshgrid(torch.arange(self.num_episodes), timestep_arange), dim=-1
         )
-
-        trainable_mask = timestep_arange < rearrange(
-            torch.from_numpy(self.episode_length) - num_timesteps, "e -> e 1"
-        )
+        trainable_mask = timestep_arange < ((torch.from_numpy(self.episode_length) - num_timesteps).unsqueeze(1))
         self.indices = timestep_indices[trainable_mask]
 
     def __len__(self):
