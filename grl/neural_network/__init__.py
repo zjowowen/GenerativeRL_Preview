@@ -6,7 +6,7 @@ from easydict import EasyDict
 from tensordict import TensorDict
 
 from grl.neural_network.activation import get_activation
-from grl.neural_network.ResNetBlock import MLPResNet
+from grl.neural_network.residual_network import MLPResNet
 
 
 def get_module(type: str):
