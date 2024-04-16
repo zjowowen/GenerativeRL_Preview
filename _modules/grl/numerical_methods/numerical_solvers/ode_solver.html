@@ -89,14 +89,16 @@
            <div itemprop="articleBody">
              
   <h1>Source code for grl.numerical_methods.numerical_solvers.ode_solver</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
-<span class="kn">from</span> <span class="nn">tensordict</span> <span class="kn">import</span> <span class="n">TensorDict</span>
 <span class="kn">import</span> <span class="nn">torchode</span>
+<span class="kn">from</span> <span class="nn">tensordict</span> <span class="kn">import</span> <span class="n">TensorDict</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
 <span class="kn">from</span> <span class="nn">torchdyn.core</span> <span class="kn">import</span> <span class="n">NeuralODE</span>
-<span class="kn">from</span> <span class="nn">torchdyn.numerics</span> <span class="kn">import</span> <span class="n">odeint</span> <span class="k">as</span> <span class="n">torchdyn_odeint</span>
 <span class="kn">from</span> <span class="nn">torchdyn.numerics</span> <span class="kn">import</span> <span class="n">Euler</span>
+<span class="kn">from</span> <span class="nn">torchdyn.numerics</span> <span class="kn">import</span> <span class="n">odeint</span> <span class="k">as</span> <span class="n">torchdyn_odeint</span>
+
 
 <div class="viewcode-block" id="ODESolver">
 <a class="viewcode-back" href="../../../../api_doc/numerical_methods/index.html#grl.numerical_methods.ODESolver">[docs]</a>

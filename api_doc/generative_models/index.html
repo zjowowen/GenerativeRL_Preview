@@ -61,14 +61,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../algorithms/index.html">grl.algorithms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../datasets/index.html">grl.datasets</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">grl.generative_models</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#diffusionmodel">DiffusionModel</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#grl.generative_models.DiffusionModel"><code class="docutils literal notranslate"><span class="pre">DiffusionModel</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#energyconditionaldiffusionmodel">EnergyConditionalDiffusionModel</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#grl.generative_models.EnergyConditionalDiffusionModel"><code class="docutils literal notranslate"><span class="pre">EnergyConditionalDiffusionModel</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="#diffusionmodel">DiffusionModel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#energyconditionaldiffusionmodel">EnergyConditionalDiffusionModel</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../neural_network/index.html">grl.neural_network</a></li>
@@ -101,37 +95,13 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="module-grl.generative_models">
-<span id="grl-generative-models"></span><h1>grl.generative_models<a class="headerlink" href="#module-grl.generative_models" title="Link to this heading"></a></h1>
+  <section id="grl-generative-models">
+<h1>grl.generative_models<a class="headerlink" href="#grl-generative-models" title="Link to this heading"></a></h1>
 <section id="diffusionmodel">
 <h2>DiffusionModel<a class="headerlink" href="#diffusionmodel" title="Link to this heading"></a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="grl.generative_models.DiffusionModel">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.generative_models.</span></span><span class="sig-name descname"><span class="pre">DiffusionModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/diffusion_model/diffusion_model.html#DiffusionModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.DiffusionModel" title="Link to this definition"></a></dt>
-<dd><dl class="simple">
-<dt>Overview:</dt><dd><p>Diffusion Model.</p>
-</dd>
-<dt>Interfaces:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code>, <code class="docutils literal notranslate"><span class="pre">sample</span></code>, <code class="docutils literal notranslate"><span class="pre">score_function</span></code>, <code class="docutils literal notranslate"><span class="pre">score_matching_loss</span></code>, <code class="docutils literal notranslate"><span class="pre">velocity_function</span></code>, <code class="docutils literal notranslate"><span class="pre">flow_matching_loss</span></code>.</p>
-</dd>
-</dl>
-</dd></dl>
-
 </section>
 <section id="energyconditionaldiffusionmodel">
 <h2>EnergyConditionalDiffusionModel<a class="headerlink" href="#energyconditionaldiffusionmodel" title="Link to this heading"></a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="grl.generative_models.EnergyConditionalDiffusionModel">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.generative_models.</span></span><span class="sig-name descname"><span class="pre">EnergyConditionalDiffusionModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/diffusion_model/energy_conditional_diffusion_model.html#EnergyConditionalDiffusionModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.EnergyConditionalDiffusionModel" title="Link to this definition"></a></dt>
-<dd><dl class="simple">
-<dt>Overview:</dt><dd><p>Energy Conditional Diffusion Model.</p>
-</dd>
-<dt>Interfaces:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code>, <code class="docutils literal notranslate"><span class="pre">sample</span></code>, <code class="docutils literal notranslate"><span class="pre">sample_without_energy_guidance</span></code>, <code class="docutils literal notranslate"><span class="pre">sample_forward_process</span></code>, <code class="docutils literal notranslate"><span class="pre">score_function</span></code>,
-<code class="docutils literal notranslate"><span class="pre">score_function_with_energy_guidance</span></code>, <code class="docutils literal notranslate"><span class="pre">score_matching_loss</span></code>, <code class="docutils literal notranslate"><span class="pre">velocity_function</span></code>, <code class="docutils literal notranslate"><span class="pre">flow_matching_loss</span></code>,
-<code class="docutils literal notranslate"><span class="pre">energy_guidance_loss</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
 </section>
 </section>
 
