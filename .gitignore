@@ -162,3 +162,5 @@ cython_debug/
 *.pt
 wandb/
 .vscode/
+*.mp4
+*.npy
