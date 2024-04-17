@@ -127,7 +127,7 @@ if __name__ == "__main__":
     seed_value=set_seed()
 
     with wandb.init(
-        project=f"{config.project if hasattr(config, "project") else "dit-3D-mc-video"}-{seed_value}",
+        project=f"{config.project if hasattr(config, 'project') else 'dit-3D-mc-video'}-{seed_value}",
         **config.wandb if hasattr(config, "wandb") else {}
     ) as wandb_run:
         config=merge_two_dicts_into_newone(EasyDict(wandb_run.config), config)

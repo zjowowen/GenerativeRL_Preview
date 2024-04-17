@@ -115,7 +115,6 @@ def train_func():
                 training_loss_type="flow_matching",
                 lr=5e-3,
                 data_num=10000,
-                weight_decay=1e-4,
                 iterations=1000,
                 batch_size=2048,
                 clip_grad_norm=1.0,
@@ -158,7 +157,6 @@ def train_func():
         optimizer = torch.optim.Adam(
             diffusion_model.parameters(),
             lr=config.parameter.lr,
-            weight_decay=config.parameter.weight_decay,
         )
 
         last_iteration = -1
