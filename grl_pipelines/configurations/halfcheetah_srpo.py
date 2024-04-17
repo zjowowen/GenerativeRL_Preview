@@ -102,11 +102,12 @@ config = EasyDict(
             ),
             sample_per_state=16,
             critic=dict(
-                batch_size=2048,
+                batch_size=256,
                 iterations=100000,
                 learning_rate=3e-4,
                 discount_factor=0.99,
-                tau=0.9,
+                tau=0.7,
+                moment=0.995,
             ),
             actor=dict(
                 batch_size=512,

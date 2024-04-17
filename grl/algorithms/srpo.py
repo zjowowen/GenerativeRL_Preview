@@ -374,45 +374,45 @@ class SRPOAlgorithm:
             # self.model["SRPOPolicy"].sro.diffusion_model.model.load_state_dict(checkpoint["diffusion_model"])
             # behaviour_model_optimizer.load_state_dict(checkpoint["behaviour_model_optimizer"])
 
-            for train_iter in track(
-                range(config.parameter.behaviour_policy.iterations),
-                description="Behaviour policy training",
-            ):
-                data = next(data_generator)
-                # data["s"].shape  torch.Size([2048, 17])   data["a"].shape torch.Size([2048, 6])  data["r"].shape torch.Size([2048, 1])
-                behaviour_model_training_loss = self.model[
-                    "SRPOPolicy"
-                ].behaviour_policy_loss(data["a"], data["s"])
-                behaviour_model_optimizer.zero_grad()
-                behaviour_model_training_loss.backward()
-                behaviour_model_optimizer.step()
+            # for train_iter in track(
+            #     range(config.parameter.behaviour_policy.iterations),
+            #     description="Behaviour policy training",
+            # ):
+            #     data = next(data_generator)
+            #     # data["s"].shape  torch.Size([2048, 17])   data["a"].shape torch.Size([2048, 6])  data["r"].shape torch.Size([2048, 1])
+            #     behaviour_model_training_loss = self.model[
+            #         "SRPOPolicy"
+            #     ].behaviour_policy_loss(data["a"], data["s"])
+            #     behaviour_model_optimizer.zero_grad()
+            #     behaviour_model_training_loss.backward()
+            #     behaviour_model_optimizer.step()
 
-                # if train_iter == 0 or (train_iter + 1) % config.parameter.evaluation.evaluation_interval == 0:
-                #     evaluation_results = evaluate(self.model["SRPOPolicy"], train_iter=train_iter)
-                #     wandb_run.log(data=evaluation_results, commit=False)
+            #     # if train_iter == 0 or (train_iter + 1) % config.parameter.evaluation.evaluation_interval == 0:
+            #     #     evaluation_results = evaluate(self.model["SRPOPolicy"], train_iter=train_iter)
+            #     #     wandb_run.log(data=evaluation_results, commit=False)
 
-                wandb_run.log(
-                    data=dict(
-                        train_iter=train_iter,
-                        behaviour_model_training_loss=behaviour_model_training_loss.item(),
-                    ),
-                    commit=True,
-                )
+            #     wandb_run.log(
+            #         data=dict(
+            #             train_iter=train_iter,
+            #             behaviour_model_training_loss=behaviour_model_training_loss.item(),
+            #         ),
+            #         commit=True,
+            #     )
 
-            if train_iter == config.parameter.behaviour_policy.iterations - 1:
-                file_path = os.path.join(
-                    directory_path, f"checkpoint_diffusion_{train_iter+1}.pt"
-                )
-                torch.save(
-                    dict(
-                        diffusion_model=self.model[
-                            "SRPOPolicy"
-                        ].sro.diffusion_model.model.state_dict(),
-                        behaviour_model_optimizer=behaviour_model_optimizer.state_dict(),
-                        diffusion_iteration=train_iter + 1,
-                    ),
-                    f=file_path,
-            )
+            # if train_iter == config.parameter.behaviour_policy.iterations - 1:
+            #     file_path = os.path.join(
+            #         directory_path, f"checkpoint_diffusion_{train_iter+1}.pt"
+            #     )
+            #     torch.save(
+            #         dict(
+            #             diffusion_model=self.model[
+            #                 "SRPOPolicy"
+            #             ].sro.diffusion_model.model.state_dict(),
+            #             behaviour_model_optimizer=behaviour_model_optimizer.state_dict(),
+            #             diffusion_iteration=train_iter + 1,
+            #         ),
+            #         f=file_path,
+            # )
 
             q_optimizer = torch.optim.Adam(
                 self.model["SRPOPolicy"].critic.q0.parameters(),
@@ -457,11 +457,11 @@ class SRPOAlgorithm:
                 # Update target
                 for param, target_param in zip(
                     self.model["SRPOPolicy"].critic.q0.parameters(),
-                    self.model["SRPOPolicy"].critic.q0_target .parameters(),
+                    self.model["SRPOPolicy"].critic.q0_target.parameters(),
                 ):
                     target_param.data.copy_(
-                        config.parameter.critic.tau * param.data
-                        + (1 - config.parameter.critic.tau) * target_param.data
+                        config.parameter.critic.moment * param.data
+                        + (1 - config.parameter.critic.moment) * target_param.data
                     )
 
                 wandb_run.log(
