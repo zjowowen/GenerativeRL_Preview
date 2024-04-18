@@ -98,12 +98,12 @@ config = EasyDict(
             behaviour_policy=dict(
                 batch_size=2048,
                 learning_rate=3e-4,
-                iterations=5,
+                iterations=2000000,
             ),
             sample_per_state=16,
             critic=dict(
                 batch_size=256,
-                iterations=5,
+                iterations=2000000,
                 learning_rate=3e-4,
                 discount_factor=0.99,
                 tau=0.7,
@@ -111,7 +111,7 @@ config = EasyDict(
             ),
             actor=dict(
                 batch_size=256,
-                iterations=5,
+                iterations=2000000,
                 learning_rate=3e-4,
             ),
             evaluation=dict(
