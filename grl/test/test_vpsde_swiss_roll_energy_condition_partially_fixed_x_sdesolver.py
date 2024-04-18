@@ -130,14 +130,14 @@ config = EasyDict(
         ),
         evaluation = dict(
             eval_freq=5000,
-            video_save_path="./video-swiss-roll-energy-conditioned-diffusion-model",
-            model_save_path="./model-swiss-roll-energy-conditioned-diffusion-model",
+            video_save_path="./video-swiss-roll-energy-conditioned-diffusion-model-fixed-x",
+            model_save_path="./model-swiss-roll-energy-conditioned-diffusion-model-fixed-x",
             guidance_scale = [0, 1, 2, 4, 8, 16],
         ),
     ),
 )
 
-def render_video(data_list, video_save_path, iteration, guidance_scale=1.0, fps=100, dpi=100):
+def render_video(data_list, video_save_path, iteration, guidance_scale=1.0, fps=100, dpi=100, info=None):
     if not os.path.exists(video_save_path):
         os.makedirs(video_save_path)
     fig = plt.figure(figsize=(6, 6))
@@ -151,7 +151,10 @@ def render_video(data_list, video_save_path, iteration, guidance_scale=1.0, fps=
         im = plt.scatter(data[:,0], data[:,1], s=1)
         ims.append([im])
     ani = animation.ArtistAnimation(fig, ims, interval=0.1, blit=True)
-    ani.save(os.path.join(video_save_path, f"iteration_{iteration}_guidance_scale_{guidance_scale}.mp4"), fps=fps, dpi=dpi)
+    if info is not None:
+        ani.save(os.path.join(video_save_path, f"iteration_{iteration}_guidance_scale_{guidance_scale}_{info}.mp4"), fps=fps, dpi=dpi)
+    else:
+        ani.save(os.path.join(video_save_path, f"iteration_{iteration}_guidance_scale_{guidance_scale}.mp4"), fps=fps, dpi=dpi)
     # clean up
     plt.close(fig)
     plt.clf()
@@ -287,8 +290,6 @@ if __name__ == "__main__":
                 # plt.imshow(torch.fliplr(grid_value).detach().cpu().numpy(), extent=(-10, 10, -10, 10))
                 plt.imshow(grid_value.detach().cpu().numpy(), extent=(-10, 10, -10, 10), vmin=-5, vmax=3)
                 plt.colorbar()
-                if not os.path.exists(config.parameter.evaluation.video_save_path):
-                    os.makedirs(config.parameter.evaluation.video_save_path)
                 plt.savefig(os.path.join(config.parameter.evaluation.video_save_path, f"iteration_{train_iter}_value_function.png"))
                 plt.clf()
 
@@ -331,15 +332,20 @@ if __name__ == "__main__":
                 energy_conditioned_diffusion_model.eval()
                 for guidance_scale in config.parameter.evaluation.guidance_scale:
                     t_span=torch.linspace(0.0, 1.0, 1000)
-                    x_t = energy_conditioned_diffusion_model.sample_forward_process(t_span=t_span, batch_size=500, guidance_scale=guidance_scale).cpu().detach()
+                    fixed_x = torch.tensor([1.0, 0.0]).to(config.model.device).unsqueeze(0)
+                    fixed_mask = torch.tensor([0.0, 1.0]).to(config.model.device).unsqueeze(0)
+                    x_t = energy_conditioned_diffusion_model.sample_forward_process_with_fixed_x(fixed_x=fixed_x, fixed_mask=fixed_mask, t_span=t_span, batch_size=500).squeeze(2).cpu().detach()
                     x_t=[x.squeeze(0) for x in torch.split(x_t, split_size_or_sections=1, dim=0)]
-                    # run render_video in main process
-                    # render_video(x_t, config.parameter.evaluation.video_save_path, train_iter, guidance_scale=guidance_scale, fps=100, dpi=100)
-                    # run render_video in subprocess
-                    p = mp.Process(target=render_video, args=(x_t, config.parameter.evaluation.video_save_path, train_iter, guidance_scale, 100, 100))
-                    p.start()
-                    subprocess_list.append(p)
-
+                    # render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
+                    p1 = mp.Process(target=render_video, args=(x_t, config.parameter.evaluation.video_save_path, train_iter, guidance_scale, 100, 100, "fixed_x"))
+                    p1.start()
+                    subprocess_list.append(p1)
+                    x_t = energy_conditioned_diffusion_model.sample_forward_process(t_span=t_span, batch_size=500).cpu().detach()
+                    x_t=[x.squeeze(0) for x in torch.split(x_t, split_size_or_sections=1, dim=0)]
+                    # render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
+                    p2 = mp.Process(target=render_video, args=(x_t, config.parameter.evaluation.video_save_path, train_iter, guidance_scale, 100, 100))
+                    p2.start()
+                    subprocess_list.append(p2)
 
                 save_checkpoint(energy_conditioned_diffusion_model, train_iter, config.parameter.evaluation.model_save_path)
 
