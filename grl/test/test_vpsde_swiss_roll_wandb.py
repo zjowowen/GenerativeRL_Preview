@@ -4,10 +4,11 @@ import sys
 
 import matplotlib
 import numpy as np
-import wandb
 from easydict import EasyDict
 from rich.progress import track
 from sklearn.datasets import make_swiss_roll
+
+import wandb
 
 matplotlib.use('Agg')
 from datetime import datetime

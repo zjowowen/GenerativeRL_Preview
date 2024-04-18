@@ -3,21 +3,22 @@
 import os
 import signal
 import sys
+import unittest
+
 import matplotlib
 import numpy as np
-from easydict import EasyDict
-from rich.progress import track
-from sklearn.datasets import make_swiss_roll
-
 import torch
 import torch.nn as nn
 from easydict import EasyDict
 from matplotlib import animation
+from rich.progress import track
+from sklearn.datasets import make_swiss_roll
 
-from grl.generative_models.diffusion_model.diffusion_model import DiffusionModel
+from grl.generative_models.diffusion_model.diffusion_model import \
+    DiffusionModel
 from grl.utils import set_seed
 from grl.utils.log import log
-import unittest
+
 
 class TestDiffusionModel(unittest.TestCase):
 

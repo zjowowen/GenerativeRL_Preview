@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torchvision
-import wandb
 from diffusers.models import AutoencoderKL
 from easydict import EasyDict
 from matplotlib import animation
@@ -20,6 +19,7 @@ from PIL import Image
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
 
+import wandb
 from grl.datasets.minecraft import MineRLVideoDataset
 from grl.generative_models.diffusion_model.diffusion_model import \
     DiffusionModel

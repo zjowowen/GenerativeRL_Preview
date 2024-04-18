@@ -8,12 +8,12 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import numpy as np
 import torch
 import torch.nn as nn
-import wandb
 from easydict import EasyDict
 from rich.progress import Progress, track
 from tensordict import TensorDict
 from torch.utils.data import DataLoader
 
+import wandb
 from grl.agents.qgpo import QGPOAgent
 from grl.datasets import create_dataset
 from grl.datasets.qgpo import QGPODataset

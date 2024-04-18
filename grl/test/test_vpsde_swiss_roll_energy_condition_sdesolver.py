@@ -135,14 +135,14 @@ config = EasyDict(
         ),
         evaluation = dict(
             eval_freq=5000,
-            video_save_path="./video-swiss-roll-energy-conditioned-diffusion-model-fixed-x-sdesolver",
-            model_save_path="./model-swiss-roll-energy-conditioned-diffusion-model-fixed-x-sdesolver",
+            video_save_path="./video-swiss-roll-energy-conditioned-diffusion-model-sdesolver",
+            model_save_path="./model-swiss-roll-energy-conditioned-diffusion-model-sdesolver",
             guidance_scale = [0, 0.1, 0.5, 1, 2, 4, 8, 16],
         ),
     ),
 )
 
-def render_video(data_list, video_save_path, iteration, guidance_scale=1.0, fps=100, dpi=100, info=None):
+def render_video(data_list, video_save_path, iteration, guidance_scale=1.0, fps=100, dpi=100):
     if not os.path.exists(video_save_path):
         os.makedirs(video_save_path)
     fig = plt.figure(figsize=(6, 6))
@@ -156,10 +156,7 @@ def render_video(data_list, video_save_path, iteration, guidance_scale=1.0, fps=
         im = plt.scatter(data[:,0], data[:,1], s=1)
         ims.append([im])
     ani = animation.ArtistAnimation(fig, ims, interval=0.1, blit=True)
-    if info is not None:
-        ani.save(os.path.join(video_save_path, f"iteration_{iteration}_guidance_scale_{guidance_scale}_{info}.mp4"), fps=fps, dpi=dpi)
-    else:
-        ani.save(os.path.join(video_save_path, f"iteration_{iteration}_guidance_scale_{guidance_scale}.mp4"), fps=fps, dpi=dpi)
+    ani.save(os.path.join(video_save_path, f"iteration_{iteration}_guidance_scale_{guidance_scale}.mp4"), fps=fps, dpi=dpi)
     # clean up
     plt.close(fig)
     plt.clf()
@@ -281,13 +278,6 @@ if __name__ == "__main__":
                 p = mp.Process(target=render_video, args=(x_t, config.parameter.evaluation.video_save_path, f"diffusion_model_iteration_{diffusion_model_iteration}_value_model_iteration_{value_model_iteration}", guidance_scale, 100, 100))
                 p.start()
                 subprocess_list.append(p)
-                fixed_x = torch.tensor([1.0, 0.0]).to(config.model.device).unsqueeze(0)
-                fixed_mask = torch.tensor([0.0, 1.0]).to(config.model.device).unsqueeze(0)
-                x_t = energy_conditioned_diffusion_model.sample_forward_process_with_fixed_x(fixed_x=fixed_x, fixed_mask=fixed_mask, t_span=t_span, batch_size=500).squeeze(2).cpu().detach()
-                p = mp.Process(target=render_video, args=(x_t, config.parameter.evaluation.video_save_path, f"diffusion_model_iteration_{diffusion_model_iteration}_value_model_iteration_{value_model_iteration}", guidance_scale, 100, 100, "fixed_x"))
-                p.start()
-                subprocess_list.append(p)
-
             save_checkpoint(diffusion_model=energy_conditioned_diffusion_model, value_model=value_function_model, diffusion_model_iteration=diffusion_model_iteration, value_model_iteration=value_model_iteration, path=config.parameter.evaluation.model_save_path)
 
     for p in subprocess_list:
@@ -416,12 +406,6 @@ if __name__ == "__main__":
                     p = mp.Process(target=render_video, args=(x_t, config.parameter.evaluation.video_save_path, f"diffusion_model_iteration_{diffusion_model_iteration}_value_model_iteration_{value_model_iteration}", guidance_scale, 100, 100))
                     p.start()
                     subprocess_list.append(p)
-                    fixed_x = torch.tensor([1.0, 0.0]).to(config.model.device).unsqueeze(0)
-                    fixed_mask = torch.tensor([0.0, 1.0]).to(config.model.device).unsqueeze(0)
-                    x_t = energy_conditioned_diffusion_model.sample_forward_process_with_fixed_x(fixed_x=fixed_x, fixed_mask=fixed_mask, t_span=t_span, batch_size=500).squeeze(2).cpu().detach()
-                    p = mp.Process(target=render_video, args=(x_t, config.parameter.evaluation.video_save_path, f"diffusion_model_iteration_{diffusion_model_iteration}_value_model_iteration_{value_model_iteration}", guidance_scale, 100, 100, "fixed_x"))
-                    p.start()
-                    subprocess_list.append(p)
 
                 save_checkpoint(diffusion_model=energy_conditioned_diffusion_model, value_model=value_function_model, diffusion_model_iteration=diffusion_model_iteration, value_model_iteration=value_model_iteration, path=config.parameter.evaluation.model_save_path)
 
@@ -431,5 +415,4 @@ if __name__ == "__main__":
 def sample_from_energy_conditioned_diffusion_model(energy_conditioned_diffusion_model, batch_size=500, guidance_scale=1.0):
     t_span=torch.linspace(0.0, 1.0, 1000)
     x_t = energy_conditioned_diffusion_model.sample(t_span=t_span, batch_size=batch_size, guidance_scale=guidance_scale).cpu().detach()
-
 

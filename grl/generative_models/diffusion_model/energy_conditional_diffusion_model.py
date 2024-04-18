@@ -224,16 +224,15 @@ class EnergyConditionalDiffusionModel(nn.Module):
             condition = torch.repeat_interleave(condition, torch.prod(extra_batch_size), dim=0)
             # condition.shape = (B*N, D)
 
-        def score_function_with_energy_guidance(t, x, condition):
-            return self.score_function_with_energy_guidance(t, x, condition, guidance_scale)
-
-        def noise_function_with_energy_guidance(t, x, condition):
-            return self.noise_function_with_energy_guidance(t, x, condition, guidance_scale)
-
-        def data_prediction_function_with_energy_guidance(t, x, condition):
-            return self.data_prediction_function_with_energy_guidance(t, x, condition, guidance_scale)
 
         if isinstance(solver, DPMSolver):
+
+            def noise_function_with_energy_guidance(t, x, condition):
+                return self.noise_function_with_energy_guidance(t, x, condition, guidance_scale)
+
+            def data_prediction_function_with_energy_guidance(t, x, condition):
+                return self.data_prediction_function_with_energy_guidance(t, x, condition, guidance_scale)
+
             #Note: DPMSolver does not support t_span argument assignment
             assert t_span is None, "DPMSolver does not support t_span argument assignment"
             #TODO: make it compatible with TensorDict
@@ -257,35 +256,43 @@ class EnergyConditionalDiffusionModel(nn.Module):
                         save_intermediate=False,
                     )
         elif isinstance(solver, ODESolver):
+
+            def score_function_with_energy_guidance(t, x, condition):
+                # for SDE solver, the shape of t is (,) while for ODE solver, the shape of t is (B*N,)
+                return self.score_function_with_energy_guidance(t, x, condition, guidance_scale)
+
             #TODO: make it compatible with TensorDict
-            if not hasattr(self, "t_span"):
-                self.t_span = torch.linspace(0, self.diffusion_process.t_max, 2).to(self.device)
             if with_grad:
                 data = solver.integrate(
                     drift=self.diffusion_process.reverse_ode(function=score_function_with_energy_guidance, function_type="score_function", condition=condition).drift,
                     x0=x,
-                    t_span=self.t_span,
+                    t_span=t_span,
                 )[-1]
             else:
                 with torch.no_grad():
                     data = solver.integrate(
                         drift=self.diffusion_process.reverse_ode(function=score_function_with_energy_guidance, function_type="score_function", condition=condition).drift,
                         x0=x,
-                        t_span=self.t_span,
+                        t_span=t_span,
                     )[-1]
         elif isinstance(solver, SDESolver):
+
+            def score_function_with_energy_guidance(t, x, condition):
+                # for SDE solver, the shape of t is (,) while for ODE solver, the shape of t is (B*N,)
+                if len(t.shape) == 0:
+                    t = t.repeat(x.shape[0])
+                return self.score_function_with_energy_guidance(t, x, condition, guidance_scale)
+
             #TODO: make it compatible with TensorDict
             #TODO: validate the implementation
             assert self.reverse_diffusion_process is not None, "reverse_path must be specified in config"
-            if not hasattr(self, "t_span"):
-                self.t_span = torch.linspace(0, self.diffusion_process.t_max, 2).to(self.device)
             sde = self.diffusion_process.reverse_sde(function=score_function_with_energy_guidance, function_type="score_function", condition=condition, reverse_diffusion_function=self.reverse_diffusion_process.diffusion, reverse_diffusion_squared_function=self.reverse_diffusion_process.diffusion_squared)
             if with_grad:
                 data = solver.integrate(
                     drift=sde.drift,
                     diffusion=sde.diffusion,
                     x0=x,
-                    t_span=self.t_span,
+                    t_span=t_span,
                 )[-1]
             else:
                 with torch.no_grad():
@@ -293,7 +300,7 @@ class EnergyConditionalDiffusionModel(nn.Module):
                         drift=sde.drift,
                         diffusion=sde.diffusion,
                         x0=x,
-                        t_span=self.t_span,
+                        t_span=t_span,
                     )[-1]
         else:
             raise NotImplementedError("Solver type {} is not implemented".format(self.config.solver.type))
@@ -446,17 +453,14 @@ class EnergyConditionalDiffusionModel(nn.Module):
             condition = torch.repeat_interleave(condition, torch.prod(extra_batch_size), dim=0)
             # condition.shape = (B*N, D)
 
-        def score_function_with_energy_guidance(t, x, condition):
-            return self.score_function_with_energy_guidance(t, x, condition, guidance_scale)
-
-        def noise_function_with_energy_guidance(t, x, condition):
-            return self.noise_function_with_energy_guidance(t, x, condition, guidance_scale)
-
-        def data_prediction_function_with_energy_guidance(t, x, condition):
-            return self.data_prediction_function_with_energy_guidance(t, x, condition, guidance_scale)
-        
-
         if isinstance(solver, DPMSolver):
+
+            def noise_function_with_energy_guidance(t, x, condition):
+                return self.noise_function_with_energy_guidance(t, x, condition, guidance_scale)
+
+            def data_prediction_function_with_energy_guidance(t, x, condition):
+                return self.data_prediction_function_with_energy_guidance(t, x, condition, guidance_scale)
+            
             #Note: DPMSolver does not support t_span argument assignment
             assert t_span is None, "DPMSolver does not support t_span argument assignment"
             #TODO: make it compatible with TensorDict
@@ -480,6 +484,11 @@ class EnergyConditionalDiffusionModel(nn.Module):
                         save_intermediate=True,
                     )
         elif isinstance(solver, ODESolver):
+
+            def score_function_with_energy_guidance(t, x, condition):
+                # for SDE solver, the shape of t is (,) while for ODE solver, the shape of t is (B*N,)
+                return self.score_function_with_energy_guidance(t, x, condition, guidance_scale)
+
             #TODO: make it compatible with TensorDict
             if with_grad:
                 data = solver.integrate(
@@ -495,12 +504,17 @@ class EnergyConditionalDiffusionModel(nn.Module):
                         t_span=t_span,
                     )
         elif isinstance(solver, SDESolver):
+
+            def score_function_with_energy_guidance(t, x, condition):
+                # for SDE solver, the shape of t is (,) while for ODE solver, the shape of t is (B*N,)
+                if len(t.shape) == 0:
+                    t = t.repeat(x.shape[0])
+                return self.score_function_with_energy_guidance(t, x, condition, guidance_scale)
+
             #TODO: make it compatible with TensorDict
             #TODO: validate the implementation
             assert self.reverse_diffusion_process is not None, "reverse_path must be specified in config"
-            if not hasattr(self, "t_span"):
-                self.t_span = torch.linspace(0, self.diffusion_process.t_max, 2).to(self.device)
-            sde = self.diffusion_process.reverse_sde(function=self.model, function_type=self.model_type, condition=condition, reverse_diffusion_function=self.reverse_diffusion_process.diffusion, reverse_diffusion_squared_function=self.reverse_diffusion_process.diffusion_squared)
+            sde = self.diffusion_process.reverse_sde(function=score_function_with_energy_guidance, function_type="score_function", condition=condition, reverse_diffusion_function=self.reverse_diffusion_process.diffusion, reverse_diffusion_squared_function=self.reverse_diffusion_process.diffusion_squared)
             if with_grad:
                 data = solver.integrate(
                     drift=sde.drift,
@@ -646,19 +660,22 @@ class EnergyConditionalDiffusionModel(nn.Module):
         fixed_x = torch.repeat_interleave(fixed_x, torch.prod(extra_batch_size), dim=0)
         fixed_mask = torch.repeat_interleave(fixed_mask, torch.prod(extra_batch_size), dim=0)
 
-        def score_function_with_energy_guidance(t, x, condition):
-            return self.score_function_with_energy_guidance(t, x, condition, guidance_scale)
-
-        def noise_function_with_energy_guidance(t, x, condition):
-            return self.noise_function_with_energy_guidance(t, x, condition, guidance_scale)
-
-        def data_prediction_function_with_energy_guidance(t, x, condition):
-            return self.data_prediction_function_with_energy_guidance(t, x, condition, guidance_scale)
-
         if isinstance(solver, DPMSolver):
+
+            def noise_function_with_energy_guidance(t, x, condition):
+                return self.noise_function_with_energy_guidance(t, x, condition, guidance_scale)
+
+            def data_prediction_function_with_energy_guidance(t, x, condition):
+                return self.data_prediction_function_with_energy_guidance(t, x, condition, guidance_scale)
+
             #TODO: make it compatible with DPM solver
             assert False, "Not implemented"
         elif isinstance(solver, ODESolver):
+
+            def score_function_with_energy_guidance(t, x, condition):
+                # for SDE solver, the shape of t is (,) while for ODE solver, the shape of t is (B*N,)
+                return self.score_function_with_energy_guidance(t, x, condition, guidance_scale)
+
             #TODO: make it compatible with TensorDict
             x = fixed_x * (1 - fixed_mask) + x * fixed_mask
             def drift_fixed_x(t, x):
@@ -678,6 +695,13 @@ class EnergyConditionalDiffusionModel(nn.Module):
                         t_span=t_span,
                     )[-1]
         elif isinstance(solver, SDESolver):
+
+            def score_function_with_energy_guidance(t, x, condition):
+                # for SDE solver, the shape of t is (,) while for ODE solver, the shape of t is (B*N,)
+                if len(t.shape) == 0:
+                    t = t.repeat(x.shape[0])
+                return self.score_function_with_energy_guidance(t, x, condition, guidance_scale)
+
             #TODO: make it compatible with TensorDict
             #TODO: validate the implementation
             assert self.reverse_diffusion_process is not None, "reverse_path must be specified in config"
@@ -834,19 +858,22 @@ class EnergyConditionalDiffusionModel(nn.Module):
         fixed_x = torch.repeat_interleave(fixed_x, torch.prod(extra_batch_size), dim=0)
         fixed_mask = torch.repeat_interleave(fixed_mask, torch.prod(extra_batch_size), dim=0)
 
-        def score_function_with_energy_guidance(t, x, condition):
-            return self.score_function_with_energy_guidance(t, x, condition, guidance_scale)
-
-        def noise_function_with_energy_guidance(t, x, condition):
-            return self.noise_function_with_energy_guidance(t, x, condition, guidance_scale)
-
-        def data_prediction_function_with_energy_guidance(t, x, condition):
-            return self.data_prediction_function_with_energy_guidance(t, x, condition, guidance_scale)
-
         if isinstance(solver, DPMSolver):
+
+            def noise_function_with_energy_guidance(t, x, condition):
+                return self.noise_function_with_energy_guidance(t, x, condition, guidance_scale)
+
+            def data_prediction_function_with_energy_guidance(t, x, condition):
+                return self.data_prediction_function_with_energy_guidance(t, x, condition, guidance_scale)
+
             #TODO: make it compatible with DPM solver
             assert False, "Not implemented"
         elif isinstance(solver, ODESolver):
+
+            def score_function_with_energy_guidance(t, x, condition):
+                # for SDE solver, the shape of t is (,) while for ODE solver, the shape of t is (B*N,)
+                return self.score_function_with_energy_guidance(t, x, condition, guidance_scale)
+
             #TODO: make it compatible with TensorDict
             x = fixed_x * (1 - fixed_mask) + x * fixed_mask
             def drift_fixed_x(t, x):
@@ -866,6 +893,13 @@ class EnergyConditionalDiffusionModel(nn.Module):
                         t_span=t_span,
                     )
         elif isinstance(solver, SDESolver):
+
+            def score_function_with_energy_guidance(t, x, condition):
+                # for SDE solver, the shape of t is (,) while for ODE solver, the shape of t is (B*N,)
+                if len(t.shape) == 0:
+                    t = t.repeat(x.shape[0])
+                return self.score_function_with_energy_guidance(t, x, condition, guidance_scale)
+
             #TODO: make it compatible with TensorDict
             #TODO: validate the implementation
             assert self.reverse_diffusion_process is not None, "reverse_path must be specified in config"

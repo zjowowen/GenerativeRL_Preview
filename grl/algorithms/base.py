@@ -1,10 +1,10 @@
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import torch
-import wandb
 from easydict import EasyDict
 from torch.utils.data import DataLoader
 
+import wandb
 from grl.agents.base import BaseAgent
 from grl.datasets import create_dataset
 from grl.rl_modules.simulators import create_simulator

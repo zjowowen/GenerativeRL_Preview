@@ -1,8 +1,9 @@
 import logging
 import os
 
-import wandb
 from rich.logging import RichHandler
+
+import wandb
 
 # Silence wandb by using the following line
 # os.environ["WANDB_SILENT"] = "True"

@@ -70,20 +70,15 @@ config = EasyDict(
             x_size = x_size,
             alpha = 1.0,
             solver = dict(
-                type = "SDESolver",
+                type = "ODESolver",
                 args = dict(
-                    library="torchsde",
+                    library="torchdyn",
                 ),
             ),
             path = dict(
                 type = "linear_vp_sde",
                 beta_0 = 0.1,
                 beta_1 = 20.0,
-            ),
-            reverse_path = dict(
-                type = "linear_vp_sde",
-                beta_0 = 0.1,
-                beta_1 = 160.0,
             ),
             model = dict(
                 type = "noise_function",
@@ -135,8 +130,8 @@ config = EasyDict(
         ),
         evaluation = dict(
             eval_freq=5000,
-            video_save_path="./video-swiss-roll-energy-conditioned-diffusion-model-fixed-x-sdesolver",
-            model_save_path="./model-swiss-roll-energy-conditioned-diffusion-model-fixed-x-sdesolver",
+            video_save_path="./video-swiss-roll-energy-conditioned-diffusion-model-fixed-x",
+            model_save_path="./model-swiss-roll-energy-conditioned-diffusion-model-fixed-x",
             guidance_scale = [0, 0.1, 0.5, 1, 2, 4, 8, 16],
         ),
     ),

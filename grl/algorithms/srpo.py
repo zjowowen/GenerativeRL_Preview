@@ -8,12 +8,12 @@ import gym
 import numpy as np
 import torch
 import torch.nn as nn
-import wandb
 from easydict import EasyDict
 from rich.progress import Progress, track
 from tensordict import TensorDict
 from torch.utils.data import DataLoader
 
+import wandb
 from grl.agents.srpo import SRPOAgent
 from grl.datasets import create_dataset
 from grl.datasets.d4rl import D4RLDataset

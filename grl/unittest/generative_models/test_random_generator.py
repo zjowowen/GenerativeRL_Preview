@@ -1,11 +1,13 @@
 # Test grl/generative_models/random_generator.py
 
 import unittest
-import torch
-from tensordict import TensorDict
 from typing import Dict, Tuple
 
+import torch
+from tensordict import TensorDict
+
 from grl.generative_models.random_generator import gaussian_random_variable
+
 
 class TestGaussianRandomVariable(unittest.TestCase):
     def test_scalar_output(self):
