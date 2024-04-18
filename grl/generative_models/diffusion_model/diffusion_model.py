@@ -135,7 +135,7 @@ class DiffusionModel(nn.Module):
 
         if x_0 is None:
             x = self.gaussian_generator(batch_size=torch.prod(extra_batch_size) * data_batch_size)
-            # x_0.shape = (B*N, D)
+            # x.shape = (B*N, D)
         else:
             if isinstance(self.x_size, int):
                 assert torch.Size([self.x_size]) == x_0[0].shape, "The shape of x_0 must be the same as the x_size that is specified in the config"
@@ -145,7 +145,7 @@ class DiffusionModel(nn.Module):
                 assert False,  "Invalid x_size"
 
             x = torch.repeat_interleave(x_0, torch.prod(extra_batch_size), dim=0)
-            # x_0.shape = (B*N, D)
+            # x.shape = (B*N, D)
         
         if condition is not None:
             condition = torch.repeat_interleave(condition, torch.prod(extra_batch_size), dim=0)
@@ -312,7 +312,7 @@ class DiffusionModel(nn.Module):
 
         if x_0 is None:
             x = self.gaussian_generator(batch_size=torch.prod(extra_batch_size) * data_batch_size)
-            # x_0.shape = (B*N, D)
+            # x.shape = (B*N, D)
         else:
             if isinstance(self.x_size, int):
                 assert torch.Size([self.x_size]) == x_0[0].shape, "The shape of x_0 must be the same as the x_size that is specified in the config"
@@ -322,7 +322,7 @@ class DiffusionModel(nn.Module):
                 assert False,  "Invalid x_size"
                 
             x = torch.repeat_interleave(x_0, torch.prod(extra_batch_size), dim=0)
-            # x_0.shape = (B*N, D)
+            # x.shape = (B*N, D)
         
         if condition is not None:
             condition = torch.repeat_interleave(condition, torch.prod(extra_batch_size), dim=0)
@@ -476,7 +476,6 @@ class DiffusionModel(nn.Module):
             else:
                 assert False, "Invalid batch size"
         
-
         data_batch_size = fixed_x.shape[0]
         assert fixed_x.shape[0] == fixed_mask.shape[0], "The batch size of fixed_x and fixed_mask must be the same"
         if x_0 is not None and condition is not None:
@@ -543,8 +542,6 @@ class DiffusionModel(nn.Module):
             #TODO: make it compatible with TensorDict
             #TODO: validate the implementation
             assert self.reverse_diffusion_process is not None, "reverse_path must be specified in config"
-            if not hasattr(self, "t_span"):
-                self.t_span = torch.linspace(0, self.diffusion_process.t_max, 2).to(self.device)
 
             x = fixed_x * (1 - fixed_mask) + x * fixed_mask
             sde = self.diffusion_process.reverse_sde(
