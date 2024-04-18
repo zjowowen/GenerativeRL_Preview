@@ -78,7 +78,9 @@ class TestDiffusionModel(unittest.TestCase):
         ))
 
         diffusion_model = DiffusionModel(config=config.diffusion_model).to(config.diffusion_model.device)
-        diffusion_model = torch.compile(diffusion_model)
+        # if python version is 3.12 or higher, torch.compile is not available
+        if sys.version_info[1] < 12:
+            diffusion_model = torch.compile(diffusion_model)
 
         # get data
         data = make_swiss_roll(n_samples=config.parameter.data_num, noise=0.01)[0].astype(np.float32)[:,[0,2]]
