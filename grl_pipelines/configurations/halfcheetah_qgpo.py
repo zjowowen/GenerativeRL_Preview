@@ -12,6 +12,7 @@ t_encoder = dict(
         scale = 30.0,
     ),
 )
+solver_type = "DPMSolver"
 
 config = EasyDict(
     train = dict(
@@ -51,18 +52,29 @@ config = EasyDict(
                     x_size = action_size,
                     alpha = 1.0,
                     solver = dict(
-                        # type = "ODESolver",
-                        # args = dict(
-                        #     library="torchdyn",
-                        # ),
                         type = "DPMSolver",
                         args = dict(
                             order=2,
                             device=device,
                             steps=17,
-                        ),
+                        )
+                    ) if solver_type == "DPMSolver" else dict(
+                            type = "ODESolver",
+                            args = dict(
+                                library="torchdyn",
+                        )
+                    ) if solver_type == "ODESolver" else dict(
+                            type = "SDESolver",
+                            args = dict(
+                                library="torchsde",
+                        )
                     ),
                     path = dict(
+                        type = "linear_vp_sde",
+                        beta_0 = 0.1,
+                        beta_1 = 20.0,
+                    ),
+                    reverse_path = dict(
                         type = "linear_vp_sde",
                         beta_0 = 0.1,
                         beta_1 = 20.0,
@@ -105,6 +117,7 @@ config = EasyDict(
                 iterations = 600000,
             ),
             sample_per_state = 16,
+            fake_data_t_span = None if solver_type == "DPMSolver" else 32,
             energy_guided_policy = dict(
                 batch_size = 256,
             ),

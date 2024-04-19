@@ -138,6 +138,7 @@ class QGPOPolicy(nn.Module):
             batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
             guidance_scale: Union[torch.Tensor, float] = torch.tensor(1.0),
             solver_config: EasyDict = None,
+            t_span: torch.Tensor = None,
         ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
@@ -146,11 +147,12 @@ class QGPOPolicy(nn.Module):
             state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
             guidance_scale (:obj:`Union[torch.Tensor, float]`): The guidance scale.
             solver_config (:obj:`EasyDict`): The configuration for the ODE solver.
+            t_span (:obj:`torch.Tensor`): The time span for the ODE solver or SDE solver.
         Returns:
             action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
         return self.diffusion_model.sample(
-            t_span = torch.linspace(0.0, 1.0, 32).to(self.device),
+            t_span = t_span,
             condition=state,
             batch_size=batch_size,
             guidance_scale=guidance_scale,
@@ -163,6 +165,7 @@ class QGPOPolicy(nn.Module):
             state: Union[torch.Tensor, TensorDict],
             batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
             solver_config: EasyDict = None,
+            t_span: torch.Tensor = None,
         ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
@@ -170,11 +173,12 @@ class QGPOPolicy(nn.Module):
         Arguments:
             state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
             solver_config (:obj:`EasyDict`): The configuration for the ODE solver.
+            t_span (:obj:`torch.Tensor`): The time span for the ODE solver or SDE solver.
         Returns:
             action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
         return self.diffusion_model.sample_without_energy_guidance(
-            t_span = torch.linspace(0.0, 1.0, 32).to(self.device),
+            t_span = t_span,
             condition=state,
             batch_size=batch_size,
             solver_config=solver_config
@@ -349,6 +353,7 @@ class QGPOAlgorithm:
                             model.sample(
                                 state = states,
                                 guidance_scale = 0.0,
+                                t_span = torch.linspace(0.0, 1.0, config.parameter.fake_data_t_span).to(self.device) if config.parameter.fake_data_t_span is not None else None
                             )
                         )
                     fake_actions_sampled.append(torch.stack(fake_actions_per_state, dim=1))
@@ -362,7 +367,9 @@ class QGPOAlgorithm:
                         obs = torch.tensor(obs, dtype=torch.float32, device=config.model.QGPOPolicy.device).unsqueeze(0)
                         action = model.sample(
                             state = obs,
-                            guidance_scale=guidance_scale).squeeze(0).cpu().detach().numpy()
+                            guidance_scale=guidance_scale,
+                            t_span = torch.linspace(0.0, 1.0, config.parameter.fake_data_t_span).to(self.device) if config.parameter.fake_data_t_span is not None else None
+                        ).squeeze(0).cpu().detach().numpy()
                         return action
                     evaluation_results[f"evaluation/guidance_scale:[{guidance_scale}]/total_return"] = self.simulator.evaluate(policy=policy, )[0]["total_return"]
                     log.info(f"Train iter: {train_iter}, guidance_scale: {guidance_scale}, total_return: {evaluation_results[f'evaluation/guidance_scale:[{guidance_scale}]/total_return']}")
