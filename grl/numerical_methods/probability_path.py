@@ -460,3 +460,22 @@ class GaussianConditionalProbabilityPath:
             return numerator / denominator
         else:
             raise NotImplementedError("Inverse function of half-logSNR for type {} is not implemented".format(self.type))
+
+class ConditionalProbabilityPath:
+    """
+    Overview:
+        Conditional probability path for general continuous-time normalizing flow.
+    
+    """
+
+    def __init__(self) -> None:
+        pass
+
+    def drift_coefficient(self, t: torch.Tensor) -> torch.Tensor:
+        pass
+
+    def drift(self, t: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
+        pass
+
+    def diffusion(self, t: torch.Tensor) -> torch.Tensor:
+        pass

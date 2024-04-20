@@ -118,3 +118,114 @@ class VelocityFunction:
             return loss
         else:
             raise NotImplementedError("Unknown type of velocity function {}".format(type))
+
+
+    def flow_matching_loss_2(
+            self,
+            model: Union[Callable, nn.Module],
+            x: Union[torch.Tensor, TensorDict],
+            condition: Union[torch.Tensor, TensorDict] = None,
+        ) -> torch.Tensor:
+
+        #TODO: make it compatible with TensorDict
+        if self.model_type == "noise_function":
+            eps = 1e-5
+            t_random = torch.rand(x.shape[0], device=x.device) * (self.process.t_max - eps) + eps
+            noise = torch.randn_like(x).to(x.device)
+            std = self.process.std(t_random, x)
+            x_t = self.process.scale(t_random, x) * x + std * noise
+            velocity_value = self.process.drift(t_random, x_t) + 0.5 * self.process.diffusion_squared(t_random, x_t) * model(t_random, x_t, condition=condition) / std
+            velocity = self.process.velocity(t_random, x, noise=noise)
+            loss = torch.mean(torch.sum((velocity_value * torch.abs(velocity_value) - velocity * torch.abs(velocity)) ** 2, dim=(1, )))
+            return loss
+        elif self.model_type == "score_function":
+            eps = 1e-5
+            t_random = torch.rand(x.shape[0], device=x.device) * (self.process.t_max - eps) + eps
+            noise = torch.randn_like(x).to(x.device)
+            std = self.process.std(t_random, x)
+            x_t = self.process.scale(t_random, x) * x + std * noise
+            velocity_value = self.process.drift(t_random, x_t) - 0.5 * self.process.diffusion_squared(t_random, x_t) * model(t_random, x_t, condition=condition)
+            velocity = self.process.velocity(t_random, x, noise=noise)
+            loss = torch.mean(torch.sum((velocity_value * torch.abs(velocity_value) - velocity * torch.abs(velocity)) ** 2, dim=(1, )))
+            return loss
+        elif self.model_type == "velocity_function":
+            eps = 1e-5
+            t_random = torch.rand(x.shape[0], device=x.device) * (self.process.t_max - eps) + eps
+            noise = torch.randn_like(x).to(x.device)
+            std = self.process.std(t_random, x)
+            x_t = self.process.scale(t_random, x) * x + std * noise
+            velocity_value = model(t_random, x_t, condition=condition)
+            velocity = self.process.velocity(t_random, x, noise=noise)
+            loss = torch.mean(torch.sum((velocity_value * torch.abs(velocity_value) - velocity * torch.abs(velocity)) ** 2, dim=(1, )))
+            return loss
+        elif self.model_type == "data_prediction_function":
+            #TODO: check if this is correct
+            eps = 1e-5
+            t_random = torch.rand(x.shape[0], device=x.device) * (self.process.t_max - eps) + eps
+            noise = torch.randn_like(x).to(x.device)
+            std = self.process.std(t_random, x)
+            x_t = self.process.scale(t_random, x) * x + std * noise
+            D = 0.5 * self.process.diffusion_squared(t_random, x) / self.process.covariance(t_random, x)
+            velocity_value = (self.process.drift_coefficient(t_random, x_t) + D) * x_t - D * self.process.scale(t_random, x_t) * model(t_random, x_t, condition=condition)
+            velocity = self.process.velocity(t_random, x, noise=noise)
+            loss = torch.mean(torch.sum((velocity_value * torch.abs(velocity_value) - velocity * torch.abs(velocity)) ** 2, dim=(1, )))
+            return loss
+        else:
+            raise NotImplementedError("Unknown type of velocity function {}".format(type))
+
+    def flow_matching_loss_hybrid(
+            self,
+            model: Union[Callable, nn.Module],
+            x: Union[torch.Tensor, TensorDict],
+            condition: Union[torch.Tensor, TensorDict] = None,
+        ) -> torch.Tensor:
+
+        #TODO: make it compatible with TensorDict
+        if self.model_type == "noise_function":
+            eps = 1e-5
+            t_random = torch.rand(x.shape[0], device=x.device) * (self.process.t_max - eps) + eps
+            noise = torch.randn_like(x).to(x.device)
+            std = self.process.std(t_random, x)
+            x_t = self.process.scale(t_random, x) * x + std * noise
+            velocity_value = self.process.drift(t_random, x_t) + 0.5 * self.process.diffusion_squared(t_random, x_t) * model(t_random, x_t, condition=condition) / std
+            velocity = self.process.velocity(t_random, x, noise=noise)
+            loss_1 = torch.mean(torch.sum((velocity_value - velocity) ** 2, dim=(1, )))
+            loss_2 = torch.mean(torch.sum((velocity_value * torch.abs(velocity_value) - velocity * torch.abs(velocity)) ** 2, dim=(1, )))
+            return loss_1 + loss_2 / 4.0
+        elif self.model_type == "score_function":
+            eps = 1e-5
+            t_random = torch.rand(x.shape[0], device=x.device) * (self.process.t_max - eps) + eps
+            noise = torch.randn_like(x).to(x.device)
+            std = self.process.std(t_random, x)
+            x_t = self.process.scale(t_random, x) * x + std * noise
+            velocity_value = self.process.drift(t_random, x_t) - 0.5 * self.process.diffusion_squared(t_random, x_t) * model(t_random, x_t, condition=condition)
+            velocity = self.process.velocity(t_random, x, noise=noise)
+            loss_1 = torch.mean(torch.sum((velocity_value - velocity) ** 2, dim=(1, )))
+            loss_2 = torch.mean(torch.sum((velocity_value * torch.abs(velocity_value) - velocity * torch.abs(velocity)) ** 2, dim=(1, )))
+            return loss_1 + loss_2 / 4.0
+        elif self.model_type == "velocity_function":
+            eps = 1e-5
+            t_random = torch.rand(x.shape[0], device=x.device) * (self.process.t_max - eps) + eps
+            noise = torch.randn_like(x).to(x.device)
+            std = self.process.std(t_random, x)
+            x_t = self.process.scale(t_random, x) * x + std * noise
+            velocity_value = model(t_random, x_t, condition=condition)
+            velocity = self.process.velocity(t_random, x, noise=noise)
+            loss_1 = torch.mean(torch.sum((velocity_value - velocity) ** 2, dim=(1, )))
+            loss_2 = torch.mean(torch.sum((velocity_value * torch.abs(velocity_value) - velocity * torch.abs(velocity)) ** 2, dim=(1, )))
+            return loss_1 + loss_2 / 4.0
+        elif self.model_type == "data_prediction_function":
+            #TODO: check if this is correct
+            eps = 1e-5
+            t_random = torch.rand(x.shape[0], device=x.device) * (self.process.t_max - eps) + eps
+            noise = torch.randn_like(x).to(x.device)
+            std = self.process.std(t_random, x)
+            x_t = self.process.scale(t_random, x) * x + std * noise
+            D = 0.5 * self.process.diffusion_squared(t_random, x) / self.process.covariance(t_random, x)
+            velocity_value = (self.process.drift_coefficient(t_random, x_t) + D) * x_t - D * self.process.scale(t_random, x_t) * model(t_random, x_t, condition=condition)
+            velocity = self.process.velocity(t_random, x, noise=noise)
+            loss_1 = torch.mean(torch.sum((velocity_value - velocity) ** 2, dim=(1, )))
+            loss_2 = torch.mean(torch.sum((velocity_value * torch.abs(velocity_value) - velocity * torch.abs(velocity)) ** 2, dim=(1, )))
+            return loss_1 + loss_2 / 4.0
+        else:
+            raise NotImplementedError("Unknown type of velocity function {}".format(type))

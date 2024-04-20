@@ -971,3 +971,34 @@ class DiffusionModel(nn.Module):
 
         return self.data_prediction_function_.forward(self.model, t, x, condition)
     
+    
+    def flow_matching_loss_2(
+            self,
+            x: Union[torch.Tensor, TensorDict],
+            condition: Union[torch.Tensor, TensorDict] = None,
+        ) -> torch.Tensor:
+        """
+        Overview:
+            Return the flow matching loss function of the model given the initial state and the condition.
+        Arguments:
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+        """
+
+        return self.velocity_function_.flow_matching_loss_2(self.model, x, condition)
+
+    def flow_matching_loss_hybrid(
+            self,
+            x: Union[torch.Tensor, TensorDict],
+            condition: Union[torch.Tensor, TensorDict] = None,
+        ) -> torch.Tensor:
+        """
+        Overview:
+            Return the flow matching loss function of the model given the initial state and the condition.
+        Arguments:
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+        """
+
+        return self.velocity_function_.flow_matching_loss_hybrid(self.model, x, condition)
+

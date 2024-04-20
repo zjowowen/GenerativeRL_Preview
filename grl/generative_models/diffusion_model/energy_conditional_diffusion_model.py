@@ -1218,14 +1218,14 @@ class EnergyConditionalDiffusionModel(nn.Module):
         t_random = torch.rand((x.shape[0], ), device=self.device) * (1. - eps) + eps
         t_random = torch.stack([t_random] * x.shape[1], dim=1)
         if condition is not None:
-            energy = self.energy_model(x, torch.stack([condition] * x.shape[1], axis=1)).detach().squeeze()
+            energy = self.energy_model(x, torch.stack([condition] * x.shape[1], axis=1)).detach().squeeze(dim=-1)
         else:
-            energy = self.energy_model(x).detach().squeeze()
+            energy = self.energy_model(x).detach().squeeze(dim=-1)
         x_t = self.diffusion_process.direct_sample(t_random, x, condition)
         if condition is not None:
-            xt_energy_guidance = self.energy_guidance(t_random, x_t, torch.stack([condition] * x.shape[1], axis=1)).squeeze()
+            xt_energy_guidance = self.energy_guidance(t_random, x_t, torch.stack([condition] * x.shape[1], axis=1)).squeeze(dim=-1)
         else:
-            xt_energy_guidance = self.energy_guidance(t_random, x_t).squeeze()
+            xt_energy_guidance = self.energy_guidance(t_random, x_t).squeeze(dim=-1)
         log_xt_relative_energy = nn.LogSoftmax(dim=1)(xt_energy_guidance)
         x0_relative_energy = nn.Softmax(dim=1)(energy * self.alpha)
         loss = -torch.mean(torch.sum(x0_relative_energy * log_xt_relative_energy, axis=-1))
