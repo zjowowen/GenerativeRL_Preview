@@ -57,6 +57,12 @@ class ScoreFunction:
             return - model(t, x, condition) / self.process.std(t, x)
         elif self.model_type == "score_function":
             return model(t, x, condition)
+        elif self.model_type == "velocity_function":
+            #TODO: check if is correct
+            return - (model(t, x, condition) - self.process.drift(t, x)) * 2.0 / self.process.diffusion_squared(t, x)
+        elif self.model_type == "data_prediction_function":
+            #TODO: check if is correct
+            return - (x - self.process.scale(t, x) * model(t, x, condition)) / self.process.covariance(t, x)
         else:
             raise NotImplementedError("Unknown type of ScoreFunction {}".format(type))
 
