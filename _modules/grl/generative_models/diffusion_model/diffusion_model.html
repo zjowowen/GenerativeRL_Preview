@@ -1098,9 +1098,46 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_prediction_function_</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">condition</span><span class="p">)</span></div>
-</div>
 
     
+    
+<div class="viewcode-block" id="DiffusionModel.flow_matching_loss_2">
+<a class="viewcode-back" href="../../../../api_doc/generative_models/index.html#grl.generative_models.DiffusionModel.flow_matching_loss_2">[docs]</a>
+    <span class="k">def</span> <span class="nf">flow_matching_loss_2</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
+            <span class="n">condition</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overview:</span>
+<span class="sd">            Return the flow matching loss function of the model given the initial state and the condition.</span>
+<span class="sd">        Arguments:</span>
+<span class="sd">            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.</span>
+<span class="sd">            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity_function_</span><span class="o">.</span><span class="n">flow_matching_loss_2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">condition</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DiffusionModel.flow_matching_loss_hybrid">
+<a class="viewcode-back" href="../../../../api_doc/generative_models/index.html#grl.generative_models.DiffusionModel.flow_matching_loss_hybrid">[docs]</a>
+    <span class="k">def</span> <span class="nf">flow_matching_loss_hybrid</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
+            <span class="n">condition</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overview:</span>
+<span class="sd">            Return the flow matching loss function of the model given the initial state and the condition.</span>
+<span class="sd">        Arguments:</span>
+<span class="sd">            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.</span>
+<span class="sd">            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity_function_</span><span class="o">.</span><span class="n">flow_matching_loss_hybrid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">condition</span><span class="p">)</span></div>
+</div>
+
+
 </pre></div>
 
            </div>

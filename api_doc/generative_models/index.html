@@ -68,6 +68,8 @@
 <li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.__init__"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.__init__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.data_prediction_function"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.data_prediction_function()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.flow_matching_loss"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.flow_matching_loss()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.flow_matching_loss_2"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.flow_matching_loss_2()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.flow_matching_loss_hybrid"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.flow_matching_loss_hybrid()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.forward_sample"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.forward_sample()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.noise_function"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.noise_function()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.sample"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.sample()</span></code></a></li>
@@ -189,6 +191,46 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="grl.generative_models.DiffusionModel.flow_matching_loss">
 <span class="sig-name descname"><span class="pre">flow_matching_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/diffusion_model/diffusion_model.html#DiffusionModel.flow_matching_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.DiffusionModel.flow_matching_loss" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Overview:</dt><dd><p>Return the flow matching loss function of the model given the initial state and the condition.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input state.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="grl.generative_models.DiffusionModel.flow_matching_loss_2">
+<span class="sig-name descname"><span class="pre">flow_matching_loss_2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/diffusion_model/diffusion_model.html#DiffusionModel.flow_matching_loss_2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.DiffusionModel.flow_matching_loss_2" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Overview:</dt><dd><p>Return the flow matching loss function of the model given the initial state and the condition.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input state.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="grl.generative_models.DiffusionModel.flow_matching_loss_hybrid">
+<span class="sig-name descname"><span class="pre">flow_matching_loss_hybrid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/diffusion_model/diffusion_model.html#DiffusionModel.flow_matching_loss_hybrid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.DiffusionModel.flow_matching_loss_hybrid" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
 <dt>Overview:</dt><dd><p>Return the flow matching loss function of the model given the initial state and the condition.</p>
 </dd>
