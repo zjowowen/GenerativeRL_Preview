@@ -100,6 +100,19 @@
 <span class="kn">from</span> <span class="nn">grl.neural_network.residual_network</span> <span class="kn">import</span> <span class="n">MLPResNet</span>
 
 
+<span class="k">def</span> <span class="nf">register_module</span><span class="p">(</span><span class="n">module</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Overview:</span>
+<span class="sd">        Register the module to the module dictionary.</span>
+<span class="sd">    Arguments:</span>
+<span class="sd">        - module (:obj:`nn.Module`): The module to be registered.</span>
+<span class="sd">        - name (:obj:`str`): The name of the module.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">MODULES</span>
+    <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">MODULES</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Module </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> is already registered.&quot;</span><span class="p">)</span>
+    <span class="n">MODULES</span><span class="p">[</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="o">=</span> <span class="n">module</span>
+
 <span class="k">def</span> <span class="nf">get_module</span><span class="p">(</span><span class="nb">type</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
     <span class="k">if</span> <span class="nb">type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">MODULES</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">MODULES</span><span class="p">[</span><span class="nb">type</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>

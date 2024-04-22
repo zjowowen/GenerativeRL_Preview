@@ -68,8 +68,6 @@
 <li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.__init__"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.__init__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.data_prediction_function"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.data_prediction_function()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.flow_matching_loss"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.flow_matching_loss()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.flow_matching_loss_2"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.flow_matching_loss_2()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.flow_matching_loss_hybrid"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.flow_matching_loss_hybrid()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.forward_sample"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.forward_sample()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.noise_function"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.noise_function()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.sample"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.sample()</span></code></a></li>
@@ -178,12 +176,12 @@
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>t</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The input time.</p></li>
-<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input state.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input state.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorDict</span></code>]</span></p>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorDict</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -198,48 +196,8 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input state.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="grl.generative_models.DiffusionModel.flow_matching_loss_2">
-<span class="sig-name descname"><span class="pre">flow_matching_loss_2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/diffusion_model/diffusion_model.html#DiffusionModel.flow_matching_loss_2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.DiffusionModel.flow_matching_loss_2" title="Link to this definition"></a></dt>
-<dd><dl class="simple">
-<dt>Overview:</dt><dd><p>Return the flow matching loss function of the model given the initial state and the condition.</p>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input state.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="grl.generative_models.DiffusionModel.flow_matching_loss_hybrid">
-<span class="sig-name descname"><span class="pre">flow_matching_loss_hybrid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/diffusion_model/diffusion_model.html#DiffusionModel.flow_matching_loss_hybrid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.DiffusionModel.flow_matching_loss_hybrid" title="Link to this definition"></a></dt>
-<dd><dl class="simple">
-<dt>Overview:</dt><dd><p>Return the flow matching loss function of the model given the initial state and the condition.</p>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input state.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input state.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -258,9 +216,9 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input state.</p></li>
+<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input state.</p></li>
 <li><p><strong>t_span</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The time span.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 <li><p><strong>with_grad</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to return the gradient.</p></li>
 <li><p><strong>solver_config</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">EasyDict</span></code>) – The configuration of the solver.</p></li>
 </ul>
@@ -281,12 +239,12 @@
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>t</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The input time.</p></li>
-<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input state.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input state.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorDict</span></code>]</span></p>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorDict</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -295,7 +253,7 @@
 <dt class="sig sig-object py" id="grl.generative_models.DiffusionModel.sample">
 <span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_span</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/diffusion_model/diffusion_model.html#DiffusionModel.sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.DiffusionModel.sample" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
-<dt>Overview:</dt><dd><p>Sample from the diffusion model.</p>
+<dt>Overview:</dt><dd><p>Sample from the diffusion model, return the final state.</p>
 </dd>
 </dl>
 <dl class="field-list simple">
@@ -303,8 +261,8 @@
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>t_span</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The time span.</p></li>
 <li><p><strong>batch_size</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Size,</span> <span class="pre">int,</span> <span class="pre">Tuple[int],</span> <span class="pre">List[int]]</span></code>) – The batch size.</p></li>
-<li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 <li><p><strong>with_grad</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to return the gradient.</p></li>
 <li><p><strong>solver_config</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">EasyDict</span></code>) – The configuration of the solver.</p></li>
 </ul>
@@ -313,7 +271,7 @@
 <dd class="field-even"><p>The sampled result.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>x (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>)</p>
+<dd class="field-odd"><p>x (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>)</p>
 </dd>
 </dl>
 <dl class="simple">
@@ -330,7 +288,7 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dt class="sig sig-object py" id="grl.generative_models.DiffusionModel.sample_forward_process">
 <span class="sig-name descname"><span class="pre">sample_forward_process</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_span</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/diffusion_model/diffusion_model.html#DiffusionModel.sample_forward_process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.DiffusionModel.sample_forward_process" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
-<dt>Overview:</dt><dd><p>Sample from the diffusion model.</p>
+<dt>Overview:</dt><dd><p>Sample from the diffusion model, return all intermediate states.</p>
 </dd>
 </dl>
 <dl class="field-list simple">
@@ -338,8 +296,8 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>t_span</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The time span.</p></li>
 <li><p><strong>batch_size</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Size,</span> <span class="pre">int,</span> <span class="pre">Tuple[int],</span> <span class="pre">List[int]]</span></code>) – An extra batch size used for repeated sampling with the same initial state.</p></li>
-<li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 <li><p><strong>with_grad</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to return the gradient.</p></li>
 <li><p><strong>solver_config</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">EasyDict</span></code>) – The configuration of the solver.</p></li>
 </ul>
@@ -348,7 +306,7 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dd class="field-even"><p>The sampled result.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>x (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>)</p>
+<dd class="field-odd"><p>x (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>)</p>
 </dd>
 </dl>
 <dl class="simple">
@@ -365,18 +323,18 @@ x: <span class="math notranslate nohighlight">\((T, N, D)\)</span>, if extra bat
 <dt class="sig sig-object py" id="grl.generative_models.DiffusionModel.sample_forward_process_with_fixed_x">
 <span class="sig-name descname"><span class="pre">sample_forward_process_with_fixed_x</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fixed_x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fixed_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_span</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/diffusion_model/diffusion_model.html#DiffusionModel.sample_forward_process_with_fixed_x"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.DiffusionModel.sample_forward_process_with_fixed_x" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
-<dt>Overview:</dt><dd><p>Sample from the diffusion model with fixed x.</p>
+<dt>Overview:</dt><dd><p>Sample from the diffusion model with fixed x, return all intermediate states.</p>
 </dd>
 </dl>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>fixed_x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The fixed x.</p></li>
-<li><p><strong>fixed_mask</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The fixed mask.</p></li>
+<li><p><strong>fixed_x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The fixed x.</p></li>
+<li><p><strong>fixed_mask</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The fixed mask.</p></li>
 <li><p><strong>t_span</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The time span.</p></li>
 <li><p><strong>batch_size</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Size,</span> <span class="pre">int,</span> <span class="pre">Tuple[int],</span> <span class="pre">List[int]]</span></code>) – The batch size.</p></li>
-<li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 <li><p><strong>with_grad</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to return the gradient.</p></li>
 <li><p><strong>solver_config</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">EasyDict</span></code>) – The configuration of the solver.</p></li>
 </ul>
@@ -385,7 +343,7 @@ x: <span class="math notranslate nohighlight">\((T, N, D)\)</span>, if extra bat
 <dd class="field-even"><p>The sampled result.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>x (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>)</p>
+<dd class="field-odd"><p>x (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>)</p>
 </dd>
 </dl>
 <dl class="simple">
@@ -404,18 +362,18 @@ x: <span class="math notranslate nohighlight">\((T, N, D)\)</span>, if extra bat
 <dt class="sig sig-object py" id="grl.generative_models.DiffusionModel.sample_with_fixed_x">
 <span class="sig-name descname"><span class="pre">sample_with_fixed_x</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fixed_x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fixed_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_span</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/diffusion_model/diffusion_model.html#DiffusionModel.sample_with_fixed_x"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.DiffusionModel.sample_with_fixed_x" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
-<dt>Overview:</dt><dd><p>Sample from the diffusion model with fixed x.</p>
+<dt>Overview:</dt><dd><p>Sample from the diffusion model with fixed x, return the final state.</p>
 </dd>
 </dl>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>fixed_x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The fixed x.</p></li>
-<li><p><strong>fixed_mask</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The fixed mask.</p></li>
+<li><p><strong>fixed_x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The fixed x.</p></li>
+<li><p><strong>fixed_mask</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The fixed mask.</p></li>
 <li><p><strong>t_span</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The time span.</p></li>
 <li><p><strong>batch_size</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Size,</span> <span class="pre">int,</span> <span class="pre">Tuple[int],</span> <span class="pre">List[int]]</span></code>) – The batch size.</p></li>
-<li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 <li><p><strong>with_grad</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to return the gradient.</p></li>
 <li><p><strong>solver_config</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">EasyDict</span></code>) – The configuration of the solver.</p></li>
 </ul>
@@ -424,7 +382,7 @@ x: <span class="math notranslate nohighlight">\((T, N, D)\)</span>, if extra bat
 <dd class="field-even"><p>The sampled result.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>x (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>)</p>
+<dd class="field-odd"><p>x (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>)</p>
 </dd>
 </dl>
 <dl class="simple">
@@ -452,12 +410,12 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>t</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The input time.</p></li>
-<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input state.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input state.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorDict</span></code>]</span></p>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorDict</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -472,8 +430,8 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -495,12 +453,12 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>t</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The input time.</p></li>
-<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input state at time t.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input state at time t.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorDict</span></code>]</span></p>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorDict</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -549,12 +507,12 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>t</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The input time.</p></li>
-<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input state.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input state.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorDict</span></code>]</span></p>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorDict</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -570,8 +528,8 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>t</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The input time.</p></li>
-<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input state.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input state.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 <li><p><strong>guidance_scale</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">float</span></code>) – The scale of guidance.</p></li>
 </ul>
 </dd>
@@ -594,8 +552,8 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 </ul>
 </dd>
 </dl>
@@ -611,8 +569,8 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input state.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input state.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -634,12 +592,12 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>t</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The input time.</p></li>
-<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input state.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input state.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorDict</span></code>]</span></p>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorDict</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -655,8 +613,8 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>t</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The input time.</p></li>
-<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input state.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input state.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 <li><p><strong>guidance_scale</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">float</span></code>) – The scale of guidance.</p></li>
 </ul>
 </dd>
@@ -664,7 +622,7 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dd class="field-even"><p>The nose function.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>noise (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>)</p>
+<dd class="field-odd"><p>noise (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -681,8 +639,8 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>t_span</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The time span.</p></li>
 <li><p><strong>batch_size</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Size,</span> <span class="pre">int,</span> <span class="pre">Tuple[int],</span> <span class="pre">List[int]]</span></code>) – The batch size.</p></li>
-<li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 <li><p><strong>with_grad</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to return the gradient.</p></li>
 <li><p><strong>solver_config</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">EasyDict</span></code>) – The configuration of the solver.</p></li>
 </ul>
@@ -691,7 +649,7 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dd class="field-even"><p>The sampled result.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>x (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>)</p>
+<dd class="field-odd"><p>x (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>)</p>
 </dd>
 </dl>
 <dl class="simple">
@@ -716,8 +674,8 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>t_span</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The time span.</p></li>
 <li><p><strong>batch_size</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Size,</span> <span class="pre">int,</span> <span class="pre">Tuple[int],</span> <span class="pre">List[int]]</span></code>) – The batch size.</p></li>
-<li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 <li><p><strong>guidance_scale</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">float</span></code>) – The scale of guidance.</p></li>
 <li><p><strong>with_grad</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to return the gradient.</p></li>
 <li><p><strong>solver_config</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">EasyDict</span></code>) – The configuration of the solver.</p></li>
@@ -727,7 +685,7 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dd class="field-even"><p>The sampled result.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>x (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>)</p>
+<dd class="field-odd"><p>x (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -742,12 +700,12 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>fixed_x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The fixed x.</p></li>
-<li><p><strong>fixed_mask</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The fixed mask.</p></li>
+<li><p><strong>fixed_x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The fixed x.</p></li>
+<li><p><strong>fixed_mask</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The fixed mask.</p></li>
 <li><p><strong>t_span</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The time span.</p></li>
 <li><p><strong>batch_size</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Size,</span> <span class="pre">int,</span> <span class="pre">Tuple[int],</span> <span class="pre">List[int]]</span></code>) – The batch size.</p></li>
-<li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 <li><p><strong>guidance_scale</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">float</span></code>) – The scale of guidance.</p></li>
 <li><p><strong>with_grad</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to return the gradient.</p></li>
 <li><p><strong>solver_config</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">EasyDict</span></code>) – The configuration of the solver.</p></li>
@@ -757,7 +715,7 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dd class="field-even"><p>The sampled result.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>x (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>)</p>
+<dd class="field-odd"><p>x (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>)</p>
 </dd>
 </dl>
 <dl class="simple">
@@ -782,12 +740,12 @@ x: <span class="math notranslate nohighlight">\((T, N, D)\)</span>, if extra bat
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>fixed_x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The fixed x.</p></li>
-<li><p><strong>fixed_mask</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The fixed mask.</p></li>
+<li><p><strong>fixed_x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The fixed x.</p></li>
+<li><p><strong>fixed_mask</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The fixed mask.</p></li>
 <li><p><strong>t_span</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The time span.</p></li>
 <li><p><strong>batch_size</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Size,</span> <span class="pre">int,</span> <span class="pre">Tuple[int],</span> <span class="pre">List[int]]</span></code>) – The batch size.</p></li>
-<li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 <li><p><strong>guidance_scale</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">float</span></code>) – The scale of guidance.</p></li>
 <li><p><strong>with_grad</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to return the gradient.</p></li>
 <li><p><strong>solver_config</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">EasyDict</span></code>) – The configuration of the solver.</p></li>
@@ -797,7 +755,7 @@ x: <span class="math notranslate nohighlight">\((T, N, D)\)</span>, if extra bat
 <dd class="field-even"><p>The sampled result.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>x (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>)</p>
+<dd class="field-odd"><p>x (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>)</p>
 </dd>
 </dl>
 <dl class="simple">
@@ -822,12 +780,12 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>fixed_x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The fixed x.</p></li>
-<li><p><strong>fixed_mask</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The fixed mask.</p></li>
+<li><p><strong>fixed_x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The fixed x.</p></li>
+<li><p><strong>fixed_mask</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The fixed mask.</p></li>
 <li><p><strong>t_span</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The time span.</p></li>
 <li><p><strong>batch_size</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Size,</span> <span class="pre">int,</span> <span class="pre">Tuple[int],</span> <span class="pre">List[int]]</span></code>) – The batch size.</p></li>
-<li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 <li><p><strong>with_grad</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to return the gradient.</p></li>
 <li><p><strong>solver_config</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">EasyDict</span></code>) – The configuration of the solver.</p></li>
 </ul>
@@ -836,7 +794,7 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dd class="field-even"><p>The sampled result.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>x (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>)</p>
+<dd class="field-odd"><p>x (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>)</p>
 </dd>
 </dl>
 <dl class="simple">
@@ -863,8 +821,8 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>t_span</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The time span.</p></li>
 <li><p><strong>batch_size</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Size,</span> <span class="pre">int,</span> <span class="pre">Tuple[int],</span> <span class="pre">List[int]]</span></code>) – The batch size.</p></li>
-<li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 <li><p><strong>with_grad</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to return the gradient.</p></li>
 <li><p><strong>solver_config</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">EasyDict</span></code>) – The configuration of the solver.</p></li>
 </ul>
@@ -873,7 +831,7 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dd class="field-even"><p>The sampled result.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>x (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>)</p>
+<dd class="field-odd"><p>x (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>)</p>
 </dd>
 </dl>
 <dl class="simple">
@@ -899,12 +857,12 @@ x: <span class="math notranslate nohighlight">\((T, N, D)\)</span>, if extra bat
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>t</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The input time.</p></li>
-<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input state.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input state.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorDict</span></code>]</span></p>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorDict</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -920,8 +878,8 @@ x: <span class="math notranslate nohighlight">\((T, N, D)\)</span>, if extra bat
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>t</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The input time.</p></li>
-<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input state.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input state.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 <li><p><strong>guidance_scale</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">float</span></code>) – The scale of guidance.</p></li>
 </ul>
 </dd>
@@ -929,7 +887,7 @@ x: <span class="math notranslate nohighlight">\((T, N, D)\)</span>, if extra bat
 <dd class="field-even"><p>The score function.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>score (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>)</p>
+<dd class="field-odd"><p>score (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -944,8 +902,8 @@ x: <span class="math notranslate nohighlight">\((T, N, D)\)</span>, if extra bat
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -967,12 +925,12 @@ x: <span class="math notranslate nohighlight">\((T, N, D)\)</span>, if extra bat
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>t</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The input time.</p></li>
-<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input state at time t.</p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict]</span></code>) – The input condition.</p></li>
+<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input state at time t.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorDict</span></code>]</span></p>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorDict</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</span></p>
 </dd>
 </dl>
 </dd></dl>
