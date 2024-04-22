@@ -2,6 +2,7 @@ from typing import Callable, Union
 
 import torch
 import torch.nn as nn
+import treetensor
 from easydict import EasyDict
 from tensordict import TensorDict
 
@@ -37,8 +38,8 @@ class DataPredictionFunction:
             self,
             model: Union[Callable, nn.Module],
             t: torch.Tensor,
-            x: Union[torch.Tensor, TensorDict],
-            condition: Union[torch.Tensor, TensorDict] = None,
+            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+            condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
         ) -> torch.Tensor:
         """
         Overview:
@@ -49,8 +50,8 @@ class DataPredictionFunction:
         Arguments:
             - model (:obj:`Union[Callable, nn.Module]`): The model.
             - t (:obj:`torch.Tensor`): The input time.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            - x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
+            - condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
         """
 
         if self.model_type == "noise_function":

@@ -1,5 +1,5 @@
 from .dpm_solver import DPMSolver
-from .ode_solver import ODESolver
+from .ode_solver import DictTensorODESolver, ODESolver
 from .sde_solver import SDESolver
 
 
@@ -12,5 +12,6 @@ def get_solver(solver_type):
 SOLVERS={
     "DPMSolver".lower():DPMSolver,
     "ODESolver".lower():ODESolver,
+    "DictTensorODESolver".lower():DictTensorODESolver,
     "SDESolver".lower():SDESolver,
 }

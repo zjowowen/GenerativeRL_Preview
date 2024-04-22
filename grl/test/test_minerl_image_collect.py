@@ -25,8 +25,6 @@ config = EasyDict(
     )
 )
 
-
-
 def kill_process_by_string(process_string):
     for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
         if type(proc.info['cmdline']) is list:

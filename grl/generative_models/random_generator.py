@@ -3,12 +3,14 @@ from typing import Any, Callable, Dict, List, Tuple, Union
 
 import torch
 import torch.nn as nn
+import treetensor
 from tensordict import TensorDict
 
 
 def gaussian_random_variable(
         data_size: Union[torch.Tensor, torch.Size, int, Tuple[int], List[int], Dict[Any, Any]],
         device: torch.device = torch.device("cpu"),
+        use_tree_tensor: bool = False,
     ) -> Callable:
     """
     Overview:
@@ -19,7 +21,7 @@ def gaussian_random_variable(
     Returns:
         generate (:obj:`Callable`): The random Gaussian tensor generator.
     .. note::
-        If data_size is a dictionary, the return value will be a TensorDict.
+        If data_size is a dictionary, the return value will be a (:obj:`TensorDict`) or (:obj:`treetensor.torch.Tensor`).
 
     Examples:
         >>> print(gaussian_random_variable(3)())
@@ -118,7 +120,8 @@ def gaussian_random_variable(
                 generator_dict: Dict[str, Any],
                 device: torch.device,
                 batch_size: Union[torch.Tensor, torch.Size, int, Tuple[int], List[int]] = None,
-            ) -> Union[torch.Tensor, TensorDict]:
+                use_tree_tensor: bool = False,
+            ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
             """
             Overview:
                 Generate a random Gaussian tensor according to the given batch size.
@@ -130,16 +133,19 @@ def gaussian_random_variable(
             
             if isinstance(batch_size, torch.Tensor) and len(batch_size.shape)==0:
                 batch_size = batch_size.unsqueeze(0)
-            generated_data = TensorDict({}, batch_size=batch_size if batch_size is not None else {}, device=device)
+            if use_tree_tensor:
+                generated_data = treetensor.torch.Tensor({}, device=device)
+            else:
+                generated_data = TensorDict({}, batch_size=batch_size if batch_size is not None else {}, device=device)
             for k, v in generator_dict.items():
                 if isinstance(v, Callable):
                     generated_data[k] = v(batch_size)
                 elif isinstance(v, Dict):
-                    generated_data[k] = generate_data_from_dict(v, device=device, batch_size=batch_size)
+                    generated_data[k] = generate_data_from_dict(v, device=device, batch_size=batch_size, use_tree_tensor=use_tree_tensor)
                 else:
                     raise ValueError(f"Invalid generator: {v}")
             return generated_data
-        return lambda batch_size=None: generate_data_from_dict(data_dict, device=device, batch_size=batch_size)
+        return lambda batch_size=None, use_tree_tensor=use_tree_tensor: generate_data_from_dict(data_dict, device=device, batch_size=batch_size, use_tree_tensor=use_tree_tensor)
     elif isinstance(data_size, int) or isinstance(data_size, Tuple) or isinstance(data_size, List) or isinstance(data_size, torch.Size) or isinstance(data_size, torch.Tensor):
         return lambda batch_size=None: generate_batch_tensor(data_size, device, batch_size)
     else:
