@@ -57,15 +57,23 @@ def compute_likelihood(
             x_t = x['x'].detach()
             logp_xt_minus_logp_x0 = x['logp_xt_minus_logp_x0']
             
-            x_t.requires_grad = True
+            x_t_shape = x_t.shape
+            x_t_flatten = x_t.reshape(x_t_shape[0], -1).detach()
+            x_t_flatten.requires_grad = True
+
+            x_t_reshape = x_t_flatten.reshape(x_t_shape)
+
             t.requires_grad = True
 
-            dx = model_drift(t, x_t)
+            dx = model_drift(t, x_t_reshape)
+
+            dx_flatten = dx.reshape(x_t_shape[0], -1)
+
             if using_Hutchinson_trace_estimator:
-                noise = torch.randn_like(x_t, device=x_t.device)
-                logp_drift = - divergence_approx(dx, x_t, noise)
+                noise = torch.randn_like(x_t_flatten, device=x_t_flatten.device)
+                logp_drift = - divergence_approx(dx_flatten, x_t_flatten, noise)
             else:
-                logp_drift = - divergence_bf(dx, x_t)
+                logp_drift = - divergence_bf(dx_flatten, x_t_flatten)
 
             delta_x = treetensor.torch.tensor({'x': dx, 'logp_xt_minus_logp_x0': logp_drift}, device=x_t.device)
             return delta_x
