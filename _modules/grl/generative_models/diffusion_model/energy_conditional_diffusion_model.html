@@ -1007,6 +1007,7 @@
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">,</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
             <span class="n">condition</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">,</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">weighting_scheme</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
@@ -1015,9 +1016,26 @@
 <span class="sd">        Arguments:</span>
 <span class="sd">            x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input.</span>
 <span class="sd">            condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.</span>
+<span class="sd">            weighting_scheme (:obj:`str`): The weighting scheme for score matching loss, which can be &quot;maximum_likelihood&quot; or &quot;vanilla&quot;.</span>
+
+<span class="sd">            ..note::</span>
+<span class="sd">                - &quot;maximum_likelihood&quot;: The weighting scheme is based on the maximum likelihood estimation. Refer to the paper &quot;Maximum Likelihood Training of Score-Based Diffusion Models&quot; for more details. The weight :math:`\lambda(t)` is denoted as:</span>
+
+<span class="sd">                    .. math::</span>
+<span class="sd">                        \lambda(t) = g^2(t)</span>
+
+<span class="sd">                    for numerical stability, we use Monte Carlo sampling to approximate the integral of :math:`\lambda(t)`.</span>
+
+<span class="sd">                    .. math::</span>
+<span class="sd">                        \lambda(t) = g^2(t) = p(t)\sigma^2(t) </span>
+
+<span class="sd">                - &quot;vanilla&quot;: The weighting scheme is based on the vanilla score matching, which balances the MSE loss by scaling the model output to the noise value. Refer to the paper &quot;Score-Based Generative Modeling through Stochastic Differential Equations&quot; for more details. The weight :math:`\lambda(t)` is denoted as:</span>
+
+<span class="sd">                    .. math::</span>
+<span class="sd">                        \lambda(t) = \sigma^2(t)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">score_function_</span><span class="o">.</span><span class="n">score_matching_loss</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gaussian_generator</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">score_function_</span><span class="o">.</span><span class="n">score_matching_loss</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gaussian_generator</span><span class="p">,</span> <span class="n">weighting_scheme</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="EnergyConditionalDiffusionModel.velocity_function">

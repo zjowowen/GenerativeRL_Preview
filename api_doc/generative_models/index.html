@@ -422,7 +422,7 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grl.generative_models.DiffusionModel.score_matching_loss">
-<span class="sig-name descname"><span class="pre">score_matching_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/diffusion_model/diffusion_model.html#DiffusionModel.score_matching_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.DiffusionModel.score_matching_loss" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">score_matching_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighting_scheme</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/diffusion_model/diffusion_model.html#DiffusionModel.score_matching_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.DiffusionModel.score_matching_loss" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
 <dt>Overview:</dt><dd><p>The loss function for training unconditional diffusion model.</p>
 </dd>
@@ -432,6 +432,25 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input.</p></li>
 <li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
+<li><p><strong>weighting_scheme</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">str</span></code>) – The weighting scheme for score matching loss, which can be “maximum_likelihood” or “vanilla”.</p></li>
+<li><p><strong>..note::</strong> – <ul>
+<li><p>“maximum_likelihood”: The weighting scheme is based on the maximum likelihood estimation. Refer to the paper “Maximum Likelihood Training of Score-Based Diffusion Models” for more details. The weight <span class="math notranslate nohighlight">\(\lambda(t)\)</span> is denoted as:</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[\lambda(t) = g^2(t)\]</div>
+<p>for numerical stability, we use Monte Carlo sampling to approximate the integral of <span class="math notranslate nohighlight">\(\lambda(t)\)</span>.</p>
+<div class="math notranslate nohighlight">
+\[\lambda(t) = g^2(t) = p(t)\sigma^2(t)\]</div>
+</div></blockquote>
+</li>
+<li><p>“vanilla”: The weighting scheme is based on the vanilla score matching, which balances the MSE loss by scaling the model output to the noise value. Refer to the paper “Score-Based Generative Modeling through Stochastic Differential Equations” for more details. The weight <span class="math notranslate nohighlight">\(\lambda(t)\)</span> is denoted as:</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[\lambda(t) = \sigma^2(t)\]</div>
+</div></blockquote>
+</li>
+</ul>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -894,7 +913,7 @@ x: <span class="math notranslate nohighlight">\((T, N, D)\)</span>, if extra bat
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grl.generative_models.EnergyConditionalDiffusionModel.score_matching_loss">
-<span class="sig-name descname"><span class="pre">score_matching_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/diffusion_model/energy_conditional_diffusion_model.html#EnergyConditionalDiffusionModel.score_matching_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.EnergyConditionalDiffusionModel.score_matching_loss" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">score_matching_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighting_scheme</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/diffusion_model/energy_conditional_diffusion_model.html#EnergyConditionalDiffusionModel.score_matching_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.EnergyConditionalDiffusionModel.score_matching_loss" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
 <dt>Overview:</dt><dd><p>The loss function for training unconditional diffusion model.</p>
 </dd>
@@ -904,6 +923,25 @@ x: <span class="math notranslate nohighlight">\((T, N, D)\)</span>, if extra bat
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input.</p></li>
 <li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
+<li><p><strong>weighting_scheme</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">str</span></code>) – The weighting scheme for score matching loss, which can be “maximum_likelihood” or “vanilla”.</p></li>
+<li><p><strong>..note::</strong> – <ul>
+<li><p>“maximum_likelihood”: The weighting scheme is based on the maximum likelihood estimation. Refer to the paper “Maximum Likelihood Training of Score-Based Diffusion Models” for more details. The weight <span class="math notranslate nohighlight">\(\lambda(t)\)</span> is denoted as:</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[\lambda(t) = g^2(t)\]</div>
+<p>for numerical stability, we use Monte Carlo sampling to approximate the integral of <span class="math notranslate nohighlight">\(\lambda(t)\)</span>.</p>
+<div class="math notranslate nohighlight">
+\[\lambda(t) = g^2(t) = p(t)\sigma^2(t)\]</div>
+</div></blockquote>
+</li>
+<li><p>“vanilla”: The weighting scheme is based on the vanilla score matching, which balances the MSE loss by scaling the model output to the noise value. Refer to the paper “Score-Based Generative Modeling through Stochastic Differential Equations” for more details. The weight <span class="math notranslate nohighlight">\(\lambda(t)\)</span> is denoted as:</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[\lambda(t) = \sigma^2(t)\]</div>
+</div></blockquote>
+</li>
+</ul>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
