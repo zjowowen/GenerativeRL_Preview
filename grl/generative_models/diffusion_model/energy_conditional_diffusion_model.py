@@ -885,6 +885,7 @@ class EnergyConditionalDiffusionModel(nn.Module):
             self,
             x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
             condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+            weighting_scheme: str = None,
         ) -> torch.Tensor:
         """
         Overview:
@@ -893,9 +894,26 @@ class EnergyConditionalDiffusionModel(nn.Module):
         Arguments:
             x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input.
             condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
+            weighting_scheme (:obj:`str`): The weighting scheme for score matching loss, which can be "maximum_likelihood" or "vanilla".
+
+            ..note::
+                - "maximum_likelihood": The weighting scheme is based on the maximum likelihood estimation. Refer to the paper "Maximum Likelihood Training of Score-Based Diffusion Models" for more details. The weight :math:`\lambda(t)` is denoted as:
+
+                    .. math::
+                        \lambda(t) = g^2(t)
+
+                    for numerical stability, we use Monte Carlo sampling to approximate the integral of :math:`\lambda(t)`.
+
+                    .. math::
+                        \lambda(t) = g^2(t) = p(t)\sigma^2(t) 
+
+                - "vanilla": The weighting scheme is based on the vanilla score matching, which balances the MSE loss by scaling the model output to the noise value. Refer to the paper "Score-Based Generative Modeling through Stochastic Differential Equations" for more details. The weight :math:`\lambda(t)` is denoted as:
+
+                    .. math::
+                        \lambda(t) = \sigma^2(t)
         """
 
-        return self.score_function_.score_matching_loss(self.model, x, condition, self.gaussian_generator)
+        return self.score_function_.score_matching_loss(self.model, x, condition, self.gaussian_generator, weighting_scheme)
 
     def velocity_function(
             self,

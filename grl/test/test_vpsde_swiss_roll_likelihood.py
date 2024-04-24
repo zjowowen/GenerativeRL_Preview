@@ -45,7 +45,7 @@ config = EasyDict(
                 ),
             ),
             path = dict(
-                type = "gvp",
+                type = "linear_vp_sde",
                 beta_0 = 0.1,
                 beta_1 = 20.0,
             ),
@@ -215,7 +215,7 @@ if __name__ == "__main__":
             t_span=torch.linspace(0.0, 1.0, 1000)
             x_t = diffusion_model.sample_forward_process(t_span=t_span, batch_size=500).cpu().detach()
             x_t=[x.squeeze(0) for x in torch.split(x_t, split_size_or_sections=1, dim=0)]
-            render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
+            #render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
 
         if (iteration+1) % config.parameter.checkpoint_freq == 0:
             save_checkpoint(diffusion_model, optimizer, iteration)

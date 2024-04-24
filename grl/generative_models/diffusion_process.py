@@ -78,7 +78,7 @@ class DiffusionProcess:
     def drift_coefficient(
             self,
             t: torch.Tensor,
-            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
             condition: Union[torch.Tensor, TensorDict] = None,
         ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
         """
@@ -97,7 +97,7 @@ class DiffusionProcess:
             drift_coefficient (:obj:`Union[torch.Tensor, TensorDict]`): The output drift coefficient.
         """
 
-        if isinstance(x, torch.Tensor):
+        if isinstance(x, torch.Tensor) or x is None:
             if x is not None and len(x.shape) > len(t.shape):
                 return self.path.drift_coefficient(t)[(..., ) + (None, ) * (len(x.shape)-len(t.shape))].expand(x.shape)
             else:
@@ -118,7 +118,7 @@ class DiffusionProcess:
     def diffusion(
             self,
             t: torch.Tensor,
-            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
             condition: Union[torch.Tensor, TensorDict] = None,
         ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
         """
@@ -137,7 +137,7 @@ class DiffusionProcess:
             diffusion (:obj:`Union[torch.Tensor, TensorDict]`): The output diffusion term.
         """
 
-        if isinstance(x, torch.Tensor):
+        if isinstance(x, torch.Tensor) or x is None:
             if x is not None and len(x.shape) > len(t.shape):
                 return self.path.diffusion(t)[(..., ) + (None, ) * (len(x.shape)-len(t.shape))].expand(x.shape)
             else:
@@ -158,7 +158,7 @@ class DiffusionProcess:
     def diffusion_squared(
             self,
             t: torch.Tensor,
-            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
             condition: Union[torch.Tensor, TensorDict] = None,
         ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
         """
@@ -177,7 +177,7 @@ class DiffusionProcess:
             diffusion_squared (:obj:`Union[torch.Tensor, TensorDict]`): The output square of the diffusion term.
         """
 
-        if isinstance(x, torch.Tensor):
+        if isinstance(x, torch.Tensor) or x is None:
             if x is not None and len(x.shape) > len(t.shape):
                 return self.path.diffusion_squared(t)[(..., ) + (None, ) * (len(x.shape)-len(t.shape))].expand(x.shape)
             else:
@@ -198,7 +198,7 @@ class DiffusionProcess:
     def scale(
             self,
             t: torch.Tensor,
-            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
             condition: Union[torch.Tensor, TensorDict] = None,
         ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
         """
@@ -217,7 +217,7 @@ class DiffusionProcess:
             scale (:obj:`Union[torch.Tensor, TensorDict]`): The output scale.
         """
 
-        if isinstance(x, torch.Tensor):
+        if isinstance(x, torch.Tensor) or x is None:
             if x is not None and len(x.shape) > len(t.shape):
                 return self.path.scale(t)[(..., ) + (None, ) * (len(x.shape)-len(t.shape))].expand(x.shape)
             else:
@@ -238,7 +238,7 @@ class DiffusionProcess:
     def log_scale(
             self,
             t: torch.Tensor,
-            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
             condition: Union[torch.Tensor, TensorDict] = None,
         ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
         """
@@ -257,7 +257,7 @@ class DiffusionProcess:
             log_scale (:obj:`Union[torch.Tensor, TensorDict]`): The output log scale.
         """
 
-        if isinstance(x, torch.Tensor):
+        if isinstance(x, torch.Tensor) or x is None:
             if x is not None and len(x.shape) > len(t.shape):
                 return self.path.log_scale(t)[(..., ) + (None, ) * (len(x.shape)-len(t.shape))].expand(x.shape)
             else:
@@ -278,7 +278,7 @@ class DiffusionProcess:
     def std(
             self,
             t: torch.Tensor,
-            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
             condition: Union[torch.Tensor, TensorDict] = None,
         ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
         """
@@ -297,7 +297,7 @@ class DiffusionProcess:
             std (:obj:`Union[torch.Tensor, TensorDict]`): The output standard deviation.
         """
 
-        if isinstance(x, torch.Tensor):
+        if isinstance(x, torch.Tensor) or x is None:
             if x is not None and len(x.shape) > len(t.shape):
                 return self.path.std(t)[(..., ) + (None, ) * (len(x.shape)-len(t.shape))].expand(x.shape)
             else:
@@ -318,7 +318,7 @@ class DiffusionProcess:
     def covariance(
             self,
             t: torch.Tensor,
-            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
             condition: Union[torch.Tensor, TensorDict] = None,
         ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
         """
@@ -337,7 +337,7 @@ class DiffusionProcess:
             covariance (:obj:`Union[torch.Tensor, TensorDict]`): The output covariance.
         """
 
-        if isinstance(x, torch.Tensor):
+        if isinstance(x, torch.Tensor) or x is None:
             if x is not None and len(x.shape) > len(t.shape):
                 return self.path.covariance(t)[(..., ) + (None, ) * (len(x.shape)-len(t.shape))].expand(x.shape)
             else:

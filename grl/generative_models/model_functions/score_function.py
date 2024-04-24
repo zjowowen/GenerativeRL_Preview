@@ -6,6 +6,8 @@ import treetensor
 from easydict import EasyDict
 from tensordict import TensorDict
 
+from grl.numerical_methods.monte_carlo import MonteCarloSampler
+
 
 class ScoreFunction:
     """
@@ -73,14 +75,57 @@ class ScoreFunction:
             x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
             condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
             gaussian_generator: Callable = None,
+            weighting_scheme: str = None,
         ) -> torch.Tensor:
         """
         Overview:
             Return the score matching loss function of the model given the initial state and the condition.
+
+            .. math::
+                \mathbb{E}_{t \sim p(t)} \left[ \mathbb{E}_{x_t \sim p(x_t | x_0)} \left[ \lambda(t) \left\| \nabla_{x_t} \log p_{\theta}(x_t) - \nabla_{x_t} \log p_{\theta}(x_t|x_0) \right\|^2 \right] \right]
+            
+            which is equivalent to
+
+            .. math::
+                \mathbb{E}_{t \sim p(t)} \left[ \mathbb{E}_{x_t \sim p(x_t | x_0)} \left[ \lambda(t) \left\| \nabla_{x_t} \log p_{\theta}(x_t) - \frac{x_t - x_0}{\sigma^2} \right\|^2 \right] \right]
+
         Arguments:
+            - model (:obj:`Union[Callable, nn.Module]`): The intrinsic model of generative model, which can be a neural network representing the score function, noise function, velocity function, or data prediction function.
             - x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
             - condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
+            - gaussian_generator (:obj:`Callable`): The Gaussian generator, which is a function that generates Gaussian noise of the same shape as x.
+            - weighting_scheme (:obj:`str`): The weighting scheme for score matching loss, which can be "maximum_likelihood" or "vanilla".
+        
+            ..note::
+                - "maximum_likelihood": The weighting scheme is based on the maximum likelihood estimation. Refer to the paper "Maximum Likelihood Training of Score-Based Diffusion Models" for more details. The weight :math:`\lambda(t)` is denoted as:
+
+                    .. math::
+                        \lambda(t) = g^2(t)
+
+                    for numerical stability, we use Monte Carlo sampling to approximate the integral of :math:`\lambda(t)`.
+
+                    .. math::
+                        \lambda(t) = g^2(t) = p(t)\sigma^2(t) 
+
+                - "vanilla": The weighting scheme is based on the vanilla score matching, which balances the MSE loss by scaling the model output to the noise value. Refer to the paper "Score-Based Generative Modeling through Stochastic Differential Equations" for more details. The weight :math:`\lambda(t)` is denoted as:
+
+                    .. math::
+                        \lambda(t) = \sigma^2(t)
         """
+
+        def get_random_t_samples(batch_size, device):
+            if weighting_scheme is None or weighting_scheme == "maximum_likelihood":
+                if not hasattr(self, "monte_carlo_sampler"):
+                    def unnormalized_pdf(t):
+                        return self.process.diffusion_squared(t) / (self.process.covariance(t) + 1e-6)
+                    self.monte_carlo_sampler = MonteCarloSampler(unnormalized_pdf=unnormalized_pdf, x_min=0.0, x_max=self.process.t_max)
+                return self.monte_carlo_sampler.sample(batch_size).to(device=device)
+            elif weighting_scheme == "vanilla":
+                #TODO: test esp
+                eps = 1e-5
+                return torch.rand(batch_size, device=device) * (self.process.t_max - eps) + eps
+            else:
+                raise NotImplementedError("Unknown weighting scheme {}".format(weighting_scheme))
 
         def get_batch_size_and_device(x):
             if isinstance(x, torch.Tensor):
@@ -104,10 +149,8 @@ class ScoreFunction:
 
         #TODO: make it compatible with TensorDict
         if self.model_type == "noise_function":
-            #TODO: test esp
-            eps = 1e-5
             batch_size, device = get_batch_size_and_device(x)
-            t_random = torch.rand(batch_size, device=device) * (self.process.t_max - eps) + eps
+            t_random = get_random_t_samples(batch_size, device)
             if gaussian_generator is None:
                 noise = torch.randn_like(x).to(device)
             else:
@@ -117,10 +160,8 @@ class ScoreFunction:
             loss = get_loss(noise_value, noise)
             return loss
         elif self.model_type == "score_function":
-            #TODO: test esp
-            eps = 1e-5
             batch_size, device = get_batch_size_and_device(x)
-            t_random = torch.rand(batch_size, device=device) * (self.process.t_max - eps) + eps
+            t_random = get_random_t_samples(batch_size, device)
             if gaussian_generator is None:
                 noise = torch.randn_like(x).to(device)
             else:
@@ -131,10 +172,8 @@ class ScoreFunction:
             loss = get_loss(score_value * std, noise)
             return loss
         elif self.model_type == "velocity_function":
-            #TODO: test esp
-            eps = 1e-5
             batch_size, device = get_batch_size_and_device(x)
-            t_random = torch.rand(batch_size, device=device) * (self.process.t_max - eps) + eps
+            t_random = get_random_t_samples(batch_size, device)
             if gaussian_generator is None:
                 noise = torch.randn_like(x).to(device)
             else:
@@ -146,10 +185,8 @@ class ScoreFunction:
             loss = get_loss(noise_value, noise)
             return loss
         elif self.model_type == "data_prediction_function":
-            #TODO: test esp
-            eps = 1e-5
             batch_size, device = get_batch_size_and_device(x)
-            t_random = torch.rand(batch_size, device=device) * (self.process.t_max - eps) + eps
+            t_random = get_random_t_samples(batch_size, device)
             if gaussian_generator is None:
                 noise = torch.randn_like(x).to(device)
             else:

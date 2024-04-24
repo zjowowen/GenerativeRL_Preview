@@ -1,5 +1,6 @@
-from typing import Callable, Union
 import time
+from typing import Callable, Union
+
 import torch
 import torch.nn as nn
 import treetensor
@@ -12,6 +13,7 @@ from grl.generative_models.diffusion_model import (
 from grl.numerical_methods.numerical_solvers.ode_solver import (
     DictTensorODESolver, ODESolver)
 from grl.numerical_methods.ode import ODE
+
 
 def compute_likelihood(
         model: Union[DiffusionModel, EnergyConditionalDiffusionModel],
