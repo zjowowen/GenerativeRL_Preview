@@ -433,7 +433,7 @@ class DiffusionProcess:
             HalfLogSNR (:obj:`torch.Tensor`): The half-logSNR.
         """
 
-        if isinstance(x, torch.Tensor):
+        if isinstance(x, torch.Tensor) or x is None:
             if x is not None and len(x.shape) > len(t.shape):
                 return self.path.HalfLogSNR(t)[(..., ) + (None, ) * (len(x.shape)-len(t.shape))].expand(x.shape)
             else:
