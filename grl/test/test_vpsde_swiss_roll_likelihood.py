@@ -50,7 +50,7 @@ config = EasyDict(
                 beta_1 = 20.0,
             ),
             model = dict(
-                type = "score_function",
+                type = "noise_function",
                 args = dict(
                     t_encoder = t_encoder,
                     backbone = dict(
@@ -68,7 +68,7 @@ config = EasyDict(
             training_loss_type = "score_matching",
             lr=5e-4,
             data_num=10000,
-            iterations=3000,
+            iterations=5000,
             batch_size=2048,
             clip_grad_norm=1.0,
             eval_freq=500,
@@ -179,7 +179,7 @@ if __name__ == "__main__":
             t_span=torch.linspace(0.0, 1.0, 1000)
             x_t = diffusion_model.sample_forward_process(t_span=t_span, batch_size=500).cpu().detach()
             x_t=[x.squeeze(0) for x in torch.split(x_t, split_size_or_sections=1, dim=0)]
-            render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
+            # render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
 
         batch_data = next(data_generator)
         batch_data=batch_data.to(config.device)
@@ -203,6 +203,14 @@ if __name__ == "__main__":
             logp=compute_likelihood(
                 model=diffusion_model,
                 x=torch.tensor(data).to(config.device),
+                using_Hutchinson_trace_estimator=True)
+            logp_mean = logp.mean()
+            bits_per_dim = -logp_mean / (torch.prod(torch.tensor(x_size, device=config.device)) * torch.log(torch.tensor(2.0, device=config.device)))
+            log.info(f"iteration {iteration}, gradient {gradient_sum/counter}, loss {loss_sum/counter}, log likelihood {logp_mean.item()}, bits_per_dim {bits_per_dim.item()}")
+
+            logp=compute_likelihood(
+                model=diffusion_model,
+                x=torch.tensor(data).to(config.device),
                 using_Hutchinson_trace_estimator=False)
             logp_mean = logp.mean()
             bits_per_dim = -logp_mean / (torch.prod(torch.tensor(x_size, device=config.device)) * torch.log(torch.tensor(2.0, device=config.device)))
@@ -215,7 +223,7 @@ if __name__ == "__main__":
             t_span=torch.linspace(0.0, 1.0, 1000)
             x_t = diffusion_model.sample_forward_process(t_span=t_span, batch_size=500).cpu().detach()
             x_t=[x.squeeze(0) for x in torch.split(x_t, split_size_or_sections=1, dim=0)]
-            #render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
+            # render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
 
         if (iteration+1) % config.parameter.checkpoint_freq == 0:
             save_checkpoint(diffusion_model, optimizer, iteration)
