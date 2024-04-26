@@ -6,7 +6,7 @@ import torch.nn as nn
 import treetensor
 from easydict import EasyDict
 from tensordict import TensorDict
-from torch.distributions import Distribution, MultivariateNormal
+from torch.distributions import Normal, Independent
 
 from grl.generative_models.diffusion_model import (
     DiffusionModel, EnergyConditionalDiffusionModel)
@@ -104,7 +104,7 @@ def compute_likelihood(
     logp_x1_minus_logp_x0 = x1_and_logp1['logp_xt_minus_logp_x0']
     x1 = x1_and_logp1['x']
     x1_1d = x1.reshape(x1.shape[0], -1)
-    logp_x1 = MultivariateNormal(loc=torch.zeros_like(x1_1d, device=x1_1d.device), covariance_matrix=torch.eye(x1_1d.shape[-1], device=x1_1d.device)).log_prob(x1_1d)
+    logp_x1 = Independent(Normal(loc=torch.zeros_like(x1_1d, device=x1_1d.device), scale=torch.ones_like(x1_1d, device=x1_1d.device)), 1).log_prob(x1_1d)
 
     log_likelihood = logp_x1 - logp_x1_minus_logp_x0
 
