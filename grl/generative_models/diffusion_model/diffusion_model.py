@@ -640,6 +640,43 @@ class DiffusionModel(nn.Module):
         """
 
         return self.score_function_.score_matching_loss(self.model, x, condition)
+    
+
+    def dpo_loss(
+            self,
+            ref_dm,
+            data,
+            beta,
+        ) -> torch.Tensor:
+        """
+        Overview:
+            The loss function for training unconditional diffusion model.
+        Arguments:
+            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input.
+            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+        """
+        # TODO: split data_w, data_l
+        x_w, x_l = data[:, :2], data[:, 2:]
+        noise = torch.randn_like(x_w).to(x_w.device)
+        eps = 1e-5
+        t = torch.rand(x_w.shape[0], device=x_w.device) * (self.diffusion_process.t_max - eps) + eps
+        noisy_x_w = self.diffusion_process.scale(t, x_w) * x_w + self.diffusion_process.std(t, x_w) * noise
+        noisy_x_w = noisy_x_w.to(t)
+        noisy_x_l = self.diffusion_process.scale(t, x_l) * x_l + self.diffusion_process.std(t, x_l) * noise
+        noisy_x_l = noisy_x_l.to(t)
+        model_w_pred = self.model(t, noisy_x_w)
+        model_l_pred = self.model(t, noisy_x_l)
+        ref_w_pred = ref_dm.model(t, noisy_x_w)
+        ref_l_pred = ref_dm.model(t, noisy_x_l)
+        model_w_err = (model_w_pred - noise).norm(dim=1, keepdim=True).pow(2)
+        model_l_err = (model_l_pred - noise).norm(dim=1, keepdim=True).pow(2)
+        ref_w_err = (ref_w_pred - noise).norm(dim=1, keepdim=True).pow(2).detach()
+        ref_l_err = (ref_l_pred - noise).norm(dim=1, keepdim=True).pow(2).detach()
+        w_diff = model_w_err - ref_w_err
+        l_diff = model_l_err - ref_l_err
+        inside_term = -1 * beta * (w_diff - l_diff)
+        loss = -1 * torch.log(torch.sigmoid(inside_term)+eps).mean()
+        return loss
 
     def velocity_function(
             self,
