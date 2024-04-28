@@ -1,21 +1,24 @@
 import os
 import signal
 import sys
+
+import matplotlib
+import numpy as np
 from easydict import EasyDict
 from rich.progress import track
-import numpy as np
 from sklearn.datasets import make_swiss_roll
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-
-from matplotlib import animation
-from easydict import EasyDict
 import torch
 import torch.nn as nn
-from grl.generative_models.diffusion_model.diffusion_model import DiffusionModel
-from grl.utils.log import log
+from easydict import EasyDict
+from matplotlib import animation
+
+from grl.generative_models.diffusion_model.diffusion_model import \
+    DiffusionModel
 from grl.utils import set_seed
+from grl.utils.log import log
 
 x_size=2
 device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
@@ -66,7 +69,6 @@ config = EasyDict(
             training_loss_type = "score_matching",
             lr=5e-3,
             data_num=10000,
-            weight_decay=1e-4,
             iterations=1000,
             batch_size=2048,
             clip_grad_norm=1.0,
@@ -96,7 +98,6 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(
         diffusion_model.parameters(), 
         lr=config.parameter.lr,
-        weight_decay=config.parameter.weight_decay,
         )
 
     if config.parameter.checkpoint_path is not None:
@@ -176,8 +177,7 @@ if __name__ == "__main__":
 
         if iteration > 0 and iteration % config.parameter.eval_freq == 0:
             diffusion_model.eval()
-            t_span=torch.linspace(0.0, 1.0, 1000)
-            x_t = diffusion_model.sample_forward_process(t_span=t_span, batch_size=500).cpu().detach()
+            x_t = diffusion_model.sample_forward_process(batch_size=500).cpu().detach()
             x_t=[x.squeeze(0) for x in torch.split(x_t, split_size_or_sections=1, dim=0)]
             render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
 
@@ -204,8 +204,7 @@ if __name__ == "__main__":
 
         if iteration == config.parameter.iterations-1:
             diffusion_model.eval()
-            t_span=torch.linspace(0.0, 1.0, 1000)
-            x_t = diffusion_model.sample_forward_process(t_span=t_span, batch_size=500).cpu().detach()
+            x_t = diffusion_model.sample_forward_process(batch_size=500).cpu().detach()
             x_t=[x.squeeze(0) for x in torch.split(x_t, split_size_or_sections=1, dim=0)]
             render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
 

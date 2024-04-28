@@ -1,15 +1,14 @@
-from typing import Union, List, Tuple, Dict, Any, Callable
-from easydict import EasyDict
+from typing import Any, Callable, Dict, List, Tuple, Union
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from grl.generative_models.diffusion_model.diffusion_model import DiffusionModel
-from typing import Union, Callable
 from easydict import EasyDict
-import torch
-import torch.nn as nn
-from torch.distributions import Distribution
 from tensordict import TensorDict
+from torch.distributions import Distribution
+
+from grl.generative_models.diffusion_model.diffusion_model import \
+    DiffusionModel
 
 
 class SRPOConditionalDiffusionModel(nn.Module):
@@ -32,8 +31,8 @@ class SRPOConditionalDiffusionModel(nn.Module):
         Overview:
             Initialization of Energy Conditional Diffusion Model.
         Arguments:
-            - config (:obj:`EasyDict`): The configuration.
-            - energy_model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The energy model.
+            config (:obj:`EasyDict`): The configuration.
+            energy_model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The energy model.
         """
 
         super().__init__()
@@ -52,8 +51,8 @@ class SRPOConditionalDiffusionModel(nn.Module):
         Overview:
             The loss function for training unconditional diffusion model.
         Arguments:
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The input.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         """
 
         return self.diffusion_model.score_matching_loss(x, condition)
@@ -63,8 +62,7 @@ class SRPOConditionalDiffusionModel(nn.Module):
         condition: Union[torch.Tensor, TensorDict],  # state
     ):
         x = self.distribution_model(condition)
-        eps = 1e-4
-        t_random = torch.rand(x.shape[0], device=x.device) * (1.0 - eps) + eps  # [256]
+        t_random = torch.rand(x.shape[0], device=x.device) * 0.96 + 0.02  # [256]
         x_t = self.diffusion_model.diffusion_process.direct_sample(
             t_random, x
         )  # [256,6x]
@@ -78,4 +76,4 @@ class SRPOConditionalDiffusionModel(nn.Module):
         q = (qs[0].squeeze() + qs[1].squeeze()) / 2.0
         guidance = torch.autograd.grad(torch.sum(q), detach_x)[0].detach()
         loss = (episilon * x) * wt - (guidance * x) * self.env_beta
-        return loss
+        return loss, torch.mean(q)

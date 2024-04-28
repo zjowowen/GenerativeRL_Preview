@@ -1,13 +1,15 @@
-from typing import Optional, Tuple, Union, List, Dict, Any, Callable
-from easydict import EasyDict
-import torch
-from torch.utils.data import DataLoader
-import wandb
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
+import torch
+from easydict import EasyDict
+from torch.utils.data import DataLoader
+
+import wandb
+from grl.agents.base import BaseAgent
 from grl.datasets import create_dataset
 from grl.rl_modules.simulators import create_simulator
 from grl.utils.config import merge_two_dicts_into_newone
-from grl.agents.base import BaseAgent
+
 
 class BasePolicy(torch.nn.Module):
     """
@@ -21,7 +23,7 @@ class BasePolicy(torch.nn.Module):
         Overview:
             Initialize the base policy.
         Arguments:
-            - config (:obj:`EasyDict`): The configuration.
+            config (:obj:`EasyDict`): The configuration.
         """
         super().__init__()
         self.config = config
@@ -31,7 +33,7 @@ class BasePolicy(torch.nn.Module):
         Overview:
             Forward pass.
         Arguments:
-            - data (:obj:`torch.Tensor`): The input data.
+            data (:obj:`torch.Tensor`): The input data.
         """
         pass
 
@@ -54,12 +56,12 @@ class BaseAlgorithm:
         Overview:
             Initialize the base algorithm.
         Arguments:
-            - config (:obj:`EasyDict`): The configuration , which must contain the following keys:
-                - train (:obj:`EasyDict`): The training configuration.
-                - deploy (:obj:`EasyDict`): The deployment configuration.
-            - simulator (:obj:`object`): The environment.
-            - dataset (:obj:`torch.utils.data.Dataset`): The dataset.
-            - model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The model.
+            config (:obj:`EasyDict`): The configuration , which must contain the following keys:
+                train (:obj:`EasyDict`): The training configuration.
+                deploy (:obj:`EasyDict`): The deployment configuration.
+            simulator (:obj:`object`): The environment.
+            dataset (:obj:`torch.utils.data.Dataset`): The dataset.
+            model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The model.
         Interface:
             ``__init__``, ``train``, ``deploy``
         """
@@ -86,7 +88,7 @@ class BaseAlgorithm:
             Train the model using the given configuration. \
             A weight-and-bias run will be created automatically when this function is called.
         Arguments:
-            - config (:obj:`EasyDict`): The training configuration.
+            config (:obj:`EasyDict`): The training configuration.
         """
 
         if config is not None:

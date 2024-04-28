@@ -1,6 +1,8 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
-from easydict import EasyDict
 from copy import deepcopy
+from typing import Any, Dict, List, Optional, Tuple, Union
+
+from easydict import EasyDict
+
 
 def merge_dict1_into_dict2(dict1:Union[Dict, EasyDict], dict2:Union[Dict, EasyDict]) -> Union[Dict, EasyDict]:
     """

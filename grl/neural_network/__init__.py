@@ -1,10 +1,26 @@
 from typing import Callable, List, Optional, Union
-from easydict import EasyDict
+
 import torch
 import torch.nn as nn
+from easydict import EasyDict
 from tensordict import TensorDict
+
 from grl.neural_network.activation import get_activation
-from grl.neural_network.ResNetBlock import MLPResNet
+from grl.neural_network.residual_network import MLPResNet
+
+
+def register_module(module: nn.Module, name: str):
+    """
+    Overview:
+        Register the module to the module dictionary.
+    Arguments:
+        - module (:obj:`nn.Module`): The module to be registered.
+        - name (:obj:`str`): The name of the module.
+    """
+    global MODULES
+    if name.lower() in MODULES:
+        raise KeyError(f"Module {name} is already registered.")
+    MODULES[name.lower()] = module
 
 def get_module(type: str):
     if type.lower() in MODULES:
@@ -349,7 +365,7 @@ class MultiLayerPerceptron(nn.Module):
             if dropout is not None and dropout > 0:
                 self.model.add_module('dropout', nn.Dropout(dropout))
             if layernorm:
-                self.model.add_module('layernorm', nn.LayerNorm(hidden_sizes[i]))
+                self.model.add_module('layernorm', nn.LayerNorm(hidden_sizes[i+1]))
 
         self.model.add_module('linear'+str(len(hidden_sizes)-1), nn.Linear(hidden_sizes[-1], output_size))
 

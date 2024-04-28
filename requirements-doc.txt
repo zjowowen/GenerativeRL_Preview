@@ -8,3 +8,14 @@ packaging
 sphinx-multiversion>=0.2.4
 where~=1.0.2
 easydict
+ipykernel
+ipython
+m2r2
+nbclient
+nbformat
+nbsphinx
+platformdirs
+setuptools_scm
+sphinx_autodoc_typehints
+lxml_html_clean
+lxml

@@ -1,4 +1,4 @@
-# Generative Reinforcement Learning
+# Generative Reinforcement Learning (GRL)
     
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
@@ -8,8 +8,8 @@ GenerativeRL, short for Generative Reinforcement Learning, is a Python library f
 
 ## Features
 
-- Integration of diffusion models and flow models for state representation and policy learning in RL
-- Implementation of popular RL algorithms tailored for generative models
+- Integration of diffusion models and flow models for state representation, action representation or policy learning in RL
+- Implementation of popular RL algorithms tailored for generative models, such as Q-guided policy optimization (QGPO)
 - Support for various RL environments and benchmarks
 - Easy-to-use API for training and evaluation
 

@@ -14,21 +14,31 @@ setup(
         'torch>=2.2.0',
         'opencv-python',
         'tensordict',
+        'di-treetensor',
         'matplotlib',
         'wandb',
         'rich',
-        'mujoco_py',
         'easydict',
-        'Cython<3.0',
         'tqdm',
         'torchdyn',
         'torchode',
         'torchsde',
         'scipy',
+        'beartype',
         'diffusers',
         'timm',
         'av',
         'moviepy',
         'imageio[ffmpeg]',
-    ]
+    ],
+    extras_require={
+        'd4rl': [
+            'gym==0.23.1',
+            'mujoco_py',
+            'Cython<3.0',
+        ],
+        'DI-engine': [
+            'DI-engine',
+        ]
+    }
 )

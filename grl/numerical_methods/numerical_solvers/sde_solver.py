@@ -1,8 +1,10 @@
 
-from typing import Union, Tuple, List, Dict, Any
+from typing import Any, Dict, List, Tuple, Union
+
 import torch
-from torch import nn
 import torchsde
+from torch import nn
+
 
 class TorchSDE(nn.Module):
     """
@@ -22,10 +24,10 @@ class TorchSDE(nn.Module):
         Overview:
             Initialize the SDE object.
         Arguments:
-            - drift (:obj:`nn.Module`): The function that defines the drift of the SDE.
-            - diffusion (:obj:`nn.Module`): The function that defines the diffusion of the SDE.
-            - noise_type (:obj:`str`): The type of noise of the SDE. It can be 'diagonal', 'general', 'scalar' or 'additive'.
-            - sde_type (:obj:`str`): The type of the SDE. It can be 'ito' or 'stratonovich'.
+            drift (:obj:`nn.Module`): The function that defines the drift of the SDE.
+            diffusion (:obj:`nn.Module`): The function that defines the diffusion of the SDE.
+            noise_type (:obj:`str`): The type of noise of the SDE. It can be 'diagonal', 'general', 'scalar' or 'additive'.
+            sde_type (:obj:`str`): The type of the SDE. It can be 'ito' or 'stratonovich'.
         """
         super().__init__()
         self.drift = drift
@@ -66,14 +68,14 @@ class SDESolver:
         Overview:
             Initialize the SDE solver using torchsde library.
         Arguments:
-            - sde_solver (:obj:`str`): The SDE solver to use.
-            - sde_noise_type (:obj:`str`): The type of noise of the SDE. It can be 'diagonal', 'general', 'scalar' or 'additive'.
-            - sde_type (:obj:`str`): The type of the SDE. It can be 'ito' or 'stratonovich'.
-            - dt (:obj:`float`): The time step.
-            - atol (:obj:`float`): The absolute tolerance.
-            - rtol (:obj:`float`): The relative tolerance.
-            - library (:obj:`str`): The library to use for the ODE solver. Currently, it supports 'torchsde'.
-            - **kwargs: Additional arguments for the ODE solver.
+            sde_solver (:obj:`str`): The SDE solver to use.
+            sde_noise_type (:obj:`str`): The type of noise of the SDE. It can be 'diagonal', 'general', 'scalar' or 'additive'.
+            sde_type (:obj:`str`): The type of the SDE. It can be 'ito' or 'stratonovich'.
+            dt (:obj:`float`): The time step.
+            atol (:obj:`float`): The absolute tolerance.
+            rtol (:obj:`float`): The relative tolerance.
+            library (:obj:`str`): The library to use for the ODE solver. Currently, it supports 'torchsde'.
+            **kwargs: Additional arguments for the ODE solver.
         """
         super().__init__()
         self.sde_solver = sde_solver
@@ -100,8 +102,8 @@ class SDESolver:
         Overview:
             Integrate the SDE.
         Arguments:
-            - drift (:obj:`nn.Module`): The function that defines the ODE.
-            - diffusion (:obj:`nn.Module`): The function that defines the ODE.
+            drift (:obj:`nn.Module`): The function that defines the ODE.
+            diffusion (:obj:`nn.Module`): The function that defines the ODE.
 
         """
 

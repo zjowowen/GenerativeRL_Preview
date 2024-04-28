@@ -1,10 +1,12 @@
 from typing import Union
-from easydict import EasyDict
+
 import torch
 import torch.nn as nn
+from easydict import EasyDict
 from tensordict import TensorDict
-from grl.neural_network.encoders import get_encoder
+
 from grl.neural_network import get_module
+from grl.neural_network.encoders import get_encoder
 
 
 class IntrinsicModel(nn.Module):

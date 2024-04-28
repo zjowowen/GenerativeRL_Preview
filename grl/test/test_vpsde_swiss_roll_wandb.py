@@ -1,24 +1,28 @@
-import wandb
 import os
 import signal
 import sys
+
+import matplotlib
+import numpy as np
 from easydict import EasyDict
 from rich.progress import track
-import numpy as np
 from sklearn.datasets import make_swiss_roll
-import matplotlib
+
+import wandb
 
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 from datetime import datetime
-from matplotlib import animation
+
+import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
-from grl.generative_models.diffusion_model.diffusion_model import DiffusionModel
-from grl.utils.log import log
-from grl.utils.config import merge_two_dicts_into_newone
-from grl.utils import set_seed
+from matplotlib import animation
 
+from grl.generative_models.diffusion_model.diffusion_model import \
+    DiffusionModel
+from grl.utils import set_seed
+from grl.utils.config import merge_two_dicts_into_newone
+from grl.utils.log import log
 
 sweep_config = EasyDict(
     name="base-sweep-gvp-lossadding",
@@ -112,7 +116,6 @@ def train_func():
                 training_loss_type="flow_matching",
                 lr=5e-3,
                 data_num=10000,
-                weight_decay=1e-4,
                 iterations=1000,
                 batch_size=2048,
                 clip_grad_norm=1.0,
@@ -155,7 +158,6 @@ def train_func():
         optimizer = torch.optim.Adam(
             diffusion_model.parameters(),
             lr=config.parameter.lr,
-            weight_decay=config.parameter.weight_decay,
         )
 
         last_iteration = -1

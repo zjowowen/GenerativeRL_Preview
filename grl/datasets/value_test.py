@@ -1,22 +1,12 @@
 import sys
 from pathlib import Path
 
-from numpy.lib.format import open_memmap
-
 import torch
-from torch import nn, einsum, Tensor
-from torch.nn import Module, ModuleList
-from torch.utils.data import Dataset, DataLoader
-from tensordict import TensorDict
 import torchvision.transforms as transforms
-import gym
-from rich.progress import track
-from einops import rearrange
-from torchtyping import TensorType
 from beartype import beartype
-from beartype.typing import Iterator, Tuple, Union
+from numpy.lib.format import open_memmap
 from rich.progress import track
-import cv2
+from torch.utils.data import DataLoader, Dataset
 
 # just force training on 64 bit systems
 
@@ -31,8 +21,6 @@ ACTIONS_FILENAME = "actions.memmap.npy"
 REWARDS_FILENAME = "rewards.memmap.npy"
 DONES_FILENAME = "dones.memmap.npy"
 
-DEFAULT_REPLAY_MEMORIES_FOLDER = "./value_function_memories_data"
-
 
 # helpers
 def exists(v):
@@ -46,7 +34,9 @@ def cast_tuple(t):
 # replay memory dataset
 class ReplayMemoryDataset(Dataset):
     @beartype
-    def __init__(self, dataset_folder: str, num_timesteps: int = 1):
+    def __init__(self, config):
+        dataset_folder = config.dataset_folder
+        num_timesteps = config.num_timesteps
         assert num_timesteps >= 1, "num_timesteps must be at least 1"
         self.is_single_timestep = num_timesteps == 1
         self.num_timesteps = num_timesteps
@@ -79,9 +69,8 @@ class ReplayMemoryDataset(Dataset):
         timestep_indices = torch.stack(
             torch.meshgrid(torch.arange(self.num_episodes), timestep_arange), dim=-1
         )
-
-        trainable_mask = timestep_arange < rearrange(
-            torch.from_numpy(self.episode_length) - num_timesteps, "e -> e 1"
+        trainable_mask = timestep_arange < (
+            (torch.from_numpy(self.episode_length) - num_timesteps).unsqueeze(1)
         )
         self.indices = timestep_indices[trainable_mask]
 
@@ -106,11 +95,12 @@ class SampleData:
     def __init__(
         self,
         env,
-        memories_dataset_folder: str = DEFAULT_REPLAY_MEMORIES_FOLDER,
-        num_episodes: int = 10,
-        max_num_steps_per_episode: int = 13000,
+        config,
     ):
         super().__init__()
+        memories_dataset_folder = config.dataset_folder
+        num_episodes = config.dataset_num_episodes
+        max_num_steps_per_episode = config.dataset_max_num_steps_per_episode
         self.env = env
         self.num_episodes = num_episodes
         self.max_num_steps_per_episode = max_num_steps_per_episode

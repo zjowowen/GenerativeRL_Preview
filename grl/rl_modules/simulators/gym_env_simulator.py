@@ -1,7 +1,9 @@
-from typing import List, Tuple, Union, Callable, Dict
-from easydict import EasyDict
+from typing import Callable, Dict, List, Tuple, Union
+
 import gym
 import torch
+from easydict import EasyDict
+
 
 class GymEnvSimulator:
     """
@@ -17,7 +19,7 @@ class GymEnvSimulator:
         Overview:
             Initialize the GymEnvSimulator according to the given configuration.
         Arguments:
-            - env_id (:obj:`str`): The id of the gym environment to simulate.
+            env_id (:obj:`str`): The id of the gym environment to simulate.
         """
         self.env_id = env_id
         self.collect_env = gym.make(self.env_id)
@@ -44,9 +46,9 @@ class GymEnvSimulator:
             Collect several episodes using the given policy. The environment will be reset at the beginning of each episode.
             No history will be stored in this method. The collected information of steps will be returned as a list of dictionaries.
         Arguments:
-            - policy (:obj:`Union[Callable, torch.nn.Module]`): The policy to collect episodes.
-            - num_episodes (:obj:`int`): The number of episodes to collect.
-            - num_steps (:obj:`int`): The number of steps to collect.
+            policy (:obj:`Union[Callable, torch.nn.Module]`): The policy to collect episodes.
+            num_episodes (:obj:`int`): The number of episodes to collect.
+            num_steps (:obj:`int`): The number of steps to collect.
         """
         assert num_episodes is not None or num_steps is not None
         if num_episodes is not None:
@@ -135,15 +137,17 @@ class GymEnvSimulator:
             policy: Union[Callable, torch.nn.Module],
             num_episodes: int = None,
             num_steps: int = None,
+            random_policy: bool = False,
         ) -> List[Dict]:
         """
         Overview:
             Collect several steps using the given policy. The environment will not be reset until the end of the episode.
             Last observation will be stored in this method. The collected information of steps will be returned as a list of dictionaries.
         Arguments:
-            - policy (:obj:`Union[Callable, torch.nn.Module]`): The policy to collect steps.
-            - num_episodes (:obj:`int`): The number of episodes to collect.
-            - num_steps (:obj:`int`): The number of steps to collect.
+            policy (:obj:`Union[Callable, torch.nn.Module]`): The policy to collect steps.
+            num_episodes (:obj:`int`): The number of episodes to collect.
+            num_steps (:obj:`int`): The number of steps to collect.
+            random_policy (:obj:`bool`): Whether to use a random policy.
         """
         assert num_episodes is not None or num_steps is not None
         if num_episodes is not None:
@@ -155,7 +159,10 @@ class GymEnvSimulator:
                         done = False
                         truncated = False
                         while not done and not truncated:
-                            action = policy(obs)
+                            if random_policy:
+                                action = self.collect_env.action_space.sample()
+                            else:
+                                action = policy(obs)
                             next_obs, reward, done, truncated, _ = self.collect_env.step(action)
                             data_list.append(
                                 dict(
@@ -176,7 +183,10 @@ class GymEnvSimulator:
                         obs = self.collect_env.reset()
                         done = False
                         while not done:
-                            action = policy(obs)
+                            if random_policy:
+                                action = self.collect_env.action_space.sample()
+                            else:
+                                action = policy(obs)
                             next_obs, reward, done, _ = self.collect_env.step(action)
                             data_list.append(
                                 dict(
@@ -197,7 +207,10 @@ class GymEnvSimulator:
                 if gym.__version__ >= '0.26.0':
                     while len(data_list) < num_steps:
                         if not self.last_state_done or not self.last_state_truncated:
-                            action = policy(self.last_state_obs)
+                            if random_policy:
+                                action = self.collect_env.action_space.sample()
+                            else:
+                                action = policy(self.last_state_obs)
                             next_obs, reward, done, truncated, _ = self.collect_env.step(action)
                             data_list.append(
                                 dict(
@@ -219,14 +232,16 @@ class GymEnvSimulator:
                 else:
                     while len(data_list) < num_steps:
                         if not self.last_state_done:
-                            action = policy(self.last_state_obs)
+                            if random_policy:
+                                action = self.collect_env.action_space.sample()
+                            else:
+                                action = policy(self.last_state_obs)
                             next_obs, reward, done, _ = self.collect_env.step(action)
                             data_list.append(
                                 dict(
                                     obs=self.last_state_obs,
                                     action=action,
                                     reward=reward,
-                                    truncated=truncated,
                                     done=done,
                                     next_obs=next_obs
                                 )

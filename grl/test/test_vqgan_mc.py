@@ -1,13 +1,15 @@
+import copy
+import functools
+import importlib
+
+import numpy as np
+import pytorch_lightning as pl
 import torch
 import torch.nn as nn
-import pytorch_lightning as pl
-import numpy as np
-import importlib
-from einops import rearrange
 import torch.nn.functional as F
+from einops import rearrange
 from torch.utils.data import DataLoader, Dataset
-import functools
-import copy
+
 
 def hinge_d_loss(logits_real, logits_fake):
     loss_real = torch.mean(F.relu(1. - logits_real))
@@ -1035,9 +1037,11 @@ class VQModelInterface(VQModel):
         dec = self.decoder(quant)
         return dec
     
-from torchvision import transforms
-from PIL import Image
 import os
+
+from PIL import Image
+from torchvision import transforms
+
 
 class MineRLImageDataset(torch.utils.data.Dataset):
     def __init__(self, path, transform=None):
@@ -1092,6 +1096,7 @@ def unnormalize_batch(batch, mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], device =
     return image
 
 from tqdm import tqdm
+
 if __name__ == '__main__':
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
     image_folder_path = '/mnt/nfs/chenyun/latent-diffusion/cy_model/5000'

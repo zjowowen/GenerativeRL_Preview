@@ -16,7 +16,7 @@ t_encoder = dict(
 
 config = EasyDict(
     train=dict(
-        project="d4rl-halfcheetah-v2-qgpo",
+        project="d4rl-halfcheetah-srpo",
         simulator=dict(
             type="GymEnvSimulator",
             args=dict(
@@ -59,7 +59,7 @@ config = EasyDict(
                     device=device,
                     x_size=action_size,
                     alpha=1.0,
-                    beta=0.02,
+                    beta=0.01,
                     solver=dict(
                         # type = "ODESolver",
                         # args = dict(
@@ -98,15 +98,16 @@ config = EasyDict(
             behaviour_policy=dict(
                 batch_size=2048,
                 learning_rate=3e-4,
-                iterations=2000000,
+                iterations=600000,
             ),
             sample_per_state=16,
             critic=dict(
                 batch_size=256,
-                iterations=1500000,
+                iterations=600000,
                 learning_rate=3e-4,
                 discount_factor=0.99,
-                tau=0.9,
+                tau=0.7,
+                moment=0.995,
             ),
             actor=dict(
                 batch_size=256,
@@ -114,7 +115,7 @@ config = EasyDict(
                 learning_rate=3e-4,
             ),
             evaluation=dict(
-                evaluation_interval=1,
+                evaluation_interval=1000,
             ),
         ),
     ),

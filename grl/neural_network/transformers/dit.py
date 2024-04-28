@@ -1,94 +1,62 @@
-from typing import Callable, List, Optional, Union, Tuple
-from easydict import EasyDict
 import math
+from typing import Callable, List, Optional, Tuple, Union
+
 import numpy as np
 import torch
 import torch.nn as nn
 from tensordict import TensorDict
-from timm.models.vision_transformer import PatchEmbed, Attention, Mlp
-from torchdiffeq import odeint_adjoint
-from torchdiffeq import odeint
+from timm.models.vision_transformer import Attention, Mlp, PatchEmbed
 
-from grl.neural_network.encoders import GaussianFourierProjectionTimeEncoder
+from grl.neural_network.encoders import ExponentialFourierProjectionTimeEncoder
+
 
 def modulate(x: torch.Tensor, shift: torch.Tensor, scale: torch.Tensor) -> torch.Tensor:
     """
     Overview:
         Modulate the input tensor x with the shift and scale tensors.
     Arguments:
-        - x (:obj:`torch.Tensor`): The input tensor.
-        - shift (:obj:`torch.Tensor`): The shift tensor.
-        - scale (:obj:`torch.Tensor`): The scale tensor.
+        x (:obj:`torch.Tensor`): The input tensor.
+        shift (:obj:`torch.Tensor`): The shift tensor.
+        scale (:obj:`torch.Tensor`): The scale tensor.
     """
     return x * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1)
 
-#TODO: Difusion model t is irrelavent to exponential time.
-class TimestepEmbedder(nn.Module):
-    """
-    Overview:
-        Embeds scalar timesteps into vector representations.
-    Interfaces:
-        ``__init__``, ``forward``
-    """
-    def __init__(self, hidden_size, frequency_embedding_size=256):
-        """
-        Overview:
-            Initialize the timestep embedder.
-        Arguments:
-            - hidden_size (:obj:`int`): The hidden size.
-            - frequency_embedding_size (:obj:`int`): The size of the frequency embedding.
-        """
-        super().__init__()
-        self.mlp = nn.Sequential(
-            nn.Linear(frequency_embedding_size, hidden_size, bias=True),
-            nn.SiLU(),
-            nn.Linear(hidden_size, hidden_size, bias=True),
-        )
-        self.frequency_embedding_size = frequency_embedding_size
-
-    #TODO: simplify this function
-    @staticmethod
-    def timestep_embedding(t, dim, max_period=10000):
-        """
-        Create sinusoidal timestep embeddings.
-        :param t: a 1-D Tensor of N indices, one per batch element.
-                          These may be fractional.
-        :param dim: the dimension of the output.
-        :param max_period: controls the minimum frequency of the embeddings.
-        :return: an (N, D) Tensor of positional embeddings.
-        """
-        # https://github.com/openai/glide-text2im/blob/main/glide_text2im/nn.py
-        half = dim // 2
-        freqs = torch.exp(
-            -math.log(max_period) * torch.arange(start=0, end=half, dtype=torch.float32) / half
-        ).to(device=t.device)
-        if len(t.shape) == 0:
-            t = t.unsqueeze(0)
-        args = t[:, None].float() * freqs[None]
-        embedding = torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
-        if dim % 2:
-            embedding = torch.cat([embedding, torch.zeros_like(embedding[:, :1])], dim=-1)
-        return embedding
-
-    def forward(self, t):
-        t_freq = self.timestep_embedding(t, self.frequency_embedding_size)
-        t_emb = self.mlp(t_freq)
-        return t_emb
-
 class LabelEmbedder(nn.Module):
     """
-    Embeds class labels into vector representations. Also handles label dropout for classifier-free guidance.
+    Overview:
+        Embeds class labels into vector representations. Also handles label dropout for classifier-free guidance.
     """
-    def __init__(self, num_classes, hidden_size, dropout_prob):
+    def __init__(
+            self,
+            num_classes: int,
+            hidden_size: int,
+            dropout_prob: float = 0.1,
+        ):
+        """
+        Overview:
+            Initialize the label embedder.
+        Arguments:
+            num_classes (:obj:`int`): The number of classes.
+            hidden_size (:obj:`int`): The hidden size.
+            dropout_prob (:obj:`float`, defaults to 0.1): The dropout probability.
+        """
         super().__init__()
         use_cfg_embedding = dropout_prob > 0
         self.embedding_table = nn.Embedding(num_classes + use_cfg_embedding, hidden_size)
         self.num_classes = num_classes
         self.dropout_prob = dropout_prob
 
-    def token_drop(self, labels, force_drop_ids=None):
+    def token_drop(
+            self,
+            labels: torch.Tensor,
+            force_drop_ids: Optional[torch.Tensor] = None,
+        ):
         """
-        Drops labels to enable classifier-free guidance.
+        Overview:
+            Drops labels to enable classifier-free guidance.
+        Arguments:
+            labels (:obj:`torch.Tensor`): The input labels.
+            force_drop_ids (:obj:`torch.Tensor`, optional): The force drop ids.
         """
         if force_drop_ids is None:
             drop_ids = torch.rand(labels.shape[0], device=labels.device) < self.dropout_prob
@@ -97,25 +65,36 @@ class LabelEmbedder(nn.Module):
         labels = torch.where(drop_ids, self.num_classes, labels)
         return labels
 
-    def forward(self, labels, train, force_drop_ids=None):
+    def forward(
+            self,
+            labels: torch.Tensor,
+            train: bool = True,
+            force_drop_ids: Optional[torch.Tensor] = None,
+        ):
+        """
+        Overview:
+            Embeds the input labels.
+        Arguments:
+            labels (:obj:`torch.Tensor`): The input labels.
+            train (:obj:`bool`, defaults to True): Whether to train the model.
+            force_drop_ids (:obj:`torch.Tensor`, optional): The force drop ids.
+        """
         use_dropout = self.dropout_prob > 0
         if (train and use_dropout) or (force_drop_ids is not None):
             labels = self.token_drop(labels, force_drop_ids)
         embeddings = self.embedding_table(labels)
         return embeddings
 
-# https://github.com/facebookresearch/mae/blob/main/util/pos_embed.py
-
 def get_3d_pos_embed(
-        embed_dim,
-        grid_num
+        embed_dim: int,
+        grid_num: List[int],
     ):
     """
     Overview:
         Get 3D positional embeddings for 3D data.
     Arguments:
-        - embed_dim (:obj:`int`): The output dimension of embeddings for each grid.
-        - grid_num (:obj:`List[int]`): The number of the grid in each dimension.
+        embed_dim (:obj:`int`): The output dimension of embeddings for each grid.
+        grid_num (:obj:`List[int]`): The number of the grid in each dimension.
     """
     assert len(grid_num) == 3
     grid_num_sum = grid_num[0] + grid_num[1] + grid_num[2]
@@ -137,11 +116,24 @@ def get_3d_pos_embed(
     emb = np.concatenate([emb_0, emb_1, emb_2], axis=-1)
     return emb
 
-def get_2d_sincos_pos_embed(embed_dim, grid_size, cls_token=False, extra_tokens=0):
+def get_2d_sincos_pos_embed(
+        embed_dim: int,
+        grid_size: int,
+        cls_token: bool = False,
+        extra_tokens: int = 0,
+    ):
     """
-    grid_size: int of the grid height and width
-    return:
-    pos_embed: [grid_size*grid_size, embed_dim] or [1+grid_size*grid_size, embed_dim] (w/ or w/o cls_token)
+    Overview:
+        Get 2D positional embeddings for 2D data.
+    Arguments:
+        embed_dim (:obj:`int`): The output dimension for each position.
+        grid_size (:obj:`int`): The size of the grid.
+        cls_token (:obj:`bool`, defaults to False): Whether to include the class token.
+        extra_tokens (:obj:`int`, defaults to 0): The number of extra tokens.
+    Returns:
+        pos_embed (:obj:`np.ndarray`): The positional embeddings.
+    Shapes:
+        pos_embed (:obj:`np.ndarray`): [grid_size*grid_size, embed_dim] or [1+grid_size*grid_size, embed_dim] (w/ or w/o cls_token)
     """
     grid_h = np.arange(grid_size, dtype=np.float32)
     grid_w = np.arange(grid_size, dtype=np.float32)
@@ -149,26 +141,30 @@ def get_2d_sincos_pos_embed(embed_dim, grid_size, cls_token=False, extra_tokens=
     grid = np.stack(grid, axis=0)
 
     grid = grid.reshape([2, 1, grid_size, grid_size])
-    pos_embed = get_2d_sincos_pos_embed_from_grid(embed_dim, grid)
-    if cls_token and extra_tokens > 0:
-        pos_embed = np.concatenate([np.zeros([extra_tokens, embed_dim]), pos_embed], axis=0)
-    return pos_embed
 
-def get_2d_sincos_pos_embed_from_grid(embed_dim, grid):
     assert embed_dim % 2 == 0
-
     # use half of dimensions to encode grid_h
     emb_h = get_1d_sincos_pos_embed_from_grid(embed_dim // 2, grid[0])  # (H*W, D/2)
     emb_w = get_1d_sincos_pos_embed_from_grid(embed_dim // 2, grid[1])  # (H*W, D/2)
 
-    emb = np.concatenate([emb_h, emb_w], axis=1) # (H*W, D)
-    return emb
+    pos_embed = np.concatenate([emb_h, emb_w], axis=1) # (H*W, D)
 
-def get_sincos_pos_embed_from_grid(embed_dim, pos):
+    if cls_token and extra_tokens > 0:
+        pos_embed = np.concatenate([np.zeros([extra_tokens, embed_dim]), pos_embed], axis=0)
+    return pos_embed
+
+def get_sincos_pos_embed_from_grid(
+        embed_dim: int,
+        pos: np.ndarray,
+    ):
     """
-    embed_dim: output dimension for each position
-    pos: a list of positions to be encoded: size (M,)
-    out: (M, D)
+    Overview:
+        Get positional embeddings for 1D data.
+    Arguments:
+        embed_dim (:obj:`int`): The output dimension for each position.
+        pos (:obj:`np.ndarray`): The input positions.
+    Returns:
+        emb (:obj:`np.ndarray`): The positional embeddings.
     """
     assert embed_dim % 2 == 0
     omega = np.arange(embed_dim // 2, dtype=np.float64)
@@ -183,11 +179,18 @@ def get_sincos_pos_embed_from_grid(embed_dim, pos):
     emb = np.concatenate([emb_sin, emb_cos], axis=-1)  # (M, D)
     return emb
 
-def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
+def get_1d_sincos_pos_embed_from_grid(
+        embed_dim: int,
+        pos: np.ndarray,
+    ):
     """
-    embed_dim: output dimension for each position
-    pos: a list of positions to be encoded: size (M,)
-    out: (M, D)
+    Overview:
+        Get positional embeddings for 1D data.
+    Arguments:
+        embed_dim (:obj:`int`): The output dimension for each position.
+        pos (:obj:`np.ndarray`): The input positions.
+    Returns:
+        emb (:obj:`np.ndarray`): The positional embeddings.
     """
     assert embed_dim % 2 == 0
     omega = np.arange(embed_dim // 2, dtype=np.float64)
@@ -203,6 +206,25 @@ def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
     emb = np.concatenate([emb_sin, emb_cos], axis=1)  # (M, D)
     return emb
 
+def meshgrid_3d_pos(
+        grid_num: List[int]
+    ):
+    """
+    Overview:
+        Get 3D position for 3D data.
+    Arguments:
+        grid_num (:obj:`List[int]`): The number of the grid in each dimension.
+    """
+    assert len(grid_num) == 3
+    grid_0 = np.arange(grid_num[0], dtype=np.float32)
+    grid_1 = np.arange(grid_num[1], dtype=np.float32)
+    grid_2 = np.arange(grid_num[2], dtype=np.float32)
+
+    grid = np.meshgrid(grid_1, grid_0, grid_2)  # here w goes first
+    grid = np.stack([grid[1], grid[0], grid[2]], axis=0) # grid is of shape (3, grid_num[0], grid_num[1], grid_num[2]) or (3, T, H, W)
+
+    return grid
+
 class DiTBlock(nn.Module):
     """
     Overview:
@@ -212,15 +234,21 @@ class DiTBlock(nn.Module):
     Interfaces:
         ``__init__``, ``forward``
     """
-    def __init__(self, hidden_size, num_heads, mlp_ratio=4.0, **block_kwargs):
+    def __init__(
+            self,
+            hidden_size: int,
+            num_heads: int,
+            mlp_ratio: float = 4.0,
+            **block_kwargs
+        ):
         """
         Overview:
             Initialize the DiT block.
         Arguments:
-            - hidden_size (:obj:`int`): The hidden size.
-            - num_heads (:obj:`int`): The number of attention heads.
-            - mlp_ratio (:obj:`float`, defaults to 4.0): The hidden size of the MLP with respect to the hidden size of Attention.
-            - block_kwargs (:obj:`dict`): The keyword arguments for the attention block.
+            hidden_size (:obj:`int`): The hidden size.
+            num_heads (:obj:`int`): The number of attention heads.
+            mlp_ratio (:obj:`float`, defaults to 4.0): The hidden size of the MLP with respect to the hidden size of Attention.
+            block_kwargs (:obj:`dict`): The keyword arguments for the attention block.
         """
         super().__init__()
         self.norm1 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
@@ -234,7 +262,7 @@ class DiTBlock(nn.Module):
             nn.Linear(hidden_size, 6 * hidden_size, bias=True)
         )
 
-    def forward(self, x, c):
+    def forward(self, x: torch.tensor, c: torch.tensor):
         shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = self.adaLN_modulation(c).chunk(6, dim=1)
         x = x + gate_msa.unsqueeze(1) * self.attn(modulate(self.norm1(x), shift_msa, scale_msa))
         x = x + gate_mlp.unsqueeze(1) * self.mlp(modulate(self.norm2(x), shift_mlp, scale_mlp))
@@ -249,14 +277,14 @@ class FinalLayer(nn.Module):
     Interfaces:
         ``__init__``, ``forward``
     """
-    def __init__(self, hidden_size, patch_size, out_channels):
+    def __init__(self, hidden_size: int, patch_size: int, out_channels: int):
         """
         Overview:
             Initialize the final layer.
         Arguments:
-            - hidden_size (:obj:`int`): The hidden size.
-            - patch_size (:obj:`int`): The patch size.
-            - out_channels (:obj:`int`): The number of output channels.
+            hidden_size (:obj:`int`): The hidden size.
+            patch_size (:obj:`int`): The patch size.
+            out_channels (:obj:`int`): The number of output channels.
         """
         super().__init__()
         self.norm_final = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
@@ -266,7 +294,7 @@ class FinalLayer(nn.Module):
             nn.Linear(hidden_size, 2 * hidden_size, bias=True)
         )
 
-    def forward(self, x, c):
+    def forward(self, x: torch.tensor, c: torch.tensor):
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
         x = modulate(self.norm_final(x), shift, scale)
         x = self.linear(x)
@@ -283,31 +311,31 @@ class DiT(nn.Module):
     """
     def __init__(
         self,
-        input_size=32,
-        patch_size=2,
-        in_channels=4,
-        hidden_size=1152,
-        depth=28,
-        num_heads=16,
-        mlp_ratio=4.0,
-        class_dropout_prob=0.1,
-        num_classes=1000,
-        learn_sigma=True,
+        input_size: int = 32,
+        patch_size: int = 2,
+        in_channels: int = 4,
+        hidden_size: int = 1152,
+        depth: int = 28,
+        num_heads: int = 16,
+        mlp_ratio: float = 4.0,
+        class_dropout_prob: float = 0.1,
+        num_classes: int = 1000,
+        learn_sigma: bool = True,
     ):
         """
         Overview:
             Initialize the DiT model.
         Arguments:
-            - input_size (:obj:`int`, defaults to 32): The input size.
-            - patch_size (:obj:`int`, defaults to 2): The patch size.
-            - in_channels (:obj:`int`, defaults to 4): The number of input channels.
-            - hidden_size (:obj:`int`, defaults to 1152): The hidden size.
-            - depth (:obj:`int`, defaults to 28): The depth.
-            - num_heads (:obj:`int`, defaults to 16): The number of attention heads.
-            - mlp_ratio (:obj:`float`, defaults to 4.0): The hidden size of the MLP with respect to the hidden size of Attention.
-            - class_dropout_prob (:obj:`float`, defaults to 0.1): The class dropout probability.
-            - num_classes (:obj:`int`, defaults to 1000): The number of classes.
-            - learn_sigma (:obj:`bool`, defaults to True): Whether to learn sigma.
+            input_size (:obj:`int`, defaults to 32): The input size.
+            patch_size (:obj:`int`, defaults to 2): The patch size.
+            in_channels (:obj:`int`, defaults to 4): The number of input channels.
+            hidden_size (:obj:`int`, defaults to 1152): The hidden size.
+            depth (:obj:`int`, defaults to 28): The depth.
+            num_heads (:obj:`int`, defaults to 16): The number of attention heads.
+            mlp_ratio (:obj:`float`, defaults to 4.0): The hidden size of the MLP with respect to the hidden size of Attention.
+            class_dropout_prob (:obj:`float`, defaults to 0.1): The class dropout probability.
+            num_classes (:obj:`int`, defaults to 1000): The number of classes.
+            learn_sigma (:obj:`bool`, defaults to True): Whether to learn sigma.
         """
         super().__init__()
         self.learn_sigma = learn_sigma
@@ -317,7 +345,7 @@ class DiT(nn.Module):
         self.num_heads = num_heads
 
         self.x_embedder = PatchEmbed(input_size, patch_size, in_channels, hidden_size, bias=True)
-        self.t_embedder = TimestepEmbedder(hidden_size)
+        self.t_embedder = ExponentialFourierProjectionTimeEncoder(hidden_size)
         self.y_embedder = LabelEmbedder(num_classes, hidden_size, class_dropout_prob)
         num_patches = self.x_embedder.num_patches
         # Will use fixed sin-cos embedding:
@@ -330,6 +358,10 @@ class DiT(nn.Module):
         self.initialize_weights()
 
     def initialize_weights(self):
+        """
+        Overview:
+            Initialize the weights of the model.
+        """
         # Initialize transformer layers:
         def _basic_init(module):
             if isinstance(module, nn.Linear):
@@ -367,8 +399,15 @@ class DiT(nn.Module):
 
     def unpatchify(self, x):
         """
-        x: (N, T, patch_size**2 * C)
-        imgs: (N, H, W, C)
+        Overview:
+            Unpatchify the input tensor.
+        Arguments:
+            x (:obj:`torch.Tensor`): The input tensor.
+        Returns:
+            imgs (:obj:`torch.Tensor`): The output tensor.
+        Shapes:
+            x (:obj:`torch.Tensor`): (N, T, patch_size**2 * C)
+            imgs (:obj:`torch.Tensor`): (N, H, W, C)
         """
         c = self.out_channels
         p = self.x_embedder.patch_size[0]
@@ -390,9 +429,9 @@ class DiT(nn.Module):
         Overview:
             Forward pass of DiT.
         Arguments:
-            - t (:obj:`torch.Tensor`): Tensor of diffusion timesteps.
-            - x (:obj:`torch.Tensor`): Tensor of spatial inputs (images or latent representations of images).
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`, optional): The input condition, such as class labels.
+            t (:obj:`torch.Tensor`): Tensor of diffusion timesteps.
+            x (:obj:`torch.Tensor`): Tensor of spatial inputs (images or latent representations of images).
+            condition (:obj:`Union[torch.Tensor, TensorDict]`, optional): The input condition, such as class labels.
         """
 
         x = self.x_embedder(x) + self.pos_embed  # (N, T, D), where T = H * W / patch_size ** 2
@@ -421,10 +460,10 @@ class DiT(nn.Module):
         Overview:
             Forward pass of DiT, but also batches the unconditional forward pass for classifier-free guidance.
         Arguments:
-            - t (:obj:`torch.Tensor`): Tensor of diffusion timesteps.
-            - x (:obj:`torch.Tensor`): Tensor of spatial inputs (images or latent representations of images).
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`, optional): The input condition, such as class labels.
-            - cfg_scale (:obj:`float`, defaults to 1.0): The scale for classifier-free guidance.
+            t (:obj:`torch.Tensor`): Tensor of diffusion timesteps.
+            x (:obj:`torch.Tensor`): Tensor of spatial inputs (images or latent representations of images).
+            condition (:obj:`Union[torch.Tensor, TensorDict]`, optional): The input condition, such as class labels.
+            cfg_scale (:obj:`float`, defaults to 1.0): The scale for classifier-free guidance.
         """
         # https://github.com/openai/glide-text2im/blob/main/notebooks/text2im.ipynb
         half = x[: len(x) // 2]
@@ -457,9 +496,9 @@ class FinalLayer_3D(nn.Module):
         Overview:
             Initialize the final layer.
         Arguments:
-            - hidden_size (:obj:`int`): The hidden size.
-            - patch_size (:obj:`Union[int, List[int], Tuple[int]]`): The patch size of each token in attention layer.
-            - out_channels (:obj:`Union[int, List[int], Tuple[int]]`): The number of output channels.
+            hidden_size (:obj:`int`): The hidden size.
+            patch_size (:obj:`Union[int, List[int], Tuple[int]]`): The patch size of each token in attention layer.
+            out_channels (:obj:`Union[int, List[int], Tuple[int]]`): The number of output channels.
         """
         super().__init__()
         assert isinstance(patch_size, (list, tuple)) and len(patch_size) == 3 or isinstance(patch_size, int)
@@ -491,10 +530,10 @@ class FinalLayer_3D(nn.Module):
         Overview:
             Forward pass of the final layer.
         Arguments:
-            - x (:obj:`torch.Tensor`): The input tensor of shape (N, total_patches, hidden_size).
-            - c (:obj:`torch.Tensor`): The conditioning tensor.
+            x (:obj:`torch.Tensor`): The input tensor of shape (N, total_patches, hidden_size).
+            c (:obj:`torch.Tensor`): The conditioning tensor.
         Returns:
-            - x (:obj:`torch.Tensor`): The output tensor of shape (N, total_patches, patch_size[0] * patch_size[1] * patch_size[2] * **out_channels).
+            x (:obj:`torch.Tensor`): The output tensor of shape (N, total_patches, patch_size[0] * patch_size[1] * patch_size[2] * **out_channels).
         """
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
         x = modulate(self.norm_final(x), shift, scale)
@@ -523,12 +562,12 @@ class Patchify_3D(nn.Module):
         Overview:
             Initialize the patchify layer.
         Arguments:
-            - channel_size (:obj:`Union[int, List[int]]`): The number of input channels, defaults to 3.
-            - data_size (:obj:`List[int]`): The input size of data, defaults to [32, 32, 32].
-            - patch_size (:obj:`List[int]`): The patch size of each token for attention layer, defaults to [2, 2, 2].
-            - hidden_size (:obj:`int`): The hidden size of attention layer, defaults to 768.
-            - bias (:obj:`bool`): Whether to use bias, defaults to False.
-            - convolved (:obj:`bool`): Whether to use fully connected layer for all channels, defaults to False.
+            channel_size (:obj:`Union[int, List[int]]`): The number of input channels, defaults to 3.
+            data_size (:obj:`List[int]`): The input size of data, defaults to [32, 32, 32].
+            patch_size (:obj:`List[int]`): The patch size of each token for attention layer, defaults to [2, 2, 2].
+            hidden_size (:obj:`int`): The hidden size of attention layer, defaults to 768.
+            bias (:obj:`bool`): Whether to use bias, defaults to False.
+            convolved (:obj:`bool`): Whether to use fully connected layer for all channels, defaults to False.
         """
         super().__init__()
         assert isinstance(data_size, (list, tuple)) or isinstance(data_size, int)
@@ -554,9 +593,9 @@ class Patchify_3D(nn.Module):
         Overview:
             Forward pass of the patchify layer.
         Arguments:
-            - x (:obj:`torch.Tensor`): The input tensor of shape (B, C, T, H, W).
+            x (:obj:`torch.Tensor`): The input tensor of shape (B, C, T, H, W).
         Returns:
-            - x (:obj:`torch.Tensor`): The output tensor of shape (B, T' * H'* W', hidden_size). \
+            x (:obj:`torch.Tensor`): The output tensor of shape (B, T' * H'* W', hidden_size). \
             where T' = T // patch_size[0], H' = H // patch_size[1], W' = W // patch_size[2].
         """
 
@@ -564,11 +603,6 @@ class Patchify_3D(nn.Module):
         x = x.flatten(start_dim=1, end_dim=-4)
         # x: (B, C1 * C2, T, H, W)
         x = self.proj(x)
-        # x: (B, hidden_size, T', H', W') # x.reshape(shape=(x.shape[0], x.shape[1], -1))
-        # x = x.flatten(start_dim=-3)
-        # x: (B, hidden_size, T' * H' * W') # x = torch.einsum('bhN->bNh', x)
-        # x = x.transpose(1, 2)
-        # x: (B, T' * H' * W', hidden_size)
         return x
 
 class DiT_3D(nn.Module):
@@ -594,15 +628,15 @@ class DiT_3D(nn.Module):
         Overview:
             Initialize the DiT model.
         Arguments:
-            - patch_block_size (:obj:`Union[List[int], Tuple[int]]`): The size of patch block, defaults to [10, 32, 32].
-            - patch_size (:obj:`Union[int, List[int], Tuple[int]]`): The patch size of each token in attention layer, defaults to 2.
-            - in_channels (:obj:`Union[int, List[int], Tuple[int]]`): The number of input channels, defaults to 4.
-            - hidden_size (:obj:`int`): The hidden size of attention layer, defaults to 1152.
-            - depth (:obj:`int`): The depth of transformer, defaults to 28.
-            - num_heads (:obj:`int`): The number of attention heads, defaults to 16.
-            - mlp_ratio (:obj:`float`): The hidden size of the MLP with respect to the hidden size of Attention, defaults to 4.0.
-            - learn_sigma (:obj:`bool`): Whether to learn sigma, defaults to True.
-            - convolved (:obj:`bool`): Whether to use fully connected layer for all channels, defaults to False.
+            patch_block_size (:obj:`Union[List[int], Tuple[int]]`): The size of patch block, defaults to [10, 32, 32].
+            patch_size (:obj:`Union[int, List[int], Tuple[int]]`): The patch size of each token in attention layer, defaults to 2.
+            in_channels (:obj:`Union[int, List[int], Tuple[int]]`): The number of input channels, defaults to 4.
+            hidden_size (:obj:`int`): The hidden size of attention layer, defaults to 1152.
+            depth (:obj:`int`): The depth of transformer, defaults to 28.
+            num_heads (:obj:`int`): The number of attention heads, defaults to 16.
+            mlp_ratio (:obj:`float`): The hidden size of the MLP with respect to the hidden size of Attention, defaults to 4.0.
+            learn_sigma (:obj:`bool`): Whether to learn sigma, defaults to True.
+            convolved (:obj:`bool`): Whether to use fully connected layer for all channels, defaults to False.
         """
         super().__init__()
 
@@ -622,7 +656,7 @@ class DiT_3D(nn.Module):
         self.num_heads = num_heads
 
         self.x_embedder = Patchify_3D(in_channels, patch_block_size, patch_size, hidden_size, bias=True, convolved=convolved)
-        self.t_embedder = TimestepEmbedder(hidden_size)
+        self.t_embedder = ExponentialFourierProjectionTimeEncoder(hidden_size)
 
         pos_embed = get_3d_pos_embed(embed_dim=hidden_size, grid_num=self.patch_grid_num)
         self.pos_embed = nn.Parameter(torch.from_numpy(pos_embed).float(), requires_grad=False)
@@ -634,6 +668,10 @@ class DiT_3D(nn.Module):
         self.initialize_weights()
 
     def initialize_weights(self):
+        """
+        Overview:
+            Initialize the weights of the model.
+        """
         # Initialize transformer layers:
         def _basic_init(module):
             if isinstance(module, nn.Linear):
@@ -668,9 +706,9 @@ class DiT_3D(nn.Module):
         Overview:
             Unpatchify the output tensor of attention layer.
         Arguments:
-            x: (N, total_patches = T' * H' * W', patch_size[0] * patch_size[1] * patch_size[2] * C)
+            x (:obj:`torch.Tensor`): The input tensor of shape (N, total_patches = T' * H' * W', patch_size[0] * patch_size[1] * patch_size[2] * C)
         Returns:
-            x: (N, T, C, H, W)
+            x (:obj:`torch.Tensor`): The output tensor of shape (N, T, C, H, W).
         """
 
         x = x.reshape(shape=(x.shape[0], self.patch_grid_num[0], self.patch_grid_num[1], self.patch_grid_num[2], self.patch_size[0], self.patch_size[1], self.patch_size[2], np.prod(self.out_channels)))
@@ -689,9 +727,9 @@ class DiT_3D(nn.Module):
         Overview:
             Forward pass of DiT for 3D data.
         Arguments:
-            - t (:obj:`torch.Tensor`): Tensor of diffusion timesteps.
-            - x (:obj:`torch.Tensor`): Tensor of inputs with spatial information (originally at t=0 it is tensor of videos or latent representations of videos).
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`, optional): The input condition, such as class labels.
+            t (:obj:`torch.Tensor`): Tensor of diffusion timesteps.
+            x (:obj:`torch.Tensor`): Tensor of inputs with spatial information (originally at t=0 it is tensor of videos or latent representations of videos).
+            condition (:obj:`Union[torch.Tensor, TensorDict]`, optional): The input condition, such as class labels.
         """
 
         # x is of shape (N, T, C, H, W), reshape to (N, C, T, H, W)
@@ -713,22 +751,3 @@ class DiT_3D(nn.Module):
         x = self.final_layer(x, c)                # (N, total_patches, patch_size[0] * patch_size[1] * patch_size[2] * C)
         x = self.unpatchify(x)                   # (N, T, C, H, W)
         return x
-
-def meshgrid_3d_pos(
-        grid_num
-    ):
-    """
-    Overview:
-        Get 3D position for 3D data.
-    Arguments:
-        - grid_num (:obj:`List[int]`): The number of the grid in each dimension.
-    """
-    assert len(grid_num) == 3
-    grid_0 = np.arange(grid_num[0], dtype=np.float32)
-    grid_1 = np.arange(grid_num[1], dtype=np.float32)
-    grid_2 = np.arange(grid_num[2], dtype=np.float32)
-
-    grid = np.meshgrid(grid_1, grid_0, grid_2)  # here w goes first
-    grid = np.stack([grid[1], grid[0], grid[2]], axis=0) # grid is of shape (3, grid_num[0], grid_num[1], grid_num[2]) or (3, T, H, W)
-
-    return grid

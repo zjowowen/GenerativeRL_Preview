@@ -3,11 +3,12 @@
 # wich is based on https://github.com/LuChengTHU/dpm-solver
 #############################################################
 
-from typing import Union, Tuple, List, Dict, Any, Callable
+from typing import Any, Callable, Dict, List, Tuple, Union
+
 import torch
-from torch import nn
 from tensordict import TensorDict
-from grl.generative_models.diffusion_process import DiffusionProcess
+from torch import nn
+
 
 class DPMSolver:
     """
@@ -34,18 +35,18 @@ class DPMSolver:
         Overview:
             Initialize the DPM-Solver.
         Arguments:
-            - order (:obj:`int`): The order of the DPM-Solver, which should be 1, 2, or 3.
-            - device (:obj:`str`): The device for the computation.
-            - denoise (:obj:`bool`): Whether to denoise at the final step.
-            - atol (:obj:`float`): The absolute tolerance for the adaptive solver.
-            - rtol (:obj:`float`): The relative tolerance for the adaptive solver.
-            - steps (:obj:`int`): The total number of function evaluations (NFE).
-            - type (:obj:`str`): The type for the DPM-Solver, which should be 'dpm_solver' or 'dpm_solver++'.
-            - method (:obj:`str`): The method for the DPM-Solver, which should be 'singlestep', 'multistep', 'singlestep_fixed', or 'adaptive'.
-            - solver_type (:obj:`str`): The type for the high-order solvers, which should be 'dpm_solver' or 'taylor'. 
+            order (:obj:`int`): The order of the DPM-Solver, which should be 1, 2, or 3.
+            device (:obj:`str`): The device for the computation.
+            denoise (:obj:`bool`): Whether to denoise at the final step.
+            atol (:obj:`float`): The absolute tolerance for the adaptive solver.
+            rtol (:obj:`float`): The relative tolerance for the adaptive solver.
+            steps (:obj:`int`): The total number of function evaluations (NFE).
+            type (:obj:`str`): The type for the DPM-Solver, which should be 'dpm_solver' or 'dpm_solver++'.
+            method (:obj:`str`): The method for the DPM-Solver, which should be 'singlestep', 'multistep', 'singlestep_fixed', or 'adaptive'.
+            solver_type (:obj:`str`): The type for the high-order solvers, which should be 'dpm_solver' or 'taylor'. 
                 The type slightly impacts the performance. We recommend to use 'dpm_solver' type.
-            - skip_type (:obj:`str`): The type for the spacing of the time steps, which should be 'logSNR', 'time_uniform', or 'time_quadratic'.
-            - denoise (:obj:`bool`): Whether to denoise at the final step.
+            skip_type (:obj:`str`): The type for the spacing of the time steps, which should be 'logSNR', 'time_uniform', or 'time_quadratic'.
+            denoise (:obj:`bool`): Whether to denoise at the final step.
         """
         self.type = type
         assert self.type in ['dpm_solver', 'dpm_solver++']
@@ -76,7 +77,7 @@ class DPMSolver:
 
     def integrate(
             self,
-            diffusion_process: DiffusionProcess,
+            diffusion_process,
             noise_function: Callable,
             data_prediction_function: Callable,
             x: Union[torch.Tensor, TensorDict],
@@ -88,15 +89,15 @@ class DPMSolver:
         Overview:
             Integrate the diffusion process by the DPM-Solver.
         Arguments:
-            - diffusion_process (:obj:`DiffusionProcess`): The diffusion process.
-            - noise_function (:obj:`Callable`): The noise prediction model.
-            - data_prediction_function (:obj:`Callable`): The data prediction model.
-            - x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `t_start`.
-            - condition (:obj:`Union[torch.Tensor, TensorDict]`): The condition for the data prediction model.
-            - steps (:obj:`int`): The total number of function evaluations (NFE).
-            - save_intermediate (:obj:`bool`): If true, also return the intermediate model values.
+            diffusion_process (:obj:`DiffusionProcess`): The diffusion process.
+            noise_function (:obj:`Callable`): The noise prediction model.
+            data_prediction_function (:obj:`Callable`): The data prediction model.
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `t_start`.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The condition for the data prediction model.
+            steps (:obj:`int`): The total number of function evaluations (NFE).
+            save_intermediate (:obj:`bool`): If true, also return the intermediate model values.
         Returns:
-            - x_end (:obj:`torch.Tensor`): The approximated solution at time `t_end`.
+            x_end (:obj:`torch.Tensor`): The approximated solution at time `t_end`.
         """
         
         steps = steps if steps is not None else self.steps if self.steps is not None else 20
@@ -106,8 +107,8 @@ class DPMSolver:
             Overview:
                 Convert the model to the noise prediction model or the data prediction model.
             Arguments:
-                - x (:obj:`Union[torch.Tensor, TensorDict]`): The input tensor.
-                - t (:obj:`torch.Tensor`): The time tensor.
+                x (:obj:`Union[torch.Tensor, TensorDict]`): The input tensor.
+                t (:obj:`torch.Tensor`): The time tensor.
             """
             if self.use_dpm_solver_plus_plus:
                 return data_prediction_function(t, x, condition)
@@ -120,11 +121,11 @@ class DPMSolver:
                 Compute the intermediate time steps for sampling.
 
             Arguments:
-                - t_T (:obj:`float`): The starting time of the sampling (default is T).
-                - t_0 (:obj:`float`): The ending time of the sampling (default is epsilon).
-                - N (:obj:`int`): The total number of the spacing of the time steps.
+                t_T (:obj:`float`): The starting time of the sampling (default is T).
+                t_0 (:obj:`float`): The ending time of the sampling (default is epsilon).
+                N (:obj:`int`): The total number of the spacing of the time steps.
             Returns:
-                - t (:obj:`torch.Tensor`): A pytorch tensor of the time steps, with the shape (N + 1,).
+                t (:obj:`torch.Tensor`): A pytorch tensor of the time steps, with the shape (N + 1,).
             """
             if self.skip_type == 'logSNR':
                 lambda_T = diffusion_process.HalfLogSNR(t_T).to(self.device)
@@ -147,26 +148,26 @@ class DPMSolver:
             Overview:
                 Get the order of each step for sampling by the singlestep DPM-Solver.
             Arguments:
-                - steps (:obj:`int`): The total number of function evaluations (NFE).
-                - order (:obj:`int`): The max order for the solver (2 or 3).
+                steps (:obj:`int`): The total number of function evaluations (NFE).
+                order (:obj:`int`): The max order for the solver (2 or 3).
             Returns:
-                - orders (:obj:`List[int]`): A list of the solver order of each step.
+                orders (:obj:`List[int]`): A list of the solver order of each step.
                 
             .. note::
                 We combine both DPM-Solver-1,2,3 to use all the function evaluations, which is named as "DPM-Solver-fast".
                 Given a fixed number of function evaluations by `steps`, the sampling procedure by DPM-Solver-fast is:
-                    - If order == 1:
+                    If order == 1:
                         We take `steps` of DPM-Solver-1 (i.e. DDIM).
-                    - If order == 2:
-                        - Denote K = (steps // 2). We take K or (K + 1) intermediate time steps for sampling.
-                        - If steps % 2 == 0, we use K steps of DPM-Solver-2.
-                        - If steps % 2 == 1, we use K steps of DPM-Solver-2 and 1 step of DPM-Solver-1.
-                    - If order == 3:
-                        - Denote K = (steps // 3 + 1). We take K intermediate time steps for sampling.
-                        - If steps % 3 == 0, we use (K - 2) steps of DPM-Solver-3, \
+                    If order == 2:
+                        Denote K = (steps // 2). We take K or (K + 1) intermediate time steps for sampling.
+                        If steps % 2 == 0, we use K steps of DPM-Solver-2.
+                        If steps % 2 == 1, we use K steps of DPM-Solver-2 and 1 step of DPM-Solver-1.
+                    If order == 3:
+                        Denote K = (steps // 3 + 1). We take K intermediate time steps for sampling.
+                        If steps % 3 == 0, we use (K - 2) steps of DPM-Solver-3, \
                             and 1 step of DPM-Solver-2 and 1 step of DPM-Solver-1.
-                        - If steps % 3 == 1, we use (K - 1) steps of DPM-Solver-3 and 1 step of DPM-Solver-1.
-                        - If steps % 3 == 2, we use (K - 1) steps of DPM-Solver-3 and 1 step of DPM-Solver-2
+                        If steps % 3 == 1, we use (K - 1) steps of DPM-Solver-3 and 1 step of DPM-Solver-1.
+                        If steps % 3 == 2, we use (K - 1) steps of DPM-Solver-3 and 1 step of DPM-Solver-2
             """
             if order == 3:
                 K = steps // 3 + 1
@@ -211,11 +212,11 @@ class DPMSolver:
                 Denoise at the final step, which is equivalent to solve the ODE \
                 from lambda_s to infty by first-order discretization.
             Arguments:
-                - x (:obj:`Union[torch.Tensor, TensorDict]`): The input tensor.
-                - s (:obj:`torch.Tensor`): The time tensor.
-                - condition (:obj:`Union[torch.Tensor, TensorDict]`): The condition for the data prediction model.
+                x (:obj:`Union[torch.Tensor, TensorDict]`): The input tensor.
+                s (:obj:`torch.Tensor`): The time tensor.
+                condition (:obj:`Union[torch.Tensor, TensorDict]`): The condition for the data prediction model.
             Returns:
-                - x (:obj:`Union[torch.Tensor, TensorDict]`): The denoised output.
+                x (:obj:`Union[torch.Tensor, TensorDict]`): The denoised output.
             """
             return data_prediction_function(s, x, condition)
 
@@ -224,14 +225,14 @@ class DPMSolver:
             Overview:
                 DPM-Solver-1 (equivalent to DDIM) from time `s` to time `t`.
             Arguments:
-                - x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.
-                - s (:obj:`torch.Tensor`): The starting time, with the shape (x.shape[0],).
-                - t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).
-                - model_s (:obj:`Union[torch.Tensor, TensorDict]`): The model function evaluated at time `s`.
+                x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.
+                s (:obj:`torch.Tensor`): The starting time, with the shape (x.shape[0],).
+                t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).
+                model_s (:obj:`Union[torch.Tensor, TensorDict]`): The model function evaluated at time `s`.
                     If `model_s` is None, we evaluate the model by `x` and `s`; otherwise we directly use it.
-                - return_intermediate (:obj:`bool`): If true, also return the model value at time `s`.
+                return_intermediate (:obj:`bool`): If true, also return the model value at time `s`.
             Returns:
-                - x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.
+                x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.
             """
 
             lambda_s = diffusion_process.HalfLogSNR(s, x)
@@ -271,15 +272,15 @@ class DPMSolver:
             Overview:
                 Singlestep solver DPM-Solver-2 from time `s` to time `t`.
             Arguments:
-                - x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.
-                - s (:obj:`torch.Tensor`): The starting time, with the shape (x.shape[0],).
-                - t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).
-                - r1 (:obj:`float`): The hyperparameter of the second-order solver.
-                - model_s (:obj:`Union[torch.Tensor, TensorDict]`): The model function evaluated at time `s`.
+                x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.
+                s (:obj:`torch.Tensor`): The starting time, with the shape (x.shape[0],).
+                t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).
+                r1 (:obj:`float`): The hyperparameter of the second-order solver.
+                model_s (:obj:`Union[torch.Tensor, TensorDict]`): The model function evaluated at time `s`.
                     If `model_s` is None, we evaluate the model by `x` and `s`; otherwise we directly use it.
-                - return_intermediate (:obj:`bool`): If true, also return the model value at time `s` and `s1` (the intermediate time).
+                return_intermediate (:obj:`bool`): If true, also return the model value at time `s` and `s1` (the intermediate time).
             Returns:
-                - x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.
+                x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.
             """
 
             if r1 is None:
@@ -340,18 +341,18 @@ class DPMSolver:
             Overview:
                 Singlestep solver DPM-Solver-3 from time `s` to time `t`.
             Arguments:
-                - x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.
-                - s (:obj:`torch.Tensor`): The starting time, with the shape (x.shape[0],).
-                - t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).
-                - r1 (:obj:`float`): The hyperparameter of the third-order solver.
-                - r2 (:obj:`float`): The hyperparameter of the third-order solver.
-                - model_s (:obj:`Union[torch.Tensor, TensorDict]`): The model function evaluated at time `s`.
+                x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.
+                s (:obj:`torch.Tensor`): The starting time, with the shape (x.shape[0],).
+                t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).
+                r1 (:obj:`float`): The hyperparameter of the third-order solver.
+                r2 (:obj:`float`): The hyperparameter of the third-order solver.
+                model_s (:obj:`Union[torch.Tensor, TensorDict]`): The model function evaluated at time `s`.
                     If `model_s` is None, we evaluate the model by `x` and `s`; otherwise we directly use it.
-                - model_s1 (:obj:`Union[torch.Tensor, TensorDict]`): The model function evaluated at time `s1` (the intermediate time given by `r1`).
+                model_s1 (:obj:`Union[torch.Tensor, TensorDict]`): The model function evaluated at time `s1` (the intermediate time given by `r1`).
                     If `model_s1` is None, we evaluate the model at `s1`; otherwise we directly use it.
-                - return_intermediate (:obj:`bool`): If true, also return the model value at time `s`, `s1` and `s2` (the intermediate times).
+                return_intermediate (:obj:`bool`): If true, also return the model value at time `s`, `s1` and `s2` (the intermediate times).
             Returns:
-                - x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.
+                x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.
             """
 
             if r1 is None:
@@ -430,12 +431,12 @@ class DPMSolver:
             Overview:
                 Multistep solver DPM-Solver-2 from time `t_prev_list[-1]` to time `t`.
             Arguments:
-                - x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.
-                - model_prev_list (:obj:`List[Union[torch.Tensor, TensorDict]]`): The previous computed model values.
-                - t_prev_list (:obj:`List[torch.Tensor]`): The previous times, each time has the shape (x.shape[0],).
-                - t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).
+                x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.
+                model_prev_list (:obj:`List[Union[torch.Tensor, TensorDict]]`): The previous computed model values.
+                t_prev_list (:obj:`List[torch.Tensor]`): The previous times, each time has the shape (x.shape[0],).
+                t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).
             Returns:
-                - x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.
+                x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.
             """
 
             model_prev_1, model_prev_0 = model_prev_list
@@ -470,12 +471,12 @@ class DPMSolver:
             Overview:
                 Multistep solver DPM-Solver-3 from time `t_prev_list[-1]` to time `t`.
             Arguments:
-                - x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.
-                - model_prev_list (:obj:`List[Union[torch.Tensor, TensorDict]]`): The previous computed model values.
-                - t_prev_list (:obj:`List[torch.Tensor]`): The previous times, each time has the shape (x.shape[0],).
-                - t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).
+                x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.
+                model_prev_list (:obj:`List[Union[torch.Tensor, TensorDict]]`): The previous computed model values.
+                t_prev_list (:obj:`List[torch.Tensor]`): The previous times, each time has the shape (x.shape[0],).
+                t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).
             Returns:
-                - x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.
+                x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.
             """
 
             model_prev_2, model_prev_1, model_prev_0 = model_prev_list
@@ -511,15 +512,15 @@ class DPMSolver:
             Overview:
                 Singlestep DPM-Solver with the order `order` from time `s` to time `t`.
             Arguments:
-                - x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.
-                - s (:obj:`torch.Tensor`): The starting time, with the shape (x.shape[0],).
-                - t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).
-                - order (:obj:`int`): The order of DPM-Solver. We only support order == 1 or 2 or 3.
-                - return_intermediate (:obj:`bool`): If true, also return the model value at time `s`, `s1` and `s2` (the intermediate times).
-                - r1 (:obj:`float`): The hyperparameter of the second-order or third-order solver.
-                - r2 (:obj:`float`): The hyperparameter of the third-order solver.
+                x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.
+                s (:obj:`torch.Tensor`): The starting time, with the shape (x.shape[0],).
+                t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).
+                order (:obj:`int`): The order of DPM-Solver. We only support order == 1 or 2 or 3.
+                return_intermediate (:obj:`bool`): If true, also return the model value at time `s`, `s1` and `s2` (the intermediate times).
+                r1 (:obj:`float`): The hyperparameter of the second-order or third-order solver.
+                r2 (:obj:`float`): The hyperparameter of the third-order solver.
             Returns:
-                - x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.
+                x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.
             """
             if order == 1:
                 return dpm_solver_first_update(x, s, t, return_intermediate=return_intermediate)
@@ -535,13 +536,13 @@ class DPMSolver:
             Overview:
                 Multistep DPM-Solver with the order `order` from time `t_prev_list[-1]` to time `t`.
             Arguments:
-                - x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.
-                - model_prev_list (:obj:`List[Union[torch.Tensor, TensorDict]]`): The previous computed model values.
-                - t_prev_list (:obj:`List[torch.Tensor]`): The previous times, each time has the shape (x.shape[0],).
-                - t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).
-                - order (:obj:`int`): The order of DPM-Solver. We only support order == 1 or 2 or 3.
+                x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `s`.
+                model_prev_list (:obj:`List[Union[torch.Tensor, TensorDict]]`): The previous computed model values.
+                t_prev_list (:obj:`List[torch.Tensor]`): The previous times, each time has the shape (x.shape[0],).
+                t (:obj:`torch.Tensor`): The ending time, with the shape (x.shape[0],).
+                order (:obj:`int`): The order of DPM-Solver. We only support order == 1 or 2 or 3.
             Returns:
-                - x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.
+                x_t (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t`.
             """
 
             if order == 1:
@@ -560,17 +561,17 @@ class DPMSolver:
             Overview:
                 The adaptive step size solver based on singlestep DPM-Solver.
             Arguments:
-                - x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `t_T`.
-                - t_T (:obj:`float`): The starting time of the sampling (default is T).
-                - t_0 (:obj:`float`): The ending time of the sampling (default is epsilon).
-                - h_init (:obj:`float`): The initial step size (for logSNR).
-                - theta (:obj:`float`): The safety hyperparameter for adapting the step size.
-                - t_err (:obj:`float`): The tolerance for the time.
-                - save_intermediate (:obj:`bool`): If true, also return the intermediate values.
+                x (:obj:`Union[torch.Tensor, TensorDict]`): The initial value at time `t_T`.
+                t_T (:obj:`float`): The starting time of the sampling (default is T).
+                t_0 (:obj:`float`): The ending time of the sampling (default is epsilon).
+                h_init (:obj:`float`): The initial step size (for logSNR).
+                theta (:obj:`float`): The safety hyperparameter for adapting the step size.
+                t_err (:obj:`float`): The tolerance for the time.
+                save_intermediate (:obj:`bool`): If true, also return the intermediate values.
             Returns:
-                - x_0 (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t_0`.
+                x_0 (:obj:`Union[torch.Tensor, TensorDict]`): The approximated solution at time `t_0`.
             References:
-                - [1] A. Jolicoeur-Martineau, K. Li, R. Piché-Taillefer, T. Kachman, and I. Mitliagkas, \
+                [1] A. Jolicoeur-Martineau, K. Li, R. Piché-Taillefer, T. Kachman, and I. Mitliagkas, \
                     "Gotta go fast when generating data with score-based models," \
                     arXiv preprint arXiv:2105.14080, 2021.
             """

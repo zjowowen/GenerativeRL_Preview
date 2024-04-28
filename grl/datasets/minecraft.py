@@ -1,8 +1,10 @@
 import os
+
 import numpy as np
 import torch
 import torchvision.transforms as transforms
 from PIL import Image
+
 from grl.utils.log import log
 
 
@@ -19,8 +21,8 @@ class MineRLVideoDataset(torch.utils.data.Dataset):
         Overview:
             Initialize the dataset.
         Arguments:
-            - config (:obj:`EasyDict`): The configuration.
-            - transform (:obj:`torchvision.transforms.Compose`): The transformation.
+            config (:obj:`EasyDict`): The configuration.
+            transform (:obj:`torchvision.transforms.Compose`): The transformation.
         """
         self.config = config
         self.data_path = config.data_path
@@ -73,8 +75,8 @@ class MineRLImageDataset(torch.utils.data.Dataset):
         Overview:
             Initialize the dataset.
         Arguments:
-            - config (:obj:`EasyDict`): The configuration.
-            - transform (:obj:`torchvision.transforms.Compose`): The transformation.
+            config (:obj:`EasyDict`): The configuration.
+            transform (:obj:`torchvision.transforms.Compose`): The transformation.
         """
         self.config = config
         self.data_path = config.data_path

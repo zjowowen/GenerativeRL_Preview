@@ -1,30 +1,33 @@
-import os
 import multiprocessing as mp
+import os
 import signal
 import sys
+
+import matplotlib
+import numpy as np
 from easydict import EasyDict
 from rich.progress import track
-import numpy as np
 from sklearn.datasets import make_swiss_roll
-import matplotlib
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader, Dataset
 
 matplotlib.use("Agg")
+import gym
 import matplotlib.pyplot as plt
-from grl.utils.config import merge_two_dicts_into_newone
-from matplotlib import animation
-from easydict import EasyDict
 import torch
 import torch.nn as nn
-from grl.generative_models.diffusion_model.diffusion_model import DiffusionModel
-from grl.utils.log import log
-from grl.utils import set_seed
-from grl.datasets.value_test import ReplayMemoryDataset, SampleData
-import gym
-import wandb
 import torchvision
-from torchvision.datasets import ImageFolder
+from easydict import EasyDict
+from matplotlib import animation
 from torchvision import transforms
+from torchvision.datasets import ImageFolder
+
+import wandb
+from grl.datasets.value_test import ReplayMemoryDataset, SampleData
+from grl.generative_models.diffusion_model.diffusion_model import \
+    DiffusionModel
+from grl.utils import set_seed
+from grl.utils.config import merge_two_dicts_into_newone
+from grl.utils.log import log
 
 
 def get_train_data(dataloader):
@@ -50,11 +53,12 @@ hidden_size = np.sum(patch_grid_num) * 2 * num_heads * 2
 assert (
     hidden_size % (np.sum(patch_grid_num) * 2 * num_heads) == 0
 ), f"hidden_size must be divisible by patch_grid_num * 2 * num_heads."
+projectname = "dit-3D-inpating-video"
 
 config = EasyDict(
     dict(
         device=device,
-        project="value_function",
+        project=projectname,
         diffusion_model=dict(
             device=device,
             x_size=x_size,
@@ -83,7 +87,6 @@ config = EasyDict(
                             depth=6,
                             num_heads=num_heads,
                             learn_sigma=False,
-                            convolved=True,
                         ),
                     ),
                 ),
@@ -92,19 +95,18 @@ config = EasyDict(
         parameter=dict(
             training_loss_type="flow_matching",
             train_mode=train_mode,
-            batch_size=4,
+            batch_size=2700,
             eval_freq=1000,
             learning_rate=5e-4,
-            weight_decay=1e-4,
-            iterations=1,
+            iterations=200000,
             clip_grad_norm=1.0,
-            checkpoint_freq=10000000000,
+            checkpoint_freq=1000,
             checkpoint_path="./checkpoint",
             video_save_path="./videos",
-            dataset=dict(
-                dataset_folder="./value_function_memories_data",
-                num_timesteps=video_length,
-            ),
+            dataset_folder="./value_function_memories_data",
+            dataset_num_episodes=1,
+            dataset_max_num_steps_per_episode=13000,
+            num_timesteps=video_length,
         ),
     )
 )
@@ -122,7 +124,8 @@ if __name__ == "__main__":
             full_action_space=False,  # Use all actions
             render_mode="rgb_array",  # None | human | rgb_array
         )
-        value_test = SampleData(env)
+
+        value_test = SampleData(env, config.parameter)
         value_test.start_smple()
     transform = transforms.Compose(
         [
@@ -134,14 +137,14 @@ if __name__ == "__main__":
     )
     data_generator0 = get_train_data(
         DataLoader(
-            ReplayMemoryDataset(**config.parameter.dataset),
+            ReplayMemoryDataset(config.parameter),
             batch_size=config.parameter.batch_size,
             shuffle=True,
         )
     )
     data_generator1 = get_train_data(
         DataLoader(
-            ReplayMemoryDataset(**config.parameter.dataset),
+            ReplayMemoryDataset(config.parameter),
             batch_size=12,
             shuffle=True,
         )
@@ -160,7 +163,6 @@ if __name__ == "__main__":
         optimizer = torch.optim.Adam(
             diffusion_model.parameters(),
             lr=config.parameter.learning_rate,
-            weight_decay=config.parameter.weight_decay,
         )
         if config.parameter.checkpoint_path is not None:
             if (
@@ -310,19 +312,20 @@ if __name__ == "__main__":
                     ),
                     commit=False,
                 )
-
             batch_data = next(data_generator0)
             s = batch_data[0].to(config.device)
             s = s.to(config.device)
 
             # plot2d(batch_data.cpu().numpy())
             diffusion_model.train()
+
             if config.parameter.training_loss_type == "flow_matching":
                 loss = diffusion_model.flow_matching_loss(s)
             elif config.parameter.training_loss_type == "score_matching":
                 loss = diffusion_model.score_matching_loss(s)
             else:
                 raise NotImplementedError("Unknown loss type")
+
             optimizer.zero_grad()
             loss.backward()
             gradien_norm = torch.nn.utils.clip_grad_norm_(
@@ -332,11 +335,15 @@ if __name__ == "__main__":
             gradient_sum += gradien_norm.item()
             loss_sum += loss.item()
             counter += 1
-
-            log.info(
-                f"iteration {iteration}, gradient {gradient_sum/counter}, loss {loss_sum/counter}"
+            wandb_run.log(
+                data=dict(
+                    iteration=iteration,
+                    loss=loss.item(),
+                    average_loss=loss_sum / counter,
+                    average_gradient=gradient_sum / counter,
+                ),
+                commit=True,
             )
-            history_iteration.append(iteration)
 
             if iteration == config.parameter.iterations - 1:
                 diffusion_model.eval()
@@ -378,7 +385,7 @@ if __name__ == "__main__":
                     data=dict(
                         video=video,
                     ),
-                    commit=False,
+                    commit=True,
                 )
 
             if (iteration + 1) % config.parameter.checkpoint_freq == 0:

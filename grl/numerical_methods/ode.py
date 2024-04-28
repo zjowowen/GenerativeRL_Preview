@@ -1,15 +1,19 @@
-from typing import Union, Callable
+from typing import Callable, Union
+
 import torch
-from torch import nn
 from tensordict import TensorDict
+from torch import nn
+
 
 class ODE:
     """
     Overview:
         Base class for ordinary differential equations.
         The ODE is defined as:
+
         .. math::
             dx = f(x, t)dt
+
         where f(x, t) is the drift term.
 
     Interfaces:
