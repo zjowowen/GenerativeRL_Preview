@@ -404,26 +404,34 @@ class QGPOOnlineAlgorithm:
 
                     return evaluation_results
                 
-                def collect(model, num_steps, guidance_scale=1.0):
-                    def policy(obs: np.ndarray) -> np.ndarray:
-                        obs = torch.tensor(obs, dtype=torch.float32, device=config.model.QGPOPolicy.device).unsqueeze(0)
-                        action = model.sample(
-                            state = obs,
-                            guidance_scale=guidance_scale,
-                            t_span = torch.linspace(0.0, 1.0, config.parameter.fake_data_t_span).to(config.model.QGPOPolicy.device) if config.parameter.fake_data_t_span is not None else None
-                        ).squeeze(0).cpu().detach().numpy()
-                        return action
-                    return self.simulator.collect_steps(policy=policy, num_steps=num_steps)
+                def collect(model, num_steps, guidance_scale=1.0, random_policy=False, random_ratio=0.0):
+                    if random_policy:
+                        return self.simulator.collect_steps(policy=None, num_steps=num_steps, random_policy=True)
+                    else:
+                        def policy(obs: np.ndarray) -> np.ndarray:
+                            obs = torch.tensor(obs, dtype=torch.float32, device=config.model.QGPOPolicy.device).unsqueeze(0)
+                            action = model.sample(
+                                state = obs,
+                                guidance_scale=guidance_scale,
+                                t_span = torch.linspace(0.0, 1.0, config.parameter.fake_data_t_span).to(config.model.QGPOPolicy.device) if config.parameter.fake_data_t_span is not None else None
+                            ).squeeze(0).cpu().detach().numpy()
+                            # randomly replace some item of action with random action
+                            if np.random.rand() < random_ratio:
+                                # select random i from 0 to action.shape[0]
+                                i = np.random.randint(0, action.shape[0])
+                                # randomly select a value from -1 to 1
+                                action[i] = np.random.rand() * 2 - 1
+                            return action
+                        return self.simulator.collect_steps(policy=policy, num_steps=num_steps)
 
                 if better_than_baseline:
                     if online_rl_iteration > 0:
                         self.dataset.drop_data(config.parameter.online_rl.drop_ratio)
-                        self.dataset.load_data(collect(self.model["QGPOPolicy"], num_steps=config.parameter.online_rl.collect_steps, guidance_scale=baseline_guidance_scale))
+                        self.dataset.load_data(collect(self.model["QGPOPolicy"], num_steps=config.parameter.online_rl.collect_steps, guidance_scale=baseline_guidance_scale, random_policy=False, random_ratio=0.01))
                     else:
-                        # self.dataset.load_data(collect(self.model["QGPOPolicy"], num_steps=config.parameter.online_rl.collect_steps_at_the_beginning, guidance_scale=1.0))
-                        self.dataset.load_data(self.simulator.collect_steps(policy=None, num_steps=config.parameter.online_rl.collect_steps_at_the_beginning, random_policy=True))
+                        self.dataset.load_data(collect(self.model["QGPOPolicy"], num_steps=config.parameter.online_rl.collect_steps_at_the_beginning, guidance_scale=0.0, random_policy=True))
                 else:
-                    self.dataset.load_data(collect(self.model["QGPOPolicy"], num_steps=config.parameter.online_rl.collect_steps, guidance_scale=baseline_guidance_scale))
+                    self.dataset.load_data(collect(self.model["QGPOPolicy"], num_steps=config.parameter.online_rl.collect_steps, guidance_scale=baseline_guidance_scale, random_ratio=0.2))
 
                 dataloader = DataLoader(
                     self.dataset,
@@ -514,7 +522,6 @@ class QGPOOnlineAlgorithm:
             #---------------------------------------
 
             wandb.finish()
-
 
     def deploy(self, config:EasyDict = None) -> QGPOAgent:
         

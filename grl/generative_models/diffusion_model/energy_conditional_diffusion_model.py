@@ -102,7 +102,7 @@ class EnergyConditionalDiffusionModel(nn.Module):
     def __init__(
             self,
             config: EasyDict,
-            energy_model: Union[torch.nn.Module, torch.nn.ModuleDict]
+            energy_model: Union[torch.nn.Module, torch.nn.ModuleDict, Callable]
             ) -> None:
         """
         Overview:
