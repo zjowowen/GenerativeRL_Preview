@@ -67,7 +67,6 @@
 <li class="toctree-l3"><a class="reference internal" href="#grl.generative_models.DiffusionModel"><code class="docutils literal notranslate"><span class="pre">DiffusionModel</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.__init__"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.__init__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.data_prediction_function"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.data_prediction_function()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.dpo_loss"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.dpo_loss()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.flow_matching_loss"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.flow_matching_loss()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.forward_sample"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.forward_sample()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.noise_function"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.noise_function()</span></code></a></li>
@@ -183,26 +182,6 @@
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorDict</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</span></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="grl.generative_models.DiffusionModel.dpo_loss">
-<span class="sig-name descname"><span class="pre">dpo_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ref_dm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/diffusion_model/diffusion_model.html#DiffusionModel.dpo_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.DiffusionModel.dpo_loss" title="Link to this definition"></a></dt>
-<dd><dl class="simple">
-<dt>Overview:</dt><dd><p>The loss function for training unconditional diffusion model.</p>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<em>-</em>) – The input.</p></li>
-<li><p><strong>condition</strong> (<em>-</em>) – The input condition.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
