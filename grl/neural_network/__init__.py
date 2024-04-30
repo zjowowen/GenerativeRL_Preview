@@ -229,6 +229,7 @@ class TemporalSpatialResidualNet(nn.Module):
             hidden_sizes: List[int],
             output_dim: int,
             t_dim: int,
+            input_dim: int = None,
             condition_dim: int = None,
             condition_hidden_dim: int = None,
             t_condition_hidden_dim: int = None,
@@ -247,6 +248,8 @@ class TemporalSpatialResidualNet(nn.Module):
                 Default is None.
         """
         super().__init__()
+        if input_dim is None:
+            input_dim = output_dim
         if condition_dim is None or condition_dim <= 0:
             condition_hidden_dim = 0
             t_condition_dim = t_dim
@@ -260,7 +263,7 @@ class TemporalSpatialResidualNet(nn.Module):
             torch.nn.SiLU(),
             nn.Linear(t_condition_hidden_dim, t_condition_hidden_dim),
         )
-        self.first_block = TemporalSpatialResBlock(output_dim, hidden_sizes[0], t_dim=t_condition_hidden_dim)
+        self.first_block = TemporalSpatialResBlock(input_dim, hidden_sizes[0], t_dim=t_condition_hidden_dim)
         self.down_block = nn.ModuleList([TemporalSpatialResBlock(hidden_sizes[i], hidden_sizes[i + 1], t_dim=t_condition_hidden_dim) for i in range(len(hidden_sizes) - 1)])
         self.middle_block = TemporalSpatialResBlock(hidden_sizes[-1], hidden_sizes[-1], t_dim=t_condition_hidden_dim)
         self.up_block = nn.ModuleList([TemporalSpatialResBlock(hidden_sizes[i], hidden_sizes[i], t_dim=t_condition_hidden_dim) for i in range(len(hidden_sizes) - 2, -1, -1)])

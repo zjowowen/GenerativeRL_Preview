@@ -1,7 +1,7 @@
 import os
 import signal
 import sys
-from typing import Union, Optional
+from typing import Optional, Union
 
 import matplotlib
 import numpy as np
@@ -12,28 +12,30 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
-import treetensor
-from tensordict import TensorDict
 import torchvision
+import treetensor
 from diffusers.models import AutoencoderKL
 from easydict import EasyDict
 from matplotlib import animation
 from PIL import Image
+from tensordict import TensorDict
+from timm.models.vision_transformer import Attention, Mlp, PatchEmbed
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
 
 import wandb
-from grl.neural_network import TemporalSpatialResidualNet, register_module
-from grl.generative_models.variational_autoencoder import VariationalAutoencoder
+from grl.datasets.minecraft import MineRLImageDataset, MineRLVideoDataset
 from grl.generative_models.diffusion_model.diffusion_model import \
     DiffusionModel
+from grl.generative_models.variational_autoencoder import \
+    VariationalAutoencoder
+from grl.neural_network import TemporalSpatialResidualNet, register_module
+from grl.neural_network.encoders import ExponentialFourierProjectionTimeEncoder
+from grl.neural_network.transformers.dit import (DiTBlock, FinalLayer,
+                                                 get_2d_sincos_pos_embed)
 from grl.utils import set_seed
 from grl.utils.log import log
 
-from timm.models.vision_transformer import Attention, Mlp, PatchEmbed
-from grl.neural_network.encoders import ExponentialFourierProjectionTimeEncoder
-from grl.neural_network.transformers.dit import DiTBlock, FinalLayer, get_2d_sincos_pos_embed
-from grl.datasets.minecraft import MineRLVideoDataset, MineRLImageDataset
 
 class DiT_Encoder(nn.Module):
 

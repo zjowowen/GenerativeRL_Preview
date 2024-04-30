@@ -1,15 +1,16 @@
 import math
 from typing import Callable, List, Optional, Tuple, Union
 
-from easydict import EasyDict
 import numpy as np
 import torch
 import torch.nn as nn
+from easydict import EasyDict
 from tensordict import TensorDict
 from timm.models.vision_transformer import Attention, Mlp, PatchEmbed
 
-from grl.neural_network.encoders import ExponentialFourierProjectionTimeEncoder
 from grl.neural_network import get_module
+from grl.neural_network.encoders import ExponentialFourierProjectionTimeEncoder
+
 
 def modulate(x: torch.Tensor, shift: torch.Tensor, scale: torch.Tensor) -> torch.Tensor:
     """

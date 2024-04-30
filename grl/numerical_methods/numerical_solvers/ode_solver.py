@@ -126,7 +126,7 @@ class ODESolver:
             return_t_eval=False,
             **self.kwargs,
         )
-        trajectory = neural_ode(drift, x0, t_span)
+        trajectory = neural_ode(x0, t_span)
         return trajectory
 
     def odeint_by_torchode(self, x0, t_span):
@@ -364,6 +364,7 @@ class DictTensorODESolver:
 
         neural_ode = NeuralODE(
             vector_field=forward_ode_drift_by_torchdyn_NeuralODE,
+            sensitivity='adjoint',
             solver=self.ode_solver,
             atol=self.atol,
             rtol=self.rtol,
@@ -372,8 +373,20 @@ class DictTensorODESolver:
         )
 
         x0 = self.dict_tensor_converter.dict_to_tensor(x0, batch_size=batch_size)
-        trajectory = neural_ode(drift, x0, t_span)
-        trajectory = self.dict_tensor_converter.tensor_to_dict(trajectory, x_size=x_size)
+        trajectory = neural_ode(x0, t_span)
+
+        if self.dict_type == "dict":
+            raise NotImplementedError("dict type is not supported")
+        elif self.dict_type == "TensorDict":
+            raise NotImplementedError("TensorDict type is not supported")
+        elif self.dict_type == "treetensor":
+            t_span_tensordict = treetensor.torch.tensor({}, device=t_span.device)
+            for key in x_size.keys():
+                t_span_tensordict[key] = torch.tensor([t_span.numel()], device=t_span.device)
+            t_x_size = treetensor.torch.Size(treetensor.torch.cat([t_span_tensordict, treetensor.torch.tensor(x_size, device=t_span.device)],dim=0))
+
+            trajectory = self.dict_tensor_converter.tensor_to_dict(trajectory, x_size=t_x_size)
+
         return trajectory
 
     def odeint_by_torchode(self, x0, t_span, batch_size, x_size):

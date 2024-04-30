@@ -1,11 +1,9 @@
+from typing import Union
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import treetensor
-
-from typing import Union
-
-
 from easydict import EasyDict
 from tensordict import TensorDict
 

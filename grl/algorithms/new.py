@@ -1,28 +1,31 @@
 import copy
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import queue
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.distributions import Distribution, MultivariateNormal
-from torch.distributions.transforms import TanhTransform
 from easydict import EasyDict
 from rich.progress import Progress, track
 from tensordict import TensorDict
+from torch.distributions import Distribution, MultivariateNormal
+from torch.distributions.transforms import TanhTransform
 from torch.utils.data import DataLoader
 
 import wandb
-
 from grl.generative_models.diffusion_model.energy_conditional_diffusion_model import \
     EnergyConditionalDiffusionModel
+from grl.neural_network import (MultiLayerPerceptron, get_module,
+                                register_module)
+from grl.neural_network.encoders import (
+    ExponentialFourierProjectionTimeEncoder, get_encoder)
+from grl.neural_network.transformers.dit import (DiTBlock, FinalLayer1D,
+                                                 get_1d_pos_embed, modulate)
 from grl.rl_modules.simulators import create_simulator
 from grl.rl_modules.value_network import DoubleQNetwork, DoubleVNetwork
 from grl.utils.config import merge_two_dicts_into_newone
 from grl.utils.log import log
 
-from grl.neural_network import MultiLayerPerceptron, get_module, register_module
-from grl.neural_network.encoders import get_encoder, ExponentialFourierProjectionTimeEncoder
-from grl.neural_network.transformers.dit import DiTBlock, FinalLayer1D, get_1d_pos_embed, modulate
 
 class DiffusionModelDataset(torch.utils.data.Dataset):
     """

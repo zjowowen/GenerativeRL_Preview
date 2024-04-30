@@ -46,6 +46,7 @@ class DiffusionModel(nn.Module):
 
         super().__init__()
         self.config = config
+        
         self.x_size = config.x_size
         self.device = config.device
 
@@ -72,6 +73,9 @@ class DiffusionModel(nn.Module):
 
         if hasattr(config, "solver"):
             self.solver=get_solver(config.solver.type)(**config.solver.args)
+
+    def get_type(self):
+        return "DiffusionModel"
 
     def sample(
             self,
