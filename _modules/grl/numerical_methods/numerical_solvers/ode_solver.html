@@ -225,7 +225,7 @@
             <span class="n">return_t_eval</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">trajectory</span> <span class="o">=</span> <span class="n">neural_ode</span><span class="p">(</span><span class="n">drift</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">)</span>
+        <span class="n">trajectory</span> <span class="o">=</span> <span class="n">neural_ode</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">trajectory</span>
 
     <span class="k">def</span> <span class="nf">odeint_by_torchode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">):</span>
@@ -464,6 +464,7 @@
 
         <span class="n">neural_ode</span> <span class="o">=</span> <span class="n">NeuralODE</span><span class="p">(</span>
             <span class="n">vector_field</span><span class="o">=</span><span class="n">forward_ode_drift_by_torchdyn_NeuralODE</span><span class="p">,</span>
+            <span class="n">sensitivity</span><span class="o">=</span><span class="s1">&#39;adjoint&#39;</span><span class="p">,</span>
             <span class="n">solver</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ode_solver</span><span class="p">,</span>
             <span class="n">atol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atol</span><span class="p">,</span>
             <span class="n">rtol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rtol</span><span class="p">,</span>
@@ -472,8 +473,20 @@
         <span class="p">)</span>
 
         <span class="n">x0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_tensor_converter</span><span class="o">.</span><span class="n">dict_to_tensor</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
-        <span class="n">trajectory</span> <span class="o">=</span> <span class="n">neural_ode</span><span class="p">(</span><span class="n">drift</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">)</span>
-        <span class="n">trajectory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_tensor_converter</span><span class="o">.</span><span class="n">tensor_to_dict</span><span class="p">(</span><span class="n">trajectory</span><span class="p">,</span> <span class="n">x_size</span><span class="o">=</span><span class="n">x_size</span><span class="p">)</span>
+        <span class="n">trajectory</span> <span class="o">=</span> <span class="n">neural_ode</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_type</span> <span class="o">==</span> <span class="s2">&quot;dict&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;dict type is not supported&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_type</span> <span class="o">==</span> <span class="s2">&quot;TensorDict&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;TensorDict type is not supported&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_type</span> <span class="o">==</span> <span class="s2">&quot;treetensor&quot;</span><span class="p">:</span>
+            <span class="n">t_span_tensordict</span> <span class="o">=</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">({},</span> <span class="n">device</span><span class="o">=</span><span class="n">t_span</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">x_size</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">t_span_tensordict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">t_span</span><span class="o">.</span><span class="n">numel</span><span class="p">()],</span> <span class="n">device</span><span class="o">=</span><span class="n">t_span</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">t_x_size</span> <span class="o">=</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">(</span><span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">t_span_tensordict</span><span class="p">,</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">x_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">t_span</span><span class="o">.</span><span class="n">device</span><span class="p">)],</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+
+            <span class="n">trajectory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_tensor_converter</span><span class="o">.</span><span class="n">tensor_to_dict</span><span class="p">(</span><span class="n">trajectory</span><span class="p">,</span> <span class="n">x_size</span><span class="o">=</span><span class="n">t_x_size</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="n">trajectory</span>
 
     <span class="k">def</span> <span class="nf">odeint_by_torchode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">x_size</span><span class="p">):</span>
