@@ -65,5 +65,3 @@ class IntrinsicModel(nn.Module):
             output = self.model["backbone"](t, x)
 
         return output
-    
-

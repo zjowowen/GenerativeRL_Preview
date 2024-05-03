@@ -4,9 +4,11 @@ from typing import Callable, List, Optional, Tuple, Union
 import numpy as np
 import torch
 import torch.nn as nn
+from easydict import EasyDict
 from tensordict import TensorDict
 from timm.models.vision_transformer import Attention, Mlp, PatchEmbed
 
+from grl.neural_network import get_module
 from grl.neural_network.encoders import ExponentialFourierProjectionTimeEncoder
 
 
@@ -152,6 +154,22 @@ def get_2d_sincos_pos_embed(
     if cls_token and extra_tokens > 0:
         pos_embed = np.concatenate([np.zeros([extra_tokens, embed_dim]), pos_embed], axis=0)
     return pos_embed
+
+def get_1d_pos_embed(
+        embed_dim: int,
+        grid_num: int,
+    ):
+    """
+    Overview:
+        Get 1D positional embeddings for 1D data.
+    Arguments:
+        embed_dim (:obj:`int`): The output dimension of embeddings for each grid.
+        grid_num (:obj:`int`): The number of the grid in each dimension.
+    """
+    grid = np.arange(grid_num, dtype=np.float32)
+    emb = get_sincos_pos_embed_from_grid(embed_dim, grid)
+    return emb
+
 
 def get_sincos_pos_embed_from_grid(
         embed_dim: int,
@@ -750,4 +768,151 @@ class DiT_3D(nn.Module):
             x = block(x, c)                      # (N, total_patches, hidden_size)
         x = self.final_layer(x, c)                # (N, total_patches, patch_size[0] * patch_size[1] * patch_size[2] * C)
         x = self.unpatchify(x)                   # (N, T, C, H, W)
+        return x
+
+class FinalLayer1D(nn.Module):
+    """
+    Overview:
+        The final layer of DiT for 1D data.
+        This is the official implementation of Github repo:
+        https://github.com/facebookresearch/DiT/blob/main/models.py
+    Interfaces:
+        ``__init__``, ``forward``
+    """
+    def __init__(self, hidden_size: int, out_channels: int):
+        """
+        Overview:
+            Initialize the final layer.
+        Arguments:
+            hidden_size (:obj:`int`): The hidden size.
+            out_channels (:obj:`int`): The number of output channels.
+        """
+        super().__init__()
+        self.norm_final = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
+        self.linear = nn.Linear(hidden_size, out_channels, bias=True)
+        self.adaLN_modulation = nn.Sequential(
+            nn.SiLU(),
+            nn.Linear(hidden_size, 2 * hidden_size, bias=True)
+        )
+
+    def forward(self, x: torch.tensor, c: torch.tensor):
+        shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
+        x = modulate(self.norm_final(x), shift, scale)
+        x = self.linear(x)
+        return x
+
+class DiT1D(nn.Module):
+    """
+    Overview:
+        Transformer backbone for Diffusion model for 1D data.
+    Interfaces:
+        ``__init__``, ``forward``
+    """
+
+    def __init__(
+        self,
+        token_size: int,
+        in_channels: int = 4,
+        hidden_size: int = 1152,
+        depth: int = 28,
+        num_heads: int = 16,
+        mlp_ratio: float = 4.0,
+        condition_embedder: EasyDict = None,
+    ):
+        """
+        Overview:
+            Initialize the DiT model.
+        Arguments:
+            in_channels (:obj:`Union[int, List[int], Tuple[int]]`): The number of input channels, defaults to 4.
+            hidden_size (:obj:`int`): The hidden size of attention layer, defaults to 1152.
+            depth (:obj:`int`): The depth of transformer, defaults to 28.
+            num_heads (:obj:`int`): The number of attention heads, defaults to 16.
+            mlp_ratio (:obj:`float`): The hidden size of the MLP with respect to the hidden size of Attention, defaults to 4.0.
+        """
+        super().__init__()
+
+        self.in_channels = in_channels
+        self.out_channels = in_channels
+
+        self.num_heads = num_heads
+
+        self.x_embedder = nn.Conv1d(in_channels=self.in_channels, out_channels=hidden_size, kernel_size=1, groups=in_channels, bias=False)
+        if condition_embedder:
+            self.y_embedder = get_module(condition_embedder.type)(**condition_embedder.args)
+        self.t_embedder = ExponentialFourierProjectionTimeEncoder(hidden_size)
+
+        pos_embed = get_1d_pos_embed(embed_dim=hidden_size, grid_num=token_size)
+        self.pos_embed = nn.Parameter(torch.from_numpy(pos_embed).float(), requires_grad=False)
+        
+        self.blocks = nn.ModuleList([
+            DiTBlock(hidden_size, num_heads, mlp_ratio=mlp_ratio) for _ in range(depth)
+        ])
+        self.final_layer = FinalLayer1D(hidden_size, self.out_channels)
+        self.initialize_weights()
+
+    def initialize_weights(self):
+        """
+        Overview:
+            Initialize the weights of the model.
+        """
+        # Initialize transformer layers:
+        def _basic_init(module):
+            if isinstance(module, nn.Linear):
+                torch.nn.init.xavier_uniform_(module.weight)
+                if module.bias is not None:
+                    nn.init.constant_(module.bias, 0)
+        self.apply(_basic_init)
+
+
+        # Initialize patch_embed like nn.Linear (instead of nn.Conv2d):
+        w = self.x_embedder.weight.data
+        nn.init.xavier_uniform_(w.view([w.shape[0], -1]))
+        nn.init.constant_(self.x_embedder.proj.bias, 0)
+
+        # Initialize timestep embedding MLP:
+        nn.init.normal_(self.t_embedder.mlp[0].weight, std=0.02)
+        nn.init.normal_(self.t_embedder.mlp[2].weight, std=0.02)
+
+        # Zero-out adaLN modulation layers in DiT blocks:
+        for block in self.blocks:
+            nn.init.constant_(block.adaLN_modulation[-1].weight, 0)
+            nn.init.constant_(block.adaLN_modulation[-1].bias, 0)
+
+        # Zero-out output layers:
+        nn.init.constant_(self.final_layer.adaLN_modulation[-1].weight, 0)
+        nn.init.constant_(self.final_layer.adaLN_modulation[-1].bias, 0)
+        nn.init.constant_(self.final_layer.linear.weight, 0)
+        nn.init.constant_(self.final_layer.linear.bias, 0)
+
+    def forward(
+            self,
+            t: torch.Tensor,
+            x: torch.Tensor,
+            condition: Optional[Union[torch.Tensor, TensorDict]] = None,
+        ):
+        """
+        Overview:
+            Forward pass of DiT for 3D data.
+        Arguments:
+            t (:obj:`torch.Tensor`): Tensor of diffusion timesteps.
+            x (:obj:`torch.Tensor`): Tensor of inputs with spatial information (originally at t=0 it is tensor of videos or latent representations of videos).
+            condition (:obj:`Union[torch.Tensor, TensorDict]`, optional): The input condition, such as class labels.
+        """
+
+        # x is of shape (N, T, C), reshape to (N, C, T)
+        x = torch.einsum('ntc->nct', x)
+        x = self.x_embedder(x) + torch.einsum("th->ht", self.pos_embed)
+
+        t = self.t_embedder(t)                   # (N, hidden_size)
+        
+        if condition is not None:
+            #TODO: polish this part
+            y = self.y_embedder(condition, self.training)    # (N, hidden_size)
+            c = t + y                                # (N, hidden_size)
+        else:
+            c = t
+        
+        for block in self.blocks:
+            x = block(x, c)                      # (N, total_patches, hidden_size)
+        x = self.final_layer(x, c)                # (N, total_patches, C)
         return x

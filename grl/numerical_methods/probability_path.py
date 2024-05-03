@@ -468,14 +468,11 @@ class ConditionalProbabilityPath:
     
     """
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, config) -> None:
+        self.config = config
 
-    def drift_coefficient(self, t: torch.Tensor) -> torch.Tensor:
-        pass
-
-    def drift(self, t: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
-        pass
-
-    def diffusion(self, t: torch.Tensor) -> torch.Tensor:
-        pass
+    def std(self, t: torch.Tensor) -> torch.Tensor:
+        
+        return ((self.config.sigma * t) + 1 - t)**2 - (1 - t)**2
+        # return (self.config.sigma * t)*(self.config.sigma * t + 2*(1 - t))
+    

@@ -6,8 +6,10 @@ import torch.nn as nn
 import treetensor
 from easydict import EasyDict
 from tensordict import TensorDict
-from torch.distributions import Normal, Independent
+from torch.distributions import Independent, Normal
 
+from grl.generative_models.conditional_flow_model import (
+    IndependentConditionalFlowModel, OptimalTransportConditionalFlowModel)
 from grl.generative_models.diffusion_model import (
     DiffusionModel, EnergyConditionalDiffusionModel)
 from grl.numerical_methods.numerical_solvers.ode_solver import (
@@ -36,7 +38,15 @@ def compute_likelihood(
     """
     #TODO: Add support for EnergyConditionalDiffusionModel; Add support for t; Add support for treetensor.torch.Tensor
 
-    model_drift = model.diffusion_process.forward_ode(function=model.model, function_type=model.model_type, condition=condition).drift
+
+    if model.get_type() == "EnergyConditionalDiffusionModel":
+        raise NotImplementedError("EnergyConditionalDiffusionModel is not supported yet.")
+    elif model.get_type() == "DiffusionModel":
+        model_drift = model.diffusion_process.forward_ode(function=model.model, function_type=model.model_type, condition=condition).drift
+    elif model.get_type() in ["IndependentConditionalFlowModel", "OptimalTransportConditionalFlowModel"]: 
+        model_drift = model.model
+    else:
+        raise ValueError("Invalid model type: {}".format(model.get_type()))
 
     def compute_trace_of_jacobian_general(dx, x):
         # Assuming x has shape (B, D1, ..., Dn)
@@ -91,7 +101,8 @@ def compute_likelihood(
     t_span = torch.linspace(eps, 1.0, 1000).to(x.device)
 
 
-    solver = DictTensorODESolver(library="torchdyn", dict_type="treetensor")
+    # solver = DictTensorODESolver(library="torchdyn", dict_type="treetensor")
+    solver = DictTensorODESolver(library="torchdyn_NeuralODE", dict_type="treetensor")
 
     x1_and_logp1 = solver.integrate(
         drift=composite_drift,

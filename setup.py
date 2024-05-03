@@ -24,6 +24,7 @@ setup(
         'torchode',
         'torchsde',
         'scipy',
+        'POT',
         'beartype',
         'diffusers',
         'timm',
