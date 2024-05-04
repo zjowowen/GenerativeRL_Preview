@@ -849,6 +849,7 @@
             <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">,</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
             <span class="n">condition</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">,</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
             <span class="n">weighting_scheme</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">average</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
@@ -876,7 +877,7 @@
 <span class="sd">                        \lambda(t) = \sigma^2(t)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">score_function_</span><span class="o">.</span><span class="n">score_matching_loss</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gaussian_generator</span><span class="p">,</span> <span class="n">weighting_scheme</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">score_function_</span><span class="o">.</span><span class="n">score_matching_loss</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gaussian_generator</span><span class="p">,</span> <span class="n">weighting_scheme</span><span class="p">,</span> <span class="n">average</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DiffusionModel.velocity_function">
@@ -909,6 +910,7 @@
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">,</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
             <span class="n">condition</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">,</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">average</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
@@ -918,7 +920,7 @@
 <span class="sd">            condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity_function_</span><span class="o">.</span><span class="n">flow_matching_loss</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gaussian_generator</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity_function_</span><span class="o">.</span><span class="n">flow_matching_loss</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gaussian_generator</span><span class="p">,</span> <span class="n">average</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DiffusionModel.noise_function">
