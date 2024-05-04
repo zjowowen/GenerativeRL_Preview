@@ -103,13 +103,13 @@ config = EasyDict(
             behaviour_policy = dict(
                 batch_size = 4096,
                 learning_rate = 1e-4,
-                iterations = 60,
+                iterations = 600000,
             ),
             sample_per_state = 16,
             fake_data_t_span = None if solver_type == "DPMSolver" else 32,
             critic = dict(
                 batch_size = 4096,
-                stop_training_iterations = 50,
+                stop_training_iterations = 500000,
                 learning_rate = 3e-4,
                 discount_factor = 0.99,
                 update_momentum = 0.995,
@@ -120,7 +120,7 @@ config = EasyDict(
                 learning_rate = 1e-4,
             ),
             evaluation = dict(
-                evaluation_interval = 10000,
+                evaluation_interval = 1000,
                 guidance_scale = [0.0, 1.0],
             ),
         ),
