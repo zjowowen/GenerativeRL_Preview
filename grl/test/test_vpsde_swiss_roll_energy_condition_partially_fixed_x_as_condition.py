@@ -223,8 +223,6 @@ if __name__ == "__main__":
         diffusion_model_iteration = 0
         value_model_iteration = 0
 
-    diffusion_model_iteration = 49999
-
     # get data
     x_and_t = make_swiss_roll(n_samples=config.dataset.data_num, noise=config.dataset.noise)
     t = x_and_t[1].astype(np.float32)
@@ -414,7 +412,3 @@ if __name__ == "__main__":
 
     for p in subprocess_list:
         p.join()
-
-def sample_from_energy_conditioned_diffusion_model(energy_conditioned_diffusion_model, batch_size=500, guidance_scale=1.0):
-    t_span=torch.linspace(0.0, 1.0, 1000)
-    x_t = energy_conditioned_diffusion_model.sample(t_span=t_span, batch_size=batch_size, guidance_scale=guidance_scale).cpu().detach()

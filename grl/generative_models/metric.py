@@ -101,8 +101,8 @@ def compute_likelihood(
     t_span = torch.linspace(eps, 1.0, 1000).to(x.device)
 
 
-    # solver = DictTensorODESolver(library="torchdyn", dict_type="treetensor")
-    solver = DictTensorODESolver(library="torchdyn_NeuralODE", dict_type="treetensor")
+    solver = DictTensorODESolver(library="torchdyn", dict_type="treetensor")
+    # solver = DictTensorODESolver(library="torchdyn_NeuralODE", dict_type="treetensor")
 
     x1_and_logp1 = solver.integrate(
         drift=composite_drift,

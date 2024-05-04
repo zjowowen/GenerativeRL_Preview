@@ -1,4 +1,5 @@
 import copy
+import math
 import os
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
@@ -17,19 +18,15 @@ import wandb
 from grl.agents.srpo import SRPOAgent
 from grl.datasets import create_dataset
 from grl.datasets.d4rl import D4RLDataset
-from grl.generative_models.diffusion_model.diffusion_model import (
-    DiffusionModel,
-)
+from grl.generative_models.diffusion_model.diffusion_model import \
+    DiffusionModel
 from grl.generative_models.sro import SRPOConditionalDiffusionModel
-from grl.neural_network import MultiLayerPerceptron
+from grl.neural_network import MultiLayerPerceptron, register_module
 from grl.rl_modules.simulators import create_simulator
 from grl.rl_modules.value_network.q_network import DoubleQNetwork
 from grl.utils import set_seed
 from grl.utils.config import merge_two_dicts_into_newone
 from grl.utils.log import log
-import math
-
-from grl.neural_network import register_module
 
 
 class CONCATMLP(nn.Module):

@@ -76,6 +76,7 @@ class ScoreFunction:
             condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
             gaussian_generator: Callable = None,
             weighting_scheme: str = None,
+            average: bool = True,
         ) -> torch.Tensor:
         """
         Overview:
@@ -118,7 +119,7 @@ class ScoreFunction:
                 if not hasattr(self, "monte_carlo_sampler"):
                     def unnormalized_pdf(t):
                         return self.process.diffusion_squared(t) / (self.process.covariance(t) + 1e-6)
-                    self.monte_carlo_sampler = MonteCarloSampler(unnormalized_pdf=unnormalized_pdf, x_min=0.0, x_max=self.process.t_max)
+                    self.monte_carlo_sampler = MonteCarloSampler(unnormalized_pdf=unnormalized_pdf, x_min=0.0, x_max=self.process.t_max, device=device)
                 return self.monte_carlo_sampler.sample(batch_size).to(device=device)
             elif weighting_scheme == "vanilla":
                 #TODO: test esp
@@ -139,11 +140,17 @@ class ScoreFunction:
 
         def get_loss(noise_value, noise):
             if isinstance(noise_value, torch.Tensor):
-                return torch.mean(torch.sum((noise_value - noise) ** 2, dim=(1, )))
+                if average:
+                    return torch.mean(torch.sum(0.5 * (noise_value - noise) ** 2, dim=(1, )))
+                else:
+                    return torch.sum(0.5 * (noise_value - noise) ** 2, dim=(1, ))
             elif isinstance(noise_value, TensorDict):
                 raise NotImplementedError("Not implemented yet")
             elif isinstance(noise_value, treetensor.torch.Tensor):
-                return treetensor.torch.mean(treetensor.torch.sum((noise_value - noise) * (noise_value - noise), dim=(1, )))
+                if average:
+                    return treetensor.torch.mean(treetensor.torch.sum(0.5 * (noise_value - noise) * (noise_value - noise), dim=(1, )))
+                else:
+                    return treetensor.torch.sum(0.5 * (noise_value - noise) * (noise_value - noise), dim=(1, ))
             else:
                 raise NotImplementedError("Unknown type of noise_value {}".format(type))
 

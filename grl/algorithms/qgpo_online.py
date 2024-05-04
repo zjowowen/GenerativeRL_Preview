@@ -215,7 +215,7 @@ class QGPOPolicy(nn.Module):
             state (:obj:`torch.Tensor`): The input state.
         """
         
-        return self.diffusion_model.score_matching_loss(action, state)
+        return self.diffusion_model.score_matching_loss(action, state, weighting_scheme="vanilla")
 
     def energy_guidance_loss(
             self,

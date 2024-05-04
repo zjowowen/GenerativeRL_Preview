@@ -890,6 +890,7 @@ class EnergyConditionalDiffusionModel(nn.Module):
             x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
             condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
             weighting_scheme: str = None,
+            average: bool = True,
         ) -> torch.Tensor:
         """
         Overview:
@@ -917,7 +918,7 @@ class EnergyConditionalDiffusionModel(nn.Module):
                         \lambda(t) = \sigma^2(t)
         """
 
-        return self.score_function_.score_matching_loss(self.model, x, condition, self.gaussian_generator, weighting_scheme)
+        return self.score_function_.score_matching_loss(self.model, x, condition, self.gaussian_generator, weighting_scheme, average)
 
     def velocity_function(
             self,

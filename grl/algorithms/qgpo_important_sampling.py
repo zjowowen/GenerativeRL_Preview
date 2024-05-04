@@ -17,8 +17,9 @@ import wandb
 from grl.agents.qgpo import QGPOAgent
 from grl.datasets import create_dataset
 from grl.datasets.qgpo import QGPODataset
-from grl.generative_models.diffusion_model.energy_conditional_diffusion_model import \
-    EnergyConditionalDiffusionModel
+from grl.generative_models.diffusion_model import DiffusionModel
+from grl.generative_models.diffusion_model.guided_diffusion_model import \
+    GuidedDiffusionModel
 from grl.rl_modules.simulators import create_simulator
 from grl.rl_modules.value_network.q_network import DoubleQNetwork
 from grl.utils.config import merge_two_dicts_into_newone
@@ -119,7 +120,9 @@ class QGPOPolicy(nn.Module):
         self.device = config.device
 
         self.critic = QGPOCritic(config.critic)
-        self.diffusion_model = EnergyConditionalDiffusionModel(config.diffusion_model, energy_model=self.critic)
+        self.diffusion_model = DiffusionModel(config.diffusion_model)
+        self.diffusion_model_important_sampling = DiffusionModel(config.diffusion_model)
+        self.guidance_model = GuidedDiffusionModel(config.diffusion_model, base_model=self.diffusion_model, guided_model=self.diffusion_model_important_sampling)
 
     def forward(self, state: Union[torch.Tensor, TensorDict]) -> Union[torch.Tensor, TensorDict]:
         """
@@ -151,7 +154,7 @@ class QGPOPolicy(nn.Module):
         Returns:
             action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
-        return self.diffusion_model.sample(
+        return self.guidance_model.sample(
             t_span = t_span,
             condition=state,
             batch_size=batch_size,
@@ -177,7 +180,7 @@ class QGPOPolicy(nn.Module):
         Returns:
             action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
-        return self.diffusion_model.sample_without_energy_guidance(
+        return self.diffusion_model.sample(
             t_span = t_span,
             condition=state,
             batch_size=batch_size,
@@ -205,6 +208,7 @@ class QGPOPolicy(nn.Module):
             self,
             action: Union[torch.Tensor, TensorDict],
             state: Union[torch.Tensor, TensorDict],
+            maximum_likelihood: bool = False,
         ):
         """
         Overview:
@@ -214,7 +218,28 @@ class QGPOPolicy(nn.Module):
             state (:obj:`torch.Tensor`): The input state.
         """
         
-        return self.diffusion_model.score_matching_loss(action, state, weighting_scheme="vanilla")
+        if maximum_likelihood:
+            return self.diffusion_model.score_matching_loss(action, state)
+        else:
+            return self.diffusion_model.score_matching_loss(action, state, weighting_scheme="vanilla")
+
+    def policy_loss(
+            self,
+            action: Union[torch.Tensor, TensorDict],
+            state: Union[torch.Tensor, TensorDict],
+        ):
+        """
+        Overview:
+            Calculate the behaviour policy loss.
+        Arguments:
+            action (:obj:`torch.Tensor`): The input action.
+            state (:obj:`torch.Tensor`): The input state.
+        """
+        
+        score_loss = self.diffusion_model.score_matching_loss(action, state, weighting_scheme="vanilla", average=False)
+        with torch.no_grad():
+            value = self.critic(action, state).squeeze(dim=-1)
+        return torch.mean(score_loss * torch.exp(value))
 
     def energy_guidance_loss(
             self,
@@ -255,7 +280,7 @@ class QGPOPolicy(nn.Module):
         """
         return self.critic.q_loss(action, state, reward, next_state, done, fake_next_action, discount_factor)
 
-class QGPOAlgorithm:
+class QGPOISAlgorithm:
 
     def __init__(
         self,
@@ -350,9 +375,8 @@ class QGPOAlgorithm:
                     fake_actions_per_state = []
                     for _ in range(sample_per_state):
                         fake_actions_per_state.append(
-                            model.sample(
+                            model.behaviour_policy_sample(
                                 state = states,
-                                guidance_scale = 0.0,
                                 t_span = torch.linspace(0.0, 1.0, config.parameter.fake_data_t_span).to(states.device) if config.parameter.fake_data_t_span is not None else None
                             )
                         )
@@ -375,7 +399,6 @@ class QGPOAlgorithm:
                     log.info(f"Train iter: {train_iter}, guidance_scale: {guidance_scale}, total_return: {evaluation_results[f'evaluation/guidance_scale:[{guidance_scale}]/total_return']}")
 
                 return evaluation_results
-                
 
             data_generator = get_train_data(DataLoader(
                 self.dataset,
@@ -391,12 +414,12 @@ class QGPOAlgorithm:
 
             for train_iter in track(range(config.parameter.behaviour_policy.iterations), description="Behaviour policy training"):
                 data=next(data_generator)
-                behaviour_model_training_loss = self.model["QGPOPolicy"].behaviour_policy_loss(data['a'], data['s'])
+                behaviour_model_training_loss = self.model["QGPOPolicy"].behaviour_policy_loss(data['a'], data['s'], maximum_likelihood=config.parameter.behaviour_policy.maximum_likelihood if hasattr(config.parameter.behaviour_policy, "maximum_likelihood") else False)
                 behaviour_model_optimizer.zero_grad()
                 behaviour_model_training_loss.backward()
                 behaviour_model_optimizer.step()
 
-                if train_iter == 0 or (train_iter + 1) % config.parameter.evaluation.evaluation_interval == 0:
+                if train_iter < 0 or (train_iter + 1) % config.parameter.evaluation.evaluation_interval == 0:
                     evaluation_results = evaluate(self.model["QGPOPolicy"], train_iter=train_iter)
                     wandb_run.log(data=evaluation_results, commit=False)
 
@@ -407,10 +430,6 @@ class QGPOAlgorithm:
                     ),
                     commit=True)
 
-            self.dataset.fake_actions = generate_fake_action(
-                self.model["QGPOPolicy"],
-                self.dataset.states[:],
-                config.parameter.sample_per_state)
             self.dataset.fake_next_actions = generate_fake_action(
                 self.model["QGPOPolicy"],
                 self.dataset.next_states[:],
@@ -419,7 +438,7 @@ class QGPOAlgorithm:
             #TODO add notation
             data_generator = get_train_data(DataLoader(
                 self.dataset,
-                batch_size=config.parameter.energy_guided_policy.batch_size,
+                batch_size=config.parameter.critic.batch_size,
                 shuffle=True,
                 collate_fn=None,
             ))
@@ -429,52 +448,59 @@ class QGPOAlgorithm:
                 lr=config.parameter.critic.learning_rate,
             )
 
-            energy_guidance_optimizer = torch.optim.Adam(
-                self.model["QGPOPolicy"].diffusion_model.energy_guidance.parameters(),
-                lr=config.parameter.energy_guidance.learning_rate,
+            for train_iter in track(range(config.parameter.critic.stop_training_iterations), description="Critic training"):
+
+                data=next(data_generator)
+
+                q_loss = self.model["QGPOPolicy"].q_loss(
+                    data['a'], data['s'], data['r'], data['s_'], data['d'], data['fake_a_'],
+                    discount_factor=config.parameter.critic.discount_factor
+                )
+
+                q_optimizer.zero_grad()
+                q_loss.backward()
+                q_optimizer.step()
+                
+                # Update target
+                for param, target_param in zip(self.model["QGPOPolicy"].critic.parameters(), self.model["QGPOPolicy"].critic.q_target.parameters()):
+                    target_param.data.copy_(
+                        config.parameter.critic.update_momentum * param.data + (1 - config.parameter.critic.update_momentum) * target_param.data
+                    )
+
+                wandb_run.log(data=dict(q_loss=q_loss.item()), commit=False)
+
+            diffusion_model_important_sampling_optimizer = torch.optim.Adam(
+                self.model["QGPOPolicy"].diffusion_model_important_sampling.parameters(),
+                lr=config.parameter.diffusion_model_important_sampling.learning_rate,
             )
             
-            with Progress() as progress:
-                critic_training = progress.add_task("Critic training", total=config.parameter.critic.stop_training_iterations)
-                energy_guidance_training = progress.add_task("Energy guidance training", total=config.parameter.energy_guidance.iterations)
+            data_generator = get_train_data(DataLoader(
+                self.dataset,
+                batch_size=config.parameter.diffusion_model_important_sampling.batch_size,
+                shuffle=True,
+                collate_fn=None,
+            ))
 
-                for train_iter in range(config.parameter.energy_guidance.iterations):
-                    data=next(data_generator)
-                    if train_iter < config.parameter.critic.stop_training_iterations:
-                        q_loss = self.model["QGPOPolicy"].q_loss(
-                            data['a'], data['s'], data['r'], data['s_'], data['d'], data['fake_a_'],
-                            discount_factor=config.parameter.critic.discount_factor
-                        )
+            for train_iter in track(range(config.parameter.diffusion_model_important_sampling.iterations), description="Energy conditioned diffusion model training"):
 
-                        q_optimizer.zero_grad()
-                        q_loss.backward()
-                        q_optimizer.step()
-                        
-                        # Update target
-                        for param, target_param in zip(self.model["QGPOPolicy"].critic.parameters(), self.model["QGPOPolicy"].critic.q_target.parameters()):
-                            target_param.data.copy_(
-                                config.parameter.critic.update_momentum * param.data + (1 - config.parameter.critic.update_momentum) * target_param.data
-                            )
+                data=next(data_generator)
 
-                        wandb_run.log(data=dict(q_loss=q_loss.item()), commit=False)
-                        progress.update(critic_training, advance=1)
+                diffusion_model_important_sampling_loss = self.model["QGPOPolicy"].policy_loss(data['a'], data['s'])
+                diffusion_model_important_sampling_optimizer.zero_grad()
+                diffusion_model_important_sampling_loss.backward()
+                diffusion_model_important_sampling_optimizer.step()
 
-                    energy_guidance_loss = self.model["QGPOPolicy"].energy_guidance_loss(data['s'], data['fake_a'])
-                    energy_guidance_optimizer.zero_grad()
-                    energy_guidance_loss.backward()
-                    energy_guidance_optimizer.step()
+                if train_iter == 0 or (train_iter + 1) % config.parameter.evaluation.evaluation_interval == 0:
+                    evaluation_results = evaluate(self.model["QGPOPolicy"], train_iter=train_iter)
+                    wandb_run.log(data=evaluation_results, commit=False)
 
-                    if train_iter == 0 or (train_iter + 1) % config.parameter.evaluation.evaluation_interval == 0:
-                        evaluation_results = evaluate(self.model["QGPOPolicy"], train_iter=train_iter)
-                        wandb_run.log(data=evaluation_results, commit=False)
+                wandb_run.log(
+                    data=dict(
+                        train_iter=train_iter,
+                        diffusion_model_important_sampling_loss=diffusion_model_important_sampling_loss.item(),
+                    ),
+                    commit=True)
 
-                    wandb_run.log(
-                        data=dict(
-                            train_iter=train_iter,
-                            energy_guidance_loss=energy_guidance_loss.item(),
-                        ),
-                        commit=True)
-                    progress.update(energy_guidance_training, advance=1)
 
             #---------------------------------------
             # Customized training code ↑

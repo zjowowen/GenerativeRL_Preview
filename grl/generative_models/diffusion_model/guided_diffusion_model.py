@@ -6,6 +6,7 @@ import treetensor
 from easydict import EasyDict
 from tensordict import TensorDict
 
+from grl.generative_models.diffusion_model import DiffusionModel
 from grl.generative_models.diffusion_process import DiffusionProcess
 from grl.generative_models.intrinsic_model import IntrinsicModel
 from grl.generative_models.model_functions.data_prediction_function import \
@@ -24,17 +25,19 @@ from grl.numerical_methods.probability_path import \
     GaussianConditionalProbabilityPath
 
 
-class DiffusionModel(nn.Module):
+class GuidedDiffusionModel(nn.Module):
     """
     Overview:
-        Diffusion Model.
+        Guided Diffusion Model with a base diffusion model and a guided diffusion model.
     Interfaces:
         ``__init__``, ``sample``, ``score_function``, ``score_matching_loss``, ``velocity_function``, ``flow_matching_loss``.
     """
 
     def __init__(
             self,
-            config: EasyDict
+            config: EasyDict,
+            base_model: DiffusionModel,
+            guided_model: DiffusionModel,
             ) -> None:
         """
         Overview:
@@ -60,7 +63,8 @@ class DiffusionModel(nn.Module):
         self.model_type = config.model.type
         assert self.model_type in ["score_function", "data_prediction_function", "velocity_function", "noise_function"], \
             "Unknown type of model {}".format(self.model_type)
-        self.model = IntrinsicModel(config.model.args)
+        self.base_model = base_model.model
+        self.guided_model = guided_model.model
         self.diffusion_process = DiffusionProcess(self.path)
         if self.reverse_path is not None:
             self.reverse_diffusion_process = DiffusionProcess(self.reverse_path)
@@ -75,7 +79,7 @@ class DiffusionModel(nn.Module):
             self.solver=get_solver(config.solver.type)(**config.solver.args)
 
     def get_type(self):
-        return "DiffusionModel"
+        return "GuidedDiffusionModel"
 
     def sample(
             self,
@@ -85,6 +89,7 @@ class DiffusionModel(nn.Module):
             condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
             with_grad: bool = False,
             solver_config: EasyDict = None,
+            guidance_scale: float = 1.0,
         ):
         """
         Overview:
@@ -116,6 +121,7 @@ class DiffusionModel(nn.Module):
             condition=condition,
             with_grad=with_grad,
             solver_config=solver_config,
+            guidance_scale=guidance_scale,
         )[-1]
 
     def sample_forward_process(
@@ -126,6 +132,7 @@ class DiffusionModel(nn.Module):
             condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
             with_grad: bool = False,
             solver_config: EasyDict = None,
+            guidance_scale: float = 1.0,
         ):
         """
         Overview:
@@ -223,24 +230,31 @@ class DiffusionModel(nn.Module):
                     )
         elif isinstance(solver, ODESolver):
             #TODO: make it compatible with TensorDict
+            def drift(t, x):
+                return (1.0-guidance_scale)*self.diffusion_process.reverse_ode(function=self.base_model, function_type=self.model_type, condition=condition).drift(t, x) + guidance_scale*self.diffusion_process.reverse_ode(function=self.guided_model, function_type=self.model_type, condition=condition).drift(t, x)
+
             if with_grad:
                 data = solver.integrate(
-                    drift=self.diffusion_process.reverse_ode(function=self.model, function_type=self.model_type, condition=condition).drift,
+                    drift=drift,
                     x0=x,
                     t_span=t_span,
                 )
             else:
                 with torch.no_grad():
                     data = solver.integrate(
-                        drift=self.diffusion_process.reverse_ode(function=self.model, function_type=self.model_type, condition=condition).drift,
+                        drift=drift,
                         x0=x,
                         t_span=t_span,
                     )
         elif isinstance(solver, DictTensorODESolver):
             #TODO: make it compatible with TensorDict
+
+            def drift(t, x):
+                return (1.0-guidance_scale)*self.diffusion_process.reverse_ode(function=self.base_model, function_type=self.model_type, condition=condition).drift(t, x) + guidance_scale*self.diffusion_process.reverse_ode(function=self.guided_model, function_type=self.model_type, condition=condition).drift(t, x)
+
             if with_grad:
                 data = solver.integrate(
-                    drift=self.diffusion_process.reverse_ode(function=self.model, function_type=self.model_type, condition=condition).drift,
+                    drift=drift,
                     x0=x,
                     t_span=t_span,
                     batch_size=torch.prod(extra_batch_size) * data_batch_size,
@@ -249,7 +263,7 @@ class DiffusionModel(nn.Module):
             else:
                 with torch.no_grad():
                     data = solver.integrate(
-                        drift=self.diffusion_process.reverse_ode(function=self.model, function_type=self.model_type, condition=condition).drift,
+                        drift=drift,
                         x0=x,
                         t_span=t_span,
                         batch_size=torch.prod(extra_batch_size) * data_batch_size,
@@ -261,19 +275,23 @@ class DiffusionModel(nn.Module):
             assert self.reverse_diffusion_process is not None, "reverse_path must be specified in config"
             if not hasattr(self, "t_span"):
                 self.t_span = torch.linspace(0, self.diffusion_process.t_max, 2).to(self.device)
-            sde = self.diffusion_process.reverse_sde(function=self.model, function_type=self.model_type, condition=condition, reverse_diffusion_function=self.reverse_diffusion_process.diffusion, reverse_diffusion_squared_function=self.reverse_diffusion_process.diffusion_squared)
+            
+            sde_based = self.diffusion_process.reverse_sde(function=self.base_model, function_type=self.model_type, condition=condition, reverse_diffusion_function=self.reverse_diffusion_process.diffusion, reverse_diffusion_squared_function=self.reverse_diffusion_process.diffusion_squared)
+            sde_guided = self.diffusion_process.reverse_sde(function=self.guided_model, function_type=self.model_type, condition=condition, reverse_diffusion_function=self.reverse_diffusion_process.diffusion, reverse_diffusion_squared_function=self.reverse_diffusion_process.diffusion_squared)
+            def drift(t, x):
+                return (1.0-guidance_scale)*sde_based.drift(t, x) + guidance_scale*sde_guided.drift(t, x)
             if with_grad:
                 data = solver.integrate(
-                    drift=sde.drift,
-                    diffusion=sde.diffusion,
+                    drift=drift,
+                    diffusion=sde_based.diffusion,
                     x0=x,
                     t_span=t_span,
                 )
             else:
                 with torch.no_grad():
                     data = solver.integrate(
-                        drift=sde.drift,
-                        diffusion=sde.diffusion,
+                        drift=drift,
+                        diffusion=sde_based.diffusion,
                         x0=x,
                         t_span=t_span,
                     )
@@ -362,6 +380,7 @@ class DiffusionModel(nn.Module):
             condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
             with_grad: bool = False,
             solver_config: EasyDict = None,
+            guidance_scale: float = 1.0,
         ):
         """
         Overview:
@@ -399,6 +418,7 @@ class DiffusionModel(nn.Module):
             condition=condition,
             with_grad=with_grad,
             solver_config=solver_config,
+            guidance_scale=guidance_scale,
         )[-1]
 
     def sample_forward_process_with_fixed_x(
@@ -411,6 +431,7 @@ class DiffusionModel(nn.Module):
             condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
             with_grad: bool = False,
             solver_config: EasyDict = None,
+            guidance_scale: float = 1.0,
         ):
         """
         Overview:
@@ -439,199 +460,7 @@ class DiffusionModel(nn.Module):
             x: :math:`(T, N, D)`, if extra batch size :math:`B` is provided, the shape will be :math:`(T, B, N, D)`. If x_0 is not provided, the shape will be :math:`(T, B, D)`. If x_0 and condition are not provided, the shape will be :math:`(T, D)`.
         """
 
-        if t_span is not None:
-            t_span = t_span.to(self.device)
-        
-        if batch_size is None:
-            extra_batch_size = torch.tensor((1,), device=self.device)
-        elif isinstance(batch_size, int):
-            extra_batch_size = torch.tensor((batch_size,), device=self.device)
-        else:
-            if isinstance(batch_size, torch.Size) or isinstance(batch_size, Tuple) or isinstance(batch_size, List):
-                extra_batch_size = torch.tensor(batch_size, device=self.device)
-            else:
-                assert False, "Invalid batch size"
-        
-
-        data_batch_size = fixed_x.shape[0]
-        assert fixed_x.shape[0] == fixed_mask.shape[0], "The batch size of fixed_x and fixed_mask must be the same"
-        if x_0 is not None and condition is not None:
-            assert x_0.shape[0] == condition.shape[0], "The batch size of x_0 and condition must be the same"
-            assert x_0.shape[0] == fixed_x.shape[0], "The batch size of x_0 and fixed_x must be the same"
-        elif x_0 is not None:
-            assert x_0.shape[0] == fixed_x.shape[0], "The batch size of x_0 and fixed_x must be the same"
-        elif condition is not None:
-            assert condition.shape[0] == fixed_x.shape[0], "The batch size of condition and fixed_x must be the same"
-        else:
-            pass
-
-        if solver_config is not None:
-            solver = get_solver(solver_config.type)(**solver_config.args)
-        else:
-            assert hasattr(self, "solver"), "solver must be specified in config or solver_config"
-            solver = self.solver
-
-        if x_0 is None:
-            x = self.gaussian_generator(batch_size=torch.prod(extra_batch_size) * data_batch_size)
-            # x.shape = (B*N, D)
-        else:
-            if isinstance(self.x_size, int):
-                assert torch.Size([self.x_size]) == x_0[0].shape, "The shape of x_0 must be the same as the x_size that is specified in the config"
-            elif isinstance(self.x_size, Tuple) or isinstance(self.x_size, List) or isinstance(self.x_size, torch.Size):
-                assert torch.Size(self.x_size) == x_0[0].shape, "The shape of x_0 must be the same as the x_size that is specified in the config"
-            else:
-                assert False,  "Invalid x_size"
-            
-            x = torch.repeat_interleave(x_0, torch.prod(extra_batch_size), dim=0)
-            # x.shape = (B*N, D)
-        
-        if condition is not None:
-            condition = torch.repeat_interleave(condition, torch.prod(extra_batch_size), dim=0)
-            # condition.shape = (B*N, D)
-
-        fixed_x = torch.repeat_interleave(fixed_x, torch.prod(extra_batch_size), dim=0)
-        fixed_mask = torch.repeat_interleave(fixed_mask, torch.prod(extra_batch_size), dim=0)
-
-        if isinstance(solver, DPMSolver):
-            #TODO: make it compatible with DPM solver
-            assert False, "Not implemented"
-        elif isinstance(solver, ODESolver):
-            #TODO: make it compatible with TensorDict
-
-            x = fixed_x * (1 - fixed_mask) + x * fixed_mask
-            def drift_fixed_x(t, x):
-                xt_partially_fixed = self.diffusion_process.direct_sample(self.diffusion_process.t_max-t, fixed_x) * (1 - fixed_mask) + x * fixed_mask
-                return fixed_mask * self.diffusion_process.reverse_ode(function=self.model, function_type=self.model_type, condition=condition).drift(t, xt_partially_fixed)
-            if with_grad:
-                data = solver.integrate(
-                    drift=drift_fixed_x,
-                    x0=x,
-                    t_span=t_span,
-                )
-            else:
-                with torch.no_grad():
-                    data = solver.integrate(
-                        drift=drift_fixed_x,
-                        x0=x,
-                        t_span=t_span,
-                    )
-        elif isinstance(solver, DictTensorODESolver):
-            #TODO: make it compatible with TensorDict
-
-            x = fixed_x * (1 - fixed_mask) + x * fixed_mask
-            def drift_fixed_x(t, x):
-                xt_partially_fixed = self.diffusion_process.direct_sample(self.diffusion_process.t_max-t, fixed_x) * (1 - fixed_mask) + x * fixed_mask
-                return fixed_mask * self.diffusion_process.reverse_ode(function=self.model, function_type=self.model_type, condition=condition).drift(t, xt_partially_fixed)
-            if with_grad:
-                data = solver.integrate(
-                    drift=drift_fixed_x,
-                    x0=x,
-                    t_span=t_span,
-                    batch_size=torch.prod(extra_batch_size) * data_batch_size,
-                    x_size=x.shape
-                )
-            else:
-                with torch.no_grad():
-                    data = solver.integrate(
-                        drift=drift_fixed_x,
-                        x0=x,
-                        t_span=t_span,
-                        batch_size=torch.prod(extra_batch_size) * data_batch_size,
-                        x_size=x.shape
-                    )
-        elif isinstance(solver, SDESolver):
-            #TODO: make it compatible with TensorDict
-            #TODO: validate the implementation
-            assert self.reverse_diffusion_process is not None, "reverse_path must be specified in config"
-            if not hasattr(self, "t_span"):
-                self.t_span = torch.linspace(0, self.diffusion_process.t_max, 2).to(self.device)
-
-            x = fixed_x * (1 - fixed_mask) + x * fixed_mask
-            sde = self.diffusion_process.reverse_sde(
-                function=self.model,
-                function_type=self.model_type,
-                condition=condition,
-                reverse_diffusion_function=self.reverse_diffusion_process.diffusion,
-                reverse_diffusion_squared_function=self.reverse_diffusion_process.diffusion_squared,
-            )
-            def drift_fixed_x(t, x):
-                xt_partially_fixed = self.diffusion_process.direct_sample(self.diffusion_process.t_max-t, fixed_x) * (1 - fixed_mask) + x * fixed_mask
-                return fixed_mask * sde.drift(t, xt_partially_fixed)
-            def diffusion_fixed_x(t, x):
-                xt_partially_fixed = self.diffusion_process.direct_sample(self.diffusion_process.t_max-t, fixed_x) * (1 - fixed_mask) + x * fixed_mask
-                return fixed_mask * sde.diffusion(t, xt_partially_fixed)
-            if with_grad:
-                data = solver.integrate(
-                    drift=drift_fixed_x,
-                    diffusion=diffusion_fixed_x,
-                    x0=x,
-                    t_span=t_span,
-                )
-            else:
-                with torch.no_grad():
-                    data = solver.integrate(
-                        drift=drift_fixed_x,
-                        diffusion=diffusion_fixed_x,
-                        x0=x,
-                        t_span=t_span,
-                    )
-        else:
-            raise NotImplementedError("Solver type {} is not implemented".format(self.config.solver.type))
-        
-        if isinstance(data, torch.Tensor):
-            # data.shape = (T, B*N, D)
-            if len(extra_batch_size.shape) == 0:
-                if isinstance(self.x_size, int):
-                    data = data.reshape(-1, extra_batch_size, data_batch_size, self.x_size)
-                elif isinstance(self.x_size, Tuple) or isinstance(self.x_size, List) or isinstance(self.x_size, torch.Size):
-                    data = data.reshape(-1, extra_batch_size, data_batch_size, *self.x_size)
-                else:
-                    assert False,  "Invalid x_size"
-            else:
-                if isinstance(self.x_size, int):
-                    data = data.reshape(-1, *extra_batch_size, data_batch_size, self.x_size)
-                elif isinstance(self.x_size, Tuple) or isinstance(self.x_size, List) or isinstance(self.x_size, torch.Size):
-                    data = data.reshape(-1, *extra_batch_size, data_batch_size, *self.x_size)
-                else:
-                    assert False,  "Invalid x_size"
-            # data.shape = (T, B, N, D)
-
-            if batch_size is None:
-                data = data.squeeze(1)
-                # data.shape = (T, N, D)
-            else:
-                # data.shape = (T, B, N, D)
-                pass
-        elif isinstance(data, TensorDict):
-            raise NotImplementedError("Not implemented")
-        elif isinstance(data, treetensor.torch.Tensor):
-            for key in data.keys():
-                if len(extra_batch_size.shape) == 0:
-                    if isinstance(self.x_size[key], int):
-                        data[key] = data[key].reshape(-1, extra_batch_size, data_batch_size, self.x_size[key])
-                    elif isinstance(self.x_size[key], Tuple) or isinstance(self.x_size[key], List) or isinstance(self.x_size[key], torch.Size):
-                        data[key] = data[key].reshape(-1, extra_batch_size, data_batch_size, *self.x_size[key])
-                    else:
-                        assert False,  "Invalid x_size"
-                else:
-                    if isinstance(self.x_size[key], int):
-                        data[key] = data[key].reshape(-1, *extra_batch_size, data_batch_size, self.x_size[key])
-                    elif isinstance(self.x_size[key], Tuple) or isinstance(self.x_size[key], List) or isinstance(self.x_size[key], torch.Size):
-                        data[key] = data[key].reshape(-1, *extra_batch_size, data_batch_size, *self.x_size[key])
-                    else:
-                        assert False,  "Invalid x_size"
-                # data.shape = (T, B, N, D)
-
-                if batch_size is None:
-                    data[key] = data[key].squeeze(1)
-                    # data.shape = (T, N, D)
-                else:
-                    # data.shape = (T, B, N, D)
-                    pass
-        else:
-            raise NotImplementedError("Not implemented")
-
-        return data
+        raise NotImplementedError("Not implemented")
 
     def forward_sample(
             self,
@@ -653,65 +482,14 @@ class DiffusionModel(nn.Module):
             solver_config (:obj:`EasyDict`): The configuration of the solver.
         """
 
-        #TODO: very important function
-        #TODO: validate these functions
-
-        t_span = t_span.to(self.device)
-
-        batch_size = x.shape[0]
-
-        if solver_config is not None:
-            solver = get_solver(solver_config.type)(**solver_config.args)
-        else:
-            assert hasattr(self, "solver"), "solver must be specified in config or solver_config"
-            solver = self.solver
-
-        if isinstance(solver, ODESolver):
-            #TODO: make it compatible with TensorDict
-
-            if with_grad:
-                data = solver.integrate(
-                    drift=self.diffusion_process.forward_ode(function=self.model, function_type=self.model_type, condition=condition).drift,
-                    x0=x,
-                    t_span=t_span,
-                )[-1]
-            else:
-                with torch.no_grad():
-                    data = solver.integrate(
-                        drift=self.diffusion_process.forward_ode(function=self.model, function_type=self.model_type, condition=condition).drift,
-                        x0=x,
-                        t_span=t_span,
-                    )[-1]
-        elif isinstance(solver, SDESolver):
-            #TODO: make it compatible with TensorDict
-            #TODO: validate the implementation
-            assert self.diffusion_process is not None, "path must be specified in config"
-
-            sde = self.diffusion_process.forward_sde(function=self.model, function_type=self.model_type, condition=condition, forward_diffusion_function=self.diffusion_process.diffusion, forward_diffusion_squared_function=self.diffusion_process.diffusion_squared)
-            if with_grad:
-                data = solver.integrate(
-                    drift=sde.drift,
-                    diffusion=sde.diffusion,
-                    x0=x,
-                    t_span=t_span,
-                )[-1]
-            else:
-                with torch.no_grad():
-                    data = solver.integrate(
-                        drift=sde.drift,
-                        diffusion=sde.diffusion,
-                        x0=x,
-                        t_span=t_span,
-                    )[-1]
-        else:
-            raise NotImplementedError("Solver type {} is not implemented".format(self.config.solver.type))
-        return data
+        raise NotImplementedError("Not implemented")
 
     def score_function(
             self,
             t: torch.Tensor,
             x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
             condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+            guidance_scale: float = 1.0,
         ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
         r"""
         Overview:
@@ -725,49 +503,14 @@ class DiffusionModel(nn.Module):
             x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
             condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
         """
-
-        return self.score_function_.forward(self.model, t, x, condition)
-
-    def score_matching_loss(
-            self,
-            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-            weighting_scheme: str = None,
-            average: bool = True,
-        ) -> torch.Tensor:
-        """
-        Overview:
-            The loss function for training unconditional diffusion model.
-
-        Arguments:
-            x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input.
-            condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
-            weighting_scheme (:obj:`str`): The weighting scheme for score matching loss, which can be "maximum_likelihood" or "vanilla".
-
-            ..note::
-                - "maximum_likelihood": The weighting scheme is based on the maximum likelihood estimation. Refer to the paper "Maximum Likelihood Training of Score-Based Diffusion Models" for more details. The weight :math:`\lambda(t)` is denoted as:
-
-                    .. math::
-                        \lambda(t) = g^2(t)
-
-                    for numerical stability, we use Monte Carlo sampling to approximate the integral of :math:`\lambda(t)`.
-
-                    .. math::
-                        \lambda(t) = g^2(t) = p(t)\sigma^2(t) 
-
-                - "vanilla": The weighting scheme is based on the vanilla score matching, which balances the MSE loss by scaling the model output to the noise value. Refer to the paper "Score-Based Generative Modeling through Stochastic Differential Equations" for more details. The weight :math:`\lambda(t)` is denoted as:
-
-                    .. math::
-                        \lambda(t) = \sigma^2(t)
-        """
-
-        return self.score_function_.score_matching_loss(self.model, x, condition, self.gaussian_generator, weighting_scheme, average)
+        return (1.0 - guidance_scale) * self.score_function_.forward(self.base_model, t, x, condition) + guidance_scale * self.score_function_.forward(self.guided_model, t, x, condition)
 
     def velocity_function(
             self,
             t: torch.Tensor,
             x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
             condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+            guidance_scale: float = 1.0,
         ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
         r"""
         Overview:
@@ -781,30 +524,14 @@ class DiffusionModel(nn.Module):
             x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state at time t.
             condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
         """
-
-        return self.velocity_function_.forward(self.model, t, x, condition)
-
-    def flow_matching_loss(
-            self,
-            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-            average: bool = True,
-        ) -> torch.Tensor:
-        """
-        Overview:
-            Return the flow matching loss function of the model given the initial state and the condition.
-        Arguments:
-            x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
-            condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
-        """
-
-        return self.velocity_function_.flow_matching_loss(self.model, x, condition, self.gaussian_generator, average)
+        return (1.0 - guidance_scale) * self.velocity_function_.forward(self.base_model, t, x, condition) + guidance_scale * self.velocity_function_.forward(self.guided_model, t, x, condition)
 
     def noise_function(
             self,
             t: torch.Tensor,
             x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
             condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+            guidance_scale: float = 1.0,
         ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
         r"""
         Overview:
@@ -819,13 +546,14 @@ class DiffusionModel(nn.Module):
             condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
         """
 
-        return self.noise_function_.forward(self.model, t, x, condition)
-    
+        return (1.0 - guidance_scale) * self.noise_function_.forward(self.base_model, t, x, condition) + guidance_scale * self.noise_function_.forward(self.guided_model, t, x, condition)
+
     def data_prediction_function(
             self,
             t: torch.Tensor,
             x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
             condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+            guidance_scale: float = 1.0,
         ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
         r"""
         Overview:
@@ -840,33 +568,4 @@ class DiffusionModel(nn.Module):
             condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
         """
 
-        return self.data_prediction_function_.forward(self.model, t, x, condition)
-
-    def dpo_loss(
-            self,
-            ref_dm,
-            data,
-            beta,
-        ) -> torch.Tensor:
-        # TODO: split data_w, data_l
-        x_w, x_l = data[:, :2], data[:, 2:]
-        noise = torch.randn_like(x_w).to(x_w.device)
-        eps = 1e-5
-        t = torch.rand(x_w.shape[0], device=x_w.device) * (self.diffusion_process.t_max - eps) + eps
-        noisy_x_w = self.diffusion_process.scale(t, x_w) * x_w + self.diffusion_process.std(t, x_w) * noise
-        noisy_x_w = noisy_x_w.to(t)
-        noisy_x_l = self.diffusion_process.scale(t, x_l) * x_l + self.diffusion_process.std(t, x_l) * noise
-        noisy_x_l = noisy_x_l.to(t)
-        model_w_pred = self.model(t, noisy_x_w)
-        model_l_pred = self.model(t, noisy_x_l)
-        ref_w_pred = ref_dm.model(t, noisy_x_w)
-        ref_l_pred = ref_dm.model(t, noisy_x_l)
-        model_w_err = (model_w_pred - noise).norm(dim=1, keepdim=True).pow(2)
-        model_l_err = (model_l_pred - noise).norm(dim=1, keepdim=True).pow(2)
-        ref_w_err = (ref_w_pred - noise).norm(dim=1, keepdim=True).pow(2).detach()
-        ref_l_err = (ref_l_pred - noise).norm(dim=1, keepdim=True).pow(2).detach()
-        w_diff = model_w_err - ref_w_err
-        l_diff = model_l_err - ref_l_err
-        inside_term = -1 * beta * (w_diff - l_diff)
-        loss = -1 * torch.log(torch.sigmoid(inside_term)+eps).mean()
-        return loss
+        return (1.0 - guidance_scale) * self.data_prediction_function_.forward(self.base_model, t, x, condition) + guidance_scale * self.data_prediction_function_.forward(self.guided_model, t, x, condition)
