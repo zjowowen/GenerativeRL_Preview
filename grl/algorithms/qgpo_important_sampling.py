@@ -112,6 +112,45 @@ class QGPOCritic(nn.Module):
         q_loss = (torch.nn.functional.mse_loss(q0, targets) + torch.nn.functional.mse_loss(q1, targets)) / 2
         return q_loss
 
+class GuidedPolicy(nn.Module):
+
+    def __init__(self, config):
+        super().__init__()
+        self.model = GuidedDiffusionModel(config)
+
+    def sample(
+            self,
+            base_model,
+            guided_model,
+            state: Union[torch.Tensor, TensorDict],
+            batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
+            guidance_scale: Union[torch.Tensor, float] = torch.tensor(1.0),
+            solver_config: EasyDict = None,
+            t_span: torch.Tensor = None,
+        ) -> Union[torch.Tensor, TensorDict]:
+        """
+        Overview:
+            Return the output of QGPO policy, which is the action conditioned on the state.
+        Arguments:
+            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            guidance_scale (:obj:`Union[torch.Tensor, float]`): The guidance scale.
+            solver_config (:obj:`EasyDict`): The configuration for the ODE solver.
+            t_span (:obj:`torch.Tensor`): The time span for the ODE solver or SDE solver.
+        Returns:
+            action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
+        """
+
+        return self.model.sample(
+            base_model=base_model,
+            guided_model=guided_model,
+            t_span = t_span,
+            condition=state,
+            batch_size=batch_size,
+            guidance_scale=guidance_scale,
+            with_grad=False,
+            solver_config=solver_config
+        )
+
 class QGPOPolicy(nn.Module):
 
     def __init__(self, config: EasyDict):
@@ -122,7 +161,7 @@ class QGPOPolicy(nn.Module):
         self.critic = QGPOCritic(config.critic)
         self.diffusion_model = DiffusionModel(config.diffusion_model)
         self.diffusion_model_important_sampling = DiffusionModel(config.diffusion_model)
-        self.guidance_model = GuidedDiffusionModel(config.diffusion_model, base_model=self.diffusion_model, guided_model=self.diffusion_model_important_sampling)
+        # self.guidance_model = GuidedDiffusionModel(config.diffusion_model)
 
     def forward(self, state: Union[torch.Tensor, TensorDict]) -> Union[torch.Tensor, TensorDict]:
         """
@@ -154,14 +193,25 @@ class QGPOPolicy(nn.Module):
         Returns:
             action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
-        return self.guidance_model.sample(
+
+        return self.diffusion_model.sample(
             t_span = t_span,
             condition=state,
             batch_size=batch_size,
-            guidance_scale=guidance_scale,
             with_grad=False,
             solver_config=solver_config
         )
+
+        # return self.guidance_model.sample(
+        #     base_model=self.diffusion_model.model,
+        #     guided_model=self.diffusion_model_important_sampling.model,
+        #     t_span = t_span,
+        #     condition=state,
+        #     batch_size=batch_size,
+        #     guidance_scale=guidance_scale,
+        #     with_grad=False,
+        #     solver_config=solver_config
+        # )
 
     def behaviour_policy_sample(
             self,
@@ -353,6 +403,7 @@ class QGPOISAlgorithm:
                 self.model["QGPOPolicy"].to(config.model.QGPOPolicy.device)
                 if torch.__version__ >= "2.0.0":
                     self.model["QGPOPolicy"] = torch.compile(self.model["QGPOPolicy"])
+                self.model["GuidedPolicy"] = GuidedPolicy(config=config.model.QGPOPolicy.diffusion_model)
 
             #---------------------------------------
             # Customized model initialization code ↑
@@ -389,7 +440,9 @@ class QGPOISAlgorithm:
                 for guidance_scale in config.parameter.evaluation.guidance_scale:
                     def policy(obs: np.ndarray) -> np.ndarray:
                         obs = torch.tensor(obs, dtype=torch.float32, device=config.model.QGPOPolicy.device).unsqueeze(0)
-                        action = model.sample(
+                        action = model["GuidedPolicy"].sample(
+                            base_model=self.model["QGPOPolicy"].diffusion_model.model,
+                            guided_model=self.model["QGPOPolicy"].diffusion_model_important_sampling.model,
                             state = obs,
                             guidance_scale=guidance_scale,
                             t_span = torch.linspace(0.0, 1.0, config.parameter.fake_data_t_span).to(config.model.QGPOPolicy.device) if config.parameter.fake_data_t_span is not None else None
@@ -419,8 +472,8 @@ class QGPOISAlgorithm:
                 behaviour_model_training_loss.backward()
                 behaviour_model_optimizer.step()
 
-                if train_iter < 0 or (train_iter + 1) % config.parameter.evaluation.evaluation_interval == 0:
-                    evaluation_results = evaluate(self.model["QGPOPolicy"], train_iter=train_iter)
+                if train_iter == 0 or (train_iter + 1) % config.parameter.evaluation.evaluation_interval == 0:
+                    evaluation_results = evaluate(self.model, train_iter=train_iter)
                     wandb_run.log(data=evaluation_results, commit=False)
 
                 wandb_run.log(
@@ -491,7 +544,7 @@ class QGPOISAlgorithm:
                 diffusion_model_important_sampling_optimizer.step()
 
                 if train_iter == 0 or (train_iter + 1) % config.parameter.evaluation.evaluation_interval == 0:
-                    evaluation_results = evaluate(self.model["QGPOPolicy"], train_iter=train_iter)
+                    evaluation_results = evaluate(self.model, train_iter=train_iter)
                     wandb_run.log(data=evaluation_results, commit=False)
 
                 wandb_run.log(

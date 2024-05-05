@@ -12,7 +12,7 @@ t_encoder = dict(
         scale = 30.0,
     ),
 )
-solver_type = "DPMSolver"
+solver_type = "ODESolver"
 
 config = EasyDict(
     train = dict(
@@ -121,7 +121,7 @@ config = EasyDict(
             ),
             evaluation = dict(
                 evaluation_interval = 1000,
-                guidance_scale = [0.0, 1.0],
+                guidance_scale = [0.0, 1.0, 2.0],
             ),
         ),
     ),

@@ -25,7 +25,7 @@ from grl.numerical_methods.probability_path import \
     GaussianConditionalProbabilityPath
 
 
-class GuidedDiffusionModel(nn.Module):
+class GuidedDiffusionModel:
     """
     Overview:
         Guided Diffusion Model with a base diffusion model and a guided diffusion model.
@@ -36,8 +36,6 @@ class GuidedDiffusionModel(nn.Module):
     def __init__(
             self,
             config: EasyDict,
-            base_model: DiffusionModel,
-            guided_model: DiffusionModel,
             ) -> None:
         """
         Overview:
@@ -63,8 +61,6 @@ class GuidedDiffusionModel(nn.Module):
         self.model_type = config.model.type
         assert self.model_type in ["score_function", "data_prediction_function", "velocity_function", "noise_function"], \
             "Unknown type of model {}".format(self.model_type)
-        self.base_model = base_model.model
-        self.guided_model = guided_model.model
         self.diffusion_process = DiffusionProcess(self.path)
         if self.reverse_path is not None:
             self.reverse_diffusion_process = DiffusionProcess(self.reverse_path)
@@ -83,6 +79,8 @@ class GuidedDiffusionModel(nn.Module):
 
     def sample(
             self,
+            base_model,
+            guided_model,
             t_span: torch.Tensor = None,
             batch_size: Union[torch.Size, int, Tuple[int], List[int]]  = None,
             x_0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
@@ -115,6 +113,8 @@ class GuidedDiffusionModel(nn.Module):
         """
 
         return self.sample_forward_process(
+            base_model=base_model,
+            guided_model=guided_model,
             t_span=t_span,
             batch_size=batch_size,
             x_0=x_0,
@@ -126,6 +126,8 @@ class GuidedDiffusionModel(nn.Module):
 
     def sample_forward_process(
             self,
+            base_model,
+            guided_model,
             t_span: torch.Tensor = None,
             batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
             x_0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
@@ -209,10 +211,21 @@ class GuidedDiffusionModel(nn.Module):
             #Note: DPMSolver does not support t_span argument assignment
             assert t_span is None, "DPMSolver does not support t_span argument assignment"
             #TODO: make it compatible with TensorDict
+            assert False, "There may exist a bug in DPMSolver, please use other solvers"
+            #TODO: validate the implementation
+
+            def noise_function(
+                t: torch.Tensor,
+                x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+                condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+                guidance_scale: float = 1.0,
+            ):
+                return self.noise_function(base_model=base_model, guided_model=guided_model, t=t, x=x, condition=condition, guidance_scale=guidance_scale)
+
             if with_grad:
                 data = solver.integrate(
                     diffusion_process=self.diffusion_process,
-                    noise_function=self.noise_function,
+                    noise_function=noise_function,
                     data_prediction_function=self.data_prediction_function,
                     x=x,
                     condition=condition,
@@ -222,7 +235,7 @@ class GuidedDiffusionModel(nn.Module):
                 with torch.no_grad():
                     data = solver.integrate(
                         diffusion_process=self.diffusion_process,
-                        noise_function=self.noise_function,
+                        noise_function=noise_function,
                         data_prediction_function=self.data_prediction_function,
                         x=x,
                         condition=condition,
@@ -231,7 +244,7 @@ class GuidedDiffusionModel(nn.Module):
         elif isinstance(solver, ODESolver):
             #TODO: make it compatible with TensorDict
             def drift(t, x):
-                return (1.0-guidance_scale)*self.diffusion_process.reverse_ode(function=self.base_model, function_type=self.model_type, condition=condition).drift(t, x) + guidance_scale*self.diffusion_process.reverse_ode(function=self.guided_model, function_type=self.model_type, condition=condition).drift(t, x)
+                return (1.0-guidance_scale)*self.diffusion_process.reverse_ode(function=base_model, function_type=self.model_type, condition=condition).drift(t, x) + guidance_scale*self.diffusion_process.reverse_ode(function=guided_model, function_type=self.model_type, condition=condition).drift(t, x)
 
             if with_grad:
                 data = solver.integrate(
@@ -250,7 +263,7 @@ class GuidedDiffusionModel(nn.Module):
             #TODO: make it compatible with TensorDict
 
             def drift(t, x):
-                return (1.0-guidance_scale)*self.diffusion_process.reverse_ode(function=self.base_model, function_type=self.model_type, condition=condition).drift(t, x) + guidance_scale*self.diffusion_process.reverse_ode(function=self.guided_model, function_type=self.model_type, condition=condition).drift(t, x)
+                return (1.0-guidance_scale)*self.diffusion_process.reverse_ode(function=base_model, function_type=self.model_type, condition=condition).drift(t, x) + guidance_scale*self.diffusion_process.reverse_ode(function=guided_model, function_type=self.model_type, condition=condition).drift(t, x)
 
             if with_grad:
                 data = solver.integrate(
@@ -276,8 +289,8 @@ class GuidedDiffusionModel(nn.Module):
             if not hasattr(self, "t_span"):
                 self.t_span = torch.linspace(0, self.diffusion_process.t_max, 2).to(self.device)
             
-            sde_based = self.diffusion_process.reverse_sde(function=self.base_model, function_type=self.model_type, condition=condition, reverse_diffusion_function=self.reverse_diffusion_process.diffusion, reverse_diffusion_squared_function=self.reverse_diffusion_process.diffusion_squared)
-            sde_guided = self.diffusion_process.reverse_sde(function=self.guided_model, function_type=self.model_type, condition=condition, reverse_diffusion_function=self.reverse_diffusion_process.diffusion, reverse_diffusion_squared_function=self.reverse_diffusion_process.diffusion_squared)
+            sde_based = self.diffusion_process.reverse_sde(function=base_model, function_type=self.model_type, condition=condition, reverse_diffusion_function=self.reverse_diffusion_process.diffusion, reverse_diffusion_squared_function=self.reverse_diffusion_process.diffusion_squared)
+            sde_guided = self.diffusion_process.reverse_sde(function=guided_model, function_type=self.model_type, condition=condition, reverse_diffusion_function=self.reverse_diffusion_process.diffusion, reverse_diffusion_squared_function=self.reverse_diffusion_process.diffusion_squared)
             def drift(t, x):
                 return (1.0-guidance_scale)*sde_based.drift(t, x) + guidance_scale*sde_guided.drift(t, x)
             if with_grad:
@@ -372,6 +385,8 @@ class GuidedDiffusionModel(nn.Module):
 
     def sample_with_fixed_x(
             self,
+            base_model,
+            guided_model,
             fixed_x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
             fixed_mask: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
             t_span: torch.Tensor = None,
@@ -410,6 +425,8 @@ class GuidedDiffusionModel(nn.Module):
         """
 
         return self.sample_forward_process_with_fixed_x(
+            base_model=base_model,
+            guided_model=guided_model,
             fixed_x=fixed_x,
             fixed_mask=fixed_mask,
             t_span=t_span,
@@ -423,6 +440,8 @@ class GuidedDiffusionModel(nn.Module):
 
     def sample_forward_process_with_fixed_x(
             self,
+            base_model,
+            guided_model,
             fixed_x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
             fixed_mask: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
             t_span: torch.Tensor = None,
@@ -464,6 +483,8 @@ class GuidedDiffusionModel(nn.Module):
 
     def forward_sample(
             self,
+            base_model,
+            guided_model,
             x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
             t_span: torch.Tensor,
             condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
@@ -486,6 +507,8 @@ class GuidedDiffusionModel(nn.Module):
 
     def score_function(
             self,
+            base_model,
+            guided_model,
             t: torch.Tensor,
             x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
             condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
@@ -503,10 +526,12 @@ class GuidedDiffusionModel(nn.Module):
             x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
             condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
         """
-        return (1.0 - guidance_scale) * self.score_function_.forward(self.base_model, t, x, condition) + guidance_scale * self.score_function_.forward(self.guided_model, t, x, condition)
+        return (1.0 - guidance_scale) * self.score_function_.forward(base_model, t, x, condition) + guidance_scale * self.score_function_.forward(guided_model, t, x, condition)
 
     def velocity_function(
             self,
+            base_model,
+            guided_model,
             t: torch.Tensor,
             x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
             condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
@@ -524,10 +549,12 @@ class GuidedDiffusionModel(nn.Module):
             x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state at time t.
             condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
         """
-        return (1.0 - guidance_scale) * self.velocity_function_.forward(self.base_model, t, x, condition) + guidance_scale * self.velocity_function_.forward(self.guided_model, t, x, condition)
+        return (1.0 - guidance_scale) * self.velocity_function_.forward(base_model, t, x, condition) + guidance_scale * self.velocity_function_.forward(guided_model, t, x, condition)
 
     def noise_function(
             self,
+            base_model,
+            guided_model,
             t: torch.Tensor,
             x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
             condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
@@ -546,10 +573,12 @@ class GuidedDiffusionModel(nn.Module):
             condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
         """
 
-        return (1.0 - guidance_scale) * self.noise_function_.forward(self.base_model, t, x, condition) + guidance_scale * self.noise_function_.forward(self.guided_model, t, x, condition)
+        return (1.0 - guidance_scale) * self.noise_function_.forward(base_model, t, x, condition) + guidance_scale * self.noise_function_.forward(guided_model, t, x, condition)
 
     def data_prediction_function(
             self,
+            base_model,
+            guided_model,
             t: torch.Tensor,
             x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
             condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
@@ -568,4 +597,4 @@ class GuidedDiffusionModel(nn.Module):
             condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
         """
 
-        return (1.0 - guidance_scale) * self.data_prediction_function_.forward(self.base_model, t, x, condition) + guidance_scale * self.data_prediction_function_.forward(self.guided_model, t, x, condition)
+        return (1.0 - guidance_scale) * self.data_prediction_function_.forward(base_model, t, x, condition) + guidance_scale * self.data_prediction_function_.forward(guided_model, t, x, condition)

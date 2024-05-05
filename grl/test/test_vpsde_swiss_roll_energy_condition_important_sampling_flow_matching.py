@@ -145,10 +145,9 @@ if __name__ == "__main__":
 
     diffusion_model = DiffusionModel(config.model.diffusion_model).to(config.model.diffusion_model.device)
     diffusion_model_important_sampling = DiffusionModel(config.model.diffusion_model).to(config.model.diffusion_model.device)
-    guidance_model = GuidedDiffusionModel(config.model.diffusion_model, base_model=diffusion_model, guided_model=diffusion_model_important_sampling).to(config.model.diffusion_model.device)
+    guidance_model = GuidedDiffusionModel(config.model.diffusion_model)
     diffusion_model = torch.compile(diffusion_model)
     diffusion_model_important_sampling = torch.compile(diffusion_model_important_sampling)
-    guidance_model = torch.compile(guidance_model)
 
     if config.parameter.evaluation.model_save_path is not None:
 
@@ -258,7 +257,12 @@ if __name__ == "__main__":
             subprocess_list.append(p1)
 
             for guidance_scale in config.parameter.evaluation.guidance_scale:
-                x_t = guidance_model.sample_forward_process(t_span=t_span, batch_size=500, guidance_scale=guidance_scale).cpu().detach()
+                x_t = guidance_model.sample_forward_process(
+                    base_model=diffusion_model.model,
+                    guided_model=diffusion_model_important_sampling.model,
+                    t_span=t_span,
+                    batch_size=500,
+                    guidance_scale=guidance_scale).cpu().detach()
                 x_t=[x.squeeze(0) for x in torch.split(x_t, split_size_or_sections=1, dim=0)]
                 p2 = mp.Process(target=render_video, args=(x_t, config.parameter.evaluation.video_save_path, f"guidance_diffusion_model_iteration_{diffusion_model_iteration}_scale_{guidance_scale}", 100, 100))
                 p2.start()
