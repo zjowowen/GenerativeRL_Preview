@@ -34,55 +34,60 @@ config = EasyDict(
                 device = device,
                 critic = dict(
                     DoubleQNetwork=dict(
-                        action_encoder=dict(
-                            type="GaussianFourierProjectionEncoder",
-                            args=dict(
-                                embed_dim=32,
-                                x_shape=[action_size],
-                            ),
-                        ),
-                        state_encoder=dict(
-                            type="GaussianFourierProjectionEncoder",
-                            args=dict(
-                                embed_dim=32,
-                                x_shape=[state_size],
-                            ),
-                        ),
+                        # action_encoder=dict(
+                        #     type="GaussianFourierProjectionEncoder",
+                        #     args=dict(
+                        #         embed_dim=32,
+                        #         x_shape=[action_size],
+                        #         scale=0.1,
+                        #     ),
+                        # ),
+                        # state_encoder=dict(
+                        #     type="GaussianFourierProjectionEncoder",
+                        #     args=dict(
+                        #         embed_dim=32,
+                        #         x_shape=[state_size],
+                        #         scale=0.1,
+                        #     ),
+                        # ),
                         backbone=dict(
                             type="ConcatenateMLP",
                             args=dict(
-                                hidden_sizes=[320, 512],
+                                hidden_sizes=[10, 256, 256],
                                 output_size=1,
-                                activation="silu",
+                                activation="relu",
                             ),
                         ),
                     ),
                 ),
                 policy = dict(
                     model=dict(
-                        condition_encoder=dict(
-                            type="GaussianFourierProjectionEncoder",
-                            args=dict(
-                                embed_dim=32,
-                                x_shape=[state_size],
-                            ),
-                        ),
+                        # condition_encoder=dict(
+                        #     type="GaussianFourierProjectionEncoder",
+                        #     args=dict(
+                        #         embed_dim=32,
+                        #         x_shape=[state_size],
+                        #         scale=0.1,
+                        #     ),
+                        # ),
                         mu_model=dict(
-                            hidden_sizes=[256, 512],
+                            hidden_sizes=[8, 128, 128],
                             output_size=action_size,
-                            activation="silu",
+                            activation="relu",
+                            final_activation='tanh',
+                            scale=5.0,
                         ),
                         cov=dict(
                             dim=action_size,
                             sigma_lambda=dict(
-                                hidden_sizes=[256, 512],
+                                hidden_sizes=[8, 128, 128],
                                 output_size=action_size,
-                                activation="silu",
+                                activation="relu",
                             ),
                             sigma_offdiag=dict(
-                                hidden_sizes=[256, 512],
-                                output_size=action_size * action_size,
-                                activation="silu",
+                                hidden_sizes=[8, 128, 128],
+                                output_size=action_size*(action_size-1)//2,
+                                activation="relu",
                             ),
                         ),
                     ),
@@ -91,7 +96,7 @@ config = EasyDict(
         ),
         parameter = dict(
             entropy_coeffi = 0.2,
-            target_entropy = -20,
+            target_entropy = -2,
             online_rl = dict(
                 iterations = 100000,
                 collect_steps = 1,

@@ -9,7 +9,8 @@ from easydict import EasyDict
 from gym import spaces
 from rich.progress import Progress, track
 from tensordict import TensorDict
-from torch.distributions import Distribution, MultivariateNormal, TransformedDistribution
+from torch.distributions import (Distribution, MultivariateNormal,
+                                 TransformedDistribution)
 from torch.distributions.transforms import TanhTransform
 from torch.utils.data import DataLoader
 
@@ -190,9 +191,10 @@ class NonegativeFunction(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.model = MultiLayerPerceptron(**config)
+        self.relu = nn.ReLU()
 
     def forward(self, x):
-        return torch.exp(self.model(x))
+        return self.relu(self.model(x))
 
 class TanhFunction(nn.Module):
 
@@ -222,10 +224,10 @@ class CovarianceMatrix(nn.Module):
         low_t_m = self.eye.detach()
 
         low_t_m=low_t_m.repeat(x.shape[0],1,1)
-        # low_t_m[torch.concat((torch.reshape(torch.arange(x.shape[0]).repeat(self.dim*(self.dim-1)//2,1).T,(1,-1)),torch.tril_indices(self.dim, self.dim, offset=-1).repeat(1,x.shape[0]))).tolist()]=torch.reshape(self.sigma_offdiag(x),(-1,1)).squeeze(-1)
-        sigma_offdiag=self.sigma_offdiag(x)
-        sigma_offdiag=sigma_offdiag.reshape(-1, self.dim, self.dim)
-        low_t_m = low_t_m + sigma_offdiag.masked_fill(self.mask, 0)
+        low_t_m[torch.concat((torch.reshape(torch.arange(x.shape[0]).repeat(self.dim*(self.dim-1)//2,1).T,(1,-1)),torch.tril_indices(self.dim, self.dim, offset=-1).repeat(1,x.shape[0]))).tolist()]=torch.reshape(self.sigma_offdiag(x),(-1,1)).squeeze(-1)
+        #sigma_offdiag=self.sigma_offdiag(x)
+        #sigma_offdiag=sigma_offdiag.reshape(-1, self.dim, self.dim)
+        #low_t_m = low_t_m + sigma_offdiag.masked_fill(self.mask, 0)
         lambda_ = self.delta + self.sigma_lambda(x)
         low_t_m=torch.einsum("bj,bjk,bk->bjk", lambda_, low_t_m, lambda_)
 
@@ -543,7 +545,8 @@ class SACAlgorithm:
                 self.model["Policy"] = Policy(config.model.Policy)
                 self.model["Policy"].to(config.model.Policy.device)
                 if torch.__version__ >= "2.0.0":
-                    self.model["Policy"] = torch.compile(self.model["Policy"])
+                    pass
+                    # self.model["Policy"] = torch.compile(self.model["Policy"])
 
             #---------------------------------------
             # Customized model initialization code ↑
