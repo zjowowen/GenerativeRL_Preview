@@ -9,7 +9,7 @@ from easydict import EasyDict
 from gym import spaces
 from rich.progress import Progress, track
 from tensordict import TensorDict
-from torch.distributions import Distribution, MultivariateNormal
+from torch.distributions import Distribution, MultivariateNormal, TransformedDistribution
 from torch.distributions.transforms import TanhTransform
 from torch.utils.data import DataLoader
 
@@ -235,6 +235,56 @@ class CovarianceMatrix(nn.Module):
         ltm = self.low_triangle_matrix(x)
         return torch.matmul(ltm, ltm.T)
 
+
+class GaussianTanh(nn.Module, Distribution):
+    def __init__(self, config):
+        super().__init__()
+        self.config = config
+        if not hasattr(config, "condition_encoder"):
+            self.condition_encoder = torch.nn.Identity()
+        else:
+            self.condition_encoder = get_encoder(config.condition_encoder.type)(**config.condition_encoder.args)
+        self.mu_model = MultiLayerPerceptron(**config.mu_model)
+        self.cov = CovarianceMatrix(config.cov)
+
+    def dist(self, condition):
+        condition = self.condition_encoder(condition)
+        mu=self.mu_model(condition)
+        scale_tril = self.cov.low_triangle_matrix(condition)
+        return TransformedDistribution(
+            base_distribution=MultivariateNormal(loc=mu, scale_tril = scale_tril),
+            transforms=[TanhTransform(cache_size=1)])
+
+    def log_prob(self, x, condition):
+        return self.dist(condition).log_prob(x)
+
+    def sample(self, condition, sample_shape=torch.Size()):
+        return self.dist(condition).sample(sample_shape=sample_shape)
+
+    def rsample(self, condition, sample_shape=torch.Size()): 
+        return self.dist(condition).rsample(sample_shape=sample_shape)
+
+    def rsample_and_log_prob(self, condition, sample_shape=torch.Size()):
+        dist=self.dist(condition)
+        x=dist.rsample(sample_shape=sample_shape)
+        log_prob=dist.log_prob(x)
+        return x, log_prob
+    
+    def sample_and_log_prob(self, condition, sample_shape=torch.Size()):
+        with torch.no_grad():
+            return self.rsample_and_log_prob(condition, sample_shape)
+
+    def entropy(self, condition):
+        raise NotImplementedError
+        # return self.dist(condition).entropy()
+
+    def forward(self, condition):
+        dist=self.dist(condition)
+        x=dist.rsample()
+        log_prob=dist.log_prob(x)
+        return x, log_prob
+
+
 class Gaussian(nn.Module, Distribution):
     def __init__(self, config: EasyDict):
         super().__init__()
@@ -285,7 +335,7 @@ class GaussianPolicy(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        self.model = Gaussian(config.model)
+        self.model = GaussianTanh(config.model)
 
         
     def forward(self, obs):
