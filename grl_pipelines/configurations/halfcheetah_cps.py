@@ -8,7 +8,7 @@ device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("
 t_embedding_dim = 16  # CHANGE
 t_encoder = dict(
     type="SinusoidalPosEmb",
-    args=dict(),
+    args=dict(dim=t_embedding_dim),
 )
 
 config = EasyDict(
@@ -28,13 +28,17 @@ config = EasyDict(
             ),
         ),
         model=dict(
-            SRPOPolicy=dict(
+            CPSPolicy=dict(
                 device=device,
                 policy_model=dict(
                     state_dim=state_size,
                     action_dim=action_size,
                     layer=2,
                 ),
+                LA=1.0,
+                LA_min=0,
+                LA_max=100,
+                target_kl=0.04,
                 critic=dict(
                     device=device,
                     adim=action_size,
@@ -91,18 +95,27 @@ config = EasyDict(
         ),
         parameter=dict(
             behaviour_policy=dict(
-                batch_size=2048,
+                batch_size=256,
+                iterations=2000000,
                 learning_rate=3e-4,
-                iterations=600000,
+                lr_learning_rate=3e-5,
+                update_momentum=0.005,
+                update_target_every=5,
+                update_policy_every=2,
+                update_lr_every=1000,
+                step_start_target=1000,
+                grad_norm=7.0,
+                t_max=2000,
             ),
             sample_per_state=16,
             critic=dict(
                 batch_size=256,
-                iterations=600000,
                 learning_rate=3e-4,
                 discount_factor=0.99,
-                tau=0.7,
-                moment=0.995,
+                update_momentum=0.005,
+                grad_norm=7.0,
+                max_action=1.0,
+                t_max=2000,
             ),
             actor=dict(
                 batch_size=256,
@@ -110,7 +123,7 @@ config = EasyDict(
                 learning_rate=3e-4,
             ),
             evaluation=dict(
-                evaluation_interval=1000,
+                evaluation_interval=1,
             ),
         ),
     ),

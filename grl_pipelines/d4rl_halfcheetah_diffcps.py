@@ -1,6 +1,6 @@
 import gym
 
-from grl.algorithms.CPS import CPSAlgorithm
+from grl.algorithms.cps import CPSAlgorithm
 from grl.utils.log import log
 from grl_pipelines.configurations.halfcheetah_cps import config
 
