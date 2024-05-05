@@ -18,6 +18,7 @@ def get_encoder(type: str):
     else:
         raise ValueError(f"Unknown encoder type: {type}")
 
+
 class GaussianFourierProjectionTimeEncoder(nn.Module):
     r"""
     Overview:
@@ -27,7 +28,7 @@ class GaussianFourierProjectionTimeEncoder(nn.Module):
         The output embedding vector is computed as follows:
 
         .. math::
-        
+
             \phi(t) = [ \sin(t \cdot w_1), \cos(t \cdot w_1), \sin(t \cdot w_2), \cos(t \cdot w_2), \ldots, \sin(t \cdot w_{\text{embed\_dim} / 2}), \cos(t \cdot w_{\text{embed\_dim} / 2}) ]
 
         where :math:`w_i` is a random scalar sampled from the Gaussian distribution.
@@ -35,7 +36,7 @@ class GaussianFourierProjectionTimeEncoder(nn.Module):
         ``__init__``, ``forward``.
     """
 
-    def __init__(self, embed_dim, scale=30.):
+    def __init__(self, embed_dim, scale=30.0):
         """
         Overview:
             Initialize the Gaussian Fourier Projection Time Encoder according to arguments.
@@ -46,7 +47,9 @@ class GaussianFourierProjectionTimeEncoder(nn.Module):
         super().__init__()
         # Randomly sample weights during initialization. These weights are fixed
         # during optimization and are not trainable.
-        self.W = nn.Parameter(torch.randn(embed_dim // 2) * scale * 2 * np.pi, requires_grad=False)
+        self.W = nn.Parameter(
+            torch.randn(embed_dim // 2) * scale * 2 * np.pi, requires_grad=False
+        )
 
     def forward(self, x):
         """
@@ -68,6 +71,7 @@ class GaussianFourierProjectionTimeEncoder(nn.Module):
         x_proj = x[..., None] * self.W[None, :]
         return torch.cat([torch.sin(x_proj), torch.cos(x_proj)], dim=-1)
 
+
 class GaussianFourierProjectionEncoder(nn.Module):
     r"""
     Overview:
@@ -77,15 +81,15 @@ class GaussianFourierProjectionEncoder(nn.Module):
         The output embedding vector is computed as follows:
 
         .. math::
-            
+
                 \phi(x) = [ \sin(x \cdot w_1), \cos(x \cdot w_1), \sin(x \cdot w_2), \cos(x \cdot w_2), \ldots, \sin(x \cdot w_{\text{embed\_dim} / 2}), \cos(x \cdot w_{\text{embed\_dim} / 2}) ]
-    
+
         where :math:`w_i` is a random scalar sampled from the Gaussian distribution.
     Interfaces:
         ``__init__``, ``forward``.
     """
 
-    def __init__(self, embed_dim, x_shape, flatten=True, scale=30.):
+    def __init__(self, embed_dim, x_shape, flatten=True, scale=30.0):
         """
         Overview:
             Initialize the Gaussian Fourier Projection Time Encoder according to arguments.
@@ -98,7 +102,9 @@ class GaussianFourierProjectionEncoder(nn.Module):
         super().__init__()
         # Randomly sample weights during initialization. These weights are fixed
         # during optimization and are not trainable.
-        self.W = nn.Parameter(torch.randn(embed_dim // 2) * scale * 2 * np.pi, requires_grad=False)
+        self.W = nn.Parameter(
+            torch.randn(embed_dim // 2) * scale * 2 * np.pi, requires_grad=False
+        )
         self.x_shape = x_shape
         self.flatten = flatten
 
@@ -124,9 +130,10 @@ class GaussianFourierProjectionEncoder(nn.Module):
 
         # if x shape is (B1, ..., Bn, **x_shape), then the output shape is (B1, ..., Bn, np.prod(x_shape) * embed_dim)
         if self.flatten:
-            x_proj = torch.flatten(x_proj, start_dim=-1-self.x_shape.__len__())
+            x_proj = torch.flatten(x_proj, start_dim=-1 - self.x_shape.__len__())
 
         return x_proj
+
 
 class ExponentialFourierProjectionTimeEncoder(nn.Module):
     r"""
@@ -136,9 +143,9 @@ class ExponentialFourierProjectionTimeEncoder(nn.Module):
         The output embedding vector is computed as follows:
 
         .. math::
-            
+
                 \phi(t) = [ \sin(t \cdot w_1), \cos(t \cdot w_1), \sin(t \cdot w_2), \cos(t \cdot w_2), \ldots, \sin(t \cdot w_{\text{embed\_dim} / 2}), \cos(t \cdot w_{\text{embed\_dim} / 2}) ]
-    
+
             where :math:`w_i` is a random scalar sampled from a uniform distribution, then transformed by exponential function.
         There is an additional MLP layer to transform the frequency embedding:
 
@@ -149,6 +156,7 @@ class ExponentialFourierProjectionTimeEncoder(nn.Module):
     Interfaces:
         ``__init__``, ``forward``
     """
+
     def __init__(self, hidden_size, frequency_embedding_size=256):
         """
         Overview:
@@ -165,7 +173,7 @@ class ExponentialFourierProjectionTimeEncoder(nn.Module):
         )
         self.frequency_embedding_size = frequency_embedding_size
 
-    #TODO: simplify this function
+    # TODO: simplify this function
     @staticmethod
     def timestep_embedding(t, embed_dim, max_period=10000):
         """
@@ -180,14 +188,18 @@ class ExponentialFourierProjectionTimeEncoder(nn.Module):
         # https://github.com/openai/glide-text2im/blob/main/glide_text2im/nn.py
         half = embed_dim // 2
         freqs = torch.exp(
-            -math.log(max_period) * torch.arange(start=0, end=half, dtype=torch.float32) / half
+            -math.log(max_period)
+            * torch.arange(start=0, end=half, dtype=torch.float32)
+            / half
         ).to(device=t.device)
         if len(t.shape) == 0:
             t = t.unsqueeze(0)
         args = t[:, None].float() * freqs[None]
         embedding = torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
         if embed_dim % 2:
-            embedding = torch.cat([embedding, torch.zeros_like(embedding[:, :1])], dim=-1)
+            embedding = torch.cat(
+                [embedding, torch.zeros_like(embedding[:, :1])], dim=-1
+            )
         return embedding
 
     def forward(self, t: torch.Tensor):
@@ -201,8 +213,25 @@ class ExponentialFourierProjectionTimeEncoder(nn.Module):
         t_emb = self.mlp(t_freq)
         return t_emb
 
-ENCODERS={
+
+class SinusoidalPosEmb(nn.Module):
+    def __init__(self, dim):
+        super().__init__()
+        self.dim = dim
+
+    def forward(self, x):
+        device = x.device
+        half_dim = self.dim // 2
+        emb = math.log(10000) / (half_dim - 1)
+        emb = torch.exp(torch.arange(half_dim, device=device) * -emb)
+        emb = x[:, None] * emb[None, :]
+        emb = torch.cat((emb.sin(), emb.cos()), dim=-1)
+        return emb
+
+
+ENCODERS = {
     "GaussianFourierProjectionTimeEncoder".lower(): GaussianFourierProjectionTimeEncoder,
     "GaussianFourierProjectionEncoder".lower(): GaussianFourierProjectionEncoder,
     "ExponentialFourierProjectionTimeEncoder".lower(): ExponentialFourierProjectionTimeEncoder,
+    "SinusoidalPosEmb".lower(): SinusoidalPosEmb,
 }
