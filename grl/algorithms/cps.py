@@ -12,13 +12,15 @@ import torch.nn as nn
 from easydict import EasyDict
 from rich.progress import Progress, track
 from tensordict import TensorDict
-from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch.utils.data import DataLoader
+
 import wandb
 from grl.agents.srpo import SRPOAgent
 from grl.datasets import create_dataset
 from grl.datasets.d4rl import D4RLDataset
-from grl.generative_models.diffusion_model.diffusion_model import DiffusionModel
+from grl.generative_models.diffusion_model.diffusion_model import \
+    DiffusionModel
 from grl.generative_models.sro import SRPOConditionalDiffusionModel
 from grl.neural_network import MultiLayerPerceptron, register_module
 from grl.rl_modules.simulators import create_simulator
@@ -26,28 +28,6 @@ from grl.rl_modules.value_network.q_network import DoubleQNetwork
 from grl.utils import set_seed
 from grl.utils.config import merge_two_dicts_into_newone
 from grl.utils.log import log
-
-
-class EMA:
-    """
-    empirical moving average
-    """
-
-    def __init__(self, beta):
-        super().__init__()
-        self.beta = beta
-
-    def update_model_average(self, ma_model, current_model):
-        for current_params, ma_params in zip(
-            current_model.parameters(), ma_model.parameters()
-        ):
-            old_weight, up_weight = ma_params.data, current_params.data
-            ma_params.data = self.update_average(old_weight, up_weight)
-
-    def update_average(self, old, new):
-        if old is None:
-            return new
-        return old * self.beta + (1 - self.beta) * new
 
 
 class CONCATMLP(nn.Module):
