@@ -97,6 +97,8 @@
 <span class="kn">import</span> <span class="nn">treetensor</span>
 <span class="kn">from</span> <span class="nn">tensordict</span> <span class="kn">import</span> <span class="n">TensorDict</span>
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
+<span class="kn">from</span> <span class="nn">torchdiffeq</span> <span class="kn">import</span> <span class="n">odeint</span> <span class="k">as</span> <span class="n">torchdiffeq_odeint</span>
+<span class="kn">from</span> <span class="nn">torchdiffeq</span> <span class="kn">import</span> <span class="n">odeint_adjoint</span> <span class="k">as</span> <span class="n">torchdiffeq_odeint_adjoint</span>
 <span class="kn">from</span> <span class="nn">torchdyn.core</span> <span class="kn">import</span> <span class="n">NeuralODE</span>
 <span class="kn">from</span> <span class="nn">torchdyn.numerics</span> <span class="kn">import</span> <span class="n">Euler</span>
 <span class="kn">from</span> <span class="nn">torchdyn.numerics</span> <span class="kn">import</span> <span class="n">odeint</span> <span class="k">as</span> <span class="n">torchdyn_odeint</span>
@@ -131,7 +133,7 @@
 <span class="sd">            dt (:obj:`float`): The time step.</span>
 <span class="sd">            atol (:obj:`float`): The absolute tolerance.</span>
 <span class="sd">            rtol (:obj:`float`): The relative tolerance.</span>
-<span class="sd">            library (:obj:`str`): The library to use for the ODE solver. Currently, it supports &#39;torchdyn&#39; and &#39;torchode&#39;.</span>
+<span class="sd">            library (:obj:`str`): The library to use for the ODE solver. Currently, it supports &#39;torchdiffeq&#39;, &#39;torchdyn&#39; and &#39;torchode&#39;.</span>
 <span class="sd">            **kwargs: Additional arguments for the ODE solver.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ode_solver</span> <span class="o">=</span> <span class="n">ode_solver</span>
@@ -150,6 +152,7 @@
             <span class="n">drift</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span>
             <span class="n">x0</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
             <span class="n">t_span</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
@@ -163,7 +166,11 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">nfe</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">library</span> <span class="o">==</span> <span class="s2">&quot;torchdyn&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">library</span> <span class="o">==</span> <span class="s2">&quot;torchdiffeq&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">odeint_by_torchdiffeq</span><span class="p">(</span><span class="n">drift</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">library</span> <span class="o">==</span> <span class="s2">&quot;torchdiffeq_adjoint&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">odeint_by_torchdiffeq_adjoint</span><span class="p">(</span><span class="n">drift</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">library</span> <span class="o">==</span> <span class="s2">&quot;torchdyn&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">odeint_by_torchdyn</span><span class="p">(</span><span class="n">drift</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">library</span> <span class="o">==</span> <span class="s2">&quot;torchdyn_NeuralODE&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">odeint_by_torchdyn_NeuralODE</span><span class="p">(</span><span class="n">drift</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">)</span>
@@ -173,22 +180,115 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;library </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">library</span><span class="si">}</span><span class="s2"> is not supported&quot;</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="nf">forward_ode_drift_by_torchdyn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">nfe</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="c1"># broadcasting t to match the batch size of x</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">drift</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+    <span class="c1"># def forward_ode_drift_by_torchdiffeq(self, t, x):</span>
+    <span class="c1">#     self.nfe += 1</span>
+    <span class="c1">#     # broadcasting t to match the batch size of x</span>
+    <span class="c1">#     t = t.repeat(x.shape[0])</span>
+    <span class="c1">#     return self.drift(t, x)</span>
 
-    <span class="k">def</span> <span class="nf">forward_ode_drift_by_torchdyn_NeuralODE</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">nfe</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="c1"># broadcasting t to match the batch size of x</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">drift</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+    <span class="c1"># def forward_ode_drift_by_torchdyn(self, t, x):</span>
+    <span class="c1">#     self.nfe += 1</span>
+    <span class="c1">#     # broadcasting t to match the batch size of x</span>
+    <span class="c1">#     t = t.repeat(x.shape[0])</span>
+    <span class="c1">#     return self.drift(t, x)</span>
 
-    <span class="k">def</span> <span class="nf">forward_ode_drift_by_torchode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">nfe</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="c1">#TODO: implement forward_ode_drift_by_torchode</span>
-        <span class="k">pass</span>
+    <span class="c1"># def forward_ode_drift_by_torchdyn_NeuralODE(self, t, x, args):</span>
+    <span class="c1">#     self.nfe += 1</span>
+    <span class="c1">#     # broadcasting t to match the batch size of x</span>
+    <span class="c1">#     t = t.repeat(x.shape[0])</span>
+    <span class="c1">#     return self.drift(t, x)</span>
+
+    <span class="c1"># def forward_ode_drift_by_torchode(self, t, x):</span>
+    <span class="c1">#     self.nfe += 1</span>
+    <span class="c1">#     #TODO: implement forward_ode_drift_by_torchode</span>
+    <span class="c1">#     pass</span>
+
+    <span class="k">def</span> <span class="nf">odeint_by_torchdiffeq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">drift</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+
+            <span class="k">def</span> <span class="nf">forward_ode_drift_by_torchdiffeq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">nfe</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="c1"># broadcasting t to match the batch size of x</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">return</span> <span class="n">drift</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+
+            <span class="n">trajectory</span> <span class="o">=</span> <span class="n">torchdiffeq_odeint</span><span class="p">(</span>
+                <span class="n">func</span><span class="o">=</span><span class="n">forward_ode_drift_by_torchdiffeq</span><span class="p">,</span>
+                <span class="n">y0</span><span class="o">=</span><span class="n">x0</span><span class="p">,</span>
+                <span class="n">t</span><span class="o">=</span><span class="n">t_span</span><span class="p">,</span>
+                <span class="n">method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ode_solver</span><span class="p">,</span>
+                <span class="n">atol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atol</span><span class="p">,</span>
+                <span class="n">rtol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rtol</span><span class="p">,</span>
+                <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">trajectory</span>
+        
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">):</span>
+
+            <span class="k">def</span> <span class="nf">forward_ode_drift_by_torchdiffeq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">nfe</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="c1"># broadcasting t to match the batch size of x</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">return</span> <span class="n">drift</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+
+            <span class="n">trajectory</span> <span class="o">=</span> <span class="n">torchdiffeq_odeint</span><span class="p">(</span>
+                <span class="n">func</span><span class="o">=</span><span class="n">forward_ode_drift_by_torchdiffeq</span><span class="p">,</span>
+                <span class="n">y0</span><span class="o">=</span><span class="n">x0</span><span class="p">,</span>
+                <span class="n">t</span><span class="o">=</span><span class="n">t_span</span><span class="p">,</span>
+                <span class="n">method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ode_solver</span><span class="p">,</span>
+                <span class="n">atol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atol</span><span class="p">,</span>
+                <span class="n">rtol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rtol</span><span class="p">,</span>
+                <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">trajectory</span>
+        
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported data type for x0: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">x0</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">odeint_by_torchdiffeq_adjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">drift</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+
+            <span class="k">def</span> <span class="nf">forward_ode_drift_by_torchdiffeq_adjoint</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">nfe</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="c1"># broadcasting t to match the batch size of x</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">return</span> <span class="n">drift</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+
+            <span class="n">trajectory</span> <span class="o">=</span> <span class="n">torchdiffeq_odeint_adjoint</span><span class="p">(</span>
+                <span class="n">func</span><span class="o">=</span><span class="n">forward_ode_drift_by_torchdiffeq_adjoint</span><span class="p">,</span>
+                <span class="n">y0</span><span class="o">=</span><span class="n">x0</span><span class="p">,</span>
+                <span class="n">t</span><span class="o">=</span><span class="n">t_span</span><span class="p">,</span>
+                <span class="n">method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ode_solver</span><span class="p">,</span>
+                <span class="n">atol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atol</span><span class="p">,</span>
+                <span class="n">rtol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rtol</span><span class="p">,</span>
+                <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">trajectory</span>
+        
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">):</span>
+
+            <span class="k">def</span> <span class="nf">forward_ode_drift_by_torchdiffeq_adjoint</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">nfe</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="c1"># broadcasting t to match the batch size of x</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">return</span> <span class="n">drift</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+
+            <span class="n">trajectory</span> <span class="o">=</span> <span class="n">torchdiffeq_odeint_adjoint</span><span class="p">(</span>
+                <span class="n">func</span><span class="o">=</span><span class="n">forward_ode_drift_by_torchdiffeq_adjoint</span><span class="p">,</span>
+                <span class="n">y0</span><span class="o">=</span><span class="n">x0</span><span class="p">,</span>
+                <span class="n">t</span><span class="o">=</span><span class="n">t_span</span><span class="p">,</span>
+                <span class="n">method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ode_solver</span><span class="p">,</span>
+                <span class="n">atol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atol</span><span class="p">,</span>
+                <span class="n">rtol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rtol</span><span class="p">,</span>
+                <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">trajectory</span>
 
     <span class="k">def</span> <span class="nf">odeint_by_torchdyn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">drift</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">):</span>
         
@@ -219,9 +319,13 @@
 
         <span class="n">neural_ode</span> <span class="o">=</span> <span class="n">NeuralODE</span><span class="p">(</span>
             <span class="n">vector_field</span><span class="o">=</span><span class="n">forward_ode_drift_by_torchdyn_NeuralODE</span><span class="p">,</span>
+            <span class="n">sensitivity</span><span class="o">=</span><span class="s1">&#39;adjoint&#39;</span><span class="p">,</span>
+            <span class="n">solver_adjoint</span><span class="o">=</span><span class="s1">&#39;dopri5&#39;</span><span class="p">,</span> 
+            <span class="n">atol_adjoint</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span>
+            <span class="n">rtol_adjoint</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span>
             <span class="n">solver</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ode_solver</span><span class="p">,</span>
-            <span class="n">atol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atol</span><span class="p">,</span>
-            <span class="n">rtol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rtol</span><span class="p">,</span>
+            <span class="c1"># atol=self.atol,</span>
+            <span class="c1"># rtol=self.rtol,</span>
             <span class="n">return_t_eval</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span>
@@ -246,7 +350,6 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dict_type</span> <span class="o">=</span> <span class="n">dict_type</span> <span class="k">if</span> <span class="n">dict_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">dict</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_type</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">,</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
-
 
     <span class="k">def</span> <span class="nf">dict_to_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">batch_size</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -323,7 +426,10 @@
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_type</span> <span class="o">==</span> <span class="n">TensorDict</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">TensorDict</span><span class="p">(</span><span class="n">output_dict</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">x_size</span><span class="o">.</span><span class="n">batch_size</span><span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_type</span> <span class="o">==</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">output_dict</span><span class="p">)</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">({},</span> <span class="n">device</span><span class="o">=</span><span class="n">input_tensor</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">output_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">output</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">output</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported dictionary type: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dict_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
@@ -449,7 +555,7 @@
 
     <span class="k">def</span> <span class="nf">odeint_by_torchdyn_NeuralODE</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">drift</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">x_size</span><span class="p">):</span>
 
-        <span class="k">def</span> <span class="nf">forward_ode_drift_by_torchdyn_NeuralODE</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">forward_ode_drift_by_torchdyn_NeuralODE</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">{}):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">nfe</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="c1"># broadcasting t to match the batch size of x</span>
             <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
@@ -473,6 +579,7 @@
         <span class="p">)</span>
 
         <span class="n">x0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_tensor_converter</span><span class="o">.</span><span class="n">dict_to_tensor</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
+
         <span class="n">trajectory</span> <span class="o">=</span> <span class="n">neural_ode</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_type</span> <span class="o">==</span> <span class="s2">&quot;dict&quot;</span><span class="p">:</span>
