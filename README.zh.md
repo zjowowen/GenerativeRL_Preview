@@ -29,17 +29,19 @@ pip install -e .
 
 ## 启动
 
-这是一个在 MuJoCo 环境中训练 Q-guided policy optimization (QGPO) 的扩散模型的示例：
+这是一个在 LunarLanderContinuous-v2 环境中训练 Q-guided policy optimization (QGPO) 的扩散模型的示例。
+数据集可以从 [这里](https://drive.google.com/file/d/1YnT-Oeu9LPKuS_ZqNc5kol_pMlJ1DwyG/view?usp=drive_link) 下载，请将其置于工作路径下，并命名为 `data.npz`。
 
 ```python
-from grl_pipelines.configurations.halfcheetah_qgpo import config
-from grl.algorithms import QGPOAlgorithm
-from grl.utils.log import log
 import gym
 
-def qgpo_pipeline(config):
+from grl.algorithms.qgpo import QGPOAlgorithm
+from grl.datasets import QGPOCustomizedDataset
+from grl.utils.log import log
+from grl_pipelines.configurations.lunarlander_continuous_qgpo import config
 
-    qgpo = QGPOAlgorithm(config)
+def qgpo_pipeline(config):
+    qgpo = QGPOAlgorithm(config, dataset=QGPOCustomizedDataset(numpy_data_path="./data.npz", device=config.train.device))
     qgpo.train()
 
     agent = qgpo.deploy()

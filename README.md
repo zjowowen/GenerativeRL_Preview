@@ -29,17 +29,18 @@ pip install -e .
 
 ## Quick Start
 
-Here is an example of how to train a diffusion model for Q-guided policy optimization (QGPO) in the MuJoCo environment:
+Here is an example of how to train a diffusion model for Q-guided policy optimization (QGPO) in the LunarLanderContinuous-v2 environment using GenerativeRL. Download dataset from [here](https://drive.google.com/file/d/1YnT-Oeu9LPKuS_ZqNc5kol_pMlJ1DwyG/view?usp=drive_link) and save it as `data.npz` in the current directory.
 
 ```python
-from grl_pipelines.configurations.halfcheetah_qgpo import config
-from grl.algorithms import QGPOAlgorithm
-from grl.utils.log import log
 import gym
 
-def qgpo_pipeline(config):
+from grl.algorithms.qgpo import QGPOAlgorithm
+from grl.datasets import QGPOCustomizedDataset
+from grl.utils.log import log
+from grl_pipelines.configurations.lunarlander_continuous_qgpo import config
 
-    qgpo = QGPOAlgorithm(config)
+def qgpo_pipeline(config):
+    qgpo = QGPOAlgorithm(config, dataset=QGPOCustomizedDataset(numpy_data_path="./data.npz", device=config.train.device))
     qgpo.train()
 
     agent = qgpo.deploy()
