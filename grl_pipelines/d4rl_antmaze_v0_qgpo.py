@@ -2,7 +2,7 @@ import gym
 import d4rl
 from grl.algorithms.qgpo import QGPOAlgorithm
 from grl.utils.log import log
-from grl_pipelines.configurations.antmaze_qgpo import config
+from grl_pipelines.configurations.antmaze_umaze_v0_qgpo import config
 
 
 def qgpo_pipeline(config):
