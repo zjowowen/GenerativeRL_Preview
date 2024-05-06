@@ -611,6 +611,8 @@ class SACAlgorithm:
                     evaluation_results = evaluate(self.model["Policy"])
                     wandb_run.log(data=evaluation_results, commit=False)
 
+                if evaluation_results["evaluation/total_return"] > 200.0:
+                    self.dataset.load_data(collect(self.model["Policy"], num_steps=1000, random_policy=False, random_ratio=0.0))
 
                 if online_rl_iteration > 0:
                     self.dataset.drop_data(config.parameter.online_rl.drop_ratio)

@@ -17,6 +17,7 @@ solver_type = "ODESolver"
 config = EasyDict(
     train = dict(
         project = 'LunarLanderContinuous-v2-SAC-Online',
+        device = device,
         simulator = dict(
             type = "GymEnvSimulator",
             args = dict(
@@ -34,26 +35,26 @@ config = EasyDict(
                 device = device,
                 critic = dict(
                     DoubleQNetwork=dict(
-                        # action_encoder=dict(
-                        #     type="GaussianFourierProjectionEncoder",
-                        #     args=dict(
-                        #         embed_dim=32,
-                        #         x_shape=[action_size],
-                        #         scale=0.1,
-                        #     ),
-                        # ),
-                        # state_encoder=dict(
-                        #     type="GaussianFourierProjectionEncoder",
-                        #     args=dict(
-                        #         embed_dim=32,
-                        #         x_shape=[state_size],
-                        #         scale=0.1,
-                        #     ),
-                        # ),
+                        action_encoder=dict(
+                            type="GaussianFourierProjectionEncoder",
+                            args=dict(
+                                embed_dim=32,
+                                x_shape=[action_size],
+                                scale=1,
+                            ),
+                        ),
+                        state_encoder=dict(
+                            type="GaussianFourierProjectionEncoder",
+                            args=dict(
+                                embed_dim=32,
+                                x_shape=[state_size],
+                                scale=1,
+                            ),
+                        ),
                         backbone=dict(
                             type="ConcatenateMLP",
                             args=dict(
-                                hidden_sizes=[10, 256, 256],
+                                hidden_sizes=[320, 256, 256],
                                 output_size=1,
                                 activation="relu",
                             ),
@@ -62,16 +63,16 @@ config = EasyDict(
                 ),
                 policy = dict(
                     model=dict(
-                        # condition_encoder=dict(
-                        #     type="GaussianFourierProjectionEncoder",
-                        #     args=dict(
-                        #         embed_dim=32,
-                        #         x_shape=[state_size],
-                        #         scale=0.1,
-                        #     ),
-                        # ),
+                        condition_encoder=dict(
+                            type="GaussianFourierProjectionEncoder",
+                            args=dict(
+                                embed_dim=32,
+                                x_shape=[state_size],
+                                scale=1,
+                            ),
+                        ),
                         mu_model=dict(
-                            hidden_sizes=[8, 128, 128],
+                            hidden_sizes=[256, 128, 128],
                             output_size=action_size,
                             activation="relu",
                             final_activation='tanh',
@@ -80,12 +81,12 @@ config = EasyDict(
                         cov=dict(
                             dim=action_size,
                             sigma_lambda=dict(
-                                hidden_sizes=[8, 128, 128],
+                                hidden_sizes=[256, 128, 128],
                                 output_size=action_size,
                                 activation="relu",
                             ),
                             sigma_offdiag=dict(
-                                hidden_sizes=[8, 128, 128],
+                                hidden_sizes=[256, 128, 128],
                                 output_size=action_size*(action_size-1)//2,
                                 activation="relu",
                             ),
