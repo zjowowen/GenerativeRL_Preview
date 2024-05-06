@@ -73,8 +73,8 @@ config = EasyDict(
             clip_grad_norm=1.0,
             eval_freq=500,
             checkpoint_freq=500,
-            checkpoint_path="./checkpoint",
-            video_save_path="./video",
+            checkpoint_path="./checkpoint-vp-sde-swiss-roll-likelihood",
+            video_save_path="./video-vp-sde-swiss-roll-likelihood",
             device=device,
         ),
 ))

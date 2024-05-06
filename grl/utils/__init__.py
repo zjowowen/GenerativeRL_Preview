@@ -31,3 +31,7 @@ def set_seed(seed_value=None, cudnn_deterministic=True, cudnn_benchmark=False):
     torch.backends.cudnn.benchmark = cudnn_benchmark
     
     return seed_value
+
+from .config import merge_dict1_into_dict2, merge_two_dicts_into_newone
+from .log import log
+from .statistics import find_parameters

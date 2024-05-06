@@ -29,6 +29,7 @@ class FlowModel(nn.Module):
     def __init__(self, config: EasyDict):
         super().__init__()
         self.config = config
+        self.x_size = config.x_size
         self.device = config.device
         self.gaussian_generator = gaussian_random_variable(config.x_size, config.device, config.use_tree_tensor if hasattr(config, "use_tree_tensor") else False)
 
@@ -36,10 +37,13 @@ class FlowModel(nn.Module):
         if hasattr(config, "solver"):
             self.solver=get_solver(config.solver.type)(**config.solver.args)
 
+    def get_type(self):
+        return "FlowModel"
+
     def sample(
             self,
             t_span: torch.Tensor = None,
-            batch_size: Union[torch.Size, int, Tuple[int], List[int]]  = None,
+            batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
             x_0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
             condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
             with_grad: bool = False,

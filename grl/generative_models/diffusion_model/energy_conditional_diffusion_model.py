@@ -22,6 +22,7 @@ from grl.numerical_methods.numerical_solvers.ode_solver import (
 from grl.numerical_methods.numerical_solvers.sde_solver import SDESolver
 from grl.numerical_methods.probability_path import \
     GaussianConditionalProbabilityPath
+from grl.utils import find_parameters
 
 
 class EnergyGuidance(nn.Module):

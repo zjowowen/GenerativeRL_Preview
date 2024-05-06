@@ -20,6 +20,7 @@ setup(
         'rich',
         'easydict',
         'tqdm',
+        'git+https://github.com/rtqichen/torchdiffeq.git',
         'torchdyn',
         'torchode',
         'torchsde',

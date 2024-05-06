@@ -40,7 +40,7 @@ config = EasyDict(
             solver = dict(
                 type = "ODESolver",
                 args = dict(
-                    library="torchdyn",
+                    library="torchdiffeq_adjoint",
                 ),
             ),
             path = dict(
@@ -72,8 +72,8 @@ config = EasyDict(
             clip_grad_norm=1.0,
             eval_freq=500,
             checkpoint_freq=100,
-            checkpoint_path="./checkpoint",
-            video_save_path="./video",
+            checkpoint_path="./checkpoint-vp-sde-swiss-roll-sample-with-grad",
+            video_save_path="./video-vp-sde-swiss-roll-sample-with-grad",
             device=device,
         ),
 ))
@@ -173,7 +173,7 @@ if __name__ == "__main__":
         if iteration <= last_iteration:
             continue
 
-        if iteration >= 0 and iteration % config.parameter.eval_freq == 0:
+        if iteration > 0 and iteration % config.parameter.eval_freq == 0:
             diffusion_model.eval()
             t_span=torch.linspace(0.0, 1.0, 1000)
             x_t = diffusion_model.sample_forward_process(t_span=t_span, batch_size=500).cpu().detach()
@@ -184,12 +184,9 @@ if __name__ == "__main__":
         batch_data=batch_data.to(config.device)
         # plot2d(batch_data.cpu().numpy())
         diffusion_model.train()
-        if config.parameter.training_loss_type=="flow_matching":
-            loss=diffusion_model.flow_matching_loss(batch_data)
-        elif config.parameter.training_loss_type=="score_matching":
-            loss=diffusion_model.score_matching_loss(batch_data)
-        else:
-            raise NotImplementedError("Unknown loss type")
+        t_span=torch.linspace(0.01, 0.99, 5)
+        x_t = diffusion_model.sample_forward_process_naive(t_span=t_span, with_grad=True)
+        loss=torch.sum(x_t[-1]**2-200**2)*0.00001
         optimizer.zero_grad()
         loss.backward()
         gradien_norm = torch.nn.utils.clip_grad_norm_(diffusion_model.parameters(), config.parameter.clip_grad_norm)

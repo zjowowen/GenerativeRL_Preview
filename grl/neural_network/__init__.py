@@ -458,7 +458,7 @@ class Sequential(nn.Module):
 
     def forward(self, *x):
         for module in self.model:
-            x = module(x)
+            x = module(*x)
         return x
 
 class TimeExtension(nn.Module):

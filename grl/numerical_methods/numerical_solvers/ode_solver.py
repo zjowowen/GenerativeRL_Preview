@@ -6,6 +6,8 @@ import torchode
 import treetensor
 from tensordict import TensorDict
 from torch import nn
+from torchdiffeq import odeint as torchdiffeq_odeint
+from torchdiffeq import odeint_adjoint as torchdiffeq_odeint_adjoint
 from torchdyn.core import NeuralODE
 from torchdyn.numerics import Euler
 from torchdyn.numerics import odeint as torchdyn_odeint
@@ -36,7 +38,7 @@ class ODESolver:
             dt (:obj:`float`): The time step.
             atol (:obj:`float`): The absolute tolerance.
             rtol (:obj:`float`): The relative tolerance.
-            library (:obj:`str`): The library to use for the ODE solver. Currently, it supports 'torchdyn' and 'torchode'.
+            library (:obj:`str`): The library to use for the ODE solver. Currently, it supports 'torchdiffeq', 'torchdyn' and 'torchode'.
             **kwargs: Additional arguments for the ODE solver.
         """
         self.ode_solver = ode_solver
@@ -52,6 +54,7 @@ class ODESolver:
             drift: Union[nn.Module, Callable],
             x0: Union[torch.Tensor, TensorDict],
             t_span: torch.Tensor,
+            **kwargs,
         ):
         """
         Overview:
@@ -65,7 +68,11 @@ class ODESolver:
         """
 
         self.nfe = 0
-        if self.library == "torchdyn":
+        if self.library == "torchdiffeq":
+            return self.odeint_by_torchdiffeq(drift, x0, t_span, **kwargs)
+        elif self.library == "torchdiffeq_adjoint":
+            return self.odeint_by_torchdiffeq_adjoint(drift, x0, t_span, **kwargs)
+        elif self.library == "torchdyn":
             return self.odeint_by_torchdyn(drift, x0, t_span)
         elif self.library == "torchdyn_NeuralODE":
             return self.odeint_by_torchdyn_NeuralODE(drift, x0, t_span)
@@ -74,22 +81,115 @@ class ODESolver:
         else:
             raise ValueError(f"library {self.library} is not supported")
 
-    def forward_ode_drift_by_torchdyn(self, t, x):
-        self.nfe += 1
-        # broadcasting t to match the batch size of x
-        t = t.repeat(x.shape[0])
-        return self.drift(t, x)
+    # def forward_ode_drift_by_torchdiffeq(self, t, x):
+    #     self.nfe += 1
+    #     # broadcasting t to match the batch size of x
+    #     t = t.repeat(x.shape[0])
+    #     return self.drift(t, x)
 
-    def forward_ode_drift_by_torchdyn_NeuralODE(self, t, x, args):
-        self.nfe += 1
-        # broadcasting t to match the batch size of x
-        t = t.repeat(x.shape[0])
-        return self.drift(t, x)
+    # def forward_ode_drift_by_torchdyn(self, t, x):
+    #     self.nfe += 1
+    #     # broadcasting t to match the batch size of x
+    #     t = t.repeat(x.shape[0])
+    #     return self.drift(t, x)
 
-    def forward_ode_drift_by_torchode(self, t, x):
-        self.nfe += 1
-        #TODO: implement forward_ode_drift_by_torchode
-        pass
+    # def forward_ode_drift_by_torchdyn_NeuralODE(self, t, x, args):
+    #     self.nfe += 1
+    #     # broadcasting t to match the batch size of x
+    #     t = t.repeat(x.shape[0])
+    #     return self.drift(t, x)
+
+    # def forward_ode_drift_by_torchode(self, t, x):
+    #     self.nfe += 1
+    #     #TODO: implement forward_ode_drift_by_torchode
+    #     pass
+
+    def odeint_by_torchdiffeq(self, drift, x0, t_span, **kwargs):
+        
+        if isinstance(x0, torch.Tensor):
+
+            def forward_ode_drift_by_torchdiffeq(t, x):
+                self.nfe += 1
+                # broadcasting t to match the batch size of x
+                t = t.repeat(x.shape[0])
+                return drift(t, x)
+
+            trajectory = torchdiffeq_odeint(
+                func=forward_ode_drift_by_torchdiffeq,
+                y0=x0,
+                t=t_span,
+                method=self.ode_solver,
+                atol=self.atol,
+                rtol=self.rtol,
+                **self.kwargs,
+                **kwargs,
+            )
+            return trajectory
+        
+        elif isinstance(x0, Tuple):
+
+            def forward_ode_drift_by_torchdiffeq(t, x):
+                self.nfe += 1
+                # broadcasting t to match the batch size of x
+                t = t.repeat(x[0].shape[0])
+                return drift(t, x)
+
+            trajectory = torchdiffeq_odeint(
+                func=forward_ode_drift_by_torchdiffeq,
+                y0=x0,
+                t=t_span,
+                method=self.ode_solver,
+                atol=self.atol,
+                rtol=self.rtol,
+                **self.kwargs,
+                **kwargs,
+            )
+            return trajectory
+        
+        else:
+            raise ValueError(f"Unsupported data type for x0: {type(x0)}")
+
+    def odeint_by_torchdiffeq_adjoint(self, drift, x0, t_span, **kwargs):
+        
+        if isinstance(x0, torch.Tensor):
+
+            def forward_ode_drift_by_torchdiffeq_adjoint(t, x):
+                self.nfe += 1
+                # broadcasting t to match the batch size of x
+                t = t.repeat(x.shape[0])
+                return drift(t, x)
+
+            trajectory = torchdiffeq_odeint_adjoint(
+                func=forward_ode_drift_by_torchdiffeq_adjoint,
+                y0=x0,
+                t=t_span,
+                method=self.ode_solver,
+                atol=self.atol,
+                rtol=self.rtol,
+                **self.kwargs,
+                **kwargs,
+            )
+            return trajectory
+        
+        elif isinstance(x0, Tuple):
+
+            def forward_ode_drift_by_torchdiffeq_adjoint(t, x):
+                self.nfe += 1
+                # broadcasting t to match the batch size of x
+                t = t.repeat(x[0].shape[0])
+                return drift(t, x)
+
+            trajectory = torchdiffeq_odeint_adjoint(
+                func=forward_ode_drift_by_torchdiffeq_adjoint,
+                y0=x0,
+                t=t_span,
+                method=self.ode_solver,
+                atol=self.atol,
+                rtol=self.rtol,
+                **self.kwargs,
+                **kwargs,
+            )
+            return trajectory
 
     def odeint_by_torchdyn(self, drift, x0, t_span):
         
@@ -120,9 +220,13 @@ class ODESolver:
 
         neural_ode = NeuralODE(
             vector_field=forward_ode_drift_by_torchdyn_NeuralODE,
+            sensitivity='adjoint',
+            solver_adjoint='dopri5', 
+            atol_adjoint=1e-5,
+            rtol_adjoint=1e-5,
             solver=self.ode_solver,
-            atol=self.atol,
-            rtol=self.rtol,
+            # atol=self.atol,
+            # rtol=self.rtol,
             return_t_eval=False,
             **self.kwargs,
         )
@@ -146,7 +250,6 @@ class DictTensorConverter(nn.Module):
         super().__init__()
         self.dict_type = dict_type if dict_type is not None else dict
         assert self.dict_type in [dict, TensorDict, treetensor.torch.Tensor]
-
 
     def dict_to_tensor(self, input_dict: Dict[str, torch.Tensor], batch_size: Union[int, torch.Size, torch.Tensor, List, Tuple]) -> torch.Tensor:
         """
@@ -223,7 +326,10 @@ class DictTensorConverter(nn.Module):
         elif self.dict_type == TensorDict:
             return TensorDict(output_dict, batch_size=x_size.batch_size)
         elif self.dict_type == treetensor.torch.Tensor:
-            return treetensor.torch.tensor(output_dict)
+            output = treetensor.torch.tensor({}, device=input_tensor.device)
+            for key in output_dict.keys():
+                output[key] = output_dict[key]
+            return output
         else:
             raise ValueError(f"Unsupported dictionary type: {self.dict_type}")
 
@@ -349,7 +455,7 @@ class DictTensorODESolver:
 
     def odeint_by_torchdyn_NeuralODE(self, drift, x0, t_span, batch_size, x_size):
 
-        def forward_ode_drift_by_torchdyn_NeuralODE(t, x, args):
+        def forward_ode_drift_by_torchdyn_NeuralODE(t, x, args={}):
             self.nfe += 1
             # broadcasting t to match the batch size of x
             t = t.repeat(x.shape[0])
@@ -373,6 +479,7 @@ class DictTensorODESolver:
         )
 
         x0 = self.dict_tensor_converter.dict_to_tensor(x0, batch_size=batch_size)
+
         trajectory = neural_ode(x0, t_span)
 
         if self.dict_type == "dict":
