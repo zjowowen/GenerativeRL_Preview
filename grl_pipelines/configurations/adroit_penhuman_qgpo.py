@@ -1,8 +1,8 @@
 import torch
 from easydict import EasyDict
 
-action_size = 28
-state_size = 39
+action_size = 24
+state_size = 45
 device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 t_embedding_dim = 32
 t_encoder = dict(
@@ -15,17 +15,17 @@ t_encoder = dict(
 solver_type = "DPMSolver"
 config = EasyDict(
     train = dict(
-        project = 'd4rl-AdroitHandDoor-v1-qgpo',
+        project = 'minari-pen-human-v2-qgpo',
         simulator = dict(
             type = "GymEnvSimulator",
             args = dict(
-                env_id = 'AdroitHandDoor-v1',
+                env_id = 'pen-human-v1',
             ),
         ),
         dataset = dict(
-            type = "QGPOD4RLDataset",
+            type = "MinariDataset",
             args = dict(
-                env_id = "AdroitHandDoor-v1",
+                env_id = "pen-human-v2",
                 device = device,
             ),
         ),
@@ -139,7 +139,7 @@ config = EasyDict(
     deploy = dict(
         device = device,
         env = dict(
-            env_id = 'AdroitHandDoor-v1',
+            env_id = 'pen-human-v1',
             seed = 0,
         ),
         num_deploy_steps = 1000,

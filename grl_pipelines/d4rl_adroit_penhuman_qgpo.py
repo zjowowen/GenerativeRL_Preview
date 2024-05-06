@@ -2,7 +2,7 @@ import gym
 import d4rl
 from grl.algorithms.qgpo import QGPOAlgorithm
 from grl.utils.log import log
-from grl_pipelines.configurations.adroit_handdoor_qgpo import config
+from grl_pipelines.configurations.adroit_penhuman_qgpo import config
 
 
 def qgpo_pipeline(config):
