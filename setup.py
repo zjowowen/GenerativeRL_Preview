@@ -20,7 +20,6 @@ setup(
         'rich',
         'easydict',
         'tqdm',
-        'git+https://github.com/rtqichen/torchdiffeq.git',
         'torchdyn',
         'torchode',
         'torchsde',
@@ -32,6 +31,9 @@ setup(
         'av',
         'moviepy',
         'imageio[ffmpeg]',
+    ],
+    dependency_links=[
+        'git+https://github.com/rtqichen/torchdiffeq.git#egg=torchdiffeq',
     ],
     extras_require={
         'd4rl': [
