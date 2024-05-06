@@ -20,7 +20,7 @@ class MinariDataset(torch.utils.data.Dataset):
     def __init__(self):
         """
         Overview:
-            Initialization method of D4RLDataset class
+            Initialization method of MinariDataset class
         """
         pass
 
@@ -84,7 +84,7 @@ class MinariDataset(MinariDataset):
         ):
         """
         Overview:
-            Initialization method of D4RLDataset class
+            Initialization method of MinariDataset class
         Arguments:
             env_id (:obj:`str`): The environment id
             device (:obj:`str`): The device to store the dataset
@@ -122,7 +122,7 @@ class MinariDataset(MinariDataset):
         elif reward_tune == 'iql_antmaze':
             reward = reward - 1.0
         elif reward_tune == 'iql_locomotion':
-            min_ret, max_ret = D4RLDataset.return_range(data, 1000)
+            min_ret, max_ret = MinariDataset.return_range(data, 1000)
             reward /= (max_ret - min_ret)
             reward *= 1000
         elif reward_tune == 'cql_antmaze':
@@ -131,7 +131,7 @@ class MinariDataset(MinariDataset):
             reward = (reward - 0.25) * 2.0
         self.rewards = reward
         self.len = self.states.shape[0]
-        log.info(f"{self.len} data loaded in D4RLDataset")
+        log.info(f"{self.len} data loaded in MinariDataset")
 
     def return_range(dataset, max_episode_steps):
         returns, lengths = [], []
