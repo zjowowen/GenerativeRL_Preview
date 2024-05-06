@@ -8,7 +8,7 @@ from grl_pipelines.configurations.lunarlander_continuous_qgpo import config
 
 def qgpo_pipeline(config):
 
-    qgpo = QGPOAlgorithm(config, dataset=QGPOCustomizedDataset(numpy_data_path="./test_scripts/data.npz", device=config.train.device))
+    qgpo = QGPOAlgorithm(config, dataset=QGPOCustomizedDataset(numpy_data_path="./data.npz", device=config.train.device))
 
     #---------------------------------------
     # Customized train code ↓
