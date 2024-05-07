@@ -140,5 +140,6 @@ config = EasyDict(
             seed=0,
         ),
         num_deploy_steps=1000,
+        t_span=None if solver_type == "DPMSolver" else 32,
     ),
 )

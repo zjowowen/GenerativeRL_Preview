@@ -284,7 +284,7 @@ class QGPOCustomizedDataset(QGPODataset):
     ):
         """
         Overview:
-            Initialization method of QGPOD4RLDataset class
+            Initialization method of QGPOCustomizedDataset class
         Arguments:
             env_id (:obj:`str`): The environment id
             device (:obj:`str`): The device to store the dataset
@@ -305,4 +305,4 @@ class QGPOCustomizedDataset(QGPODataset):
 
         self.rewards = reward
         self.len = self.states.shape[0]
-        log.info(f"{self.len} data loaded in QGPOD4RLDataset")
+        log.info(f"{self.len} data loaded in QGPOCustomizedDataset")

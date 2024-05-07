@@ -14,7 +14,7 @@ from tensordict import TensorDict
 from torch.utils.data import DataLoader
 
 import wandb
-from grl.agents.qgpo import QGPOAgent
+from grl.agents.qgpo import QGPOISAgent
 from grl.datasets import create_dataset
 from grl.datasets.qgpo import QGPODataset
 from grl.generative_models.diffusion_model import DiffusionModel
@@ -688,7 +688,7 @@ class QGPOISAlgorithm:
 
             wandb.finish()
 
-    def deploy(self, config: EasyDict = None) -> QGPOAgent:
+    def deploy(self, config: EasyDict = None) -> QGPOISAgent:
 
         if config is not None:
             config = merge_two_dicts_into_newone(self.config.deploy, config)
@@ -696,7 +696,8 @@ class QGPOISAlgorithm:
             config = self.config.deploy
 
         assert "QGPOPolicy" in self.model, "The model must be trained first."
-        return QGPOAgent(
+        assert "GuidedPolicy" in self.model, "The model must be trained first."
+        return QGPOISAgent(
             config=config,
             model=copy.deepcopy(self.model),
         )

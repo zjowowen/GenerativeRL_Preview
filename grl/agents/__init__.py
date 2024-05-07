@@ -1,2 +1,2 @@
 from .base import BaseAgent
-from .qgpo import QGPOAgent
+from .qgpo import QGPOAgent, QGPOISAgent
