@@ -570,7 +570,7 @@
         <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="n">embed</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">result</span>
     
-<span class="kn">from</span> <span class="nn">.transformers.dit</span> <span class="kn">import</span> <span class="n">DiT</span><span class="p">,</span> <span class="n">DiT_3D</span>
+<span class="kn">from</span> <span class="nn">.transformers.dit</span> <span class="kn">import</span> <span class="n">DiT</span><span class="p">,</span> <span class="n">DiT1D</span><span class="p">,</span> <span class="n">DiT3D</span>
 
 
 <span class="k">class</span> <span class="nc">Sequential</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -672,7 +672,12 @@
     <span class="s2">&quot;ALLCONCATMLP&quot;</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">ALLCONCATMLP</span><span class="p">,</span>
     <span class="s2">&quot;TemporalSpatialResidualNet&quot;</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">TemporalSpatialResidualNet</span><span class="p">,</span>
     <span class="s2">&quot;DiT&quot;</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">DiT</span><span class="p">,</span>
-    <span class="s2">&quot;DiT_3D&quot;</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">DiT_3D</span><span class="p">,</span>
+    <span class="s2">&quot;DiT_3D&quot;</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">DiT3D</span><span class="p">,</span>
+    <span class="s2">&quot;DiT_2D&quot;</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">DiT</span><span class="p">,</span>
+    <span class="s2">&quot;DiT_1D&quot;</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">DiT1D</span><span class="p">,</span>
+    <span class="s2">&quot;DiT3D&quot;</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">DiT3D</span><span class="p">,</span>
+    <span class="s2">&quot;DiT2D&quot;</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">DiT</span><span class="p">,</span>
+    <span class="s2">&quot;DiT1D&quot;</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">DiT1D</span><span class="p">,</span>
 <span class="p">}</span>
 </pre></div>
 

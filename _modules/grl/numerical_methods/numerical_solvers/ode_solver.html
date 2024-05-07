@@ -167,7 +167,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">nfe</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">library</span> <span class="o">==</span> <span class="s2">&quot;torchdiffeq&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">odeint_by_torchdiffeq</span><span class="p">(</span><span class="n">drift</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">odeint_by_torchdiffeq</span><span class="p">(</span><span class="n">drift</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">library</span> <span class="o">==</span> <span class="s2">&quot;torchdiffeq_adjoint&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">odeint_by_torchdiffeq_adjoint</span><span class="p">(</span><span class="n">drift</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">library</span> <span class="o">==</span> <span class="s2">&quot;torchdyn&quot;</span><span class="p">:</span>
@@ -179,29 +179,6 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;library </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">library</span><span class="si">}</span><span class="s2"> is not supported&quot;</span><span class="p">)</span></div>
 
-
-    <span class="c1"># def forward_ode_drift_by_torchdiffeq(self, t, x):</span>
-    <span class="c1">#     self.nfe += 1</span>
-    <span class="c1">#     # broadcasting t to match the batch size of x</span>
-    <span class="c1">#     t = t.repeat(x.shape[0])</span>
-    <span class="c1">#     return self.drift(t, x)</span>
-
-    <span class="c1"># def forward_ode_drift_by_torchdyn(self, t, x):</span>
-    <span class="c1">#     self.nfe += 1</span>
-    <span class="c1">#     # broadcasting t to match the batch size of x</span>
-    <span class="c1">#     t = t.repeat(x.shape[0])</span>
-    <span class="c1">#     return self.drift(t, x)</span>
-
-    <span class="c1"># def forward_ode_drift_by_torchdyn_NeuralODE(self, t, x, args):</span>
-    <span class="c1">#     self.nfe += 1</span>
-    <span class="c1">#     # broadcasting t to match the batch size of x</span>
-    <span class="c1">#     t = t.repeat(x.shape[0])</span>
-    <span class="c1">#     return self.drift(t, x)</span>
-
-    <span class="c1"># def forward_ode_drift_by_torchode(self, t, x):</span>
-    <span class="c1">#     self.nfe += 1</span>
-    <span class="c1">#     #TODO: implement forward_ode_drift_by_torchode</span>
-    <span class="c1">#     pass</span>
 
     <span class="k">def</span> <span class="nf">odeint_by_torchdiffeq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">drift</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         

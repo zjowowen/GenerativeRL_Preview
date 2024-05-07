@@ -35,8 +35,21 @@ DiT
     :special-members: __init__
     :members:
 
-DiT_3D
+DiT1D
 ------
-.. autoclass:: DiT_3D
+.. autoclass:: DiT2D
+    :special-members: __init__
+    :members:
+
+DiT2D
+------
+.. autoclass:: DiT2D
+    :special-members: __init__
+    :members:
+
+
+DiT3D
+------
+.. autoclass:: DiT3D
     :special-members: __init__
     :members:

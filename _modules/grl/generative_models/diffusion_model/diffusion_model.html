@@ -338,6 +338,7 @@
                         <span class="n">drift</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">diffusion_process</span><span class="o">.</span><span class="n">reverse_ode</span><span class="p">(</span><span class="n">function</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">function_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="n">condition</span><span class="p">)</span><span class="o">.</span><span class="n">drift</span><span class="p">,</span>
                         <span class="n">x0</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
                         <span class="n">t_span</span><span class="o">=</span><span class="n">t_span</span><span class="p">,</span>
+                        <span class="n">adjoint_params</span><span class="o">=</span><span class="n">find_parameters</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">),</span>
                     <span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">solver</span><span class="p">,</span> <span class="n">DictTensorODESolver</span><span class="p">):</span>
             <span class="c1">#TODO: make it compatible with TensorDict</span>
@@ -624,6 +625,7 @@
                         <span class="n">drift</span><span class="o">=</span><span class="n">drift_fixed_x</span><span class="p">,</span>
                         <span class="n">x0</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
                         <span class="n">t_span</span><span class="o">=</span><span class="n">t_span</span><span class="p">,</span>
+                        <span class="n">adjoint_params</span><span class="o">=</span><span class="n">find_parameters</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">),</span>
                     <span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">solver</span><span class="p">,</span> <span class="n">DictTensorODESolver</span><span class="p">):</span>
             <span class="c1">#TODO: make it compatible with TensorDict</span>
