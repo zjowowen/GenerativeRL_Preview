@@ -146,7 +146,7 @@ def main(rank, world_size):
     )
 
     with wandb.init(
-        project=config.project if hasattr(config, "project") else "dit-3D-mc-video-ddp",
+        project=config.project if hasattr(config, 'project') else 'dit-3D-mc-video-ddp',
         group=f"DDP-{time.time()}",
         **config.wandb if hasattr(config, "wandb") else {}
     ) as wandb_run:

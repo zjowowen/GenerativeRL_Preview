@@ -443,7 +443,7 @@ class ALLCONCATMLP(nn.Module):
         result = self.main(torch.cat([x, condition, embed], dim=-1))
         return result
     
-from .transformers.dit import DiT, DiT_3D
+from .transformers.dit import DiT, DiT1D, DiT3D
 
 
 class Sequential(nn.Module):
@@ -545,5 +545,10 @@ MODULES={
     "ALLCONCATMLP".lower(): ALLCONCATMLP,
     "TemporalSpatialResidualNet".lower(): TemporalSpatialResidualNet,
     "DiT".lower(): DiT,
-    "DiT_3D".lower(): DiT_3D,
+    "DiT_3D".lower(): DiT3D,
+    "DiT_2D".lower(): DiT,
+    "DiT_1D".lower(): DiT1D,
+    "DiT3D".lower(): DiT3D,
+    "DiT2D".lower(): DiT,
+    "DiT1D".lower(): DiT1D,
 }

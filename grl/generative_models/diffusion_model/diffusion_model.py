@@ -237,6 +237,7 @@ class DiffusionModel(nn.Module):
                         drift=self.diffusion_process.reverse_ode(function=self.model, function_type=self.model_type, condition=condition).drift,
                         x0=x,
                         t_span=t_span,
+                        adjoint_params=find_parameters(self.model),
                     )
         elif isinstance(solver, DictTensorODESolver):
             #TODO: make it compatible with TensorDict
@@ -517,6 +518,7 @@ class DiffusionModel(nn.Module):
                         drift=drift_fixed_x,
                         x0=x,
                         t_span=t_span,
+                        adjoint_params=find_parameters(self.model),
                     )
         elif isinstance(solver, DictTensorODESolver):
             #TODO: make it compatible with TensorDict

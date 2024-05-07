@@ -115,7 +115,7 @@ def center_crop_arr(pil_image, image_size):
 if __name__ == "__main__":
     seed_vlaue=set_seed()
     with wandb.init(
-        project=f"{config.project if hasattr(config, "project") else "dit-minecraft-without-vae"}-{seed_vlaue}",
+        project=f"{config.project if hasattr(config, 'project') else 'dit-minecraft-without-vae'}",
         **config.wandb if hasattr(config, "wandb") else {}
     ) as wandb_run:
         config=merge_two_dicts_into_newone(EasyDict(wandb_run.config), config)

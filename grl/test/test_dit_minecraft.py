@@ -114,7 +114,7 @@ def center_crop_arr(pil_image, image_size):
 if __name__ == "__main__":
     seed_vale=set_seed()
     with wandb.init(
-        project=f"{config.project if hasattr(config, "project") else "dit-minecraft"}-{seed_vale}",
+        project=f"{config.project if hasattr(config, 'project') else 'dit-minecraft'}-{seed_vale}",
         **config.wandb if hasattr(config, "wandb") else {}
     ) as wandb_run:
 

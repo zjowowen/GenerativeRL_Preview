@@ -27,7 +27,6 @@ setup(
         'POT',
         'beartype',
         'diffusers',
-        'timm',
         'av',
         'moviepy',
         'imageio[ffmpeg]',
@@ -43,6 +42,10 @@ setup(
         ],
         'DI-engine': [
             'DI-engine',
-        ]
+        ],
+        'formatter': [
+            'black',
+            'isort',
+        ],
     }
 )

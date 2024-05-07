@@ -69,7 +69,7 @@ class ODESolver:
 
         self.nfe = 0
         if self.library == "torchdiffeq":
-            return self.odeint_by_torchdiffeq(drift, x0, t_span, **kwargs)
+            return self.odeint_by_torchdiffeq(drift, x0, t_span)
         elif self.library == "torchdiffeq_adjoint":
             return self.odeint_by_torchdiffeq_adjoint(drift, x0, t_span, **kwargs)
         elif self.library == "torchdyn":
@@ -80,29 +80,6 @@ class ODESolver:
             return self.odeint_by_torchode(drift, x0, t_span)
         else:
             raise ValueError(f"library {self.library} is not supported")
-
-    # def forward_ode_drift_by_torchdiffeq(self, t, x):
-    #     self.nfe += 1
-    #     # broadcasting t to match the batch size of x
-    #     t = t.repeat(x.shape[0])
-    #     return self.drift(t, x)
-
-    # def forward_ode_drift_by_torchdyn(self, t, x):
-    #     self.nfe += 1
-    #     # broadcasting t to match the batch size of x
-    #     t = t.repeat(x.shape[0])
-    #     return self.drift(t, x)
-
-    # def forward_ode_drift_by_torchdyn_NeuralODE(self, t, x, args):
-    #     self.nfe += 1
-    #     # broadcasting t to match the batch size of x
-    #     t = t.repeat(x.shape[0])
-    #     return self.drift(t, x)
-
-    # def forward_ode_drift_by_torchode(self, t, x):
-    #     self.nfe += 1
-    #     #TODO: implement forward_ode_drift_by_torchode
-    #     pass
 
     def odeint_by_torchdiffeq(self, drift, x0, t_span, **kwargs):
         
