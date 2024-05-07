@@ -109,6 +109,7 @@
 <span class="sd">    Interfaces:</span>
 <span class="sd">        ``__init__``, ``forward``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">EasyDict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
@@ -128,6 +129,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span>
 
+
 <div class="viewcode-block" id="BaseAlgorithm">
 <a class="viewcode-back" href="../../../api_doc/algorithms/index.html#grl.algorithms.BaseAlgorithm">[docs]</a>
 <span class="k">class</span> <span class="nc">BaseAlgorithm</span><span class="p">:</span>
@@ -142,8 +144,8 @@
 <a class="viewcode-back" href="../../../api_doc/algorithms/index.html#grl.algorithms.BaseAlgorithm.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">config</span><span class="p">:</span><span class="n">EasyDict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">simulator</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">config</span><span class="p">:</span> <span class="n">EasyDict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">simulator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">dataset</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">model</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
@@ -163,24 +165,21 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">simulator</span> <span class="o">=</span> <span class="n">simulator</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span>
-        
-        <span class="c1">#---------------------------------------</span>
+
+        <span class="c1"># ---------------------------------------</span>
         <span class="c1"># Customized model initialization code ↓</span>
-        <span class="c1">#---------------------------------------</span>
+        <span class="c1"># ---------------------------------------</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span> <span class="k">if</span> <span class="n">model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">()</span></div>
 
 
-        <span class="c1">#---------------------------------------</span>
+        <span class="c1"># ---------------------------------------</span>
         <span class="c1"># Customized model initialization code ↑</span>
-        <span class="c1">#---------------------------------------</span>
+        <span class="c1"># ---------------------------------------</span>
 
 <div class="viewcode-block" id="BaseAlgorithm.train">
 <a class="viewcode-back" href="../../../api_doc/algorithms/index.html#grl.algorithms.BaseAlgorithm.train">[docs]</a>
-    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">config</span><span class="p">:</span> <span class="n">EasyDict</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="p">):</span>
+    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">EasyDict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Train the model using the given configuration. \</span>
@@ -192,36 +191,49 @@
         <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">config</span> <span class="o">=</span> <span class="n">merge_two_dicts_into_newone</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">train</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;train&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">EasyDict</span><span class="p">(),</span>
-                <span class="n">config</span>
+                <span class="n">config</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="k">with</span> <span class="n">wandb</span><span class="o">.</span><span class="n">init</span><span class="p">(</span>
-            <span class="n">project</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">project</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;project&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+            <span class="n">project</span><span class="o">=</span><span class="p">(</span>
+                <span class="n">config</span><span class="o">.</span><span class="n">project</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;project&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+            <span class="p">),</span>
             <span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">wandb</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;wandb&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="p">{}</span>
         <span class="p">)</span> <span class="k">as</span> <span class="n">wandb_run</span><span class="p">:</span>
             <span class="n">config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">EasyDict</span><span class="p">(</span><span class="n">wandb_run</span><span class="o">.</span><span class="n">config</span><span class="p">))</span>
             <span class="n">wandb_run</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">train</span> <span class="o">=</span> <span class="n">config</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">simulator</span> <span class="o">=</span> <span class="n">create_simulator</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">simulator</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;simulator&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulator</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="n">create_dataset</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;dataset&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">simulator</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">create_simulator</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">simulator</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;simulator&quot;</span><span class="p">)</span>
+                <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulator</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">create_dataset</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;dataset&quot;</span><span class="p">)</span>
+                <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span>
+            <span class="p">)</span>
 
-            <span class="c1">#---------------------------------------</span>
+            <span class="c1"># ---------------------------------------</span>
             <span class="c1"># Customized model initialization code ↓</span>
-            <span class="c1">#---------------------------------------</span>
+            <span class="c1"># ---------------------------------------</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;BasePolicy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">BasePolicy</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BasePolicy</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;BasePolicy&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;BasePolicy&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;BasePolicy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">BasePolicy</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BasePolicy</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;BasePolicy&quot;</span><span class="p">)</span>
+                <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;BasePolicy&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="p">)</span>
             <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">__version__</span> <span class="o">&gt;=</span> <span class="s2">&quot;2.0.0&quot;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;BasePolicy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;BasePolicy&quot;</span><span class="p">])</span>
 
-            <span class="c1">#---------------------------------------</span>
+            <span class="c1"># ---------------------------------------</span>
             <span class="c1"># Customized model initialization code ↑</span>
-            <span class="c1">#---------------------------------------</span>
+            <span class="c1"># ---------------------------------------</span>
 
-
-            <span class="c1">#---------------------------------------</span>
+            <span class="c1"># ---------------------------------------</span>
             <span class="c1"># Customized training code ↓</span>
-            <span class="c1">#---------------------------------------</span>
+            <span class="c1"># ---------------------------------------</span>
 
             <span class="k">def</span> <span class="nf">get_train_data</span><span class="p">(</span><span class="n">dataloader</span><span class="p">):</span>
                 <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
@@ -240,7 +252,7 @@
             <span class="p">)</span>
 
             <span class="k">for</span> <span class="n">train_iter</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">behaviour_policy</span><span class="o">.</span><span class="n">iterations</span><span class="p">):</span>
-                <span class="n">data</span><span class="o">=</span><span class="n">get_train_data</span><span class="p">(</span><span class="n">dataloader</span><span class="p">)</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">get_train_data</span><span class="p">(</span><span class="n">dataloader</span><span class="p">)</span>
                 <span class="n">model_training_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;BasePolicy&quot;</span><span class="p">](</span><span class="n">data</span><span class="p">)</span>
                 <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
                 <span class="n">model_training_loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
@@ -251,26 +263,28 @@
                         <span class="n">train_iter</span><span class="o">=</span><span class="n">train_iter</span><span class="p">,</span>
                         <span class="n">model_training_loss</span><span class="o">=</span><span class="n">model_training_loss</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
                     <span class="p">),</span>
-                    <span class="n">commit</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">commit</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="p">)</span>
 
-            <span class="c1">#---------------------------------------</span>
+            <span class="c1"># ---------------------------------------</span>
             <span class="c1"># Customized training code ↑</span>
-            <span class="c1">#---------------------------------------</span>
+            <span class="c1"># ---------------------------------------</span>
 
             <span class="n">wandb</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span></div>
 
 
+    <span class="k">def</span> <span class="nf">deploy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">EasyDict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BaseAgent</span><span class="p">:</span>
 
-    <span class="k">def</span> <span class="nf">deploy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span><span class="n">EasyDict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BaseAgent</span><span class="p">:</span>
-        
         <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">config</span> <span class="o">=</span> <span class="n">merge_two_dicts_into_newone</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">deploy</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">BaseAgent</span><span class="p">(</span>
             <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>
-            <span class="n">model</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">({</span>
-                <span class="s2">&quot;BasePolicy&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
-            <span class="p">})</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;BasePolicy&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">),</span>
         <span class="p">)</span></div>
 
 </pre></div>

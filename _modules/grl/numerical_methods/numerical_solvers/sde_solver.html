@@ -89,8 +89,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for grl.numerical_methods.numerical_solvers.sde_solver</h1><div class="highlight"><pre>
-<span></span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torchsde</span>
@@ -104,6 +103,7 @@
 <span class="sd">        The output of `g` should be a single tensor of size (batch_size, d) for diagonal noise SDEs or (batch_size, d, m) for SDEs of other noise types,</span>
 <span class="sd">        where d is the dimensionality of state and m is the dimensionality of Brownian motion.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">drift</span><span class="p">,</span>
@@ -123,7 +123,7 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">drift</span> <span class="o">=</span> <span class="n">drift</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">diffusion</span> <span class="o">=</span> <span class="n">diffusion</span>
-        
+
         <span class="bp">self</span><span class="o">.</span><span class="n">noise_type</span> <span class="o">=</span> <span class="n">noise_type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sde_type</span> <span class="o">=</span> <span class="n">sde_type</span>
 
@@ -187,15 +187,7 @@
 
 <div class="viewcode-block" id="SDESolver.integrate">
 <a class="viewcode-back" href="../../../../api_doc/numerical_methods/index.html#grl.numerical_methods.SDESolver.integrate">[docs]</a>
-    <span class="k">def</span> <span class="nf">integrate</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">drift</span><span class="p">,</span>
-            <span class="n">diffusion</span><span class="p">,</span>
-            <span class="n">x0</span><span class="p">,</span>
-            <span class="n">t_span</span><span class="p">,</span>
-            <span class="n">logqp</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="n">adaptive</span><span class="o">=</span><span class="kc">False</span>
-        <span class="p">):</span>
+    <span class="k">def</span> <span class="nf">integrate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">drift</span><span class="p">,</span> <span class="n">diffusion</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">,</span> <span class="n">logqp</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">adaptive</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Integrate the SDE.</span>
@@ -216,7 +208,7 @@
             <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">*</span><span class="n">data_size</span><span class="p">)</span>
             <span class="n">f</span> <span class="o">=</span> <span class="n">drift</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">f</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        
+
         <span class="k">def</span> <span class="nf">forward_diffusion</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">nfe_diffusion</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">*</span><span class="n">data_size</span><span class="p">)</span>
@@ -227,11 +219,11 @@
             <span class="n">drift</span><span class="o">=</span><span class="n">forward_drift</span><span class="p">,</span>
             <span class="n">diffusion</span><span class="o">=</span><span class="n">forward_diffusion</span><span class="p">,</span>
             <span class="n">noise_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sde_noise_type</span><span class="p">,</span>
-            <span class="n">sde_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sde_type</span>
+            <span class="n">sde_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sde_type</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="n">x0</span> <span class="o">=</span> <span class="n">x0</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        
+
         <span class="n">trajectory</span> <span class="o">=</span> <span class="n">torchsde</span><span class="o">.</span><span class="n">sdeint</span><span class="p">(</span>
             <span class="n">sde</span><span class="p">,</span>
             <span class="n">x0</span><span class="p">,</span>
@@ -250,7 +242,6 @@
         <span class="k">return</span> <span class="n">trajectory</span></div>
 </div>
 
-    
 </pre></div>
 
            </div>

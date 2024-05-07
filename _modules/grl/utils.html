@@ -111,19 +111,20 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">seed_value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># Generate a random seed from system randomness</span>
-        <span class="n">seed_value</span> <span class="o">=</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">urandom</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span> <span class="s1">&#39;little&#39;</span><span class="p">)</span>
-    
+        <span class="n">seed_value</span> <span class="o">=</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">urandom</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span> <span class="s2">&quot;little&quot;</span><span class="p">)</span>
+
     <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed_value</span><span class="p">)</span>  <span class="c1"># Set seed for Python&#39;s built-in random library</span>
     <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed_value</span><span class="p">)</span>  <span class="c1"># Set seed for NumPy</span>
     <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">seed_value</span><span class="p">)</span>  <span class="c1"># Set seed for PyTorch</span>
     <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">seed_value</span><span class="p">)</span>
     <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">manual_seed_all</span><span class="p">(</span><span class="n">seed_value</span><span class="p">)</span>
-    
+
     <span class="c1"># Set PyTorch cuDNN behavior</span>
     <span class="n">torch</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">cudnn</span><span class="o">.</span><span class="n">deterministic</span> <span class="o">=</span> <span class="n">cudnn_deterministic</span>
     <span class="n">torch</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">cudnn</span><span class="o">.</span><span class="n">benchmark</span> <span class="o">=</span> <span class="n">cudnn_benchmark</span>
-    
+
     <span class="k">return</span> <span class="n">seed_value</span></div>
+
 
 
 <span class="kn">from</span> <span class="nn">.config</span> <span class="kn">import</span> <span class="n">merge_dict1_into_dict2</span><span class="p">,</span> <span class="n">merge_two_dicts_into_newone</span>

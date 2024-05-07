@@ -111,17 +111,22 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">()</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;action_encoder&quot;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;action_encoder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_encoder</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">action_encoder</span><span class="o">.</span><span class="n">type</span><span class="p">)(</span><span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">action_encoder</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;action_encoder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_encoder</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">action_encoder</span><span class="o">.</span><span class="n">type</span><span class="p">)(</span>
+                <span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">action_encoder</span><span class="o">.</span><span class="n">args</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;action_encoder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;state_encoder&quot;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;state_encoder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_encoder</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">state_encoder</span><span class="o">.</span><span class="n">type</span><span class="p">)(</span><span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">state_encoder</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;state_encoder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_encoder</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">state_encoder</span><span class="o">.</span><span class="n">type</span><span class="p">)(</span>
+                <span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">state_encoder</span><span class="o">.</span><span class="n">args</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;state_encoder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
-        <span class="c1">#TODO</span>
+        <span class="c1"># TODO</span>
         <span class="c1"># specific backbone network</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;backbone&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">type</span><span class="p">)(</span><span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">args</span><span class="p">)</span></div>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;backbone&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">type</span><span class="p">)(</span>
+            <span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">args</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="QNetwork.forward">
@@ -170,10 +175,10 @@
 <div class="viewcode-block" id="DoubleQNetwork.compute_double_q">
 <a class="viewcode-back" href="../../../../api_doc/rl_modules/index.html#grl.rl_modules.DoubleQNetwork.compute_double_q">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_double_q</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">action</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
-            <span class="n">state</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
-        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">action</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Return the output of two Q networks.</span>
@@ -191,10 +196,10 @@
 <div class="viewcode-block" id="DoubleQNetwork.compute_mininum_q">
 <a class="viewcode-back" href="../../../../api_doc/rl_modules/index.html#grl.rl_modules.DoubleQNetwork.compute_mininum_q">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_mininum_q</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">action</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
-            <span class="n">state</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
-        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">action</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Return the minimum output of two Q networks.</span>
@@ -211,10 +216,10 @@
 <div class="viewcode-block" id="DoubleQNetwork.forward">
 <a class="viewcode-back" href="../../../../api_doc/rl_modules/index.html#grl.rl_modules.DoubleQNetwork.forward">[docs]</a>
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">action</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
-            <span class="n">state</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
-        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">action</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Return the minimum output of two Q networks.</span>

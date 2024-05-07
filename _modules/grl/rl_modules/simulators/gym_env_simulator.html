@@ -107,6 +107,7 @@
 <span class="sd">    Interfaces:</span>
 <span class="sd">        ``__init__``, ``collect_episodes``, ``collect_steps``, ``evaluate``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="GymEnvSimulator.__init__">
 <a class="viewcode-back" href="../../../../api_doc/rl_modules/index.html#grl.rl_modules.GymEnvSimulator.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -119,13 +120,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">env_id</span> <span class="o">=</span> <span class="n">env_id</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">make</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env_id</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">gym</span><span class="o">.</span><span class="n">__version__</span> <span class="o">&gt;=</span> <span class="s1">&#39;0.26.0&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">last_state_obs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">last_state_done</span><span class="o">=</span><span class="kc">False</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">last_state_truncated</span><span class="o">=</span><span class="kc">False</span>
+        <span class="k">if</span> <span class="n">gym</span><span class="o">.</span><span class="n">__version__</span> <span class="o">&gt;=</span> <span class="s2">&quot;0.26.0&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_state_obs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_state_done</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_state_truncated</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">last_state_obs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">last_state_done</span><span class="o">=</span><span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_state_obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_state_done</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">observation_space</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span><span class="o">.</span><span class="n">observation_space</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">action_space</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span><span class="o">.</span><span class="n">action_space</span></div>
@@ -134,11 +135,11 @@
 <div class="viewcode-block" id="GymEnvSimulator.collect_episodes">
 <a class="viewcode-back" href="../../../../api_doc/rl_modules/index.html#grl.rl_modules.GymEnvSimulator.collect_episodes">[docs]</a>
     <span class="k">def</span> <span class="nf">collect_episodes</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">policy</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">],</span>
-            <span class="n">num_episodes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">num_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">policy</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">],</span>
+        <span class="n">num_episodes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">num_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Collect several episodes using the given policy. The environment will be reset at the beginning of each episode.</span>
@@ -152,14 +153,16 @@
         <span class="k">if</span> <span class="n">num_episodes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">data_list</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
-                <span class="k">if</span> <span class="n">gym</span><span class="o">.</span><span class="n">__version__</span> <span class="o">&gt;=</span> <span class="s1">&#39;0.26.0&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">gym</span><span class="o">.</span><span class="n">__version__</span> <span class="o">&gt;=</span> <span class="s2">&quot;0.26.0&quot;</span><span class="p">:</span>
                     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_episodes</span><span class="p">):</span>
                         <span class="n">obs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
                         <span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
                         <span class="n">truncated</span> <span class="o">=</span> <span class="kc">False</span>
                         <span class="k">while</span> <span class="ow">not</span> <span class="n">done</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">truncated</span><span class="p">:</span>
                             <span class="n">action</span> <span class="o">=</span> <span class="n">policy</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
-                            <span class="n">next_obs</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">truncated</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+                            <span class="n">next_obs</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">truncated</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="p">(</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+                            <span class="p">)</span>
                             <span class="n">data_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                                 <span class="nb">dict</span><span class="p">(</span>
                                     <span class="n">obs</span><span class="o">=</span><span class="n">obs</span><span class="p">,</span>
@@ -192,14 +195,16 @@
         <span class="k">elif</span> <span class="n">num_steps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">data_list</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
-                <span class="k">if</span> <span class="n">gym</span><span class="o">.</span><span class="n">__version__</span> <span class="o">&gt;=</span> <span class="s1">&#39;0.26.0&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">gym</span><span class="o">.</span><span class="n">__version__</span> <span class="o">&gt;=</span> <span class="s2">&quot;0.26.0&quot;</span><span class="p">:</span>
                     <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_list</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">num_steps</span><span class="p">:</span>
                         <span class="n">obs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
                         <span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
                         <span class="n">truncated</span> <span class="o">=</span> <span class="kc">False</span>
                         <span class="k">while</span> <span class="ow">not</span> <span class="n">done</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">truncated</span><span class="p">:</span>
                             <span class="n">action</span> <span class="o">=</span> <span class="n">policy</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
-                            <span class="n">next_obs</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">truncated</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+                            <span class="n">next_obs</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">truncated</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="p">(</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+                            <span class="p">)</span>
                             <span class="n">data_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                                 <span class="nb">dict</span><span class="p">(</span>
                                     <span class="n">obs</span><span class="o">=</span><span class="n">obs</span><span class="p">,</span>
@@ -234,12 +239,12 @@
 <div class="viewcode-block" id="GymEnvSimulator.collect_steps">
 <a class="viewcode-back" href="../../../../api_doc/rl_modules/index.html#grl.rl_modules.GymEnvSimulator.collect_steps">[docs]</a>
     <span class="k">def</span> <span class="nf">collect_steps</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">policy</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">],</span>
-            <span class="n">num_episodes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">num_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">random_policy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">policy</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">],</span>
+        <span class="n">num_episodes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">num_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">random_policy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Collect several steps using the given policy. The environment will not be reset until the end of the episode.</span>
@@ -254,7 +259,7 @@
         <span class="k">if</span> <span class="n">num_episodes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">data_list</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
-                <span class="k">if</span> <span class="n">gym</span><span class="o">.</span><span class="n">__version__</span> <span class="o">&gt;=</span> <span class="s1">&#39;0.26.0&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">gym</span><span class="o">.</span><span class="n">__version__</span> <span class="o">&gt;=</span> <span class="s2">&quot;0.26.0&quot;</span><span class="p">:</span>
                     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_episodes</span><span class="p">):</span>
                         <span class="n">obs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
                         <span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
@@ -264,7 +269,9 @@
                                 <span class="n">action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span><span class="o">.</span><span class="n">action_space</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
                             <span class="k">else</span><span class="p">:</span>
                                 <span class="n">action</span> <span class="o">=</span> <span class="n">policy</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
-                            <span class="n">next_obs</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">truncated</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+                            <span class="n">next_obs</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">truncated</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="p">(</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+                            <span class="p">)</span>
                             <span class="n">data_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                                 <span class="nb">dict</span><span class="p">(</span>
                                     <span class="n">obs</span><span class="o">=</span><span class="n">obs</span><span class="p">,</span>
@@ -305,14 +312,16 @@
         <span class="k">elif</span> <span class="n">num_steps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">data_list</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
-                <span class="k">if</span> <span class="n">gym</span><span class="o">.</span><span class="n">__version__</span> <span class="o">&gt;=</span> <span class="s1">&#39;0.26.0&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">gym</span><span class="o">.</span><span class="n">__version__</span> <span class="o">&gt;=</span> <span class="s2">&quot;0.26.0&quot;</span><span class="p">:</span>
                     <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_list</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">num_steps</span><span class="p">:</span>
                         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_state_done</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_state_truncated</span><span class="p">:</span>
                             <span class="k">if</span> <span class="n">random_policy</span><span class="p">:</span>
                                 <span class="n">action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span><span class="o">.</span><span class="n">action_space</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
                             <span class="k">else</span><span class="p">:</span>
                                 <span class="n">action</span> <span class="o">=</span> <span class="n">policy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_state_obs</span><span class="p">)</span>
-                            <span class="n">next_obs</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">truncated</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+                            <span class="n">next_obs</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">truncated</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="p">(</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">collect_env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+                            <span class="p">)</span>
                             <span class="n">data_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                                 <span class="nb">dict</span><span class="p">(</span>
                                     <span class="n">obs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">last_state_obs</span><span class="p">,</span>
@@ -320,7 +329,7 @@
                                     <span class="n">reward</span><span class="o">=</span><span class="n">reward</span><span class="p">,</span>
                                     <span class="n">truncated</span><span class="o">=</span><span class="n">truncated</span><span class="p">,</span>
                                     <span class="n">done</span><span class="o">=</span><span class="n">done</span><span class="p">,</span>
-                                    <span class="n">next_obs</span><span class="o">=</span><span class="n">next_obs</span>
+                                    <span class="n">next_obs</span><span class="o">=</span><span class="n">next_obs</span><span class="p">,</span>
                                 <span class="p">)</span>
                             <span class="p">)</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">last_state_obs</span> <span class="o">=</span> <span class="n">next_obs</span>
@@ -344,7 +353,7 @@
                                     <span class="n">action</span><span class="o">=</span><span class="n">action</span><span class="p">,</span>
                                     <span class="n">reward</span><span class="o">=</span><span class="n">reward</span><span class="p">,</span>
                                     <span class="n">done</span><span class="o">=</span><span class="n">done</span><span class="p">,</span>
-                                    <span class="n">next_obs</span><span class="o">=</span><span class="n">next_obs</span>
+                                    <span class="n">next_obs</span><span class="o">=</span><span class="n">next_obs</span><span class="p">,</span>
                                 <span class="p">)</span>
                             <span class="p">)</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">last_state_obs</span> <span class="o">=</span> <span class="n">next_obs</span>
@@ -358,11 +367,11 @@
 <div class="viewcode-block" id="GymEnvSimulator.evaluate">
 <a class="viewcode-back" href="../../../../api_doc/rl_modules/index.html#grl.rl_modules.GymEnvSimulator.evaluate">[docs]</a>
     <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">policy</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">],</span>
-            <span class="n">num_episodes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">render_args</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">policy</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">],</span>
+        <span class="n">num_episodes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">render_args</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Evaluate the given policy using the environment. The environment will be reset at the beginning of each episode.</span>
@@ -377,8 +386,10 @@
             <span class="n">render</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="k">def</span> <span class="nf">render_env</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">render_args</span><span class="p">):</span>
-            <span class="c1">#TODO: support different render modes</span>
-            <span class="n">render_output</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="o">**</span><span class="n">render_args</span><span class="p">,)</span>
+            <span class="c1"># TODO: support different render modes</span>
+            <span class="n">render_output</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">render</span><span class="p">(</span>
+                <span class="o">**</span><span class="n">render_args</span><span class="p">,</span>
+            <span class="p">)</span>
             <span class="k">return</span> <span class="n">render_output</span>
 
         <span class="n">eval_results</span> <span class="o">=</span> <span class="p">[]</span>
@@ -389,7 +400,7 @@
                 <span class="n">render_output</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="n">data_list</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
-                <span class="k">if</span> <span class="n">gym</span><span class="o">.</span><span class="n">__version__</span> <span class="o">&gt;=</span> <span class="s1">&#39;0.26.0&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">gym</span><span class="o">.</span><span class="n">__version__</span> <span class="o">&gt;=</span> <span class="s2">&quot;0.26.0&quot;</span><span class="p">:</span>
                     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_episodes</span><span class="p">):</span>
                         <span class="n">obs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
                         <span class="k">if</span> <span class="n">render</span><span class="p">:</span>
@@ -440,12 +451,12 @@
 
             <span class="n">eval_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="nb">dict</span><span class="p">(</span>
-                    <span class="n">total_return</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;reward&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">data_list</span><span class="p">]),</span>
-                    <span class="n">total_steps</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_list</span><span class="p">),</span>
-                    <span class="n">data_list</span> <span class="o">=</span> <span class="n">data_list</span><span class="p">,</span>
-                    <span class="n">render_output</span> <span class="o">=</span> <span class="n">render_output</span> <span class="k">if</span> <span class="n">render</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="n">total_return</span><span class="o">=</span><span class="nb">sum</span><span class="p">([</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;reward&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">data_list</span><span class="p">]),</span>
+                    <span class="n">total_steps</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">data_list</span><span class="p">),</span>
+                    <span class="n">data_list</span><span class="o">=</span><span class="n">data_list</span><span class="p">,</span>
+                    <span class="n">render_output</span><span class="o">=</span><span class="n">render_output</span> <span class="k">if</span> <span class="n">render</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
                 <span class="p">)</span>
-            <span class="p">)</span> 
+            <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">eval_results</span></div>
 </div>

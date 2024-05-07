@@ -148,12 +148,12 @@
 <div class="viewcode-block" id="ODESolver.integrate">
 <a class="viewcode-back" href="../../../../api_doc/numerical_methods/index.html#grl.numerical_methods.ODESolver.integrate">[docs]</a>
     <span class="k">def</span> <span class="nf">integrate</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">drift</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span>
-            <span class="n">x0</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
-            <span class="n">t_span</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-        <span class="p">):</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">drift</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span>
+        <span class="n">x0</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
+        <span class="n">t_span</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Integrate the ODE.</span>
@@ -181,7 +181,7 @@
 
 
     <span class="k">def</span> <span class="nf">odeint_by_torchdiffeq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">drift</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        
+
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
 
             <span class="k">def</span> <span class="nf">forward_ode_drift_by_torchdiffeq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
@@ -201,7 +201,7 @@
                 <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="k">return</span> <span class="n">trajectory</span>
-        
+
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">):</span>
 
             <span class="k">def</span> <span class="nf">forward_ode_drift_by_torchdiffeq</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
@@ -221,12 +221,12 @@
                 <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="k">return</span> <span class="n">trajectory</span>
-        
+
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported data type for x0: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">x0</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">odeint_by_torchdiffeq_adjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">drift</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        
+
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
 
             <span class="k">def</span> <span class="nf">forward_ode_drift_by_torchdiffeq_adjoint</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
@@ -246,7 +246,7 @@
                 <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="k">return</span> <span class="n">trajectory</span>
-        
+
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">):</span>
 
             <span class="k">def</span> <span class="nf">forward_ode_drift_by_torchdiffeq_adjoint</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
@@ -268,7 +268,7 @@
             <span class="k">return</span> <span class="n">trajectory</span>
 
     <span class="k">def</span> <span class="nf">odeint_by_torchdyn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">drift</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">):</span>
-        
+
         <span class="k">def</span> <span class="nf">forward_ode_drift_by_torchdyn</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">nfe</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="c1"># broadcasting t to match the batch size of x</span>
@@ -296,8 +296,8 @@
 
         <span class="n">neural_ode</span> <span class="o">=</span> <span class="n">NeuralODE</span><span class="p">(</span>
             <span class="n">vector_field</span><span class="o">=</span><span class="n">forward_ode_drift_by_torchdyn_NeuralODE</span><span class="p">,</span>
-            <span class="n">sensitivity</span><span class="o">=</span><span class="s1">&#39;adjoint&#39;</span><span class="p">,</span>
-            <span class="n">solver_adjoint</span><span class="o">=</span><span class="s1">&#39;dopri5&#39;</span><span class="p">,</span> 
+            <span class="n">sensitivity</span><span class="o">=</span><span class="s2">&quot;adjoint&quot;</span><span class="p">,</span>
+            <span class="n">solver_adjoint</span><span class="o">=</span><span class="s2">&quot;dopri5&quot;</span><span class="p">,</span>
             <span class="n">atol_adjoint</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span>
             <span class="n">rtol_adjoint</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span>
             <span class="n">solver</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ode_solver</span><span class="p">,</span>
@@ -314,7 +314,6 @@
 
 
 
-
 <span class="k">class</span> <span class="nc">DictTensorConverter</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dict_type</span><span class="p">:</span> <span class="nb">object</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -322,13 +321,17 @@
 <span class="sd">        Overview:</span>
 <span class="sd">            Initialize the DictTensorConverter module.</span>
 <span class="sd">        Arguments:</span>
-<span class="sd">            dict_type (:obj:`object`): The type of the dictionary to be used, which can be (:obj:`dict`), (:obj:`TensorDict`) or (:obj:`treetensor.torch.Tensor`).  </span>
+<span class="sd">            dict_type (:obj:`object`): The type of the dictionary to be used, which can be (:obj:`dict`), (:obj:`TensorDict`) or (:obj:`treetensor.torch.Tensor`).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dict_type</span> <span class="o">=</span> <span class="n">dict_type</span> <span class="k">if</span> <span class="n">dict_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">dict</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_type</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">,</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">dict_to_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">batch_size</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">dict_to_tensor</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">input_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
+        <span class="n">batch_size</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Convert a dictionary of PyTorch tensors into a single PyTorch tensor.</span>
@@ -362,7 +365,11 @@
         <span class="n">combined_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">tensor_list</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">combined_tensor</span>
 
-    <span class="k">def</span> <span class="nf">tensor_to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_size</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">tensor_to_dict</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">input_tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">x_size</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">]],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Convert a single PyTorch tensor into a dictionary of PyTorch tensors.</span>
@@ -385,14 +392,20 @@
                 <span class="k">assert</span> <span class="n">dimensions</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">input_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
                 <span class="n">end_idx</span> <span class="o">=</span> <span class="n">start_idx</span> <span class="o">+</span> <span class="mi">1</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dimensions</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">):</span>
-                <span class="n">data_size</span> <span class="o">=</span> <span class="n">dimensions</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">input_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]):]</span>
-                <span class="n">end_idx</span> <span class="o">=</span> <span class="n">start_idx</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">data_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int</span><span class="p">))</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                <span class="n">data_size</span> <span class="o">=</span> <span class="n">dimensions</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">input_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="p">:]</span>
+                <span class="n">end_idx</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">start_idx</span>
+                    <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">data_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int</span><span class="p">))</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                <span class="p">)</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dimensions</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
-                <span class="n">data_size</span> <span class="o">=</span> <span class="n">dimensions</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">input_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]):]</span>
+                <span class="n">data_size</span> <span class="o">=</span> <span class="n">dimensions</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">input_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="p">:]</span>
                 <span class="n">end_idx</span> <span class="o">=</span> <span class="n">start_idx</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">data_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dimensions</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
-                <span class="n">data_size</span> <span class="o">=</span> <span class="n">dimensions</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">input_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]):]</span>
-                <span class="n">end_idx</span> <span class="o">=</span> <span class="n">start_idx</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">data_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int</span><span class="p">))</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                <span class="n">data_size</span> <span class="o">=</span> <span class="n">dimensions</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">input_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="p">:]</span>
+                <span class="n">end_idx</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">start_idx</span>
+                    <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">data_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int</span><span class="p">))</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported type for dimensions: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">dimensions</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">output_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_tensor</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">start_idx</span><span class="p">:</span><span class="n">end_idx</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">dimensions</span><span class="p">)</span>
@@ -454,18 +467,20 @@
         <span class="k">elif</span> <span class="n">dict_type</span> <span class="o">==</span> <span class="s2">&quot;TensorDict&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">dict_tensor_converter</span> <span class="o">=</span> <span class="n">DictTensorConverter</span><span class="p">(</span><span class="n">dict_type</span><span class="o">=</span><span class="n">TensorDict</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">dict_type</span> <span class="o">==</span> <span class="s2">&quot;treetensor&quot;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">dict_tensor_converter</span> <span class="o">=</span> <span class="n">DictTensorConverter</span><span class="p">(</span><span class="n">dict_type</span><span class="o">=</span><span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dict_tensor_converter</span> <span class="o">=</span> <span class="n">DictTensorConverter</span><span class="p">(</span>
+                <span class="n">dict_type</span><span class="o">=</span><span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported dict_type: </span><span class="si">{</span><span class="n">dict_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">integrate</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">drift</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span>
-            <span class="n">x0</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">,</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
-            <span class="n">t_span</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-            <span class="n">batch_size</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">],</span>
-            <span class="n">x_size</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">]],</span>
-        <span class="p">):</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">drift</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span>
+        <span class="n">x0</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">,</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
+        <span class="n">t_span</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">],</span>
+        <span class="n">x_size</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">]],</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Integrate the ODE.</span>
@@ -478,18 +493,20 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">nfe</span> <span class="o">=</span> <span class="mi">0</span>
-        
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">library</span> <span class="o">==</span> <span class="s2">&quot;torchdyn&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">odeint_by_torchdyn</span><span class="p">(</span><span class="n">drift</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">x_size</span><span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">library</span> <span class="o">==</span> <span class="s2">&quot;torchdyn_NeuralODE&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">odeint_by_torchdyn_NeuralODE</span><span class="p">(</span><span class="n">drift</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">x_size</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">odeint_by_torchdyn_NeuralODE</span><span class="p">(</span>
+                <span class="n">drift</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">x_size</span>
+            <span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">library</span> <span class="o">==</span> <span class="s2">&quot;torchode&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">odeint_by_torchode</span><span class="p">(</span><span class="n">drift</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">x_size</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;library </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">library</span><span class="si">}</span><span class="s2"> is not supported&quot;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">odeint_by_torchdyn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">drift</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">x_size</span><span class="p">):</span>
-        
+
         <span class="k">def</span> <span class="nf">forward_ode_drift_by_torchdyn</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">nfe</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="c1"># broadcasting t to match the batch size of x</span>
@@ -501,7 +518,9 @@
             <span class="n">dict_drift</span> <span class="o">=</span> <span class="n">drift</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
             <span class="c1"># dict_drift is a dictionary of PyTorch tensors</span>
             <span class="c1"># dict_drift[key].shape = (*x_size[key])</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_tensor_converter</span><span class="o">.</span><span class="n">dict_to_tensor</span><span class="p">(</span><span class="n">dict_drift</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_tensor_converter</span><span class="o">.</span><span class="n">dict_to_tensor</span><span class="p">(</span>
+                <span class="n">dict_drift</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span>
+            <span class="p">)</span>
 
         <span class="n">x0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_tensor_converter</span><span class="o">.</span><span class="n">dict_to_tensor</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
         <span class="c1"># x0.shape = (*batch_size, *sum_dimensions)</span>
@@ -523,10 +542,22 @@
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_type</span> <span class="o">==</span> <span class="s2">&quot;treetensor&quot;</span><span class="p">:</span>
             <span class="n">t_span_tensordict</span> <span class="o">=</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">({},</span> <span class="n">device</span><span class="o">=</span><span class="n">t_span</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">x_size</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="n">t_span_tensordict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">t_span</span><span class="o">.</span><span class="n">numel</span><span class="p">()],</span> <span class="n">device</span><span class="o">=</span><span class="n">t_span</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-            <span class="n">t_x_size</span> <span class="o">=</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">(</span><span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">t_span_tensordict</span><span class="p">,</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">x_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">t_span</span><span class="o">.</span><span class="n">device</span><span class="p">)],</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+                <span class="n">t_span_tensordict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">t_span</span><span class="o">.</span><span class="n">numel</span><span class="p">()],</span> <span class="n">device</span><span class="o">=</span><span class="n">t_span</span><span class="o">.</span><span class="n">device</span>
+                <span class="p">)</span>
+            <span class="n">t_x_size</span> <span class="o">=</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">(</span>
+                <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="n">t_span_tensordict</span><span class="p">,</span>
+                        <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">x_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">t_span</span><span class="o">.</span><span class="n">device</span><span class="p">),</span>
+                    <span class="p">],</span>
+                    <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
 
-            <span class="n">trajectory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_tensor_converter</span><span class="o">.</span><span class="n">tensor_to_dict</span><span class="p">(</span><span class="n">trajectory</span><span class="p">,</span> <span class="n">x_size</span><span class="o">=</span><span class="n">t_x_size</span><span class="p">)</span>
+            <span class="n">trajectory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_tensor_converter</span><span class="o">.</span><span class="n">tensor_to_dict</span><span class="p">(</span>
+                <span class="n">trajectory</span><span class="p">,</span> <span class="n">x_size</span><span class="o">=</span><span class="n">t_x_size</span>
+            <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">trajectory</span>
 
@@ -543,11 +574,13 @@
             <span class="n">dict_drift</span> <span class="o">=</span> <span class="n">drift</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
             <span class="c1"># dict_drift is a dictionary of PyTorch tensors</span>
             <span class="c1"># dict_drift[key].shape = (*x_size[key])</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_tensor_converter</span><span class="o">.</span><span class="n">dict_to_tensor</span><span class="p">(</span><span class="n">dict_drift</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_tensor_converter</span><span class="o">.</span><span class="n">dict_to_tensor</span><span class="p">(</span>
+                <span class="n">dict_drift</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span>
+            <span class="p">)</span>
 
         <span class="n">neural_ode</span> <span class="o">=</span> <span class="n">NeuralODE</span><span class="p">(</span>
             <span class="n">vector_field</span><span class="o">=</span><span class="n">forward_ode_drift_by_torchdyn_NeuralODE</span><span class="p">,</span>
-            <span class="n">sensitivity</span><span class="o">=</span><span class="s1">&#39;adjoint&#39;</span><span class="p">,</span>
+            <span class="n">sensitivity</span><span class="o">=</span><span class="s2">&quot;adjoint&quot;</span><span class="p">,</span>
             <span class="n">solver</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ode_solver</span><span class="p">,</span>
             <span class="n">atol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atol</span><span class="p">,</span>
             <span class="n">rtol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rtol</span><span class="p">,</span>
@@ -566,16 +599,27 @@
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_type</span> <span class="o">==</span> <span class="s2">&quot;treetensor&quot;</span><span class="p">:</span>
             <span class="n">t_span_tensordict</span> <span class="o">=</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">({},</span> <span class="n">device</span><span class="o">=</span><span class="n">t_span</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">x_size</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="n">t_span_tensordict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">t_span</span><span class="o">.</span><span class="n">numel</span><span class="p">()],</span> <span class="n">device</span><span class="o">=</span><span class="n">t_span</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-            <span class="n">t_x_size</span> <span class="o">=</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">(</span><span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">t_span_tensordict</span><span class="p">,</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">x_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">t_span</span><span class="o">.</span><span class="n">device</span><span class="p">)],</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+                <span class="n">t_span_tensordict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">t_span</span><span class="o">.</span><span class="n">numel</span><span class="p">()],</span> <span class="n">device</span><span class="o">=</span><span class="n">t_span</span><span class="o">.</span><span class="n">device</span>
+                <span class="p">)</span>
+            <span class="n">t_x_size</span> <span class="o">=</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">(</span>
+                <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="n">t_span_tensordict</span><span class="p">,</span>
+                        <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">x_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">t_span</span><span class="o">.</span><span class="n">device</span><span class="p">),</span>
+                    <span class="p">],</span>
+                    <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
 
-            <span class="n">trajectory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_tensor_converter</span><span class="o">.</span><span class="n">tensor_to_dict</span><span class="p">(</span><span class="n">trajectory</span><span class="p">,</span> <span class="n">x_size</span><span class="o">=</span><span class="n">t_x_size</span><span class="p">)</span>
+            <span class="n">trajectory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_tensor_converter</span><span class="o">.</span><span class="n">tensor_to_dict</span><span class="p">(</span>
+                <span class="n">trajectory</span><span class="p">,</span> <span class="n">x_size</span><span class="o">=</span><span class="n">t_x_size</span>
+            <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">trajectory</span>
 
     <span class="k">def</span> <span class="nf">odeint_by_torchode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_span</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">x_size</span><span class="p">):</span>
         <span class="k">pass</span>
-
 </pre></div>
 
            </div>

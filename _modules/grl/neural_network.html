@@ -114,11 +114,13 @@
         <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Module </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> is already registered.&quot;</span><span class="p">)</span>
     <span class="n">MODULES</span><span class="p">[</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="o">=</span> <span class="n">module</span>
 
+
 <span class="k">def</span> <span class="nf">get_module</span><span class="p">(</span><span class="nb">type</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
     <span class="k">if</span> <span class="nb">type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">MODULES</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">MODULES</span><span class="p">[</span><span class="nb">type</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown module type: </span><span class="si">{</span><span class="nb">type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
 
 <span class="k">def</span> <span class="nf">build_normalization</span><span class="p">(</span><span class="n">norm_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -134,24 +136,27 @@
     <span class="k">if</span> <span class="n">dim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">key</span> <span class="o">=</span> <span class="n">norm_type</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">norm_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;BN&#39;</span><span class="p">,</span> <span class="s1">&#39;IN&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">norm_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;BN&quot;</span><span class="p">,</span> <span class="s2">&quot;IN&quot;</span><span class="p">]:</span>
             <span class="n">key</span> <span class="o">=</span> <span class="n">norm_type</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">norm_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;LN&#39;</span><span class="p">,</span> <span class="s1">&#39;SyncBN&#39;</span><span class="p">]:</span>
+        <span class="k">elif</span> <span class="n">norm_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;LN&quot;</span><span class="p">,</span> <span class="s2">&quot;SyncBN&quot;</span><span class="p">]:</span>
             <span class="n">key</span> <span class="o">=</span> <span class="n">norm_type</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;not support indicated dim when creates </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">norm_type</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;not support indicated dim when creates </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">norm_type</span><span class="p">)</span>
+            <span class="p">)</span>
     <span class="n">norm_func</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;BN1&#39;</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm1d</span><span class="p">,</span>
-        <span class="s1">&#39;BN2&#39;</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">,</span>
-        <span class="s1">&#39;LN&#39;</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">,</span>
-        <span class="s1">&#39;IN1&#39;</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">InstanceNorm1d</span><span class="p">,</span>
-        <span class="s1">&#39;IN2&#39;</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">InstanceNorm2d</span><span class="p">,</span>
-        <span class="s1">&#39;SyncBN&#39;</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">SyncBatchNorm</span><span class="p">,</span>
+        <span class="s2">&quot;BN1&quot;</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm1d</span><span class="p">,</span>
+        <span class="s2">&quot;BN2&quot;</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">,</span>
+        <span class="s2">&quot;LN&quot;</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">,</span>
+        <span class="s2">&quot;IN1&quot;</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">InstanceNorm1d</span><span class="p">,</span>
+        <span class="s2">&quot;IN2&quot;</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">InstanceNorm2d</span><span class="p">,</span>
+        <span class="s2">&quot;SyncBN&quot;</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">SyncBatchNorm</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">norm_func</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">norm_func</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;invalid norm type: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+
 
 <span class="k">def</span> <span class="nf">sequential_pack</span><span class="p">(</span><span class="n">layers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -175,6 +180,7 @@
             <span class="k">break</span>
     <span class="k">return</span> <span class="n">seq</span>
 
+
 <span class="k">def</span> <span class="nf">MLP</span><span class="p">(</span>
     <span class="n">in_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">hidden_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -187,7 +193,7 @@
     <span class="n">dropout_probability</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
     <span class="n">output_activation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">output_norm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">last_linear_layer_init_zero</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">last_linear_layer_init_zero</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Overview:</span>
@@ -265,6 +271,7 @@
 
     <span class="k">return</span> <span class="n">sequential_pack</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
 
+
 <span class="k">class</span> <span class="nc">TemporalSpatialResBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Overview:</span>
@@ -294,7 +301,11 @@
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dense1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">input_dim</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">),</span> <span class="n">activation</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dense2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">output_dim</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">),</span> <span class="n">activation</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">modify_x</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">input_dim</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">)</span> <span class="k">if</span> <span class="n">input_dim</span> <span class="o">!=</span> <span class="n">output_dim</span> <span class="k">else</span> <span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modify_x</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">input_dim</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">input_dim</span> <span class="o">!=</span> <span class="n">output_dim</span>
+            <span class="k">else</span> <span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
+        <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -302,11 +313,12 @@
 <span class="sd">            Return the redisual block output.</span>
 <span class="sd">        Arguments:</span>
 <span class="sd">            - t (:obj:`torch.Tensor`): The temporal input tensor.</span>
-<span class="sd">            - x (:obj:`torch.Tensor`): The input tensor.        </span>
+<span class="sd">            - x (:obj:`torch.Tensor`): The input tensor.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">h1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dense1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_mlp</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="n">h2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dense2</span><span class="p">(</span><span class="n">h1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">h2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">modify_x</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="TemporalSpatialResidualNet">
 <a class="viewcode-back" href="../../api_doc/neural_network/index.html#grl.neural_network.TemporalSpatialResidualNet">[docs]</a>
@@ -321,15 +333,15 @@
 <div class="viewcode-block" id="TemporalSpatialResidualNet.__init__">
 <a class="viewcode-back" href="../../api_doc/neural_network/index.html#grl.neural_network.TemporalSpatialResidualNet.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">hidden_sizes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
-            <span class="n">output_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-            <span class="n">t_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-            <span class="n">input_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">condition_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">condition_hidden_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">t_condition_hidden_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="p">):</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">hidden_sizes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="n">output_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">t_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">input_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">condition_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">condition_hidden_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">t_condition_hidden_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Initiate the temporal spatial residual network.</span>
@@ -352,28 +364,52 @@
             <span class="n">t_condition_hidden_dim</span> <span class="o">=</span> <span class="n">t_dim</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">t_condition_dim</span> <span class="o">=</span> <span class="n">t_dim</span> <span class="o">+</span> <span class="n">condition_hidden_dim</span>
-            <span class="n">t_condition_hidden_dim</span> <span class="o">=</span> <span class="n">t_condition_hidden_dim</span> <span class="k">if</span> <span class="n">t_condition_hidden_dim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">t_condition_dim</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">pre_sort_condition</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">condition_dim</span><span class="p">,</span> <span class="n">condition_hidden_dim</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SiLU</span><span class="p">())</span>
+            <span class="n">t_condition_hidden_dim</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">t_condition_hidden_dim</span>
+                <span class="k">if</span> <span class="n">t_condition_hidden_dim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="k">else</span> <span class="n">t_condition_dim</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pre_sort_condition</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">condition_dim</span><span class="p">,</span> <span class="n">condition_hidden_dim</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SiLU</span><span class="p">()</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sort_t</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
             <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">t_condition_dim</span><span class="p">,</span> <span class="n">t_condition_hidden_dim</span><span class="p">),</span>
             <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SiLU</span><span class="p">(),</span>
             <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">t_condition_hidden_dim</span><span class="p">,</span> <span class="n">t_condition_hidden_dim</span><span class="p">),</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">first_block</span> <span class="o">=</span> <span class="n">TemporalSpatialResBlock</span><span class="p">(</span><span class="n">input_dim</span><span class="p">,</span> <span class="n">hidden_sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">t_dim</span><span class="o">=</span><span class="n">t_condition_hidden_dim</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">down_block</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">([</span><span class="n">TemporalSpatialResBlock</span><span class="p">(</span><span class="n">hidden_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">hidden_sizes</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="n">t_dim</span><span class="o">=</span><span class="n">t_condition_hidden_dim</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hidden_sizes</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">middle_block</span> <span class="o">=</span> <span class="n">TemporalSpatialResBlock</span><span class="p">(</span><span class="n">hidden_sizes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">hidden_sizes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">t_dim</span><span class="o">=</span><span class="n">t_condition_hidden_dim</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">up_block</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">([</span><span class="n">TemporalSpatialResBlock</span><span class="p">(</span><span class="n">hidden_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">hidden_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">t_dim</span><span class="o">=</span><span class="n">t_condition_hidden_dim</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hidden_sizes</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">last_block</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="mi">2</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">first_block</span> <span class="o">=</span> <span class="n">TemporalSpatialResBlock</span><span class="p">(</span>
+            <span class="n">input_dim</span><span class="p">,</span> <span class="n">hidden_sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">t_dim</span><span class="o">=</span><span class="n">t_condition_hidden_dim</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">down_block</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">TemporalSpatialResBlock</span><span class="p">(</span>
+                    <span class="n">hidden_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">hidden_sizes</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="n">t_dim</span><span class="o">=</span><span class="n">t_condition_hidden_dim</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hidden_sizes</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">middle_block</span> <span class="o">=</span> <span class="n">TemporalSpatialResBlock</span><span class="p">(</span>
+            <span class="n">hidden_sizes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">hidden_sizes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">t_dim</span><span class="o">=</span><span class="n">t_condition_hidden_dim</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">up_block</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">TemporalSpatialResBlock</span><span class="p">(</span>
+                    <span class="n">hidden_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">hidden_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">t_dim</span><span class="o">=</span><span class="n">t_condition_hidden_dim</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hidden_sizes</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_block</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="TemporalSpatialResidualNet.forward">
 <a class="viewcode-back" href="../../api_doc/neural_network/index.html#grl.neural_network.TemporalSpatialResidualNet.forward">[docs]</a>
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-            <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-            <span class="n">condition</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">condition</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Return the output of the temporal spatial residual network.</span>
@@ -389,15 +425,16 @@
             <span class="n">t_condition</span> <span class="o">=</span> <span class="n">t</span>
         <span class="n">t_condition_embedding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sort_t</span><span class="p">(</span><span class="n">t_condition</span><span class="p">)</span>
         <span class="n">d0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">first_block</span><span class="p">(</span><span class="n">t_condition_embedding</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
-        <span class="n">d</span><span class="o">=</span><span class="p">[</span><span class="n">d0</span><span class="p">]</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="p">[</span><span class="n">d0</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">block</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">down_block</span><span class="p">):</span>
             <span class="n">d_i</span> <span class="o">=</span> <span class="n">block</span><span class="p">(</span><span class="n">t_condition_embedding</span><span class="p">,</span> <span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
             <span class="n">d</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d_i</span><span class="p">)</span>
         <span class="n">u</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">middle_block</span><span class="p">(</span><span class="n">t_condition_embedding</span><span class="p">,</span> <span class="n">d</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">block</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">up_block</span><span class="p">):</span>
-            <span class="n">u</span> <span class="o">=</span> <span class="n">block</span><span class="p">(</span><span class="n">t_condition_embedding</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">u</span><span class="p">,</span> <span class="n">d</span><span class="p">[</span><span class="o">-</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">u</span> <span class="o">=</span> <span class="n">block</span><span class="p">(</span><span class="n">t_condition_embedding</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">u</span><span class="p">,</span> <span class="n">d</span><span class="p">[</span><span class="o">-</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_block</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">u</span><span class="p">,</span> <span class="n">d</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span></div>
 </div>
+
 
 
 <div class="viewcode-block" id="ConcatenateLayer">
@@ -409,6 +446,7 @@
 <span class="sd">    Interface:</span>
 <span class="sd">        ``__init__``, ``forward``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="ConcatenateLayer.__init__">
 <a class="viewcode-back" href="../../api_doc/neural_network/index.html#grl.neural_network.ConcatenateLayer.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -432,6 +470,7 @@
 </div>
 
 
+
 <div class="viewcode-block" id="MultiLayerPerceptron">
 <a class="viewcode-back" href="../../api_doc/neural_network/index.html#grl.neural_network.MultiLayerPerceptron">[docs]</a>
 <span class="k">class</span> <span class="nc">MultiLayerPerceptron</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -442,19 +481,20 @@
 <span class="sd">    Interface:</span>
 <span class="sd">        ``__init__``, ``forward``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="MultiLayerPerceptron.__init__">
 <a class="viewcode-back" href="../../api_doc/neural_network/index.html#grl.neural_network.MultiLayerPerceptron.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">hidden_sizes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
-            <span class="n">output_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-            <span class="n">activation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
-            <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">layernorm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-            <span class="n">final_activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">shrink</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="p">):</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">hidden_sizes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="n">output_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">activation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
+        <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">layernorm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">final_activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">shrink</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Initiate the multi-layer perceptron.</span>
@@ -472,27 +512,34 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">()</span>
 
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hidden_sizes</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s1">&#39;linear&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">hidden_sizes</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hidden_sizes</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span>
+                <span class="s2">&quot;linear&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">hidden_sizes</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="p">)</span>
 
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">activation</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s1">&#39;activation&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">get_activation</span><span class="p">(</span><span class="n">activation</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span>
+                    <span class="s2">&quot;activation&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">get_activation</span><span class="p">(</span><span class="n">activation</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s1">&#39;activation&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">get_activation</span><span class="p">(</span><span class="n">activation</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s2">&quot;activation&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">get_activation</span><span class="p">(</span><span class="n">activation</span><span class="p">))</span>
             <span class="k">if</span> <span class="n">dropout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">dropout</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s1">&#39;dropout&#39;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s2">&quot;dropout&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">))</span>
             <span class="k">if</span> <span class="n">layernorm</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s1">&#39;layernorm&#39;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">hidden_sizes</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s2">&quot;layernorm&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">hidden_sizes</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]))</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s1">&#39;linear&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hidden_sizes</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_sizes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">output_size</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span>
+            <span class="s2">&quot;linear&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hidden_sizes</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_sizes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">output_size</span><span class="p">),</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">final_activation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s1">&#39;final_activation&#39;</span><span class="p">,</span> <span class="n">get_activation</span><span class="p">(</span><span class="n">final_activation</span><span class="p">))</span>
-        
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s2">&quot;final_activation&quot;</span><span class="p">,</span> <span class="n">get_activation</span><span class="p">(</span><span class="n">final_activation</span><span class="p">))</span>
+
         <span class="k">if</span> <span class="n">scale</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">scale</span><span class="p">),</span><span class="n">requires_grad</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">scale</span><span class="p">),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="mf">1.0</span>
 
         <span class="c1"># shrink the weight of linear layer &#39;linear&#39;+str(len(hidden_sizes) to it&#39;s origin 0.01</span>
         <span class="k">if</span> <span class="n">shrink</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -511,8 +558,9 @@
 <span class="sd">        Arguments:</span>
 <span class="sd">            - x (:obj:`torch.Tensor`): The input tensor.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div>
 </div>
+
 
 
 <div class="viewcode-block" id="ConcatenateMLP">
@@ -524,6 +572,7 @@
 <span class="sd">    Interface:</span>
 <span class="sd">        ``__init__``, ``forward``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="ConcatenateMLP.__init__">
 <a class="viewcode-back" href="../../api_doc/neural_network/index.html#grl.neural_network.ConcatenateMLP.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -550,26 +599,29 @@
 </div>
 
 
+
 <span class="k">class</span> <span class="nc">ALLCONCATMLP</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">main</span> <span class="o">=</span> <span class="n">MLPResNet</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">t_cond</span> <span class="o">=</span> <span class="n">MultiLayerPerceptron</span><span class="p">(</span>
-            <span class="n">hidden_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">],</span>
+            <span class="n">hidden_sizes</span><span class="o">=</span><span class="p">[</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">],</span>
             <span class="n">output_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
             <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;mish&quot;</span><span class="p">,</span>
         <span class="p">)</span>
+
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-            <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-            <span class="n">condition</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">condition</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 
         <span class="n">embed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">t_cond</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="n">embed</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">result</span>
-    
+
+
 <span class="kn">from</span> <span class="nn">.transformers.dit</span> <span class="kn">import</span> <span class="n">DiT</span><span class="p">,</span> <span class="n">DiT1D</span><span class="p">,</span> <span class="n">DiT3D</span>
 
 
@@ -588,20 +640,20 @@
             <span class="n">x</span> <span class="o">=</span> <span class="n">module</span><span class="p">(</span><span class="o">*</span><span class="n">x</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">x</span>
 
+
 <span class="k">class</span> <span class="nc">TimeExtension</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-            <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
-            <span class="n">condition</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span> <span class="ow">or</span> <span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
+        <span class="n">condition</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
             <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">condition</span>
-
 
 
 <span class="k">class</span> <span class="nc">IntrinsicModel</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -613,8 +665,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">EasyDict</span><span class="p">):</span>
-        <span class="c1">#TODO</span>
-        
+        <span class="c1"># TODO</span>
+
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
@@ -622,28 +674,36 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">()</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;t_encoder&quot;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;t_encoder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_encoder</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">t_encoder</span><span class="o">.</span><span class="n">type</span><span class="p">)(</span><span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">t_encoder</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;t_encoder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_encoder</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">t_encoder</span><span class="o">.</span><span class="n">type</span><span class="p">)(</span>
+                <span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">t_encoder</span><span class="o">.</span><span class="n">args</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;t_encoder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;x_encoder&quot;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;x_encoder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_encoder</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">x_encoder</span><span class="o">.</span><span class="n">type</span><span class="p">)(</span><span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">x_encoder</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;x_encoder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_encoder</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">x_encoder</span><span class="o">.</span><span class="n">type</span><span class="p">)(</span>
+                <span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">x_encoder</span><span class="o">.</span><span class="n">args</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;x_encoder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;condition_encoder&quot;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;condition_encoder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_encoder</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">condition_encoder</span><span class="o">.</span><span class="n">type</span><span class="p">)(</span><span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">condition_encoder</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;condition_encoder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_encoder</span><span class="p">(</span>
+                <span class="n">config</span><span class="o">.</span><span class="n">condition_encoder</span><span class="o">.</span><span class="n">type</span>
+            <span class="p">)(</span><span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">condition_encoder</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;condition_encoder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
-        
-        <span class="c1">#TODO</span>
+
+        <span class="c1"># TODO</span>
         <span class="c1"># specific backbone network</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;backbone&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">type</span><span class="p">)(</span><span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;backbone&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">type</span><span class="p">)(</span>
+            <span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">args</span>
+        <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-            <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
-            <span class="n">condition</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
+        <span class="n">condition</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Return the output of the model at time t given the initial state.</span>
@@ -662,7 +722,7 @@
         <span class="k">return</span> <span class="n">output</span>
 
 
-<span class="n">MODULES</span><span class="o">=</span><span class="p">{</span>
+<span class="n">MODULES</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;Sequential&quot;</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">Sequential</span><span class="p">,</span>
     <span class="s2">&quot;TimeExtension&quot;</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">TimeExtension</span><span class="p">,</span>
     <span class="s2">&quot;IntrinsicModel&quot;</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">IntrinsicModel</span><span class="p">,</span>
