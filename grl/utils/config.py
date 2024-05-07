@@ -4,7 +4,9 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from easydict import EasyDict
 
 
-def merge_dict1_into_dict2(dict1:Union[Dict, EasyDict], dict2:Union[Dict, EasyDict]) -> Union[Dict, EasyDict]:
+def merge_dict1_into_dict2(
+    dict1: Union[Dict, EasyDict], dict2: Union[Dict, EasyDict]
+) -> Union[Dict, EasyDict]:
     """
     Overview:
         Merge two dictionaries recursively. \
@@ -20,10 +22,13 @@ def merge_dict1_into_dict2(dict1:Union[Dict, EasyDict], dict2:Union[Dict, EasyDi
         else:
             # Either the key doesn't exist in dict2 or the values are not dictionaries
             dict2[key] = value
-    
+
     return dict2
 
-def merge_two_dicts_into_newone(dict1:Union[Dict, EasyDict], dict2:Union[Dict, EasyDict]) -> Union[Dict, EasyDict]:
+
+def merge_two_dicts_into_newone(
+    dict1: Union[Dict, EasyDict], dict2: Union[Dict, EasyDict]
+) -> Union[Dict, EasyDict]:
     """
     Overview:
         Merge two dictionaries recursively into a new dictionary. \

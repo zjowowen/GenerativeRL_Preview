@@ -8,20 +8,21 @@ from tensordict import TensorDict
 
 from grl.generative_models.diffusion_process import DiffusionProcess
 from grl.generative_models.intrinsic_model import IntrinsicModel
-from grl.generative_models.model_functions.data_prediction_function import \
-    DataPredictionFunction
+from grl.generative_models.model_functions.data_prediction_function import (
+    DataPredictionFunction,
+)
 from grl.generative_models.model_functions.noise_function import NoiseFunction
 from grl.generative_models.model_functions.score_function import ScoreFunction
-from grl.generative_models.model_functions.velocity_function import \
-    VelocityFunction
+from grl.generative_models.model_functions.velocity_function import VelocityFunction
 from grl.generative_models.random_generator import gaussian_random_variable
 from grl.numerical_methods.numerical_solvers import get_solver
 from grl.numerical_methods.numerical_solvers.dpm_solver import DPMSolver
 from grl.numerical_methods.numerical_solvers.ode_solver import (
-    DictTensorODESolver, ODESolver)
+    DictTensorODESolver,
+    ODESolver,
+)
 from grl.numerical_methods.numerical_solvers.sde_solver import SDESolver
-from grl.numerical_methods.probability_path import \
-    GaussianConditionalProbabilityPath
+from grl.numerical_methods.probability_path import GaussianConditionalProbabilityPath
 from grl.utils import find_parameters
 
 
@@ -33,10 +34,7 @@ class DiffusionModel(nn.Module):
         ``__init__``, ``sample``, ``score_function``, ``score_matching_loss``, ``velocity_function``, ``flow_matching_loss``.
     """
 
-    def __init__(
-            self,
-            config: EasyDict
-            ) -> None:
+    def __init__(self, config: EasyDict) -> None:
         """
         Overview:
             Initialization of Diffusion Model.
@@ -47,11 +45,15 @@ class DiffusionModel(nn.Module):
 
         super().__init__()
         self.config = config
-        
+
         self.x_size = config.x_size
         self.device = config.device
 
-        self.gaussian_generator = gaussian_random_variable(config.x_size, config.device, config.use_tree_tensor if hasattr(config, "use_tree_tensor") else False)
+        self.gaussian_generator = gaussian_random_variable(
+            config.x_size,
+            config.device,
+            config.use_tree_tensor if hasattr(config, "use_tree_tensor") else False,
+        )
 
         self.path = GaussianConditionalProbabilityPath(config.path)
         if hasattr(config, "reverse_path"):
@@ -59,8 +61,12 @@ class DiffusionModel(nn.Module):
         else:
             self.reverse_path = None
         self.model_type = config.model.type
-        assert self.model_type in ["score_function", "data_prediction_function", "velocity_function", "noise_function"], \
-            "Unknown type of model {}".format(self.model_type)
+        assert self.model_type in [
+            "score_function",
+            "data_prediction_function",
+            "velocity_function",
+            "noise_function",
+        ], "Unknown type of model {}".format(self.model_type)
         self.model = IntrinsicModel(config.model.args)
         self.diffusion_process = DiffusionProcess(self.path)
         if self.reverse_path is not None:
@@ -68,25 +74,29 @@ class DiffusionModel(nn.Module):
         else:
             self.reverse_diffusion_process = None
         self.score_function_ = ScoreFunction(self.model_type, self.diffusion_process)
-        self.velocity_function_ = VelocityFunction(self.model_type, self.diffusion_process)
+        self.velocity_function_ = VelocityFunction(
+            self.model_type, self.diffusion_process
+        )
         self.noise_function_ = NoiseFunction(self.model_type, self.diffusion_process)
-        self.data_prediction_function_ = DataPredictionFunction(self.model_type, self.diffusion_process)
+        self.data_prediction_function_ = DataPredictionFunction(
+            self.model_type, self.diffusion_process
+        )
 
         if hasattr(config, "solver"):
-            self.solver=get_solver(config.solver.type)(**config.solver.args)
+            self.solver = get_solver(config.solver.type)(**config.solver.args)
 
     def get_type(self):
         return "DiffusionModel"
 
     def sample(
-            self,
-            t_span: torch.Tensor = None,
-            batch_size: Union[torch.Size, int, Tuple[int], List[int]]  = None,
-            x_0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-            condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-            with_grad: bool = False,
-            solver_config: EasyDict = None,
-        ):
+        self,
+        t_span: torch.Tensor = None,
+        batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
+        x_0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        with_grad: bool = False,
+        solver_config: EasyDict = None,
+    ):
         """
         Overview:
             Sample from the diffusion model, return the final state.
@@ -120,14 +130,14 @@ class DiffusionModel(nn.Module):
         )[-1]
 
     def sample_forward_process(
-            self,
-            t_span: torch.Tensor = None,
-            batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
-            x_0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-            condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-            with_grad: bool = False,
-            solver_config: EasyDict = None,
-        ):
+        self,
+        t_span: torch.Tensor = None,
+        batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
+        x_0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        with_grad: bool = False,
+        solver_config: EasyDict = None,
+    ):
         """
         Overview:
             Sample from the diffusion model, return all intermediate states.
@@ -153,19 +163,25 @@ class DiffusionModel(nn.Module):
 
         if t_span is not None:
             t_span = t_span.to(self.device)
-        
+
         if batch_size is None:
             extra_batch_size = torch.tensor((1,), device=self.device)
         elif isinstance(batch_size, int):
             extra_batch_size = torch.tensor((batch_size,), device=self.device)
         else:
-            if isinstance(batch_size, torch.Size) or isinstance(batch_size, Tuple) or isinstance(batch_size, List):
+            if (
+                isinstance(batch_size, torch.Size)
+                or isinstance(batch_size, Tuple)
+                or isinstance(batch_size, List)
+            ):
                 extra_batch_size = torch.tensor(batch_size, device=self.device)
             else:
                 assert False, "Invalid batch size"
-        
+
         if x_0 is not None and condition is not None:
-            assert x_0.shape[0] == condition.shape[0], "The batch size of x_0 and condition must be the same"
+            assert (
+                x_0.shape[0] == condition.shape[0]
+            ), "The batch size of x_0 and condition must be the same"
             data_batch_size = x_0.shape[0]
         elif x_0 is not None:
             data_batch_size = x_0.shape[0]
@@ -174,35 +190,50 @@ class DiffusionModel(nn.Module):
         else:
             data_batch_size = 1
 
-
         if solver_config is not None:
             solver = get_solver(solver_config.type)(**solver_config.args)
         else:
-            assert hasattr(self, "solver"), "solver must be specified in config or solver_config"
+            assert hasattr(
+                self, "solver"
+            ), "solver must be specified in config or solver_config"
             solver = self.solver
 
         if x_0 is None:
-            x = self.gaussian_generator(batch_size=torch.prod(extra_batch_size) * data_batch_size)
+            x = self.gaussian_generator(
+                batch_size=torch.prod(extra_batch_size) * data_batch_size
+            )
             # x.shape = (B*N, D)
         else:
             if isinstance(self.x_size, int):
-                assert torch.Size([self.x_size]) == x_0[0].shape, "The shape of x_0 must be the same as the x_size that is specified in the config"
-            elif isinstance(self.x_size, Tuple) or isinstance(self.x_size, List) or isinstance(self.x_size, torch.Size):
-                assert torch.Size(self.x_size) == x_0[0].shape, "The shape of x_0 must be the same as the x_size that is specified in the config"
+                assert (
+                    torch.Size([self.x_size]) == x_0[0].shape
+                ), "The shape of x_0 must be the same as the x_size that is specified in the config"
+            elif (
+                isinstance(self.x_size, Tuple)
+                or isinstance(self.x_size, List)
+                or isinstance(self.x_size, torch.Size)
+            ):
+                assert (
+                    torch.Size(self.x_size) == x_0[0].shape
+                ), "The shape of x_0 must be the same as the x_size that is specified in the config"
             else:
-                assert False,  "Invalid x_size"
-                
+                assert False, "Invalid x_size"
+
             x = torch.repeat_interleave(x_0, torch.prod(extra_batch_size), dim=0)
             # x.shape = (B*N, D)
-        
+
         if condition is not None:
-            condition = torch.repeat_interleave(condition, torch.prod(extra_batch_size), dim=0)
+            condition = torch.repeat_interleave(
+                condition, torch.prod(extra_batch_size), dim=0
+            )
             # condition.shape = (B*N, D)
 
         if isinstance(solver, DPMSolver):
-            #Note: DPMSolver does not support t_span argument assignment
-            assert t_span is None, "DPMSolver does not support t_span argument assignment"
-            #TODO: make it compatible with TensorDict
+            # Note: DPMSolver does not support t_span argument assignment
+            assert (
+                t_span is None
+            ), "DPMSolver does not support t_span argument assignment"
+            # TODO: make it compatible with TensorDict
             if with_grad:
                 data = solver.integrate(
                     diffusion_process=self.diffusion_process,
@@ -223,10 +254,14 @@ class DiffusionModel(nn.Module):
                         save_intermediate=True,
                     )
         elif isinstance(solver, ODESolver):
-            #TODO: make it compatible with TensorDict
+            # TODO: make it compatible with TensorDict
             if with_grad:
                 data = solver.integrate(
-                    drift=self.diffusion_process.reverse_ode(function=self.model, function_type=self.model_type, condition=condition).drift,
+                    drift=self.diffusion_process.reverse_ode(
+                        function=self.model,
+                        function_type=self.model_type,
+                        condition=condition,
+                    ).drift,
                     x0=x,
                     t_span=t_span,
                     adjoint_params=find_parameters(self.model),
@@ -234,37 +269,59 @@ class DiffusionModel(nn.Module):
             else:
                 with torch.no_grad():
                     data = solver.integrate(
-                        drift=self.diffusion_process.reverse_ode(function=self.model, function_type=self.model_type, condition=condition).drift,
+                        drift=self.diffusion_process.reverse_ode(
+                            function=self.model,
+                            function_type=self.model_type,
+                            condition=condition,
+                        ).drift,
                         x0=x,
                         t_span=t_span,
                         adjoint_params=find_parameters(self.model),
                     )
         elif isinstance(solver, DictTensorODESolver):
-            #TODO: make it compatible with TensorDict
+            # TODO: make it compatible with TensorDict
             if with_grad:
                 data = solver.integrate(
-                    drift=self.diffusion_process.reverse_ode(function=self.model, function_type=self.model_type, condition=condition).drift,
+                    drift=self.diffusion_process.reverse_ode(
+                        function=self.model,
+                        function_type=self.model_type,
+                        condition=condition,
+                    ).drift,
                     x0=x,
                     t_span=t_span,
                     batch_size=torch.prod(extra_batch_size) * data_batch_size,
-                    x_size=x.shape
+                    x_size=x.shape,
                 )
             else:
                 with torch.no_grad():
                     data = solver.integrate(
-                        drift=self.diffusion_process.reverse_ode(function=self.model, function_type=self.model_type, condition=condition).drift,
+                        drift=self.diffusion_process.reverse_ode(
+                            function=self.model,
+                            function_type=self.model_type,
+                            condition=condition,
+                        ).drift,
                         x0=x,
                         t_span=t_span,
                         batch_size=torch.prod(extra_batch_size) * data_batch_size,
-                        x_size=x.shape
+                        x_size=x.shape,
                     )
         elif isinstance(solver, SDESolver):
-            #TODO: make it compatible with TensorDict
-            #TODO: validate the implementation
-            assert self.reverse_diffusion_process is not None, "reverse_path must be specified in config"
+            # TODO: make it compatible with TensorDict
+            # TODO: validate the implementation
+            assert (
+                self.reverse_diffusion_process is not None
+            ), "reverse_path must be specified in config"
             if not hasattr(self, "t_span"):
-                self.t_span = torch.linspace(0, self.diffusion_process.t_max, 2).to(self.device)
-            sde = self.diffusion_process.reverse_sde(function=self.model, function_type=self.model_type, condition=condition, reverse_diffusion_function=self.reverse_diffusion_process.diffusion, reverse_diffusion_squared_function=self.reverse_diffusion_process.diffusion_squared)
+                self.t_span = torch.linspace(0, self.diffusion_process.t_max, 2).to(
+                    self.device
+                )
+            sde = self.diffusion_process.reverse_sde(
+                function=self.model,
+                function_type=self.model_type,
+                condition=condition,
+                reverse_diffusion_function=self.reverse_diffusion_process.diffusion,
+                reverse_diffusion_squared_function=self.reverse_diffusion_process.diffusion_squared,
+            )
             if with_grad:
                 data = solver.integrate(
                     drift=sde.drift,
@@ -281,25 +338,42 @@ class DiffusionModel(nn.Module):
                         t_span=t_span,
                     )
         else:
-            raise NotImplementedError("Solver type {} is not implemented".format(self.config.solver.type))
-        
+            raise NotImplementedError(
+                "Solver type {} is not implemented".format(self.config.solver.type)
+            )
 
         if isinstance(data, torch.Tensor):
             # data.shape = (T, B*N, D)
             if len(extra_batch_size.shape) == 0:
                 if isinstance(self.x_size, int):
-                    data = data.reshape(-1, extra_batch_size, data_batch_size, self.x_size)
-                elif isinstance(self.x_size, Tuple) or isinstance(self.x_size, List) or isinstance(self.x_size, torch.Size):
-                    data = data.reshape(-1, extra_batch_size, data_batch_size, *self.x_size)
+                    data = data.reshape(
+                        -1, extra_batch_size, data_batch_size, self.x_size
+                    )
+                elif (
+                    isinstance(self.x_size, Tuple)
+                    or isinstance(self.x_size, List)
+                    or isinstance(self.x_size, torch.Size)
+                ):
+                    data = data.reshape(
+                        -1, extra_batch_size, data_batch_size, *self.x_size
+                    )
                 else:
-                    assert False,  "Invalid x_size"
+                    assert False, "Invalid x_size"
             else:
                 if isinstance(self.x_size, int):
-                    data = data.reshape(-1, *extra_batch_size, data_batch_size, self.x_size)
-                elif isinstance(self.x_size, Tuple) or isinstance(self.x_size, List) or isinstance(self.x_size, torch.Size):
-                    data = data.reshape(-1, *extra_batch_size, data_batch_size, *self.x_size)
+                    data = data.reshape(
+                        -1, *extra_batch_size, data_batch_size, self.x_size
+                    )
+                elif (
+                    isinstance(self.x_size, Tuple)
+                    or isinstance(self.x_size, List)
+                    or isinstance(self.x_size, torch.Size)
+                ):
+                    data = data.reshape(
+                        -1, *extra_batch_size, data_batch_size, *self.x_size
+                    )
                 else:
-                    assert False,  "Invalid x_size"
+                    assert False, "Invalid x_size"
             # data.shape = (T, B, N, D)
 
             if batch_size is None:
@@ -311,7 +385,7 @@ class DiffusionModel(nn.Module):
                     # data.shape = (T, N, D)
             else:
                 if x_0 is None and condition is None:
-                    data = data.squeeze(1+len(extra_batch_size.shape))
+                    data = data.squeeze(1 + len(extra_batch_size.shape))
                     # data.shape = (T, B, D)
                 else:
                     # data.shape = (T, B, N, D)
@@ -322,18 +396,34 @@ class DiffusionModel(nn.Module):
             for key in data.keys():
                 if len(extra_batch_size.shape) == 0:
                     if isinstance(self.x_size[key], int):
-                        data[key] = data[key].reshape(-1, extra_batch_size, data_batch_size, self.x_size[key])
-                    elif isinstance(self.x_size[key], Tuple) or isinstance(self.x_size[key], List) or isinstance(self.x_size[key], torch.Size):
-                        data[key] = data[key].reshape(-1, extra_batch_size, data_batch_size, *self.x_size[key])
+                        data[key] = data[key].reshape(
+                            -1, extra_batch_size, data_batch_size, self.x_size[key]
+                        )
+                    elif (
+                        isinstance(self.x_size[key], Tuple)
+                        or isinstance(self.x_size[key], List)
+                        or isinstance(self.x_size[key], torch.Size)
+                    ):
+                        data[key] = data[key].reshape(
+                            -1, extra_batch_size, data_batch_size, *self.x_size[key]
+                        )
                     else:
-                        assert False,  "Invalid x_size"
+                        assert False, "Invalid x_size"
                 else:
                     if isinstance(self.x_size[key], int):
-                        data[key] = data[key].reshape(-1, *extra_batch_size, data_batch_size, self.x_size[key])
-                    elif isinstance(self.x_size[key], Tuple) or isinstance(self.x_size[key], List) or isinstance(self.x_size[key], torch.Size):
-                        data[key] = data[key].reshape(-1, *extra_batch_size, data_batch_size, *self.x_size[key])
+                        data[key] = data[key].reshape(
+                            -1, *extra_batch_size, data_batch_size, self.x_size[key]
+                        )
+                    elif (
+                        isinstance(self.x_size[key], Tuple)
+                        or isinstance(self.x_size[key], List)
+                        or isinstance(self.x_size[key], torch.Size)
+                    ):
+                        data[key] = data[key].reshape(
+                            -1, *extra_batch_size, data_batch_size, *self.x_size[key]
+                        )
                     else:
-                        assert False,  "Invalid x_size"
+                        assert False, "Invalid x_size"
                 # data.shape = (T, B, N, D)
 
                 if batch_size is None:
@@ -345,7 +435,7 @@ class DiffusionModel(nn.Module):
                         # data.shape = (T, N, D)
                 else:
                     if x_0 is None and condition is None:
-                        data[key] = data[key].squeeze(1+len(extra_batch_size.shape))
+                        data[key] = data[key].squeeze(1 + len(extra_batch_size.shape))
                         # data.shape = (T, B, D)
                     else:
                         # data.shape = (T, B, N, D)
@@ -356,16 +446,16 @@ class DiffusionModel(nn.Module):
         return data
 
     def sample_with_fixed_x(
-            self,
-            fixed_x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            fixed_mask: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            t_span: torch.Tensor = None,
-            batch_size: Union[torch.Size, int, Tuple[int], List[int]]  = None,
-            x_0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-            condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-            with_grad: bool = False,
-            solver_config: EasyDict = None,
-        ):
+        self,
+        fixed_x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        fixed_mask: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        t_span: torch.Tensor = None,
+        batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
+        x_0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        with_grad: bool = False,
+        solver_config: EasyDict = None,
+    ):
         """
         Overview:
             Sample from the diffusion model with fixed x, return the final state.
@@ -405,16 +495,16 @@ class DiffusionModel(nn.Module):
         )[-1]
 
     def sample_forward_process_with_fixed_x(
-            self,
-            fixed_x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            fixed_mask: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            t_span: torch.Tensor = None,
-            batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
-            x_0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-            condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-            with_grad: bool = False,
-            solver_config: EasyDict = None,
-        ):
+        self,
+        fixed_x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        fixed_mask: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        t_span: torch.Tensor = None,
+        batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
+        x_0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        with_grad: bool = False,
+        solver_config: EasyDict = None,
+    ):
         """
         Overview:
             Sample from the diffusion model with fixed x, return all intermediate states.
@@ -444,67 +534,108 @@ class DiffusionModel(nn.Module):
 
         if t_span is not None:
             t_span = t_span.to(self.device)
-        
+
         if batch_size is None:
             extra_batch_size = torch.tensor((1,), device=self.device)
         elif isinstance(batch_size, int):
             extra_batch_size = torch.tensor((batch_size,), device=self.device)
         else:
-            if isinstance(batch_size, torch.Size) or isinstance(batch_size, Tuple) or isinstance(batch_size, List):
+            if (
+                isinstance(batch_size, torch.Size)
+                or isinstance(batch_size, Tuple)
+                or isinstance(batch_size, List)
+            ):
                 extra_batch_size = torch.tensor(batch_size, device=self.device)
             else:
                 assert False, "Invalid batch size"
-        
 
         data_batch_size = fixed_x.shape[0]
-        assert fixed_x.shape[0] == fixed_mask.shape[0], "The batch size of fixed_x and fixed_mask must be the same"
+        assert (
+            fixed_x.shape[0] == fixed_mask.shape[0]
+        ), "The batch size of fixed_x and fixed_mask must be the same"
         if x_0 is not None and condition is not None:
-            assert x_0.shape[0] == condition.shape[0], "The batch size of x_0 and condition must be the same"
-            assert x_0.shape[0] == fixed_x.shape[0], "The batch size of x_0 and fixed_x must be the same"
+            assert (
+                x_0.shape[0] == condition.shape[0]
+            ), "The batch size of x_0 and condition must be the same"
+            assert (
+                x_0.shape[0] == fixed_x.shape[0]
+            ), "The batch size of x_0 and fixed_x must be the same"
         elif x_0 is not None:
-            assert x_0.shape[0] == fixed_x.shape[0], "The batch size of x_0 and fixed_x must be the same"
+            assert (
+                x_0.shape[0] == fixed_x.shape[0]
+            ), "The batch size of x_0 and fixed_x must be the same"
         elif condition is not None:
-            assert condition.shape[0] == fixed_x.shape[0], "The batch size of condition and fixed_x must be the same"
+            assert (
+                condition.shape[0] == fixed_x.shape[0]
+            ), "The batch size of condition and fixed_x must be the same"
         else:
             pass
 
         if solver_config is not None:
             solver = get_solver(solver_config.type)(**solver_config.args)
         else:
-            assert hasattr(self, "solver"), "solver must be specified in config or solver_config"
+            assert hasattr(
+                self, "solver"
+            ), "solver must be specified in config or solver_config"
             solver = self.solver
 
         if x_0 is None:
-            x = self.gaussian_generator(batch_size=torch.prod(extra_batch_size) * data_batch_size)
+            x = self.gaussian_generator(
+                batch_size=torch.prod(extra_batch_size) * data_batch_size
+            )
             # x.shape = (B*N, D)
         else:
             if isinstance(self.x_size, int):
-                assert torch.Size([self.x_size]) == x_0[0].shape, "The shape of x_0 must be the same as the x_size that is specified in the config"
-            elif isinstance(self.x_size, Tuple) or isinstance(self.x_size, List) or isinstance(self.x_size, torch.Size):
-                assert torch.Size(self.x_size) == x_0[0].shape, "The shape of x_0 must be the same as the x_size that is specified in the config"
+                assert (
+                    torch.Size([self.x_size]) == x_0[0].shape
+                ), "The shape of x_0 must be the same as the x_size that is specified in the config"
+            elif (
+                isinstance(self.x_size, Tuple)
+                or isinstance(self.x_size, List)
+                or isinstance(self.x_size, torch.Size)
+            ):
+                assert (
+                    torch.Size(self.x_size) == x_0[0].shape
+                ), "The shape of x_0 must be the same as the x_size that is specified in the config"
             else:
-                assert False,  "Invalid x_size"
-            
+                assert False, "Invalid x_size"
+
             x = torch.repeat_interleave(x_0, torch.prod(extra_batch_size), dim=0)
             # x.shape = (B*N, D)
-        
+
         if condition is not None:
-            condition = torch.repeat_interleave(condition, torch.prod(extra_batch_size), dim=0)
+            condition = torch.repeat_interleave(
+                condition, torch.prod(extra_batch_size), dim=0
+            )
             # condition.shape = (B*N, D)
 
         fixed_x = torch.repeat_interleave(fixed_x, torch.prod(extra_batch_size), dim=0)
-        fixed_mask = torch.repeat_interleave(fixed_mask, torch.prod(extra_batch_size), dim=0)
+        fixed_mask = torch.repeat_interleave(
+            fixed_mask, torch.prod(extra_batch_size), dim=0
+        )
 
         if isinstance(solver, DPMSolver):
-            #TODO: make it compatible with DPM solver
+            # TODO: make it compatible with DPM solver
             assert False, "Not implemented"
         elif isinstance(solver, ODESolver):
-            #TODO: make it compatible with TensorDict
+            # TODO: make it compatible with TensorDict
 
             x = fixed_x * (1 - fixed_mask) + x * fixed_mask
+
             def drift_fixed_x(t, x):
-                xt_partially_fixed = self.diffusion_process.direct_sample(self.diffusion_process.t_max-t, fixed_x) * (1 - fixed_mask) + x * fixed_mask
-                return fixed_mask * self.diffusion_process.reverse_ode(function=self.model, function_type=self.model_type, condition=condition).drift(t, xt_partially_fixed)
+                xt_partially_fixed = (
+                    self.diffusion_process.direct_sample(
+                        self.diffusion_process.t_max - t, fixed_x
+                    )
+                    * (1 - fixed_mask)
+                    + x * fixed_mask
+                )
+                return fixed_mask * self.diffusion_process.reverse_ode(
+                    function=self.model,
+                    function_type=self.model_type,
+                    condition=condition,
+                ).drift(t, xt_partially_fixed)
+
             if with_grad:
                 data = solver.integrate(
                     drift=drift_fixed_x,
@@ -521,19 +652,31 @@ class DiffusionModel(nn.Module):
                         adjoint_params=find_parameters(self.model),
                     )
         elif isinstance(solver, DictTensorODESolver):
-            #TODO: make it compatible with TensorDict
+            # TODO: make it compatible with TensorDict
 
             x = fixed_x * (1 - fixed_mask) + x * fixed_mask
+
             def drift_fixed_x(t, x):
-                xt_partially_fixed = self.diffusion_process.direct_sample(self.diffusion_process.t_max-t, fixed_x) * (1 - fixed_mask) + x * fixed_mask
-                return fixed_mask * self.diffusion_process.reverse_ode(function=self.model, function_type=self.model_type, condition=condition).drift(t, xt_partially_fixed)
+                xt_partially_fixed = (
+                    self.diffusion_process.direct_sample(
+                        self.diffusion_process.t_max - t, fixed_x
+                    )
+                    * (1 - fixed_mask)
+                    + x * fixed_mask
+                )
+                return fixed_mask * self.diffusion_process.reverse_ode(
+                    function=self.model,
+                    function_type=self.model_type,
+                    condition=condition,
+                ).drift(t, xt_partially_fixed)
+
             if with_grad:
                 data = solver.integrate(
                     drift=drift_fixed_x,
                     x0=x,
                     t_span=t_span,
                     batch_size=torch.prod(extra_batch_size) * data_batch_size,
-                    x_size=x.shape
+                    x_size=x.shape,
                 )
             else:
                 with torch.no_grad():
@@ -542,14 +685,18 @@ class DiffusionModel(nn.Module):
                         x0=x,
                         t_span=t_span,
                         batch_size=torch.prod(extra_batch_size) * data_batch_size,
-                        x_size=x.shape
+                        x_size=x.shape,
                     )
         elif isinstance(solver, SDESolver):
-            #TODO: make it compatible with TensorDict
-            #TODO: validate the implementation
-            assert self.reverse_diffusion_process is not None, "reverse_path must be specified in config"
+            # TODO: make it compatible with TensorDict
+            # TODO: validate the implementation
+            assert (
+                self.reverse_diffusion_process is not None
+            ), "reverse_path must be specified in config"
             if not hasattr(self, "t_span"):
-                self.t_span = torch.linspace(0, self.diffusion_process.t_max, 2).to(self.device)
+                self.t_span = torch.linspace(0, self.diffusion_process.t_max, 2).to(
+                    self.device
+                )
 
             x = fixed_x * (1 - fixed_mask) + x * fixed_mask
             sde = self.diffusion_process.reverse_sde(
@@ -559,12 +706,27 @@ class DiffusionModel(nn.Module):
                 reverse_diffusion_function=self.reverse_diffusion_process.diffusion,
                 reverse_diffusion_squared_function=self.reverse_diffusion_process.diffusion_squared,
             )
+
             def drift_fixed_x(t, x):
-                xt_partially_fixed = self.diffusion_process.direct_sample(self.diffusion_process.t_max-t, fixed_x) * (1 - fixed_mask) + x * fixed_mask
+                xt_partially_fixed = (
+                    self.diffusion_process.direct_sample(
+                        self.diffusion_process.t_max - t, fixed_x
+                    )
+                    * (1 - fixed_mask)
+                    + x * fixed_mask
+                )
                 return fixed_mask * sde.drift(t, xt_partially_fixed)
+
             def diffusion_fixed_x(t, x):
-                xt_partially_fixed = self.diffusion_process.direct_sample(self.diffusion_process.t_max-t, fixed_x) * (1 - fixed_mask) + x * fixed_mask
+                xt_partially_fixed = (
+                    self.diffusion_process.direct_sample(
+                        self.diffusion_process.t_max - t, fixed_x
+                    )
+                    * (1 - fixed_mask)
+                    + x * fixed_mask
+                )
                 return fixed_mask * sde.diffusion(t, xt_partially_fixed)
+
             if with_grad:
                 data = solver.integrate(
                     drift=drift_fixed_x,
@@ -581,24 +743,42 @@ class DiffusionModel(nn.Module):
                         t_span=t_span,
                     )
         else:
-            raise NotImplementedError("Solver type {} is not implemented".format(self.config.solver.type))
-        
+            raise NotImplementedError(
+                "Solver type {} is not implemented".format(self.config.solver.type)
+            )
+
         if isinstance(data, torch.Tensor):
             # data.shape = (T, B*N, D)
             if len(extra_batch_size.shape) == 0:
                 if isinstance(self.x_size, int):
-                    data = data.reshape(-1, extra_batch_size, data_batch_size, self.x_size)
-                elif isinstance(self.x_size, Tuple) or isinstance(self.x_size, List) or isinstance(self.x_size, torch.Size):
-                    data = data.reshape(-1, extra_batch_size, data_batch_size, *self.x_size)
+                    data = data.reshape(
+                        -1, extra_batch_size, data_batch_size, self.x_size
+                    )
+                elif (
+                    isinstance(self.x_size, Tuple)
+                    or isinstance(self.x_size, List)
+                    or isinstance(self.x_size, torch.Size)
+                ):
+                    data = data.reshape(
+                        -1, extra_batch_size, data_batch_size, *self.x_size
+                    )
                 else:
-                    assert False,  "Invalid x_size"
+                    assert False, "Invalid x_size"
             else:
                 if isinstance(self.x_size, int):
-                    data = data.reshape(-1, *extra_batch_size, data_batch_size, self.x_size)
-                elif isinstance(self.x_size, Tuple) or isinstance(self.x_size, List) or isinstance(self.x_size, torch.Size):
-                    data = data.reshape(-1, *extra_batch_size, data_batch_size, *self.x_size)
+                    data = data.reshape(
+                        -1, *extra_batch_size, data_batch_size, self.x_size
+                    )
+                elif (
+                    isinstance(self.x_size, Tuple)
+                    or isinstance(self.x_size, List)
+                    or isinstance(self.x_size, torch.Size)
+                ):
+                    data = data.reshape(
+                        -1, *extra_batch_size, data_batch_size, *self.x_size
+                    )
                 else:
-                    assert False,  "Invalid x_size"
+                    assert False, "Invalid x_size"
             # data.shape = (T, B, N, D)
 
             if batch_size is None:
@@ -613,18 +793,34 @@ class DiffusionModel(nn.Module):
             for key in data.keys():
                 if len(extra_batch_size.shape) == 0:
                     if isinstance(self.x_size[key], int):
-                        data[key] = data[key].reshape(-1, extra_batch_size, data_batch_size, self.x_size[key])
-                    elif isinstance(self.x_size[key], Tuple) or isinstance(self.x_size[key], List) or isinstance(self.x_size[key], torch.Size):
-                        data[key] = data[key].reshape(-1, extra_batch_size, data_batch_size, *self.x_size[key])
+                        data[key] = data[key].reshape(
+                            -1, extra_batch_size, data_batch_size, self.x_size[key]
+                        )
+                    elif (
+                        isinstance(self.x_size[key], Tuple)
+                        or isinstance(self.x_size[key], List)
+                        or isinstance(self.x_size[key], torch.Size)
+                    ):
+                        data[key] = data[key].reshape(
+                            -1, extra_batch_size, data_batch_size, *self.x_size[key]
+                        )
                     else:
-                        assert False,  "Invalid x_size"
+                        assert False, "Invalid x_size"
                 else:
                     if isinstance(self.x_size[key], int):
-                        data[key] = data[key].reshape(-1, *extra_batch_size, data_batch_size, self.x_size[key])
-                    elif isinstance(self.x_size[key], Tuple) or isinstance(self.x_size[key], List) or isinstance(self.x_size[key], torch.Size):
-                        data[key] = data[key].reshape(-1, *extra_batch_size, data_batch_size, *self.x_size[key])
+                        data[key] = data[key].reshape(
+                            -1, *extra_batch_size, data_batch_size, self.x_size[key]
+                        )
+                    elif (
+                        isinstance(self.x_size[key], Tuple)
+                        or isinstance(self.x_size[key], List)
+                        or isinstance(self.x_size[key], torch.Size)
+                    ):
+                        data[key] = data[key].reshape(
+                            -1, *extra_batch_size, data_batch_size, *self.x_size[key]
+                        )
                     else:
-                        assert False,  "Invalid x_size"
+                        assert False, "Invalid x_size"
                 # data.shape = (T, B, N, D)
 
                 if batch_size is None:
@@ -639,13 +835,13 @@ class DiffusionModel(nn.Module):
         return data
 
     def forward_sample(
-            self,
-            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            t_span: torch.Tensor,
-            condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-            with_grad: bool = False,
-            solver_config: EasyDict = None,
-        ):
+        self,
+        x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        t_span: torch.Tensor,
+        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        with_grad: bool = False,
+        solver_config: EasyDict = None,
+    ):
         """
         Overview:
             Sample from the diffusion model given the sampled x.
@@ -658,8 +854,8 @@ class DiffusionModel(nn.Module):
             solver_config (:obj:`EasyDict`): The configuration of the solver.
         """
 
-        #TODO: very important function
-        #TODO: validate these functions
+        # TODO: very important function
+        # TODO: validate these functions
 
         t_span = t_span.to(self.device)
 
@@ -668,31 +864,49 @@ class DiffusionModel(nn.Module):
         if solver_config is not None:
             solver = get_solver(solver_config.type)(**solver_config.args)
         else:
-            assert hasattr(self, "solver"), "solver must be specified in config or solver_config"
+            assert hasattr(
+                self, "solver"
+            ), "solver must be specified in config or solver_config"
             solver = self.solver
 
         if isinstance(solver, ODESolver):
-            #TODO: make it compatible with TensorDict
+            # TODO: make it compatible with TensorDict
 
             if with_grad:
                 data = solver.integrate(
-                    drift=self.diffusion_process.forward_ode(function=self.model, function_type=self.model_type, condition=condition).drift,
+                    drift=self.diffusion_process.forward_ode(
+                        function=self.model,
+                        function_type=self.model_type,
+                        condition=condition,
+                    ).drift,
                     x0=x,
                     t_span=t_span,
                 )[-1]
             else:
                 with torch.no_grad():
                     data = solver.integrate(
-                        drift=self.diffusion_process.forward_ode(function=self.model, function_type=self.model_type, condition=condition).drift,
+                        drift=self.diffusion_process.forward_ode(
+                            function=self.model,
+                            function_type=self.model_type,
+                            condition=condition,
+                        ).drift,
                         x0=x,
                         t_span=t_span,
                     )[-1]
         elif isinstance(solver, SDESolver):
-            #TODO: make it compatible with TensorDict
-            #TODO: validate the implementation
-            assert self.diffusion_process is not None, "path must be specified in config"
+            # TODO: make it compatible with TensorDict
+            # TODO: validate the implementation
+            assert (
+                self.diffusion_process is not None
+            ), "path must be specified in config"
 
-            sde = self.diffusion_process.forward_sde(function=self.model, function_type=self.model_type, condition=condition, forward_diffusion_function=self.diffusion_process.diffusion, forward_diffusion_squared_function=self.diffusion_process.diffusion_squared)
+            sde = self.diffusion_process.forward_sde(
+                function=self.model,
+                function_type=self.model_type,
+                condition=condition,
+                forward_diffusion_function=self.diffusion_process.diffusion,
+                forward_diffusion_squared_function=self.diffusion_process.diffusion_squared,
+            )
             if with_grad:
                 data = solver.integrate(
                     drift=sde.drift,
@@ -709,15 +923,17 @@ class DiffusionModel(nn.Module):
                         t_span=t_span,
                     )[-1]
         else:
-            raise NotImplementedError("Solver type {} is not implemented".format(self.config.solver.type))
+            raise NotImplementedError(
+                "Solver type {} is not implemented".format(self.config.solver.type)
+            )
         return data
 
     def score_function(
-            self,
-            t: torch.Tensor,
-            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-        ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
+        self,
+        t: torch.Tensor,
+        x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+    ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
         r"""
         Overview:
             Return score function of the model at time t given the initial state, which is the gradient of the log-likelihood.
@@ -734,12 +950,12 @@ class DiffusionModel(nn.Module):
         return self.score_function_.forward(self.model, t, x, condition)
 
     def score_matching_loss(
-            self,
-            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-            weighting_scheme: str = None,
-            average: bool = True,
-        ) -> torch.Tensor:
+        self,
+        x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        weighting_scheme: str = None,
+        average: bool = True,
+    ) -> torch.Tensor:
         """
         Overview:
             The loss function for training unconditional diffusion model.
@@ -758,7 +974,7 @@ class DiffusionModel(nn.Module):
                     for numerical stability, we use Monte Carlo sampling to approximate the integral of :math:`\lambda(t)`.
 
                     .. math::
-                        \lambda(t) = g^2(t) = p(t)\sigma^2(t) 
+                        \lambda(t) = g^2(t) = p(t)\sigma^2(t)
 
                 - "vanilla": The weighting scheme is based on the vanilla score matching, which balances the MSE loss by scaling the model output to the noise value. Refer to the paper "Score-Based Generative Modeling through Stochastic Differential Equations" for more details. The weight :math:`\lambda(t)` is denoted as:
 
@@ -766,14 +982,16 @@ class DiffusionModel(nn.Module):
                         \lambda(t) = \sigma^2(t)
         """
 
-        return self.score_function_.score_matching_loss(self.model, x, condition, self.gaussian_generator, weighting_scheme, average)
+        return self.score_function_.score_matching_loss(
+            self.model, x, condition, self.gaussian_generator, weighting_scheme, average
+        )
 
     def velocity_function(
-            self,
-            t: torch.Tensor,
-            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-        ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
+        self,
+        t: torch.Tensor,
+        x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+    ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
         r"""
         Overview:
             Return velocity of the model at time t given the initial state.
@@ -790,11 +1008,11 @@ class DiffusionModel(nn.Module):
         return self.velocity_function_.forward(self.model, t, x, condition)
 
     def flow_matching_loss(
-            self,
-            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-            average: bool = True,
-        ) -> torch.Tensor:
+        self,
+        x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        average: bool = True,
+    ) -> torch.Tensor:
         """
         Overview:
             Return the flow matching loss function of the model given the initial state and the condition.
@@ -803,14 +1021,16 @@ class DiffusionModel(nn.Module):
             condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
         """
 
-        return self.velocity_function_.flow_matching_loss(self.model, x, condition, self.gaussian_generator, average)
+        return self.velocity_function_.flow_matching_loss(
+            self.model, x, condition, self.gaussian_generator, average
+        )
 
     def noise_function(
-            self,
-            t: torch.Tensor,
-            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-        ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
+        self,
+        t: torch.Tensor,
+        x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+    ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
         r"""
         Overview:
             Return noise function of the model at time t given the initial state.
@@ -825,13 +1045,13 @@ class DiffusionModel(nn.Module):
         """
 
         return self.noise_function_.forward(self.model, t, x, condition)
-    
+
     def data_prediction_function(
-            self,
-            t: torch.Tensor,
-            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-        ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
+        self,
+        t: torch.Tensor,
+        x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+    ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
         r"""
         Overview:
             Return data prediction function of the model at time t given the initial state.
@@ -848,19 +1068,29 @@ class DiffusionModel(nn.Module):
         return self.data_prediction_function_.forward(self.model, t, x, condition)
 
     def dpo_loss(
-            self,
-            ref_dm,
-            data,
-            beta,
-        ) -> torch.Tensor:
+        self,
+        ref_dm,
+        data,
+        beta,
+    ) -> torch.Tensor:
         # TODO: split data_w, data_l
         x_w, x_l = data[:, :2], data[:, 2:]
         noise = torch.randn_like(x_w).to(x_w.device)
         eps = 1e-5
-        t = torch.rand(x_w.shape[0], device=x_w.device) * (self.diffusion_process.t_max - eps) + eps
-        noisy_x_w = self.diffusion_process.scale(t, x_w) * x_w + self.diffusion_process.std(t, x_w) * noise
+        t = (
+            torch.rand(x_w.shape[0], device=x_w.device)
+            * (self.diffusion_process.t_max - eps)
+            + eps
+        )
+        noisy_x_w = (
+            self.diffusion_process.scale(t, x_w) * x_w
+            + self.diffusion_process.std(t, x_w) * noise
+        )
         noisy_x_w = noisy_x_w.to(t)
-        noisy_x_l = self.diffusion_process.scale(t, x_l) * x_l + self.diffusion_process.std(t, x_l) * noise
+        noisy_x_l = (
+            self.diffusion_process.scale(t, x_l) * x_l
+            + self.diffusion_process.std(t, x_l) * noise
+        )
         noisy_x_l = noisy_x_l.to(t)
         model_w_pred = self.model(t, noisy_x_w)
         model_l_pred = self.model(t, noisy_x_l)
@@ -873,18 +1103,18 @@ class DiffusionModel(nn.Module):
         w_diff = model_w_err - ref_w_err
         l_diff = model_l_err - ref_l_err
         inside_term = -1 * beta * (w_diff - l_diff)
-        loss = -1 * torch.log(torch.sigmoid(inside_term)+eps).mean()
+        loss = -1 * torch.log(torch.sigmoid(inside_term) + eps).mean()
         return loss
 
     def sample_forward_process_naive(
-            self,
-            t_span: torch.Tensor = None,
-            batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
-            x_0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-            condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-            with_grad: bool = False,
-            solver_config: EasyDict = None,
-        ):
+        self,
+        t_span: torch.Tensor = None,
+        batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
+        x_0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        with_grad: bool = False,
+        solver_config: EasyDict = None,
+    ):
         """
         Overview:
             Sample from the diffusion model, return all intermediate states.
@@ -910,19 +1140,25 @@ class DiffusionModel(nn.Module):
 
         if t_span is not None:
             t_span = t_span.to(self.device)
-        
+
         if batch_size is None:
             extra_batch_size = torch.tensor((1,), device=self.device)
         elif isinstance(batch_size, int):
             extra_batch_size = torch.tensor((batch_size,), device=self.device)
         else:
-            if isinstance(batch_size, torch.Size) or isinstance(batch_size, Tuple) or isinstance(batch_size, List):
+            if (
+                isinstance(batch_size, torch.Size)
+                or isinstance(batch_size, Tuple)
+                or isinstance(batch_size, List)
+            ):
                 extra_batch_size = torch.tensor(batch_size, device=self.device)
             else:
                 assert False, "Invalid batch size"
-        
+
         if x_0 is not None and condition is not None:
-            assert x_0.shape[0] == condition.shape[0], "The batch size of x_0 and condition must be the same"
+            assert (
+                x_0.shape[0] == condition.shape[0]
+            ), "The batch size of x_0 and condition must be the same"
             data_batch_size = x_0.shape[0]
         elif x_0 is not None:
             data_batch_size = x_0.shape[0]
@@ -934,33 +1170,48 @@ class DiffusionModel(nn.Module):
         if solver_config is not None:
             solver = get_solver(solver_config.type)(**solver_config.args)
         else:
-            assert hasattr(self, "solver"), "solver must be specified in config or solver_config"
+            assert hasattr(
+                self, "solver"
+            ), "solver must be specified in config or solver_config"
             solver = self.solver
 
         if x_0 is None:
-            x = self.gaussian_generator(batch_size=torch.prod(extra_batch_size) * data_batch_size)
+            x = self.gaussian_generator(
+                batch_size=torch.prod(extra_batch_size) * data_batch_size
+            )
             # x.shape = (B*N, D)
         else:
             if isinstance(self.x_size, int):
-                assert torch.Size([self.x_size]) == x_0[0].shape, "The shape of x_0 must be the same as the x_size that is specified in the config"
-            elif isinstance(self.x_size, Tuple) or isinstance(self.x_size, List) or isinstance(self.x_size, torch.Size):
-                assert torch.Size(self.x_size) == x_0[0].shape, "The shape of x_0 must be the same as the x_size that is specified in the config"
+                assert (
+                    torch.Size([self.x_size]) == x_0[0].shape
+                ), "The shape of x_0 must be the same as the x_size that is specified in the config"
+            elif (
+                isinstance(self.x_size, Tuple)
+                or isinstance(self.x_size, List)
+                or isinstance(self.x_size, torch.Size)
+            ):
+                assert (
+                    torch.Size(self.x_size) == x_0[0].shape
+                ), "The shape of x_0 must be the same as the x_size that is specified in the config"
             else:
-                assert False,  "Invalid x_size"
-                
+                assert False, "Invalid x_size"
+
             x = torch.repeat_interleave(x_0, torch.prod(extra_batch_size), dim=0)
             # x.shape = (B*N, D)
-        
+
         if condition is not None:
-            condition = torch.repeat_interleave(condition, torch.prod(extra_batch_size), dim=0)
+            condition = torch.repeat_interleave(
+                condition, torch.prod(extra_batch_size), dim=0
+            )
             # condition.shape = (B*N, D)
 
         data = solver.integrate(
-            drift=self.diffusion_process.reverse_ode(function=self.model, function_type=self.model_type, condition=condition).drift,
+            drift=self.diffusion_process.reverse_ode(
+                function=self.model, function_type=self.model_type, condition=condition
+            ).drift,
             x0=x,
             t_span=t_span,
             adjoint_params=find_parameters(self.model),
         )
 
         return data
-

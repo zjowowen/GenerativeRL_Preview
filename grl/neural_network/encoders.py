@@ -213,6 +213,7 @@ class ExponentialFourierProjectionTimeEncoder(nn.Module):
         t_emb = self.mlp(t_freq)
         return t_emb
 
+
 class SinusoidalPosEmb(nn.Module):
     def __init__(self, dim):
         super().__init__()
@@ -227,9 +228,10 @@ class SinusoidalPosEmb(nn.Module):
         emb = torch.cat((emb.sin(), emb.cos()), dim=-1)
         return emb
 
-ENCODERS={
+
+ENCODERS = {
     "GaussianFourierProjectionTimeEncoder".lower(): GaussianFourierProjectionTimeEncoder,
     "GaussianFourierProjectionEncoder".lower(): GaussianFourierProjectionEncoder,
     "ExponentialFourierProjectionTimeEncoder".lower(): ExponentialFourierProjectionTimeEncoder,
-    "SinusoidalPosEmb".lower(): SinusoidalPosEmb
+    "SinusoidalPosEmb".lower(): SinusoidalPosEmb,
 }

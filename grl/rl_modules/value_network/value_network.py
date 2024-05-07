@@ -16,16 +16,22 @@ class VNetwork(nn.Module):
         self.config = config
         self.model = torch.nn.ModuleDict()
         if hasattr(config, "state_encoder"):
-            self.model["state_encoder"] = get_encoder(config.state_encoder.type)(**config.state_encoder.args)
+            self.model["state_encoder"] = get_encoder(config.state_encoder.type)(
+                **config.state_encoder.args
+            )
         else:
             self.model["state_encoder"] = torch.nn.Identity()
         if hasattr(config, "condition_encoder"):
-            self.model["condition_encoder"] = get_encoder(config.condition_encoder.type)(**config.condition_encoder.args)
+            self.model["condition_encoder"] = get_encoder(
+                config.condition_encoder.type
+            )(**config.condition_encoder.args)
         else:
             self.model["condition_encoder"] = torch.nn.Identity()
-        #TODO
+        # TODO
         # specific backbone network
-        self.model["backbone"] = get_module(config.backbone.type)(**config.backbone.args)
+        self.model["backbone"] = get_module(config.backbone.type)(
+            **config.backbone.args
+        )
 
     def forward(
         self,
@@ -41,7 +47,7 @@ class VNetwork(nn.Module):
         Returns:
             value (:obj:`Union[torch.Tensor, TensorDict]`): The output of value network.
         """
-        
+
         state_embedding = self.model["state_encoder"](state)
         if condition is not None:
             condition_encoder_embedding = self.model["condition_encoder"](condition)
@@ -66,10 +72,10 @@ class DoubleVNetwork(nn.Module):
         self.model["v2"] = VNetwork(config)
 
     def compute_double_v(
-            self,
-            state: Union[torch.Tensor, TensorDict],
-            condition: Union[torch.Tensor, TensorDict],
-        ) -> Tuple[torch.Tensor, torch.Tensor]:
+        self,
+        state: Union[torch.Tensor, TensorDict],
+        condition: Union[torch.Tensor, TensorDict],
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Overview:
             Return the output of two value networks.
@@ -84,10 +90,10 @@ class DoubleVNetwork(nn.Module):
         return self.model["v1"](state, condition), self.model["v2"](state, condition)
 
     def compute_mininum_v(
-            self,
-            state: Union[torch.Tensor, TensorDict],
-            condition: Union[torch.Tensor, TensorDict],
-        ) -> torch.Tensor:
+        self,
+        state: Union[torch.Tensor, TensorDict],
+        condition: Union[torch.Tensor, TensorDict],
+    ) -> torch.Tensor:
         """
         Overview:
             Return the minimum output of two value networks.
@@ -101,10 +107,10 @@ class DoubleVNetwork(nn.Module):
         return torch.min(*self.compute_double_v(state, condition=condition))
 
     def forward(
-            self,
-            state: Union[torch.Tensor, TensorDict],
-            condition: Union[torch.Tensor, TensorDict],
-        ) -> torch.Tensor:
+        self,
+        state: Union[torch.Tensor, TensorDict],
+        condition: Union[torch.Tensor, TensorDict],
+    ) -> torch.Tensor:
         """
         Overview:
             Return the minimum output of two value networks.

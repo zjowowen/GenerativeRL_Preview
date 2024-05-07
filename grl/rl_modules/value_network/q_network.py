@@ -16,17 +16,22 @@ class QNetwork(nn.Module):
         self.config = config
         self.model = torch.nn.ModuleDict()
         if hasattr(config, "action_encoder"):
-            self.model["action_encoder"] = get_encoder(config.action_encoder.type)(**config.action_encoder.args)
+            self.model["action_encoder"] = get_encoder(config.action_encoder.type)(
+                **config.action_encoder.args
+            )
         else:
             self.model["action_encoder"] = torch.nn.Identity()
         if hasattr(config, "state_encoder"):
-            self.model["state_encoder"] = get_encoder(config.state_encoder.type)(**config.state_encoder.args)
+            self.model["state_encoder"] = get_encoder(config.state_encoder.type)(
+                **config.state_encoder.args
+            )
         else:
             self.model["state_encoder"] = torch.nn.Identity()
-        #TODO
+        # TODO
         # specific backbone network
-        self.model["backbone"] = get_module(config.backbone.type)(**config.backbone.args)
-
+        self.model["backbone"] = get_module(config.backbone.type)(
+            **config.backbone.args
+        )
 
     def forward(
         self,
@@ -63,10 +68,10 @@ class DoubleQNetwork(nn.Module):
         self.model["q2"] = QNetwork(config)
 
     def compute_double_q(
-            self,
-            action: Union[torch.Tensor, TensorDict],
-            state: Union[torch.Tensor, TensorDict],
-        ) -> Tuple[torch.Tensor, torch.Tensor]:
+        self,
+        action: Union[torch.Tensor, TensorDict],
+        state: Union[torch.Tensor, TensorDict],
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Overview:
             Return the output of two Q networks.
@@ -81,10 +86,10 @@ class DoubleQNetwork(nn.Module):
         return self.model["q1"](action, state), self.model["q2"](action, state)
 
     def compute_mininum_q(
-            self,
-            action: Union[torch.Tensor, TensorDict],
-            state: Union[torch.Tensor, TensorDict],
-        ) -> torch.Tensor:
+        self,
+        action: Union[torch.Tensor, TensorDict],
+        state: Union[torch.Tensor, TensorDict],
+    ) -> torch.Tensor:
         """
         Overview:
             Return the minimum output of two Q networks.
@@ -98,10 +103,10 @@ class DoubleQNetwork(nn.Module):
         return torch.min(*self.compute_double_q(action, state))
 
     def forward(
-            self,
-            action: Union[torch.Tensor, TensorDict],
-            state: Union[torch.Tensor, TensorDict],
-        ) -> torch.Tensor:
+        self,
+        action: Union[torch.Tensor, TensorDict],
+        state: Union[torch.Tensor, TensorDict],
+    ) -> torch.Tensor:
         """
         Overview:
             Return the minimum output of two Q networks.

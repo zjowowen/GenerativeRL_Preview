@@ -14,10 +14,10 @@ class SRPOAgent:
     """
 
     def __init__(
-            self,
-            config:EasyDict,
-            model:Union[torch.nn.Module, torch.nn.ModuleDict],
-        ):
+        self,
+        config: EasyDict,
+        model: Union[torch.nn.Module, torch.nn.ModuleDict],
+    ):
         """
         Overview:
             Initialize the agent.
@@ -30,12 +30,11 @@ class SRPOAgent:
         self.device = config.device
         self.model = model.to(self.device)
 
-
     def act(
-            self,
-            obs:Union[np.ndarray, torch.Tensor, Dict],
-            return_as_torch_tensor:bool = False,
-            ) -> Union[np.ndarray, torch.Tensor, Dict]:
+        self,
+        obs: Union[np.ndarray, torch.Tensor, Dict],
+        return_as_torch_tensor: bool = False,
+    ) -> Union[np.ndarray, torch.Tensor, Dict]:
         """
         Overview:
             Given an observation, return an action.
@@ -49,7 +48,9 @@ class SRPOAgent:
         if isinstance(obs, np.ndarray):
             obs = torch.from_numpy(obs).float().to(self.device)
         elif isinstance(obs, Dict):
-            obs = {k: torch.from_numpy(v).float().to(self.device) for k, v in obs.items()}
+            obs = {
+                k: torch.from_numpy(v).float().to(self.device) for k, v in obs.items()
+            }
         elif isinstance(obs, torch.Tensor):
             obs = obs.float().to(self.device)
         else:
@@ -57,15 +58,15 @@ class SRPOAgent:
 
         with torch.no_grad():
 
-            #---------------------------------------
+            # ---------------------------------------
             # Customized inference code ↓
-            #---------------------------------------
+            # ---------------------------------------
 
             action = self.model(obs)
 
-            #---------------------------------------
+            # ---------------------------------------
             # Customized inference code ↑
-            #---------------------------------------
+            # ---------------------------------------
 
         if isinstance(action, Dict):
             if return_as_torch_tensor:

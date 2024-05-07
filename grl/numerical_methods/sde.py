@@ -22,9 +22,9 @@ class SDE:
     """
 
     def __init__(
-            self,
-            drift: Union[nn.Module, Callable] = None,
-            diffusion: Union[nn.Module, Callable] = None,
-        ):
+        self,
+        drift: Union[nn.Module, Callable] = None,
+        diffusion: Union[nn.Module, Callable] = None,
+    ):
         self.drift = drift
         self.diffusion = diffusion

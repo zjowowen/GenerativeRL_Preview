@@ -21,7 +21,7 @@ class ODE:
     """
 
     def __init__(
-            self,
-            drift: Union[nn.Module, Callable] = None,
-        ):
+        self,
+        drift: Union[nn.Module, Callable] = None,
+    ):
         self.drift = drift

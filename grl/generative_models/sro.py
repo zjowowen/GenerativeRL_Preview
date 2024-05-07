@@ -7,8 +7,7 @@ from easydict import EasyDict
 from tensordict import TensorDict
 from torch.distributions import Distribution
 
-from grl.generative_models.diffusion_model.diffusion_model import \
-    DiffusionModel
+from grl.generative_models.diffusion_model.diffusion_model import DiffusionModel
 
 
 class SRPOConditionalDiffusionModel(nn.Module):

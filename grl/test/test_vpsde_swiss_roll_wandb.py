@@ -10,7 +10,7 @@ from sklearn.datasets import make_swiss_roll
 
 import wandb
 
-matplotlib.use('Agg')
+matplotlib.use("Agg")
 from datetime import datetime
 
 import matplotlib.pyplot as plt
@@ -18,8 +18,7 @@ import torch
 import torch.nn as nn
 from matplotlib import animation
 
-from grl.generative_models.diffusion_model.diffusion_model import \
-    DiffusionModel
+from grl.generative_models.diffusion_model.diffusion_model import DiffusionModel
 from grl.utils import set_seed
 from grl.utils.config import merge_two_dicts_into_newone
 from grl.utils.log import log
@@ -36,7 +35,9 @@ sweep_config = EasyDict(
             parameters=dict(
                 path=dict(
                     parameters=dict(
-                        type=dict(values=["gvp"], ),
+                        type=dict(
+                            values=["gvp"],
+                        ),
                     ),
                 ),
                 model=dict(
@@ -56,7 +57,7 @@ sweep_config = EasyDict(
                     values=["flow_matching"],
                 ),
                 lr=dict(
-                    values=[2e-3,3e-3,4e-3,5e-3],
+                    values=[2e-3, 3e-3, 4e-3, 5e-3],
                 ),
                 accumulation_steps=dict(
                     values=[1, 2, 3, 4],
@@ -69,8 +70,9 @@ sweep_config = EasyDict(
 
 def train_func():
     x_size = 2
-    device = torch.device('cuda:0') if torch.cuda.is_available(
-    ) else torch.device('cpu')
+    device = (
+        torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
+    )
     t_embedding_dim = 32
     t_encoder = dict(
         type="GaussianFourierProjectionTimeEncoder",
@@ -90,7 +92,9 @@ def train_func():
                 alpha=1.0,
                 solver=dict(
                     type="ODESolver",
-                    args=dict(library="torchdyn", ),
+                    args=dict(
+                        library="torchdyn",
+                    ),
                 ),
                 path=dict(
                     type="linear_vp_sde",
@@ -128,11 +132,10 @@ def train_func():
             ),
         )
     )
-    
-    
+
     with wandb.init(
-            project="swiss_roll_diffusion_model",
-            config=origin_config,
+        project="swiss_roll_diffusion_model",
+        config=origin_config,
     ) as wandb_run:
         # config=merge_two_dicts_into_newone(EasyDict(wandb_run.config), origin_config)
         # wandb_run.config.update(config)
@@ -141,14 +144,15 @@ def train_func():
         run_name = f"{config.diffusion_model.path.type}-{config.diffusion_model.model.type}-{config.parameter.training_loss_type}--{config.parameter.accumulation_steps}--{config.parameter.lr}"
         wandb.run.name = run_name
         wandb.run.save()
-        diffusion_model = DiffusionModel(config=config.diffusion_model
-                                         ).to(config.diffusion_model.device)
+        diffusion_model = DiffusionModel(config=config.diffusion_model).to(
+            config.diffusion_model.device
+        )
         # diffusion_model = torch.compile(diffusion_model)
 
         # get data
-        data = make_swiss_roll(
-            n_samples=config.parameter.data_num, noise=0.01
-        )[0].astype(np.float32)[:, [0, 2]]
+        data = make_swiss_roll(n_samples=config.parameter.data_num, noise=0.01)[
+            0
+        ].astype(np.float32)[:, [0, 2]]
         # transform data
         data[:, 0] = data[:, 0] / np.max(np.abs(data[:, 0]))
         data[:, 1] = data[:, 1] / np.max(np.abs(data[:, 1]))
@@ -182,9 +186,7 @@ def train_func():
             plt.scatter(data[:, 0], data[:, 1])
             plt.show()
 
-        def render_video(
-            data_list, video_save_path, iteration, fps=100, dpi=100
-        ):
+        def render_video(data_list, video_save_path, iteration, fps=100, dpi=100):
             if not os.path.exists(video_save_path):
                 os.makedirs(video_save_path)
             fig = plt.figure(figsize=(6, 6))
@@ -201,20 +203,18 @@ def train_func():
             ani.save(
                 os.path.join(video_save_path, f"iteration_{iteration}.mp4"),
                 fps=fps,
-                dpi=dpi
+                dpi=dpi,
             )
 
             wandb_run.log(
                 data=dict(
                     video=wandb.Video(
-                        os.path.join(
-                            video_save_path, f"iteration_{iteration}.mp4"
-                        ),
+                        os.path.join(video_save_path, f"iteration_{iteration}.mp4"),
                         fps=fps,
-                        format="mp4"
+                        format="mp4",
                     ),
                 ),
-                commit=False
+                commit=False,
             )
 
             # clean up
@@ -231,9 +231,8 @@ def train_func():
                     iteration=iteration,
                 ),
                 f=os.path.join(
-                    config.parameter.checkpoint_path,
-                    f"checkpoint_{iteration}.pt"
-                )
+                    config.parameter.checkpoint_path, f"checkpoint_{iteration}.pt"
+                ),
             )
 
         history_iteration = [-1]
@@ -248,8 +247,9 @@ def train_func():
 
             signal.signal(signal.SIGINT, exit_handler)
 
-        for iteration in track(range(config.parameter.iterations),
-                               description="Training"):
+        for iteration in track(
+            range(config.parameter.iterations), description="Training"
+        ):
 
             if iteration <= last_iteration:
                 continue
@@ -270,31 +270,33 @@ def train_func():
             gradien_norm = torch.nn.utils.clip_grad_norm_(
                 diffusion_model.parameters(), config.parameter.clip_grad_norm
             )
-            if  (iteration+1) % config.parameter.accumulation_steps == 0:
+            if (iteration + 1) % config.parameter.accumulation_steps == 0:
                 optimizer.step()
-                optimizer.zero_grad() 
-            
+                optimizer.zero_grad()
+
             gradient_sum += gradien_norm.item()
             loss_sum += loss.item()
             counter += 1
             history_iteration.append(iteration)
 
-            if (iteration == config.parameter.iterations - 1) or (iteration > 0 and iteration % config.parameter.eval_freq == 0):
+            if (iteration == config.parameter.iterations - 1) or (
+                iteration > 0 and iteration % config.parameter.eval_freq == 0
+            ):
                 diffusion_model.eval()
                 t_span = torch.linspace(0.0, 1.0, 1000)
-                x_t = diffusion_model.sample_forward_process(
-                    t_span=t_span, batch_size=500
-                ).cpu().detach()
+                x_t = (
+                    diffusion_model.sample_forward_process(
+                        t_span=t_span, batch_size=500
+                    )
+                    .cpu()
+                    .detach()
+                )
                 x_t = [
                     x.squeeze(0)
                     for x in torch.split(x_t, split_size_or_sections=1, dim=0)
                 ]
                 render_video(
-                    x_t,
-                    config.parameter.video_save_path,
-                    iteration,
-                    fps=100,
-                    dpi=100
+                    x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100
                 )
 
             wandb_run.log(
@@ -303,11 +305,11 @@ def train_func():
                     gradient=gradient_sum / counter,
                     loss=loss.item(),
                 ),
-                commit=True
+                commit=True,
             )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     seed_value = set_seed()
     sweep_id = wandb.sweep(
         sweep=sweep_config, project=f"test_vpsede_swiss-{seed_value}"

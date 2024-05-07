@@ -22,30 +22,31 @@ def base_pipeline(config):
         This pipeline is for demonstration purposes only.
     """
 
-    #---------------------------------------
+    # ---------------------------------------
     # Customized train code ↓
-    #---------------------------------------
+    # ---------------------------------------
     simulator = create_simulator(config.train.simulator)
     dataset = create_dataset(config.train.dataset)
     algo = BaseAlgorithm(simulator=simulator, dataset=dataset)
     algo.train(config=config.train)
-    #---------------------------------------
+    # ---------------------------------------
     # Customized train code ↑
-    #---------------------------------------
+    # ---------------------------------------
 
-    #---------------------------------------
+    # ---------------------------------------
     # Customized deploy code ↓
-    #---------------------------------------
+    # ---------------------------------------
     agent = algo.deploy(config=config.deploy)
     env = BaseEnv(config.deploy.env)
     env.reset()
     for _ in range(config.deploy.num_deploy_steps):
         env.render()
         env.step(agent.act(env.observation))
-    #---------------------------------------
+    # ---------------------------------------
     # Customized deploy code ↑
-    #---------------------------------------
+    # ---------------------------------------
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     log.info("config: \n{}".format(config))
     base_pipeline(config)

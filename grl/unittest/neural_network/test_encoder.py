@@ -1,12 +1,15 @@
 # Test grl/neural_network/encoder.py
 
+
 def test_encoder():
     import torch
     from torch import nn
 
     from grl.neural_network.encoders import (
         ExponentialFourierProjectionTimeEncoder,
-        GaussianFourierProjectionEncoder, GaussianFourierProjectionTimeEncoder)
+        GaussianFourierProjectionEncoder,
+        GaussianFourierProjectionTimeEncoder,
+    )
 
     encoder = GaussianFourierProjectionTimeEncoder(128)
     x = torch.randn(100)

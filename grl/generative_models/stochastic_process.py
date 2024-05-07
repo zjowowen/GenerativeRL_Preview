@@ -9,29 +9,27 @@ from torch.distributions import Distribution
 
 from grl.numerical_methods.ode import ODE
 from grl.numerical_methods.probability_path import (
-    ConditionalProbabilityPath, GaussianConditionalProbabilityPath)
+    ConditionalProbabilityPath,
+    GaussianConditionalProbabilityPath,
+)
 from grl.numerical_methods.sde import SDE
 
 
 class StochasticProcess:
 
-    def __init__(
-            self,
-            path: ConditionalProbabilityPath,
-            t_max: float = 1.0
-            ) -> None:
-        
+    def __init__(self, path: ConditionalProbabilityPath, t_max: float = 1.0) -> None:
+
         super().__init__()
         self.path = path
         self.t_max = t_max
 
     def mean(
-            self,
-            t: torch.Tensor,
-            x0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            x1: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            condition: Union[torch.Tensor, TensorDict] = None,
-        ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
+        self,
+        t: torch.Tensor,
+        x0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        x1: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        condition: Union[torch.Tensor, TensorDict] = None,
+    ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
         """
         Overview:
             Return the mean of the state at time t given the initial state x0 and the final state x1.
@@ -44,7 +42,9 @@ class StochasticProcess:
 
         if isinstance(x0, torch.Tensor):
             if x0 is not None and len(x0.shape) > len(t.shape):
-                t = t[(..., ) + (None, ) * (len(x0.shape)-len(t.shape))].expand(x0.shape)
+                t = t[(...,) + (None,) * (len(x0.shape) - len(t.shape))].expand(
+                    x0.shape
+                )
                 return x0 * (1 - t) + x1 * t
             else:
                 return x0 * (1 - t) + x1 * t
@@ -56,12 +56,12 @@ class StochasticProcess:
             raise ValueError("Invalid type of x: {}".format(type(x0)))
 
     def std(
-            self,
-            t: torch.Tensor,
-            x0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            x1: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            condition: Union[torch.Tensor, TensorDict] = None,
-        ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
+        self,
+        t: torch.Tensor,
+        x0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        x1: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        condition: Union[torch.Tensor, TensorDict] = None,
+    ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
         """
         Overview:
             Return the standard deviation of the state at time t given the initial state x0 and the final state x1.
@@ -74,7 +74,9 @@ class StochasticProcess:
 
         if isinstance(x0, torch.Tensor):
             if x0 is not None and len(x0.shape) > len(t.shape):
-                return self.path.std(t)[(..., ) + (None, ) * (len(x0.shape)-len(t.shape))].expand(x0.shape)
+                return self.path.std(t)[
+                    (...,) + (None,) * (len(x0.shape) - len(t.shape))
+                ].expand(x0.shape)
             else:
                 return self.path.std(t)
         elif isinstance(x0, treetensor.torch.Tensor):
@@ -85,12 +87,12 @@ class StochasticProcess:
             raise ValueError("Invalid type of x: {}".format(type(x0)))
 
     def velocity(
-            self,
-            t: torch.Tensor,
-            x0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            x1: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            condition: Union[torch.Tensor, TensorDict] = None,
-        ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
+        self,
+        t: torch.Tensor,
+        x0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        x1: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        condition: Union[torch.Tensor, TensorDict] = None,
+    ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
         """
         Overview:
             Return the velocity of the state at time t given the state x.
@@ -103,14 +105,13 @@ class StochasticProcess:
 
         return x1 - x0
 
-
     def direct_sample(
-            self,
-            t: torch.Tensor,
-            x0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            x1: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            condition: Union[torch.Tensor, TensorDict] = None,
-        ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
+        self,
+        t: torch.Tensor,
+        x0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        x1: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        condition: Union[torch.Tensor, TensorDict] = None,
+    ) -> Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]:
         """
         Overview:
             Return the sample of the state at time t given the initial state x0 and the final state x1.
@@ -121,7 +122,8 @@ class StochasticProcess:
             condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         """
 
-        #TODO: make it compatible with TensorDict
+        # TODO: make it compatible with TensorDict
 
-        return self.mean(t, x0, x1, condition) + self.std(t, x0, x1, condition) * torch.randn_like(x0).to(x0.device)
-
+        return self.mean(t, x0, x1, condition) + self.std(
+            t, x0, x1, condition
+        ) * torch.randn_like(x0).to(x0.device)

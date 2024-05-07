@@ -9,9 +9,10 @@ def get_solver(solver_type):
     else:
         raise ValueError(f"Solver type {solver_type} not recognized")
 
-SOLVERS={
-    "DPMSolver".lower():DPMSolver,
-    "ODESolver".lower():ODESolver,
-    "DictTensorODESolver".lower():DictTensorODESolver,
-    "SDESolver".lower():SDESolver,
+
+SOLVERS = {
+    "DPMSolver".lower(): DPMSolver,
+    "ODESolver".lower(): ODESolver,
+    "DictTensorODESolver".lower(): DictTensorODESolver,
+    "SDESolver".lower(): SDESolver,
 }

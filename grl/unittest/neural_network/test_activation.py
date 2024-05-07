@@ -1,5 +1,6 @@
 # Test grl/neural_network/activation.py
 
+
 def test_activation():
     import torch
     from torch import nn

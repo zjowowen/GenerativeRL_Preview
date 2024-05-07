@@ -32,10 +32,10 @@ class OneShotValueFunction(nn.Module):
         self.v_target = copy.deepcopy(self.v).requires_grad_(False)
 
     def forward(
-            self,
-            state: Union[torch.Tensor, TensorDict],
-            condition: Union[torch.Tensor, TensorDict] = None,
-        ) -> torch.Tensor:
+        self,
+        state: Union[torch.Tensor, TensorDict],
+        condition: Union[torch.Tensor, TensorDict] = None,
+    ) -> torch.Tensor:
         """
         Overview:
             Return the output of one-shot value network.
@@ -47,10 +47,10 @@ class OneShotValueFunction(nn.Module):
         return self.v(state, condition)
 
     def compute_double_v(
-            self,
-            state: Union[torch.Tensor, TensorDict],
-            condition: Union[torch.Tensor, TensorDict] = None,
-        ) -> Tuple[torch.Tensor, torch.Tensor]:
+        self,
+        state: Union[torch.Tensor, TensorDict],
+        condition: Union[torch.Tensor, TensorDict] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Overview:
             Return the output of two value networks.
@@ -64,11 +64,11 @@ class OneShotValueFunction(nn.Module):
         return self.v.compute_double_v(state, condition=condition)
 
     def v_loss(
-            self,
-            state: Union[torch.Tensor, TensorDict],
-            value: Union[torch.Tensor, TensorDict],
-            condition: Union[torch.Tensor, TensorDict] = None,
-        ) -> torch.Tensor:
+        self,
+        state: Union[torch.Tensor, TensorDict],
+        value: Union[torch.Tensor, TensorDict],
+        condition: Union[torch.Tensor, TensorDict] = None,
+    ) -> torch.Tensor:
         """
         Overview:
             Calculate the v loss.
@@ -83,5 +83,8 @@ class OneShotValueFunction(nn.Module):
         # Update value function
         targets = value
         v0, v1 = self.v.compute_double_v(state, condition=condition)
-        v_loss = (torch.nn.functional.mse_loss(v0, targets) + torch.nn.functional.mse_loss(v1, targets)) / 2
+        v_loss = (
+            torch.nn.functional.mse_loss(v0, targets)
+            + torch.nn.functional.mse_loss(v1, targets)
+        ) / 2
         return v_loss

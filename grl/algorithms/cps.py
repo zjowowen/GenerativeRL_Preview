@@ -19,8 +19,7 @@ import wandb
 from grl.agents.srpo import SRPOAgent
 from grl.datasets import create_dataset
 from grl.datasets.d4rl import D4RLDataset
-from grl.generative_models.diffusion_model.diffusion_model import \
-    DiffusionModel
+from grl.generative_models.diffusion_model.diffusion_model import DiffusionModel
 from grl.generative_models.sro import SRPOConditionalDiffusionModel
 from grl.neural_network import MultiLayerPerceptron, register_module
 from grl.rl_modules.simulators import create_simulator

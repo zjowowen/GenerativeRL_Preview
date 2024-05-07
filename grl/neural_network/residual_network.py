@@ -12,13 +12,14 @@ class MLPResNetBlock(nn.Module):
     Interfaces:
         ``__init__``, ``forward``.
     """
+
     def __init__(
-            self,
-            hidden_dim: int,
-            activations: nn.Module,
-            dropout_rate: float = None,
-            use_layer_norm: bool = False,
-        ):
+        self,
+        hidden_dim: int,
+        activations: nn.Module,
+        dropout_rate: float = None,
+        use_layer_norm: bool = False,
+    ):
         """
         Overview:
             Initialize the MLPResNetBlock according to arguments.
@@ -41,7 +42,11 @@ class MLPResNetBlock(nn.Module):
         self.fc1 = nn.Linear(hidden_dim, hidden_dim * 4)
         self.fc2 = nn.Linear(hidden_dim * 4, hidden_dim)
         self.residual = nn.Linear(hidden_dim, hidden_dim)
-        self.dropout = nn.Dropout(dropout_rate) if dropout_rate is not None and dropout_rate > 0.0 else None
+        self.dropout = (
+            nn.Dropout(dropout_rate)
+            if dropout_rate is not None and dropout_rate > 0.0
+            else None
+        )
 
     def forward(self, x: torch.Tensor):
         """
@@ -70,6 +75,7 @@ class MLPResNetBlock(nn.Module):
 
         return residual + x
 
+
 class MLPResNet(nn.Module):
     """
     Overview:
@@ -78,16 +84,17 @@ class MLPResNet(nn.Module):
     Interfaces:
         ``__init__``, ``forward``.
     """
+
     def __init__(
-            self,
-            num_blocks: int,
-            input_dim: int,
-            output_dim: int,
-            dropout_rate: float = None,
-            use_layer_norm: bool = False,
-            hidden_dim: int = 256,
-            activations: nn.Module = nn.ReLU(),
-        ):
+        self,
+        num_blocks: int,
+        input_dim: int,
+        output_dim: int,
+        dropout_rate: float = None,
+        use_layer_norm: bool = False,
+        hidden_dim: int = 256,
+        activations: nn.Module = nn.ReLU(),
+    ):
         """
         Overview:
             Initialize the MLPResNet.
@@ -109,10 +116,19 @@ class MLPResNet(nn.Module):
         self.hidden_dim = hidden_dim
         self.activations = activations
 
-        self.fc = nn.Linear(input_dim+128, self.hidden_dim)
+        self.fc = nn.Linear(input_dim + 128, self.hidden_dim)
 
-        self.blocks = nn.ModuleList([MLPResNetBlock(self.hidden_dim, self.activations, self.dropout_rate, self.use_layer_norm)
-                                     for _ in range(self.num_blocks)])
+        self.blocks = nn.ModuleList(
+            [
+                MLPResNetBlock(
+                    self.hidden_dim,
+                    self.activations,
+                    self.dropout_rate,
+                    self.use_layer_norm,
+                )
+                for _ in range(self.num_blocks)
+            ]
+        )
 
         self.out_fc = nn.Linear(self.hidden_dim, self.out_dim)
 

@@ -23,8 +23,7 @@ from torchvision.datasets import ImageFolder
 
 import wandb
 from grl.datasets.value_test import ReplayMemoryDataset, SampleData
-from grl.generative_models.diffusion_model.diffusion_model import \
-    DiffusionModel
+from grl.generative_models.diffusion_model.diffusion_model import DiffusionModel
 from grl.utils import set_seed
 from grl.utils.config import merge_two_dicts_into_newone
 from grl.utils.log import log

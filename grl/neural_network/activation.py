@@ -11,6 +11,7 @@ class Swish(nn.Module):
     def forward(self, x):
         return x * torch.sigmoid(self.beta * x)
 
+
 class Lambda(nn.Module):
 
     def __init__(self, f):
@@ -33,7 +34,8 @@ ACTIVATIONS = {
     "identity": Lambda(lambda x: x),
 }
 
-def get_activation(name:str):
+
+def get_activation(name: str):
     if name not in ACTIVATIONS:
         raise ValueError("Unknown activation function {}".format(name))
     return ACTIVATIONS[name]

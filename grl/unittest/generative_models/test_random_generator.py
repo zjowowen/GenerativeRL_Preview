@@ -148,7 +148,8 @@ class TestGaussianRandomVariable(unittest.TestCase):
         self.assertEqual(tensor_dict["b"]["c"].shape, torch.Size([5, 2, 4]))
         self.assertEqual(tensor_dict["b"]["d"].shape, torch.Size([5, 2, 3, 3]))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     test_class = TestGaussianRandomVariable()
     test_class.test_scalar_output()
     test_class.test_tensor_output()

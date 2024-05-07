@@ -18,6 +18,7 @@ class BasePolicy(torch.nn.Module):
     Interfaces:
         ``__init__``, ``forward``
     """
+
     def __init__(self, config: EasyDict = None):
         """
         Overview:
@@ -37,6 +38,7 @@ class BasePolicy(torch.nn.Module):
         """
         pass
 
+
 class BaseAlgorithm:
     """
     Overview:
@@ -47,8 +49,8 @@ class BaseAlgorithm:
 
     def __init__(
         self,
-        config:EasyDict = None,
-        simulator = None,
+        config: EasyDict = None,
+        simulator=None,
         dataset: torch.utils.data.Dataset = None,
         model: Union[torch.nn.Module, torch.nn.ModuleDict] = None,
     ):
@@ -68,21 +70,18 @@ class BaseAlgorithm:
         self.config = config
         self.simulator = simulator
         self.dataset = dataset
-        
-        #---------------------------------------
+
+        # ---------------------------------------
         # Customized model initialization code ↓
-        #---------------------------------------
+        # ---------------------------------------
 
         self.model = model if model is not None else torch.nn.ModuleDict()
 
-        #---------------------------------------
+        # ---------------------------------------
         # Customized model initialization code ↑
-        #---------------------------------------
+        # ---------------------------------------
 
-    def train(
-        self,
-        config: EasyDict = None
-    ):
+    def train(self, config: EasyDict = None):
         """
         Overview:
             Train the model using the given configuration. \
@@ -94,36 +93,49 @@ class BaseAlgorithm:
         if config is not None:
             config = merge_two_dicts_into_newone(
                 self.config.train if hasattr(self.config, "train") else EasyDict(),
-                config
+                config,
             )
 
         with wandb.init(
-            project=config.project if hasattr(config, "project") else __class__.__name__,
+            project=(
+                config.project if hasattr(config, "project") else __class__.__name__
+            ),
             **config.wandb if hasattr(config, "wandb") else {}
         ) as wandb_run:
             config.update(EasyDict(wandb_run.config))
             wandb_run.config.update(config)
             self.config.train = config
 
-            self.simulator = create_simulator(config.simulator) if hasattr(config, "simulator") else self.simulator
-            self.dataset = create_dataset(config.dataset) if hasattr(config, "dataset") else self.dataset
+            self.simulator = (
+                create_simulator(config.simulator)
+                if hasattr(config, "simulator")
+                else self.simulator
+            )
+            self.dataset = (
+                create_dataset(config.dataset)
+                if hasattr(config, "dataset")
+                else self.dataset
+            )
 
-            #---------------------------------------
+            # ---------------------------------------
             # Customized model initialization code ↓
-            #---------------------------------------
+            # ---------------------------------------
 
-            self.model["BasePolicy"] = BasePolicy(config.model.BasePolicy) if hasattr(config.model, "BasePolicy") else self.model.get("BasePolicy", None)
+            self.model["BasePolicy"] = (
+                BasePolicy(config.model.BasePolicy)
+                if hasattr(config.model, "BasePolicy")
+                else self.model.get("BasePolicy", None)
+            )
             if torch.__version__ >= "2.0.0":
                 self.model["BasePolicy"] = torch.compile(self.model["BasePolicy"])
 
-            #---------------------------------------
+            # ---------------------------------------
             # Customized model initialization code ↑
-            #---------------------------------------
+            # ---------------------------------------
 
-
-            #---------------------------------------
+            # ---------------------------------------
             # Customized training code ↓
-            #---------------------------------------
+            # ---------------------------------------
 
             def get_train_data(dataloader):
                 while True:
@@ -142,7 +154,7 @@ class BaseAlgorithm:
             )
 
             for train_iter in range(config.parameter.behaviour_policy.iterations):
-                data=get_train_data(dataloader)
+                data = get_train_data(dataloader)
                 model_training_loss = self.model["BasePolicy"](data)
                 optimizer.zero_grad()
                 model_training_loss.backward()
@@ -153,23 +165,25 @@ class BaseAlgorithm:
                         train_iter=train_iter,
                         model_training_loss=model_training_loss.item(),
                     ),
-                    commit=True)
+                    commit=True,
+                )
 
-            #---------------------------------------
+            # ---------------------------------------
             # Customized training code ↑
-            #---------------------------------------
+            # ---------------------------------------
 
             wandb.finish()
 
+    def deploy(self, config: EasyDict = None) -> BaseAgent:
 
-    def deploy(self, config:EasyDict = None) -> BaseAgent:
-        
         if config is not None:
             config = merge_two_dicts_into_newone(self.config.deploy, config)
 
         return BaseAgent(
             config=config,
-            model=torch.nn.ModuleDict({
-                "BasePolicy": self.model,
-            })
+            model=torch.nn.ModuleDict(
+                {
+                    "BasePolicy": self.model,
+                }
+            ),
         )

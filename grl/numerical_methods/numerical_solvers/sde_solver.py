@@ -1,4 +1,3 @@
-
 from typing import Any, Dict, List, Tuple, Union
 
 import torch
@@ -13,6 +12,7 @@ class TorchSDE(nn.Module):
         The output of `g` should be a single tensor of size (batch_size, d) for diagonal noise SDEs or (batch_size, d, m) for SDEs of other noise types,
         where d is the dimensionality of state and m is the dimensionality of Brownian motion.
     """
+
     def __init__(
         self,
         drift,
@@ -32,7 +32,7 @@ class TorchSDE(nn.Module):
         super().__init__()
         self.drift = drift
         self.diffusion = diffusion
-        
+
         self.noise_type = noise_type
         self.sde_type = sde_type
 
@@ -89,15 +89,7 @@ class SDESolver:
         self.kwargs = kwargs
         self.library = library
 
-    def integrate(
-            self,
-            drift,
-            diffusion,
-            x0,
-            t_span,
-            logqp=False,
-            adaptive=False
-        ):
+    def integrate(self, drift, diffusion, x0, t_span, logqp=False, adaptive=False):
         """
         Overview:
             Integrate the SDE.
@@ -118,7 +110,7 @@ class SDESolver:
             x = x.reshape(batch_size, *data_size)
             f = drift(t, x)
             return f.reshape(batch_size, -1)
-        
+
         def forward_diffusion(t, x):
             self.nfe_diffusion += 1
             x = x.reshape(batch_size, *data_size)
@@ -129,11 +121,11 @@ class SDESolver:
             drift=forward_drift,
             diffusion=forward_diffusion,
             noise_type=self.sde_noise_type,
-            sde_type=self.sde_type
+            sde_type=self.sde_type,
         )
 
         x0 = x0.reshape(batch_size, -1)
-        
+
         trajectory = torchsde.sdeint(
             sde,
             x0,
@@ -150,4 +142,3 @@ class SDESolver:
         trajectory = trajectory.reshape(t_span.shape[0], batch_size, *data_size)
 
         return trajectory
-    

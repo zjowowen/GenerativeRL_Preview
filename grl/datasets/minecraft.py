@@ -28,17 +28,21 @@ class MineRLVideoDataset(torch.utils.data.Dataset):
         self.data_path = config.data_path
         self.video_length = config.video_length
         if transform is None:
-            self.transform = transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], inplace=True)
-            ])
+            self.transform = transforms.Compose(
+                [
+                    transforms.ToTensor(),
+                    transforms.Normalize(
+                        mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], inplace=True
+                    ),
+                ]
+            )
         else:
             self.transform = transform
 
         self.videos = self._load()
 
     def _load(self):
-        image_files = [f for f in os.listdir(self.data_path) if f.endswith('.png')]
+        image_files = [f for f in os.listdir(self.data_path) if f.endswith(".png")]
         image_files.sort()
 
         videos = []
@@ -49,7 +53,7 @@ class MineRLVideoDataset(torch.utils.data.Dataset):
                 image = Image.open(os.path.join(self.data_path, file))
                 image = self.transform(image)
                 video_images.append(image)
-                
+
             video = torch.stack(video_images)
             videos.append(video)
 
@@ -61,6 +65,7 @@ class MineRLVideoDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.videos)
+
 
 class MineRLImageDataset(torch.utils.data.Dataset):
     """
@@ -81,20 +86,26 @@ class MineRLImageDataset(torch.utils.data.Dataset):
         self.config = config
         self.data_path = config.data_path
         if transform is None or transform == "normalize":
-            self.transform = transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], inplace=True)
-            ])
+            self.transform = transforms.Compose(
+                [
+                    transforms.ToTensor(),
+                    transforms.Normalize(
+                        mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], inplace=True
+                    ),
+                ]
+            )
         elif transform == "unnormalize":
-            self.transform = transforms.Compose([
-                transforms.Lambda(lambda x: transforms.functional.pil_to_tensor(x)),
-            ])
+            self.transform = transforms.Compose(
+                [
+                    transforms.Lambda(lambda x: transforms.functional.pil_to_tensor(x)),
+                ]
+            )
         else:
             self.transform = transform
         self.images = self._load()
 
     def _load(self):
-        image_files = [f for f in os.listdir(self.data_path) if f.endswith('.png')]
+        image_files = [f for f in os.listdir(self.data_path) if f.endswith(".png")]
         image_files.sort()
 
         images = []

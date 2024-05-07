@@ -9,8 +9,11 @@ from easydict import EasyDict
 from gym import spaces
 from rich.progress import Progress, track
 from tensordict import TensorDict
-from torch.distributions import (Distribution, MultivariateNormal,
-                                 TransformedDistribution)
+from torch.distributions import (
+    Distribution,
+    MultivariateNormal,
+    TransformedDistribution,
+)
 from torch.distributions.transforms import TanhTransform
 from torch.utils.data import DataLoader
 
@@ -35,10 +38,10 @@ class Dataset(torch.utils.data.Dataset):
     """
 
     def __init__(
-            self,
-            data: List = None,
-            device: str = None,
-        ):
+        self,
+        data: List = None,
+        device: str = None,
+    ):
         """
         Overview:
             Initialization method.
@@ -51,11 +54,15 @@ class Dataset(torch.utils.data.Dataset):
         self.device = "cpu" if device is None else device
 
         if data is not None:
-            self.states = torch.from_numpy(data['observations']).float().to(device)
-            self.actions = torch.from_numpy(data['actions']).float().to(device)
-            self.next_states = torch.from_numpy(data['next_observations']).float().to(device)
-            reward = torch.from_numpy(data['rewards']).view(-1, 1).float().to(device)
-            self.is_finished = torch.from_numpy(data['terminals']).view(-1, 1).float().to(device)
+            self.states = torch.from_numpy(data["observations"]).float().to(device)
+            self.actions = torch.from_numpy(data["actions"]).float().to(device)
+            self.next_states = (
+                torch.from_numpy(data["next_observations"]).float().to(device)
+            )
+            reward = torch.from_numpy(data["rewards"]).view(-1, 1).float().to(device)
+            self.is_finished = (
+                torch.from_numpy(data["terminals"]).view(-1, 1).float().to(device)
+            )
             self.rewards = reward
             self.len = self.states.shape[0]
         else:
@@ -66,7 +73,6 @@ class Dataset(torch.utils.data.Dataset):
             self.rewards = torch.tensor([]).to(device)
             self.len = 0
         log.debug(f"{self.len} data loaded in Dataset")
-
 
     def drop_data(self, drop_ratio: float, random: bool = True):
         # drop the data from the dataset
@@ -85,7 +91,7 @@ class Dataset(torch.utils.data.Dataset):
         self.rewards = self.rewards[keep_mask]
         self.len = self.states.shape[0]
         log.debug(f"{drop_num} data dropped in Dataset")
-        
+
     def load_data(self, data: List):
         # concatenate the data into the dataset
         device = self.device
@@ -98,11 +104,15 @@ class Dataset(torch.utils.data.Dataset):
             for i, k in enumerate(keys)
         }
 
-        self.states = torch.cat([self.states, collated_data['obs'].float()], dim=0)
-        self.actions = torch.cat([self.actions, collated_data['action'].float()], dim=0)
-        self.next_states = torch.cat([self.next_states, collated_data['next_obs'].float()], dim=0)
-        reward = collated_data['reward'].view(-1, 1).float()
-        self.is_finished = torch.cat([self.is_finished, collated_data['done'].view(-1, 1).float()], dim=0)
+        self.states = torch.cat([self.states, collated_data["obs"].float()], dim=0)
+        self.actions = torch.cat([self.actions, collated_data["action"].float()], dim=0)
+        self.next_states = torch.cat(
+            [self.next_states, collated_data["next_obs"].float()], dim=0
+        )
+        reward = collated_data["reward"].view(-1, 1).float()
+        self.is_finished = torch.cat(
+            [self.is_finished, collated_data["done"].view(-1, 1).float()], dim=0
+        )
         self.rewards = torch.cat([self.rewards, reward], dim=0)
         self.len = self.states.shape[0]
         log.debug(f"{self.len} data loaded in Dataset")
@@ -131,11 +141,11 @@ class Dataset(torch.utils.data.Dataset):
         """
 
         data = {
-            'state': self.states[index % self.len],
-            'action': self.actions[index % self.len],
-            'reward': self.rewards[index % self.len],
-            'next_state': self.next_states[index % self.len],
-            'done': self.is_finished[index % self.len],
+            "state": self.states[index % self.len],
+            "action": self.actions[index % self.len],
+            "reward": self.rewards[index % self.len],
+            "next_state": self.next_states[index % self.len],
+            "done": self.is_finished[index % self.len],
         }
 
         return data
@@ -143,12 +153,13 @@ class Dataset(torch.utils.data.Dataset):
     def __len__(self):
         return self.len
 
+
 DISCRETE_SPACES = (
     spaces.Discrete,
     spaces.MultiBinary,
     spaces.MultiDiscrete,
 )
-CONTINUOUS_SPACES = (spaces.Box, )
+CONTINUOUS_SPACES = (spaces.Box,)
 
 
 def is_continuous_space(space):
@@ -158,16 +169,17 @@ def is_continuous_space(space):
 def is_discrete_space(space):
     return isinstance(space, DISCRETE_SPACES)
 
+
 def heuristic_target_entropy(action_space):
     if is_continuous_space(action_space):
         heuristic_target_entropy = -np.prod(action_space.shape)
     elif is_discrete_space(action_space):
-        raise NotImplementedError(
-            "TODO(hartikainen): implement for discrete spaces.")
+        raise NotImplementedError("TODO(hartikainen): implement for discrete spaces.")
     else:
         raise NotImplementedError((type(action_space), action_space))
 
     return heuristic_target_entropy
+
 
 class NonegativeParameter(nn.Module):
 
@@ -175,12 +187,13 @@ class NonegativeParameter(nn.Module):
         super().__init__()
         if data is None:
             data = torch.zeros(1)
-        self.log_data = nn.Parameter(torch.log(data + delta), requires_grad=requires_grad)
-    
-    
+        self.log_data = nn.Parameter(
+            torch.log(data + delta), requires_grad=requires_grad
+        )
+
     def forward(self):
         return torch.exp(self.log_data)
-    
+
     @property
     def data(self):
         return torch.exp(self.log_data)
@@ -196,6 +209,7 @@ class NonegativeFunction(nn.Module):
     def forward(self, x):
         return self.relu(self.model(x))
 
+
 class TanhFunction(nn.Module):
 
     def __init__(self, config):
@@ -205,7 +219,8 @@ class TanhFunction(nn.Module):
 
     def forward(self, x):
         return torch.tanh(self.model(x))
-    
+
+
 class CovarianceMatrix(nn.Module):
 
     def __init__(self, config, delta=1e-8):
@@ -218,22 +233,39 @@ class CovarianceMatrix(nn.Module):
         # register eye matrix
         self.eye = nn.Parameter(torch.eye(self.dim), requires_grad=False)
         self.delta = delta
-        self.mask = nn.Parameter(torch.tril(torch.ones(self.dim, self.dim, dtype=torch.bool)).unsqueeze(0), requires_grad=False)
-        
+        self.mask = nn.Parameter(
+            torch.tril(torch.ones(self.dim, self.dim, dtype=torch.bool)).unsqueeze(0),
+            requires_grad=False,
+        )
+
     def low_triangle_matrix(self, x):
         low_t_m = self.eye.detach()
 
-        low_t_m=low_t_m.repeat(x.shape[0],1,1)
-        low_t_m[torch.concat((torch.reshape(torch.arange(x.shape[0]).repeat(self.dim*(self.dim-1)//2,1).T,(1,-1)),torch.tril_indices(self.dim, self.dim, offset=-1).repeat(1,x.shape[0]))).tolist()]=torch.reshape(self.sigma_offdiag(x),(-1,1)).squeeze(-1)
-        #sigma_offdiag=self.sigma_offdiag(x)
-        #sigma_offdiag=sigma_offdiag.reshape(-1, self.dim, self.dim)
-        #low_t_m = low_t_m + sigma_offdiag.masked_fill(self.mask, 0)
+        low_t_m = low_t_m.repeat(x.shape[0], 1, 1)
+        low_t_m[
+            torch.concat(
+                (
+                    torch.reshape(
+                        torch.arange(x.shape[0])
+                        .repeat(self.dim * (self.dim - 1) // 2, 1)
+                        .T,
+                        (1, -1),
+                    ),
+                    torch.tril_indices(self.dim, self.dim, offset=-1).repeat(
+                        1, x.shape[0]
+                    ),
+                )
+            ).tolist()
+        ] = torch.reshape(self.sigma_offdiag(x), (-1, 1)).squeeze(-1)
+        # sigma_offdiag=self.sigma_offdiag(x)
+        # sigma_offdiag=sigma_offdiag.reshape(-1, self.dim, self.dim)
+        # low_t_m = low_t_m + sigma_offdiag.masked_fill(self.mask, 0)
         lambda_ = self.delta + self.sigma_lambda(x)
-        low_t_m=torch.einsum("bj,bjk,bk->bjk", lambda_, low_t_m, lambda_)
+        low_t_m = torch.einsum("bj,bjk,bk->bjk", lambda_, low_t_m, lambda_)
 
         return low_t_m
 
-    def forward(self,x):
+    def forward(self, x):
         ltm = self.low_triangle_matrix(x)
         return torch.matmul(ltm, ltm.T)
 
@@ -245,17 +277,20 @@ class GaussianTanh(nn.Module, Distribution):
         if not hasattr(config, "condition_encoder"):
             self.condition_encoder = torch.nn.Identity()
         else:
-            self.condition_encoder = get_encoder(config.condition_encoder.type)(**config.condition_encoder.args)
+            self.condition_encoder = get_encoder(config.condition_encoder.type)(
+                **config.condition_encoder.args
+            )
         self.mu_model = MultiLayerPerceptron(**config.mu_model)
         self.cov = CovarianceMatrix(config.cov)
 
     def dist(self, condition):
         condition = self.condition_encoder(condition)
-        mu=self.mu_model(condition)
+        mu = self.mu_model(condition)
         scale_tril = self.cov.low_triangle_matrix(condition)
         return TransformedDistribution(
-            base_distribution=MultivariateNormal(loc=mu, scale_tril = scale_tril),
-            transforms=[TanhTransform(cache_size=1)])
+            base_distribution=MultivariateNormal(loc=mu, scale_tril=scale_tril),
+            transforms=[TanhTransform(cache_size=1)],
+        )
 
     def log_prob(self, x, condition):
         return self.dist(condition).log_prob(x)
@@ -263,15 +298,15 @@ class GaussianTanh(nn.Module, Distribution):
     def sample(self, condition, sample_shape=torch.Size()):
         return self.dist(condition).sample(sample_shape=sample_shape)
 
-    def rsample(self, condition, sample_shape=torch.Size()): 
+    def rsample(self, condition, sample_shape=torch.Size()):
         return self.dist(condition).rsample(sample_shape=sample_shape)
 
     def rsample_and_log_prob(self, condition, sample_shape=torch.Size()):
-        dist=self.dist(condition)
-        x=dist.rsample(sample_shape=sample_shape)
-        log_prob=dist.log_prob(x)
+        dist = self.dist(condition)
+        x = dist.rsample(sample_shape=sample_shape)
+        log_prob = dist.log_prob(x)
         return x, log_prob
-    
+
     def sample_and_log_prob(self, condition, sample_shape=torch.Size()):
         with torch.no_grad():
             return self.rsample_and_log_prob(condition, sample_shape)
@@ -281,9 +316,9 @@ class GaussianTanh(nn.Module, Distribution):
         # return self.dist(condition).entropy()
 
     def forward(self, condition):
-        dist=self.dist(condition)
-        x=dist.rsample()
-        log_prob=dist.log_prob(x)
+        dist = self.dist(condition)
+        x = dist.rsample()
+        log_prob = dist.log_prob(x)
         return x, log_prob
 
 
@@ -294,33 +329,35 @@ class Gaussian(nn.Module, Distribution):
         if not hasattr(config, "condition_encoder"):
             self.condition_encoder = torch.nn.Identity()
         else:
-            self.condition_encoder = get_encoder(config.condition_encoder.type)(**config.condition_encoder.args)
+            self.condition_encoder = get_encoder(config.condition_encoder.type)(
+                **config.condition_encoder.args
+            )
         self.mu_model = MultiLayerPerceptron(**config.mu_model)
         self.cov = CovarianceMatrix(config.cov)
 
     def dist(self, condition):
         condition = self.condition_encoder(condition)
-        mu=self.mu_model(condition)
+        mu = self.mu_model(condition)
         # repeat the sigma to match the shape of mu
         scale_tril = self.cov.low_triangle_matrix(condition)
-        return MultivariateNormal(loc=mu, scale_tril = scale_tril)
+        return MultivariateNormal(loc=mu, scale_tril=scale_tril)
 
     def log_prob(self, x, condition):
         return self.dist(condition).log_prob(x)
 
     def sample(self, condition, sample_shape=torch.Size()):
         return self.dist(condition).sample(sample_shape=sample_shape)
-            
-    def rsample(self, condition, sample_shape=torch.Size()): 
+
+    def rsample(self, condition, sample_shape=torch.Size()):
         return self.dist(condition).rsample(sample_shape=sample_shape)
 
     def entropy(self, condition):
         return self.dist(condition).entropy()
 
     def rsample_and_log_prob(self, condition, sample_shape=torch.Size()):
-        dist=self.dist(condition)
-        x=dist.rsample(sample_shape=sample_shape)
-        log_prob=dist.log_prob(x)
+        dist = self.dist(condition)
+        x = dist.rsample(sample_shape=sample_shape)
+        log_prob = dist.log_prob(x)
         return x, log_prob
 
     def sample_and_log_prob(self, condition, sample_shape=torch.Size()):
@@ -328,10 +365,11 @@ class Gaussian(nn.Module, Distribution):
             return self.rsample_and_log_prob(condition, sample_shape)
 
     def forward(self, condition):
-        dist=self.dist(condition)
-        x=dist.rsample()
-        log_prob=dist.log_prob(x)
+        dist = self.dist(condition)
+        x = dist.rsample()
+        log_prob = dist.log_prob(x)
         return x, log_prob
+
 
 class GaussianPolicy(nn.Module):
     def __init__(self, config):
@@ -339,25 +377,25 @@ class GaussianPolicy(nn.Module):
         self.config = config
         self.model = GaussianTanh(config.model)
 
-        
     def forward(self, obs):
         action, logp = self.model(obs)
         return action, logp
-    
+
     def log_prob(self, action, obs):
         return self.model.log_prob(action, obs)
-    
+
     def sample(self, obs, sample_shape=torch.Size()):
         return self.model.sample(obs, sample_shape)
-    
+
     def rsample(self, obs, sample_shape=torch.Size()):
         return self.model.rsample(obs, sample_shape)
-    
+
     def entropy(self, obs):
         return self.model.entropy(obs)
-    
+
     def dist(self, obs):
         return self.model.dist(obs)
+
 
 class ActionStateCritic(nn.Module):
 
@@ -369,37 +407,43 @@ class ActionStateCritic(nn.Module):
         self.q_target = copy.deepcopy(self.q).requires_grad_(False)
 
     def compute_mininum_q(
-            self,
-            action: Union[torch.Tensor, TensorDict],
-            state: Union[torch.Tensor, TensorDict],
-        ) -> torch.Tensor:
+        self,
+        action: Union[torch.Tensor, TensorDict],
+        state: Union[torch.Tensor, TensorDict],
+    ) -> torch.Tensor:
         return self.q.compute_mininum_q(action, state)
 
     def forward(
-            self,
-            action: Union[torch.Tensor, TensorDict],
-            state: Union[torch.Tensor, TensorDict],
-        ) -> torch.Tensor:
+        self,
+        action: Union[torch.Tensor, TensorDict],
+        state: Union[torch.Tensor, TensorDict],
+    ) -> torch.Tensor:
         return self.q(action, state)
 
     def q_loss(
-            self,
-            action: Union[torch.Tensor, TensorDict],
-            state: Union[torch.Tensor, TensorDict],
-            reward: Union[torch.Tensor, TensorDict],
-            next_states: Union[torch.Tensor, TensorDict],
-            done: Union[torch.Tensor, TensorDict],
-            policy: nn.Module,
-            entropy_coeffi: NonegativeParameter,
-            discount_factor: float = 1.0,
-        ) -> torch.Tensor:
+        self,
+        action: Union[torch.Tensor, TensorDict],
+        state: Union[torch.Tensor, TensorDict],
+        reward: Union[torch.Tensor, TensorDict],
+        next_states: Union[torch.Tensor, TensorDict],
+        done: Union[torch.Tensor, TensorDict],
+        policy: nn.Module,
+        entropy_coeffi: NonegativeParameter,
+        discount_factor: float = 1.0,
+    ) -> torch.Tensor:
         with torch.no_grad():
             next_action, next_logp = policy(next_states)
             next_q = self.q_target(next_action, next_states)
-            targets = reward + (1. - done.float()) * discount_factor * (next_q - entropy_coeffi.data * next_logp.unsqueeze(-1))
+            targets = reward + (1.0 - done.float()) * discount_factor * (
+                next_q - entropy_coeffi.data * next_logp.unsqueeze(-1)
+            )
         q0, q1 = self.q.compute_double_q(action, state)
-        q_loss = (torch.nn.functional.mse_loss(q0, targets) + torch.nn.functional.mse_loss(q1, targets)) / 2
+        q_loss = (
+            torch.nn.functional.mse_loss(q0, targets)
+            + torch.nn.functional.mse_loss(q1, targets)
+        ) / 2
         return q_loss
+
 
 class Policy(nn.Module):
 
@@ -410,7 +454,9 @@ class Policy(nn.Module):
         self.policy = GaussianPolicy(config.policy)
         self.critic = ActionStateCritic(config.critic)
 
-    def forward(self, state: Union[torch.Tensor, TensorDict]) -> Union[torch.Tensor, TensorDict]:
+    def forward(
+        self, state: Union[torch.Tensor, TensorDict]
+    ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
             Return the output of New policy, which is the action and log probability of action conditioned on the state.
@@ -421,11 +467,11 @@ class Policy(nn.Module):
         """
 
         return self.policy(state)
-    
+
     def sample(
-            self,
-            state: Union[torch.Tensor, TensorDict],
-        ) -> Union[torch.Tensor, TensorDict]:
+        self,
+        state: Union[torch.Tensor, TensorDict],
+    ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
             Return the output of New policy, which is the action conditioned on the state.
@@ -437,22 +483,31 @@ class Policy(nn.Module):
         return self.policy.sample(state)
 
     def action_state_critic_loss(
-            self,
-            action: Union[torch.Tensor, TensorDict],
-            state: Union[torch.Tensor, TensorDict],
-            reward: Union[torch.Tensor, TensorDict],
-            next_state: Union[torch.Tensor, TensorDict],
-            done: Union[torch.Tensor, TensorDict],
-            entropy_coeffi: NonegativeParameter,
-            discount_factor: float = 1.0,
-        ) -> torch.Tensor:
+        self,
+        action: Union[torch.Tensor, TensorDict],
+        state: Union[torch.Tensor, TensorDict],
+        reward: Union[torch.Tensor, TensorDict],
+        next_state: Union[torch.Tensor, TensorDict],
+        done: Union[torch.Tensor, TensorDict],
+        entropy_coeffi: NonegativeParameter,
+        discount_factor: float = 1.0,
+    ) -> torch.Tensor:
 
-        return self.critic.q_loss(action, state, reward, next_state, done, policy=self.policy, entropy_coeffi=entropy_coeffi, discount_factor=discount_factor)
+        return self.critic.q_loss(
+            action,
+            state,
+            reward,
+            next_state,
+            done,
+            policy=self.policy,
+            entropy_coeffi=entropy_coeffi,
+            discount_factor=discount_factor,
+        )
 
     def policy_loss(
-            self,
-            state: Union[torch.Tensor, TensorDict],
-            entropy_coeffi: NonegativeParameter,
+        self,
+        state: Union[torch.Tensor, TensorDict],
+        entropy_coeffi: NonegativeParameter,
     ) -> torch.Tensor:
         """
         Overview:
@@ -467,12 +522,13 @@ class Policy(nn.Module):
         policy_loss = torch.mean(entropy_coeffi.data * logp.unsqueeze(-1) - q_value)
         return policy_loss, torch.mean(logp)
 
+
 class SACAlgorithm:
 
     def __init__(
         self,
-        config:EasyDict = None,
-        simulator = None,
+        config: EasyDict = None,
+        simulator=None,
         model: Union[torch.nn.Module, torch.nn.ModuleDict] = None,
     ):
         """
@@ -490,20 +546,17 @@ class SACAlgorithm:
         self.config = config
         self.simulator = simulator
 
-        #---------------------------------------
+        # ---------------------------------------
         # Customized model initialization code ↓
-        #---------------------------------------
+        # ---------------------------------------
 
         self.model = model if model is not None else torch.nn.ModuleDict()
 
-        #---------------------------------------
+        # ---------------------------------------
         # Customized model initialization code ↑
-        #---------------------------------------
+        # ---------------------------------------
 
-    def train(
-        self,
-        config: EasyDict = None
-    ):
+    def train(self, config: EasyDict = None):
         """
         Overview:
             Train the model using the given configuration. \
@@ -511,35 +564,55 @@ class SACAlgorithm:
         Arguments:
             config (:obj:`EasyDict`): The training configuration.
         """
-        
-        config = merge_two_dicts_into_newone(
-            self.config.train if hasattr(self.config, "train") else EasyDict(),
-            config
-        ) if config is not None else self.config.train
+
+        config = (
+            merge_two_dicts_into_newone(
+                self.config.train if hasattr(self.config, "train") else EasyDict(),
+                config,
+            )
+            if config is not None
+            else self.config.train
+        )
 
         with wandb.init(
-            project=config.project if hasattr(config, "project") else __class__.__name__,
-            **config.wandb if hasattr(config, "wandb") else {}
+            project=(
+                config.project if hasattr(config, "project") else __class__.__name__
+            ),
+            **config.wandb if hasattr(config, "wandb") else {},
         ) as wandb_run:
-            config=merge_two_dicts_into_newone(EasyDict(wandb_run.config), config)
+            config = merge_two_dicts_into_newone(EasyDict(wandb_run.config), config)
             wandb_run.config.update(config)
             self.config.train = config
 
-            self.simulator = create_simulator(config.simulator) if hasattr(config, "simulator") else self.simulator
+            self.simulator = (
+                create_simulator(config.simulator)
+                if hasattr(config, "simulator")
+                else self.simulator
+            )
             self.dataset = Dataset(device=config.dataset.args.device)
             # self.dataset = create_dataset(config.dataset) if hasattr(config, "dataset") else self.dataset
 
-            #---------------------------------------
+            # ---------------------------------------
             # Customized model initialization code ↓
-            #---------------------------------------
+            # ---------------------------------------
 
-            self.entropy_coeffi = NonegativeParameter(torch.tensor(config.parameter.entropy_coeffi))
+            self.entropy_coeffi = NonegativeParameter(
+                torch.tensor(config.parameter.entropy_coeffi)
+            )
             self.entropy_coeffi.to(config.model.Policy.device)
-            self.target_entropy = config.parameter.target_entropy if hasattr(config.parameter,'target_entropy') \
-                else heuristic_target_entropy(self.simulator.env.action_space) * config.parameter.relative_target_entropy_scale if hasattr(config.parameter,'relative_target_entropy_scale') \
+            self.target_entropy = (
+                config.parameter.target_entropy
+                if hasattr(config.parameter, "target_entropy")
+                else (
+                    heuristic_target_entropy(self.simulator.env.action_space)
+                    * config.parameter.relative_target_entropy_scale
+                    if hasattr(config.parameter, "relative_target_entropy_scale")
                     else heuristic_target_entropy(self.simulator.env.action_space)
-            self.target_entropy = torch.tensor(self.target_entropy).to(config.model.Policy.device)
-            
+                )
+            )
+            self.target_entropy = torch.tensor(self.target_entropy).to(
+                config.model.Policy.device
+            )
 
             if hasattr(config.model, "Policy"):
                 self.model["Policy"] = Policy(config.model.Policy)
@@ -548,14 +621,13 @@ class SACAlgorithm:
                     pass
                     # self.model["Policy"] = torch.compile(self.model["Policy"])
 
-            #---------------------------------------
+            # ---------------------------------------
             # Customized model initialization code ↑
-            #---------------------------------------
+            # ---------------------------------------
 
-
-            #---------------------------------------
+            # ---------------------------------------
             # Customized training code ↓
-            #---------------------------------------
+            # ---------------------------------------
 
             action_state_critic_optimizer = torch.optim.Adam(
                 self.model["Policy"].critic.q.parameters(),
@@ -574,19 +646,34 @@ class SACAlgorithm:
 
             def evaluate(model):
                 evaluation_results = dict()
+
                 def policy(obs: np.ndarray) -> np.ndarray:
-                    obs = torch.tensor(obs, dtype=torch.float32, device=config.model.Policy.device).unsqueeze(0)
+                    obs = torch.tensor(
+                        obs, dtype=torch.float32, device=config.model.Policy.device
+                    ).unsqueeze(0)
                     action = model.sample(obs).squeeze(0).cpu().detach().numpy()
                     return action
-                evaluation_results[f"evaluation/total_return"] = self.simulator.evaluate(policy=policy, )[0]["total_return"]
+
+                evaluation_results[f"evaluation/total_return"] = (
+                    self.simulator.evaluate(
+                        policy=policy,
+                    )[
+                        0
+                    ]["total_return"]
+                )
                 return evaluation_results
-            
+
             def collect(model, num_steps, random_policy=False, random_ratio=0.0):
                 if random_policy:
-                    return self.simulator.collect_steps(policy=None, num_steps=num_steps, random_policy=True)
+                    return self.simulator.collect_steps(
+                        policy=None, num_steps=num_steps, random_policy=True
+                    )
                 else:
+
                     def policy(obs: np.ndarray) -> np.ndarray:
-                        obs = torch.tensor(obs, dtype=torch.float32, device=config.model.Policy.device).unsqueeze(0)
+                        obs = torch.tensor(
+                            obs, dtype=torch.float32, device=config.model.Policy.device
+                        ).unsqueeze(0)
                         action = model.sample(obs).squeeze(0).cpu().detach().numpy()
                         # randomly replace some item of action with random action
                         if np.random.rand() < random_ratio:
@@ -595,45 +682,83 @@ class SACAlgorithm:
                             # randomly select a value from -1 to 1
                             action[i] = np.random.rand() * 2 - 1
                         return action
-                    return self.simulator.collect_steps(policy=policy, num_steps=num_steps)
+
+                    return self.simulator.collect_steps(
+                        policy=policy, num_steps=num_steps
+                    )
 
             def compute_entropy_coeffi_loss(obs, policy):
                 with torch.no_grad():
                     action, logp = policy.forward(obs)
                     average_action_entropy = -torch.mean(logp)
-                entropy_coeffi_loss = self.entropy_coeffi.data * (average_action_entropy - self.target_entropy)
+                entropy_coeffi_loss = self.entropy_coeffi.data * (
+                    average_action_entropy - self.target_entropy
+                )
 
                 return entropy_coeffi_loss, average_action_entropy
 
-            for online_rl_iteration in track(range(config.parameter.online_rl.iterations), description="Online RL iteration"):
+            for online_rl_iteration in track(
+                range(config.parameter.online_rl.iterations),
+                description="Online RL iteration",
+            ):
 
-                if online_rl_iteration == 0 or (online_rl_iteration + 1) % config.parameter.evaluation.evaluation_interval == 0:
+                if (
+                    online_rl_iteration == 0
+                    or (online_rl_iteration + 1)
+                    % config.parameter.evaluation.evaluation_interval
+                    == 0
+                ):
                     evaluation_results = evaluate(self.model["Policy"])
                     wandb_run.log(data=evaluation_results, commit=False)
 
                 if evaluation_results["evaluation/total_return"] > 200.0:
-                    self.dataset.load_data(collect(self.model["Policy"], num_steps=1000, random_policy=False, random_ratio=0.0))
+                    self.dataset.load_data(
+                        collect(
+                            self.model["Policy"],
+                            num_steps=1000,
+                            random_policy=False,
+                            random_ratio=0.0,
+                        )
+                    )
 
                 if online_rl_iteration > 0:
                     self.dataset.drop_data(config.parameter.online_rl.drop_ratio)
-                    self.dataset.load_data(collect(self.model["Policy"], num_steps=config.parameter.online_rl.collect_steps, random_policy=False, random_ratio=config.parameter.online_rl.random_ratio))
+                    self.dataset.load_data(
+                        collect(
+                            self.model["Policy"],
+                            num_steps=config.parameter.online_rl.collect_steps,
+                            random_policy=False,
+                            random_ratio=config.parameter.online_rl.random_ratio,
+                        )
+                    )
                 else:
-                    self.dataset.load_data(collect(self.model["Policy"], num_steps=config.parameter.online_rl.collect_steps_at_the_beginning, random_policy=True))
+                    self.dataset.load_data(
+                        collect(
+                            self.model["Policy"],
+                            num_steps=config.parameter.online_rl.collect_steps_at_the_beginning,
+                            random_policy=True,
+                        )
+                    )
 
-                dataloader = DataLoader(self.dataset, batch_size=config.parameter.online_rl.batch_size, shuffle=True, drop_last=True)
-                counter=0
-                q_loss_sum=0
-                q_value_sum=0
-                policy_loss_sum=0
-                logp_sum=0
-                entropy_coeffi_loss_sum=0
-                average_action_entropy_sum=0
-                critic_gradient_norm_sum=0
-                policy_gradient_norm_sum=0
-                entropy_gradient_norm_sum=0
+                dataloader = DataLoader(
+                    self.dataset,
+                    batch_size=config.parameter.online_rl.batch_size,
+                    shuffle=True,
+                    drop_last=True,
+                )
+                counter = 0
+                q_loss_sum = 0
+                q_value_sum = 0
+                policy_loss_sum = 0
+                logp_sum = 0
+                entropy_coeffi_loss_sum = 0
+                average_action_entropy_sum = 0
+                critic_gradient_norm_sum = 0
+                policy_gradient_norm_sum = 0
+                entropy_gradient_norm_sum = 0
 
                 for batch in dataloader:
-                    counter+=1
+                    counter += 1
                     state = batch["state"]
                     action = batch["action"]
                     reward = batch["reward"]
@@ -641,79 +766,108 @@ class SACAlgorithm:
                     done = batch["done"]
 
                     action_state_critic_optimizer.zero_grad()
-                    
-                    q_loss = self.model["Policy"].action_state_critic_loss(action, state, reward, next_state, done, discount_factor=config.parameter.critic.discount_factor, entropy_coeffi=self.entropy_coeffi)
+
+                    q_loss = self.model["Policy"].action_state_critic_loss(
+                        action,
+                        state,
+                        reward,
+                        next_state,
+                        done,
+                        discount_factor=config.parameter.critic.discount_factor,
+                        entropy_coeffi=self.entropy_coeffi,
+                    )
                     q_loss.backward()
-                    critic_gradient_norm = torch.nn.utils.clip_grad_norm_(self.model["Policy"].critic.q.parameters(), config.parameter.critic.grad_clip)
+                    critic_gradient_norm = torch.nn.utils.clip_grad_norm_(
+                        self.model["Policy"].critic.q.parameters(),
+                        config.parameter.critic.grad_clip,
+                    )
                     action_state_critic_optimizer.step()
 
-                    q_loss_sum+=q_loss
-                    critic_gradient_norm_sum+=critic_gradient_norm
-
+                    q_loss_sum += q_loss
+                    critic_gradient_norm_sum += critic_gradient_norm
 
                     if online_rl_iteration % 10 == 0:
-                        q_value = torch.mean(self.model["Policy"].critic.compute_mininum_q(action, state))
-                        q_value_sum+=q_value
-
+                        q_value = torch.mean(
+                            self.model["Policy"].critic.compute_mininum_q(action, state)
+                        )
+                        q_value_sum += q_value
 
                     policy_optimizer.zero_grad()
-                    policy_loss, logp = self.model["Policy"].policy_loss(state, entropy_coeffi=self.entropy_coeffi)
+                    policy_loss, logp = self.model["Policy"].policy_loss(
+                        state, entropy_coeffi=self.entropy_coeffi
+                    )
                     policy_loss.backward()
-                    policy_gradient_norm = torch.nn.utils.clip_grad_norm_(self.model["Policy"].policy.model.parameters(), config.parameter.policy.grad_clip)
+                    policy_gradient_norm = torch.nn.utils.clip_grad_norm_(
+                        self.model["Policy"].policy.model.parameters(),
+                        config.parameter.policy.grad_clip,
+                    )
                     policy_optimizer.step()
 
-                    policy_loss_sum+=policy_loss
-                    logp_sum+=logp
-                    policy_gradient_norm_sum+=policy_gradient_norm
+                    policy_loss_sum += policy_loss
+                    logp_sum += logp
+                    policy_gradient_norm_sum += policy_gradient_norm
 
                     entropy_coeffi_optimizer.zero_grad()
-                    entropy_coeffi_loss, average_action_entropy = compute_entropy_coeffi_loss(state, self.model["Policy"].policy)
+                    entropy_coeffi_loss, average_action_entropy = (
+                        compute_entropy_coeffi_loss(state, self.model["Policy"].policy)
+                    )
                     entropy_coeffi_loss.backward()
-                    entropy_gradient_norm = torch.nn.utils.clip_grad_norm_(self.entropy_coeffi.parameters(), config.parameter.entropy.grad_clip)
+                    entropy_gradient_norm = torch.nn.utils.clip_grad_norm_(
+                        self.entropy_coeffi.parameters(),
+                        config.parameter.entropy.grad_clip,
+                    )
                     entropy_coeffi_optimizer.step()
 
-                    entropy_coeffi_loss_sum+=entropy_coeffi_loss
-                    average_action_entropy_sum+=average_action_entropy
-                    entropy_gradient_norm_sum+=entropy_gradient_norm
-
+                    entropy_coeffi_loss_sum += entropy_coeffi_loss
+                    average_action_entropy_sum += average_action_entropy
+                    entropy_gradient_norm_sum += entropy_gradient_norm
 
                     with torch.no_grad():
-                        for q_target_param, q_param in zip(self.model["Policy"].critic.q_target.parameters(), self.model["Policy"].critic.q.parameters()):
-                            q_target_param.data.mul_(config.parameter.critic.update_momentum)
-                            q_target_param.data.add_((1-config.parameter.critic.update_momentum)*q_param.data)
+                        for q_target_param, q_param in zip(
+                            self.model["Policy"].critic.q_target.parameters(),
+                            self.model["Policy"].critic.q.parameters(),
+                        ):
+                            q_target_param.data.mul_(
+                                config.parameter.critic.update_momentum
+                            )
+                            q_target_param.data.add_(
+                                (1 - config.parameter.critic.update_momentum)
+                                * q_param.data
+                            )
 
-                log.info(f"online_rl_iteration: {online_rl_iteration}, q_loss: {q_loss_sum/counter}, q_value: {q_value_sum/counter}, policy_loss: {policy_loss_sum/counter}, logp: {logp_sum/counter}, entropy_coeffi_loss: {entropy_coeffi_loss_sum/counter}, average_action_entropy: {average_action_entropy_sum/counter}, critic_gradient_norm: {critic_gradient_norm_sum/counter}, policy_gradient_norm: {policy_gradient_norm_sum/counter}, entropy_gradient_norm: {entropy_gradient_norm_sum/counter}")
+                log.info(
+                    f"online_rl_iteration: {online_rl_iteration}, q_loss: {q_loss_sum/counter}, q_value: {q_value_sum/counter}, policy_loss: {policy_loss_sum/counter}, logp: {logp_sum/counter}, entropy_coeffi_loss: {entropy_coeffi_loss_sum/counter}, average_action_entropy: {average_action_entropy_sum/counter}, critic_gradient_norm: {critic_gradient_norm_sum/counter}, policy_gradient_norm: {policy_gradient_norm_sum/counter}, entropy_gradient_norm: {entropy_gradient_norm_sum/counter}"
+                )
 
                 if online_rl_iteration % 10 == 0:
                     wandb.log(
                         data={
-                            "q_value": q_value_sum/counter,
+                            "q_value": q_value_sum / counter,
                         },
-                        commit=False)
+                        commit=False,
+                    )
 
                 wandb.log(
                     data={
                         "iteration": online_rl_iteration,
-                        "q_loss": q_loss_sum/counter,
-                        "policy_loss": policy_loss_sum/counter,
-                        "logp": logp_sum/counter,
-                        "entropy_coeffi_loss": entropy_coeffi_loss_sum/counter,
-                        "average_action_entropy": average_action_entropy_sum/counter,
-                        "critic_gradient_norm": critic_gradient_norm_sum/counter,
-                        "policy_gradient_norm": policy_gradient_norm_sum/counter,
-                        "entropy_gradient_norm": entropy_gradient_norm_sum/counter,
-
+                        "q_loss": q_loss_sum / counter,
+                        "policy_loss": policy_loss_sum / counter,
+                        "logp": logp_sum / counter,
+                        "entropy_coeffi_loss": entropy_coeffi_loss_sum / counter,
+                        "average_action_entropy": average_action_entropy_sum / counter,
+                        "critic_gradient_norm": critic_gradient_norm_sum / counter,
+                        "policy_gradient_norm": policy_gradient_norm_sum / counter,
+                        "entropy_gradient_norm": entropy_gradient_norm_sum / counter,
                     },
-                    commit=True)
+                    commit=True,
+                )
 
-            #---------------------------------------
+            # ---------------------------------------
             # Customized training code ↑
-            #---------------------------------------
+            # ---------------------------------------
 
             wandb.finish()
 
+    def deploy(self, config: EasyDict = None):
 
-    def deploy(self, config:EasyDict = None):
-        
         pass
-

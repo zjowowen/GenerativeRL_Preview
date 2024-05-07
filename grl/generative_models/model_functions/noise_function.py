@@ -16,10 +16,10 @@ class NoiseFunction:
     """
 
     def __init__(
-            self,
-            model_type: str,
-            process: object,
-        ):
+        self,
+        model_type: str,
+        process: object,
+    ):
         """
         Overview:
             Initialize the noise function.
@@ -30,17 +30,22 @@ class NoiseFunction:
 
         self.model_type = model_type
         self.process = process
-        #TODO: add more types
-        assert self.model_type in ["data_prediction_function", "noise_function", "score_function", "velocity_function", "denoiser_function"], \
-            "Unknown type of ScoreFunction {}".format(type)
+        # TODO: add more types
+        assert self.model_type in [
+            "data_prediction_function",
+            "noise_function",
+            "score_function",
+            "velocity_function",
+            "denoiser_function",
+        ], "Unknown type of ScoreFunction {}".format(type)
 
     def forward(
-            self,
-            model: Union[Callable, nn.Module],
-            t: torch.Tensor,
-            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-        ) -> torch.Tensor:
+        self,
+        model: Union[Callable, nn.Module],
+        t: torch.Tensor,
+        x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+    ) -> torch.Tensor:
         """
         Overview:
             Return noise function of the model at time t given the initial state.
@@ -57,10 +62,17 @@ class NoiseFunction:
         if self.model_type == "noise_function":
             return model(t, x, condition)
         elif self.model_type == "score_function":
-            return - model(t, x, condition) * self.process.std(t, x)
+            return -model(t, x, condition) * self.process.std(t, x)
         elif self.model_type == "velocity_function":
-            return (model(t, x, condition) - self.process.drift(t, x)) * 2.0 * self.process.std(t, x) / self.process.diffusion_squared(t, x)
+            return (
+                (model(t, x, condition) - self.process.drift(t, x))
+                * 2.0
+                * self.process.std(t, x)
+                / self.process.diffusion_squared(t, x)
+            )
         elif self.model_type == "data_prediction_function":
-            return (x - self.process.scale(t, x) * model(t, x, condition)) / self.process.std(t, x)
+            return (
+                x - self.process.scale(t, x) * model(t, x, condition)
+            ) / self.process.std(t, x)
         else:
             raise NotImplementedError("Unknown type of noise function {}".format(type))

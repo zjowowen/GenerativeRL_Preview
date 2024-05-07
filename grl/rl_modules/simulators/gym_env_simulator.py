@@ -14,6 +14,7 @@ class GymEnvSimulator:
     Interfaces:
         ``__init__``, ``collect_episodes``, ``collect_steps``, ``evaluate``
     """
+
     def __init__(self, env_id: str) -> None:
         """
         Overview:
@@ -24,23 +25,23 @@ class GymEnvSimulator:
         self.env_id = env_id
         self.collect_env = gym.make(self.env_id)
 
-        if gym.__version__ >= '0.26.0':
-            self.last_state_obs, _ =self.collect_env.reset()
-            self.last_state_done=False
-            self.last_state_truncated=False
+        if gym.__version__ >= "0.26.0":
+            self.last_state_obs, _ = self.collect_env.reset()
+            self.last_state_done = False
+            self.last_state_truncated = False
         else:
-            self.last_state_obs=self.collect_env.reset()
-            self.last_state_done=False
+            self.last_state_obs = self.collect_env.reset()
+            self.last_state_done = False
 
         self.observation_space = self.collect_env.observation_space
         self.action_space = self.collect_env.action_space
 
     def collect_episodes(
-            self,
-            policy: Union[Callable, torch.nn.Module],
-            num_episodes: int = None,
-            num_steps: int = None,
-        ) -> List[Dict]:
+        self,
+        policy: Union[Callable, torch.nn.Module],
+        num_episodes: int = None,
+        num_steps: int = None,
+    ) -> List[Dict]:
         """
         Overview:
             Collect several episodes using the given policy. The environment will be reset at the beginning of each episode.
@@ -54,14 +55,16 @@ class GymEnvSimulator:
         if num_episodes is not None:
             data_list = []
             with torch.no_grad():
-                if gym.__version__ >= '0.26.0':
+                if gym.__version__ >= "0.26.0":
                     for i in range(num_episodes):
                         obs, _ = self.collect_env.reset()
                         done = False
                         truncated = False
                         while not done and not truncated:
                             action = policy(obs)
-                            next_obs, reward, done, truncated, _ = self.collect_env.step(action)
+                            next_obs, reward, done, truncated, _ = (
+                                self.collect_env.step(action)
+                            )
                             data_list.append(
                                 dict(
                                     obs=obs,
@@ -94,14 +97,16 @@ class GymEnvSimulator:
         elif num_steps is not None:
             data_list = []
             with torch.no_grad():
-                if gym.__version__ >= '0.26.0':
+                if gym.__version__ >= "0.26.0":
                     while len(data_list) < num_steps:
                         obs, _ = self.collect_env.reset()
                         done = False
                         truncated = False
                         while not done and not truncated:
                             action = policy(obs)
-                            next_obs, reward, done, truncated, _ = self.collect_env.step(action)
+                            next_obs, reward, done, truncated, _ = (
+                                self.collect_env.step(action)
+                            )
                             data_list.append(
                                 dict(
                                     obs=obs,
@@ -133,12 +138,12 @@ class GymEnvSimulator:
             return data_list
 
     def collect_steps(
-            self,
-            policy: Union[Callable, torch.nn.Module],
-            num_episodes: int = None,
-            num_steps: int = None,
-            random_policy: bool = False,
-        ) -> List[Dict]:
+        self,
+        policy: Union[Callable, torch.nn.Module],
+        num_episodes: int = None,
+        num_steps: int = None,
+        random_policy: bool = False,
+    ) -> List[Dict]:
         """
         Overview:
             Collect several steps using the given policy. The environment will not be reset until the end of the episode.
@@ -153,7 +158,7 @@ class GymEnvSimulator:
         if num_episodes is not None:
             data_list = []
             with torch.no_grad():
-                if gym.__version__ >= '0.26.0':
+                if gym.__version__ >= "0.26.0":
                     for i in range(num_episodes):
                         obs, _ = self.collect_env.reset()
                         done = False
@@ -163,7 +168,9 @@ class GymEnvSimulator:
                                 action = self.collect_env.action_space.sample()
                             else:
                                 action = policy(obs)
-                            next_obs, reward, done, truncated, _ = self.collect_env.step(action)
+                            next_obs, reward, done, truncated, _ = (
+                                self.collect_env.step(action)
+                            )
                             data_list.append(
                                 dict(
                                     obs=obs,
@@ -204,14 +211,16 @@ class GymEnvSimulator:
         elif num_steps is not None:
             data_list = []
             with torch.no_grad():
-                if gym.__version__ >= '0.26.0':
+                if gym.__version__ >= "0.26.0":
                     while len(data_list) < num_steps:
                         if not self.last_state_done or not self.last_state_truncated:
                             if random_policy:
                                 action = self.collect_env.action_space.sample()
                             else:
                                 action = policy(self.last_state_obs)
-                            next_obs, reward, done, truncated, _ = self.collect_env.step(action)
+                            next_obs, reward, done, truncated, _ = (
+                                self.collect_env.step(action)
+                            )
                             data_list.append(
                                 dict(
                                     obs=self.last_state_obs,
@@ -219,7 +228,7 @@ class GymEnvSimulator:
                                     reward=reward,
                                     truncated=truncated,
                                     done=done,
-                                    next_obs=next_obs
+                                    next_obs=next_obs,
                                 )
                             )
                             self.last_state_obs = next_obs
@@ -243,7 +252,7 @@ class GymEnvSimulator:
                                     action=action,
                                     reward=reward,
                                     done=done,
-                                    next_obs=next_obs
+                                    next_obs=next_obs,
                                 )
                             )
                             self.last_state_obs = next_obs
@@ -254,11 +263,11 @@ class GymEnvSimulator:
             return data_list
 
     def evaluate(
-            self,
-            policy: Union[Callable, torch.nn.Module],
-            num_episodes: int = None,
-            render_args: Dict = None,
-        ) -> List[Dict]:
+        self,
+        policy: Union[Callable, torch.nn.Module],
+        num_episodes: int = None,
+        render_args: Dict = None,
+    ) -> List[Dict]:
         """
         Overview:
             Evaluate the given policy using the environment. The environment will be reset at the beginning of each episode.
@@ -273,8 +282,10 @@ class GymEnvSimulator:
             render = False
 
         def render_env(env, render_args):
-            #TODO: support different render modes
-            render_output = env.render(**render_args,)
+            # TODO: support different render modes
+            render_output = env.render(
+                **render_args,
+            )
             return render_output
 
         eval_results = []
@@ -285,7 +296,7 @@ class GymEnvSimulator:
                 render_output = []
             data_list = []
             with torch.no_grad():
-                if gym.__version__ >= '0.26.0':
+                if gym.__version__ >= "0.26.0":
                     for i in range(num_episodes):
                         obs, _ = env.reset()
                         if render:
@@ -336,11 +347,11 @@ class GymEnvSimulator:
 
             eval_results.append(
                 dict(
-                    total_return = sum([d['reward'] for d in data_list]),
-                    total_steps = len(data_list),
-                    data_list = data_list,
-                    render_output = render_output if render else None,
+                    total_return=sum([d["reward"] for d in data_list]),
+                    total_steps=len(data_list),
+                    data_list=data_list,
+                    render_output=render_output if render else None,
                 )
-            ) 
+            )
 
         return eval_results

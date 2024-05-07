@@ -14,10 +14,10 @@ class QGPOAgent:
     """
 
     def __init__(
-            self,
-            config:EasyDict,
-            model:Union[torch.nn.Module, torch.nn.ModuleDict],
-        ):
+        self,
+        config: EasyDict,
+        model: Union[torch.nn.Module, torch.nn.ModuleDict],
+    ):
         """
         Overview:
             Initialize the agent.
@@ -35,12 +35,11 @@ class QGPOAgent:
         else:
             self.guidance_scale = 1.0
 
-
     def act(
-            self,
-            obs:Union[np.ndarray, torch.Tensor, Dict],
-            return_as_torch_tensor:bool = False,
-            ) -> Union[np.ndarray, torch.Tensor, Dict]:
+        self,
+        obs: Union[np.ndarray, torch.Tensor, Dict],
+        return_as_torch_tensor: bool = False,
+    ) -> Union[np.ndarray, torch.Tensor, Dict]:
         """
         Overview:
             Given an observation, return an action.
@@ -54,7 +53,9 @@ class QGPOAgent:
         if isinstance(obs, np.ndarray):
             obs = torch.from_numpy(obs).float().to(self.device)
         elif isinstance(obs, Dict):
-            obs = {k: torch.from_numpy(v).float().to(self.device) for k, v in obs.items()}
+            obs = {
+                k: torch.from_numpy(v).float().to(self.device) for k, v in obs.items()
+            }
         elif isinstance(obs, torch.Tensor):
             obs = obs.float().to(self.device)
         else:
@@ -62,18 +63,23 @@ class QGPOAgent:
 
         with torch.no_grad():
 
-            #---------------------------------------
+            # ---------------------------------------
             # Customized inference code ↓
-            #---------------------------------------
+            # ---------------------------------------
 
             obs = obs.unsqueeze(0)
-            action = self.model["QGPOPolicy"].sample(
-                            state = obs,
-                            guidance_scale=self.guidance_scale).squeeze(0).cpu().detach().numpy()
+            action = (
+                self.model["QGPOPolicy"]
+                .sample(state=obs, guidance_scale=self.guidance_scale)
+                .squeeze(0)
+                .cpu()
+                .detach()
+                .numpy()
+            )
 
-            #---------------------------------------
+            # ---------------------------------------
             # Customized inference code ↑
-            #---------------------------------------
+            # ---------------------------------------
 
         if isinstance(action, Dict):
             if return_as_torch_tensor:

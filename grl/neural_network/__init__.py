@@ -23,11 +23,13 @@ def register_module(module: nn.Module, name: str):
         raise KeyError(f"Module {name} is already registered.")
     MODULES[name.lower()] = module
 
+
 def get_module(type: str):
     if type.lower() in MODULES:
         return MODULES[type.lower()]
     else:
         raise ValueError(f"Unknown module type: {type}")
+
 
 def build_normalization(norm_type: str, dim: Optional[int] = None) -> nn.Module:
     """
@@ -43,24 +45,27 @@ def build_normalization(norm_type: str, dim: Optional[int] = None) -> nn.Module:
     if dim is None:
         key = norm_type
     else:
-        if norm_type in ['BN', 'IN']:
+        if norm_type in ["BN", "IN"]:
             key = norm_type + str(dim)
-        elif norm_type in ['LN', 'SyncBN']:
+        elif norm_type in ["LN", "SyncBN"]:
             key = norm_type
         else:
-            raise NotImplementedError("not support indicated dim when creates {}".format(norm_type))
+            raise NotImplementedError(
+                "not support indicated dim when creates {}".format(norm_type)
+            )
     norm_func = {
-        'BN1': nn.BatchNorm1d,
-        'BN2': nn.BatchNorm2d,
-        'LN': nn.LayerNorm,
-        'IN1': nn.InstanceNorm1d,
-        'IN2': nn.InstanceNorm2d,
-        'SyncBN': nn.SyncBatchNorm,
+        "BN1": nn.BatchNorm1d,
+        "BN2": nn.BatchNorm2d,
+        "LN": nn.LayerNorm,
+        "IN1": nn.InstanceNorm1d,
+        "IN2": nn.InstanceNorm2d,
+        "SyncBN": nn.SyncBatchNorm,
     }
     if key in norm_func.keys():
         return norm_func[key]
     else:
         raise KeyError("invalid norm type: {}".format(key))
+
 
 def sequential_pack(layers: List[nn.Module]) -> nn.Sequential:
     """
@@ -84,6 +89,7 @@ def sequential_pack(layers: List[nn.Module]) -> nn.Sequential:
             break
     return seq
 
+
 def MLP(
     in_channels: int,
     hidden_channels: int,
@@ -96,7 +102,7 @@ def MLP(
     dropout_probability: float = 0.5,
     output_activation: bool = True,
     output_norm: bool = True,
-    last_linear_layer_init_zero: bool = False
+    last_linear_layer_init_zero: bool = False,
 ):
     """
     Overview:
@@ -174,6 +180,7 @@ def MLP(
 
     return sequential_pack(block)
 
+
 class TemporalSpatialResBlock(nn.Module):
     """
     Overview:
@@ -203,7 +210,11 @@ class TemporalSpatialResBlock(nn.Module):
         )
         self.dense1 = nn.Sequential(nn.Linear(input_dim, output_dim), activation)
         self.dense2 = nn.Sequential(nn.Linear(output_dim, output_dim), activation)
-        self.modify_x = nn.Linear(input_dim, output_dim) if input_dim != output_dim else nn.Identity()
+        self.modify_x = (
+            nn.Linear(input_dim, output_dim)
+            if input_dim != output_dim
+            else nn.Identity()
+        )
 
     def forward(self, t, x) -> torch.Tensor:
         """
@@ -211,11 +222,12 @@ class TemporalSpatialResBlock(nn.Module):
             Return the redisual block output.
         Arguments:
             - t (:obj:`torch.Tensor`): The temporal input tensor.
-            - x (:obj:`torch.Tensor`): The input tensor.        
+            - x (:obj:`torch.Tensor`): The input tensor.
         """
         h1 = self.dense1(x) + self.time_mlp(t)
         h2 = self.dense2(h1)
         return h2 + self.modify_x(x)
+
 
 class TemporalSpatialResidualNet(nn.Module):
     """
@@ -226,15 +238,15 @@ class TemporalSpatialResidualNet(nn.Module):
     """
 
     def __init__(
-            self,
-            hidden_sizes: List[int],
-            output_dim: int,
-            t_dim: int,
-            input_dim: int = None,
-            condition_dim: int = None,
-            condition_hidden_dim: int = None,
-            t_condition_hidden_dim: int = None,
-        ):
+        self,
+        hidden_sizes: List[int],
+        output_dim: int,
+        t_dim: int,
+        input_dim: int = None,
+        condition_dim: int = None,
+        condition_hidden_dim: int = None,
+        t_condition_hidden_dim: int = None,
+    ):
         """
         Overview:
             Initiate the temporal spatial residual network.
@@ -257,25 +269,49 @@ class TemporalSpatialResidualNet(nn.Module):
             t_condition_hidden_dim = t_dim
         else:
             t_condition_dim = t_dim + condition_hidden_dim
-            t_condition_hidden_dim = t_condition_hidden_dim if t_condition_hidden_dim is not None else t_condition_dim
-            self.pre_sort_condition = nn.Sequential(nn.Linear(condition_dim, condition_hidden_dim), torch.nn.SiLU())
+            t_condition_hidden_dim = (
+                t_condition_hidden_dim
+                if t_condition_hidden_dim is not None
+                else t_condition_dim
+            )
+            self.pre_sort_condition = nn.Sequential(
+                nn.Linear(condition_dim, condition_hidden_dim), torch.nn.SiLU()
+            )
         self.sort_t = nn.Sequential(
             nn.Linear(t_condition_dim, t_condition_hidden_dim),
             torch.nn.SiLU(),
             nn.Linear(t_condition_hidden_dim, t_condition_hidden_dim),
         )
-        self.first_block = TemporalSpatialResBlock(input_dim, hidden_sizes[0], t_dim=t_condition_hidden_dim)
-        self.down_block = nn.ModuleList([TemporalSpatialResBlock(hidden_sizes[i], hidden_sizes[i + 1], t_dim=t_condition_hidden_dim) for i in range(len(hidden_sizes) - 1)])
-        self.middle_block = TemporalSpatialResBlock(hidden_sizes[-1], hidden_sizes[-1], t_dim=t_condition_hidden_dim)
-        self.up_block = nn.ModuleList([TemporalSpatialResBlock(hidden_sizes[i], hidden_sizes[i], t_dim=t_condition_hidden_dim) for i in range(len(hidden_sizes) - 2, -1, -1)])
-        self.last_block = nn.Linear(hidden_sizes[0]*2, output_dim)
+        self.first_block = TemporalSpatialResBlock(
+            input_dim, hidden_sizes[0], t_dim=t_condition_hidden_dim
+        )
+        self.down_block = nn.ModuleList(
+            [
+                TemporalSpatialResBlock(
+                    hidden_sizes[i], hidden_sizes[i + 1], t_dim=t_condition_hidden_dim
+                )
+                for i in range(len(hidden_sizes) - 1)
+            ]
+        )
+        self.middle_block = TemporalSpatialResBlock(
+            hidden_sizes[-1], hidden_sizes[-1], t_dim=t_condition_hidden_dim
+        )
+        self.up_block = nn.ModuleList(
+            [
+                TemporalSpatialResBlock(
+                    hidden_sizes[i], hidden_sizes[i], t_dim=t_condition_hidden_dim
+                )
+                for i in range(len(hidden_sizes) - 2, -1, -1)
+            ]
+        )
+        self.last_block = nn.Linear(hidden_sizes[0] * 2, output_dim)
 
     def forward(
-            self,
-            t: torch.Tensor,
-            x: torch.Tensor,
-            condition: torch.Tensor = None,
-        ) -> torch.Tensor:
+        self,
+        t: torch.Tensor,
+        x: torch.Tensor,
+        condition: torch.Tensor = None,
+    ) -> torch.Tensor:
         """
         Overview:
             Return the output of the temporal spatial residual network.
@@ -291,14 +327,15 @@ class TemporalSpatialResidualNet(nn.Module):
             t_condition = t
         t_condition_embedding = self.sort_t(t_condition)
         d0 = self.first_block(t_condition_embedding, x)
-        d=[d0]
+        d = [d0]
         for i, block in enumerate(self.down_block):
             d_i = block(t_condition_embedding, d[i])
             d.append(d_i)
         u = self.middle_block(t_condition_embedding, d[-1])
         for i, block in enumerate(self.up_block):
-            u = block(t_condition_embedding, torch.cat([u, d[-i-1]], dim=-1))
+            u = block(t_condition_embedding, torch.cat([u, d[-i - 1]], dim=-1))
         return self.last_block(torch.cat([u, d[0]], dim=-1))
+
 
 class ConcatenateLayer(nn.Module):
     """
@@ -307,6 +344,7 @@ class ConcatenateLayer(nn.Module):
     Interface:
         ``__init__``, ``forward``
     """
+
     def __init__(self):
         """
         Overview:
@@ -323,6 +361,7 @@ class ConcatenateLayer(nn.Module):
         """
         return torch.cat(x, dim=-1)
 
+
 class MultiLayerPerceptron(nn.Module):
     """
     Overview:
@@ -331,17 +370,18 @@ class MultiLayerPerceptron(nn.Module):
     Interface:
         ``__init__``, ``forward``
     """
+
     def __init__(
-            self,
-            hidden_sizes: List[int],
-            output_size: int,
-            activation: Union[str, List[str]],
-            dropout: float = None,
-            layernorm: bool = False,
-            final_activation: str = None,
-            scale: float = None,
-            shrink: float = None,
-        ):
+        self,
+        hidden_sizes: List[int],
+        output_size: int,
+        activation: Union[str, List[str]],
+        dropout: float = None,
+        layernorm: bool = False,
+        final_activation: str = None,
+        scale: float = None,
+        shrink: float = None,
+    ):
         """
         Overview:
             Initiate the multi-layer perceptron.
@@ -359,27 +399,34 @@ class MultiLayerPerceptron(nn.Module):
 
         self.model = nn.Sequential()
 
-        for i in range(len(hidden_sizes)-1):
-            self.model.add_module('linear'+str(i), nn.Linear(hidden_sizes[i], hidden_sizes[i+1]))
+        for i in range(len(hidden_sizes) - 1):
+            self.model.add_module(
+                "linear" + str(i), nn.Linear(hidden_sizes[i], hidden_sizes[i + 1])
+            )
 
             if isinstance(activation, list):
-                self.model.add_module('activation'+str(i), get_activation(activation[i]))
+                self.model.add_module(
+                    "activation" + str(i), get_activation(activation[i])
+                )
             else:
-                self.model.add_module('activation'+str(i), get_activation(activation))
+                self.model.add_module("activation" + str(i), get_activation(activation))
             if dropout is not None and dropout > 0:
-                self.model.add_module('dropout', nn.Dropout(dropout))
+                self.model.add_module("dropout", nn.Dropout(dropout))
             if layernorm:
-                self.model.add_module('layernorm', nn.LayerNorm(hidden_sizes[i+1]))
+                self.model.add_module("layernorm", nn.LayerNorm(hidden_sizes[i + 1]))
 
-        self.model.add_module('linear'+str(len(hidden_sizes)-1), nn.Linear(hidden_sizes[-1], output_size))
+        self.model.add_module(
+            "linear" + str(len(hidden_sizes) - 1),
+            nn.Linear(hidden_sizes[-1], output_size),
+        )
 
         if final_activation is not None:
-            self.model.add_module('final_activation', get_activation(final_activation))
-        
+            self.model.add_module("final_activation", get_activation(final_activation))
+
         if scale is not None:
-            self.scale=nn.Parameter(torch.tensor(scale),requires_grad=False)
+            self.scale = nn.Parameter(torch.tensor(scale), requires_grad=False)
         else:
-            self.scale=1.0
+            self.scale = 1.0
 
         # shrink the weight of linear layer 'linear'+str(len(hidden_sizes) to it's origin 0.01
         if shrink is not None:
@@ -395,7 +442,8 @@ class MultiLayerPerceptron(nn.Module):
         Arguments:
             - x (:obj:`torch.Tensor`): The input tensor.
         """
-        return self.scale*self.model(x)
+        return self.scale * self.model(x)
+
 
 class ConcatenateMLP(nn.Module):
     """
@@ -404,6 +452,7 @@ class ConcatenateMLP(nn.Module):
     Interface:
         ``__init__``, ``forward``
     """
+
     def __init__(self, **kwargs):
         """
         Overview:
@@ -423,26 +472,29 @@ class ConcatenateMLP(nn.Module):
         """
         return self.model(torch.cat(x, dim=-1))
 
+
 class ALLCONCATMLP(nn.Module):
     def __init__(self, **kwargs):
         super().__init__()
         self.main = MLPResNet(**kwargs)
         self.t_cond = MultiLayerPerceptron(
-            hidden_sizes = [64, 128],
+            hidden_sizes=[64, 128],
             output_size=128,
             activation="mish",
         )
+
     def forward(
-            self,
-            t: torch.Tensor,
-            x: torch.Tensor,
-            condition: torch.Tensor = None,
-        ) -> torch.Tensor:
+        self,
+        t: torch.Tensor,
+        x: torch.Tensor,
+        condition: torch.Tensor = None,
+    ) -> torch.Tensor:
 
         embed = self.t_cond(t)
         result = self.main(torch.cat([x, condition, embed], dim=-1))
         return result
-    
+
+
 from .transformers.dit import DiT, DiT1D, DiT3D
 
 
@@ -461,20 +513,20 @@ class Sequential(nn.Module):
             x = module(*x)
         return x
 
+
 class TimeExtension(nn.Module):
     def __init__(self):
         super().__init__()
 
     def forward(
-            self,
-            t: torch.Tensor,
-            x: Union[torch.Tensor, TensorDict],
-            condition: Union[torch.Tensor, TensorDict] = None,
-        ) -> torch.Tensor:
-        if len(t.shape)==0 or t.shape[0] != x.shape[0]:
+        self,
+        t: torch.Tensor,
+        x: Union[torch.Tensor, TensorDict],
+        condition: Union[torch.Tensor, TensorDict] = None,
+    ) -> torch.Tensor:
+        if len(t.shape) == 0 or t.shape[0] != x.shape[0]:
             t = t.expand(x.shape[0])
         return t, x, condition
-
 
 
 class IntrinsicModel(nn.Module):
@@ -486,8 +538,8 @@ class IntrinsicModel(nn.Module):
     """
 
     def __init__(self, config: EasyDict):
-        #TODO
-        
+        # TODO
+
         super().__init__()
 
         self.config = config
@@ -495,28 +547,36 @@ class IntrinsicModel(nn.Module):
 
         self.model = torch.nn.ModuleDict()
         if hasattr(config, "t_encoder"):
-            self.model["t_encoder"] = get_encoder(config.t_encoder.type)(**config.t_encoder.args)
+            self.model["t_encoder"] = get_encoder(config.t_encoder.type)(
+                **config.t_encoder.args
+            )
         else:
             self.model["t_encoder"] = torch.nn.Identity()
         if hasattr(config, "x_encoder"):
-            self.model["x_encoder"] = get_encoder(config.x_encoder.type)(**config.x_encoder.args)
+            self.model["x_encoder"] = get_encoder(config.x_encoder.type)(
+                **config.x_encoder.args
+            )
         else:
             self.model["x_encoder"] = torch.nn.Identity()
         if hasattr(config, "condition_encoder"):
-            self.model["condition_encoder"] = get_encoder(config.condition_encoder.type)(**config.condition_encoder.args)
+            self.model["condition_encoder"] = get_encoder(
+                config.condition_encoder.type
+            )(**config.condition_encoder.args)
         else:
             self.model["condition_encoder"] = torch.nn.Identity()
-        
-        #TODO
+
+        # TODO
         # specific backbone network
-        self.model["backbone"] = get_module(config.backbone.type)(**config.backbone.args)
+        self.model["backbone"] = get_module(config.backbone.type)(
+            **config.backbone.args
+        )
 
     def forward(
-            self,
-            t: torch.Tensor,
-            x: Union[torch.Tensor, TensorDict],
-            condition: Union[torch.Tensor, TensorDict] = None,
-        ) -> torch.Tensor:
+        self,
+        t: torch.Tensor,
+        x: Union[torch.Tensor, TensorDict],
+        condition: Union[torch.Tensor, TensorDict] = None,
+    ) -> torch.Tensor:
         """
         Overview:
             Return the output of the model at time t given the initial state.
@@ -535,7 +595,7 @@ class IntrinsicModel(nn.Module):
         return output
 
 
-MODULES={
+MODULES = {
     "Sequential".lower(): Sequential,
     "TimeExtension".lower(): TimeExtension,
     "IntrinsicModel".lower(): IntrinsicModel,

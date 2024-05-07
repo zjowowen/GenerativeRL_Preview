@@ -21,11 +21,11 @@ class BaseSimulator:
         pass
 
     def collect_episodes(
-            self,
-            policy: Union[Callable, torch.nn.Module],
-            num_episodes: int = None,
-            num_steps: int = None,
-        ) -> List[Dict]:
+        self,
+        policy: Union[Callable, torch.nn.Module],
+        num_episodes: int = None,
+        num_steps: int = None,
+    ) -> List[Dict]:
         """
         Overview:
             Collect several episodes using the given policy. The environment will be reset at the beginning of each episode.
@@ -39,11 +39,11 @@ class BaseSimulator:
         pass
 
     def collect_steps(
-            self,
-            policy: Union[Callable, torch.nn.Module],
-            num_episodes: int = None,
-            num_steps: int = None,
-        ) -> List[Dict]:
+        self,
+        policy: Union[Callable, torch.nn.Module],
+        num_episodes: int = None,
+        num_steps: int = None,
+    ) -> List[Dict]:
         """
         Overview:
             Collect several steps using the given policy. The environment will not be reset until the end of the episode.
@@ -56,16 +56,17 @@ class BaseSimulator:
         pass
 
     def evaluate(
-            self,
-            policy: Union[Callable, torch.nn.Module],
-            num_episodes: int = None,
-        ) -> List[Dict]:
+        self,
+        policy: Union[Callable, torch.nn.Module],
+        num_episodes: int = None,
+    ) -> List[Dict]:
         """
         Overview:
             Evaluate the given policy using the environment. The environment will be reset at the beginning of each episode.
             No history will be stored in this method. The evaluation resultswill be returned as a list of dictionaries.
         """
         pass
+
 
 class BaseEnv:
     """
@@ -110,4 +111,3 @@ class BaseEnv:
             Close the environment.
         """
         pass
-

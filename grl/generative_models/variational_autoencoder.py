@@ -27,23 +27,29 @@ class IntrinsicModel(nn.Module):
 
         self.model = torch.nn.ModuleDict()
         if hasattr(config, "x_encoder"):
-            self.model["x_encoder"] = get_encoder(config.x_encoder.type)(**config.x_encoder.args)
+            self.model["x_encoder"] = get_encoder(config.x_encoder.type)(
+                **config.x_encoder.args
+            )
         else:
             self.model["x_encoder"] = torch.nn.Identity()
         if hasattr(config, "condition_encoder"):
-            self.model["condition_encoder"] = get_encoder(config.condition_encoder.type)(**config.condition_encoder.args)
+            self.model["condition_encoder"] = get_encoder(
+                config.condition_encoder.type
+            )(**config.condition_encoder.args)
         else:
             self.model["condition_encoder"] = torch.nn.Identity()
-        
-        #TODO
+
+        # TODO
         # specific backbone network
-        self.model["backbone"] = get_module(config.backbone.type)(**config.backbone.args)
+        self.model["backbone"] = get_module(config.backbone.type)(
+            **config.backbone.args
+        )
 
     def forward(
-            self,
-            x: Union[torch.Tensor, TensorDict],
-            condition: Union[torch.Tensor, TensorDict] = None,
-        ) -> torch.Tensor:
+        self,
+        x: Union[torch.Tensor, TensorDict],
+        condition: Union[torch.Tensor, TensorDict] = None,
+    ) -> torch.Tensor:
         """
         Overview:
             Return the output of the model at time t given the initial state.
@@ -58,7 +64,7 @@ class IntrinsicModel(nn.Module):
             output = self.model["backbone"](x)
 
         return output
-    
+
 
 class VariationalAutoencoder(nn.Module):
     def __init__(self, config: EasyDict):
@@ -74,34 +80,37 @@ class VariationalAutoencoder(nn.Module):
         # Decoder
         self.decoder = IntrinsicModel(config.decoder)
 
-
     def encode(
-            self,
-            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None
-        ):
+        self,
+        x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+    ):
         mu, logvar = self.encoder(x, condition)
         return mu, logvar
 
-    def reparameterize(self, mu: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor], logvar: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]):
+    def reparameterize(
+        self,
+        mu: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        logvar: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+    ):
         std = torch.exp(0.5 * logvar)
         eps = torch.randn_like(std)
         z = mu + eps * std
         return z
 
     def decode(
-            self, 
-            z: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-        ):
+        self,
+        z: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+    ):
         x = self.decoder(z, condition)
         return x
 
     def forward(
-            self,
-            x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-        ):
+        self,
+        x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+    ):
         mu, logvar = self.encode(x, condition)
         z = self.reparameterize(mu, logvar)
         x_recon = self.decode(z, condition)

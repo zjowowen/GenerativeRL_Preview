@@ -14,7 +14,7 @@ from torchvision.datasets import ImageFolder
 
 from grl.utils import set_seed
 
-image_size=64
+image_size = 64
 config = EasyDict(
     dict(
         data=dict(
@@ -25,18 +25,23 @@ config = EasyDict(
     )
 )
 
+
 def kill_process_by_string(process_string):
-    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
-        if type(proc.info['cmdline']) is list:
-            if process_string in ' '.join(proc.info['cmdline']):
-                print(f"Killing process {proc.info['pid']}: {proc.info['name']} - {' '.join(proc.info['cmdline'])}")
+    for proc in psutil.process_iter(["pid", "name", "cmdline"]):
+        if type(proc.info["cmdline"]) is list:
+            if process_string in " ".join(proc.info["cmdline"]):
+                print(
+                    f"Killing process {proc.info['pid']}: {proc.info['name']} - {' '.join(proc.info['cmdline'])}"
+                )
                 proc.kill()
+
 
 def resize_image(image, size):
     # image is numpy array of shape (360, 640, 3), resize to (64, 64, 3)
     return cv2.resize(image[:, :, ::-1], (size, size), interpolation=cv2.INTER_AREA)
     # return cv2.resize(image[:, :, ::-1], (128, 72), interpolation=cv2.INTER_AREA)
     # return cv2.resize(image[:, :, ::-1], (128, 72))
+
 
 def save_image(image, path):
     cv2.imwrite(path, image, [cv2.IMWRITE_PNG_COMPRESSION, 0])
@@ -83,6 +88,7 @@ def ramdon_action(method, env):
     else:
         raise NotImplementedError(f"Unknown method {method}")
 
+
 def collect_data(env_id, i, data_path):
     try:
         env = gym.make(env_id)
@@ -92,12 +98,12 @@ def collect_data(env_id, i, data_path):
         while not done and counter < 100:
             action = ramdon_action("run_forward", env)
             obs, reward, done, info = env.step(action)
-            
+
             save_image(
                 resize_image(obs["pov"], config.data.image_size),
-                os.path.join(data_path, f"{env_id}_{i}_{counter}.png")
+                os.path.join(data_path, f"{env_id}_{i}_{counter}.png"),
             )
-            
+
             # env.render()
             counter += 1
         env.close()
@@ -108,11 +114,10 @@ def collect_data(env_id, i, data_path):
 
 if __name__ == "__main__":
     set_seed()
-    mp.set_start_method('spawn')
+    mp.set_start_method("spawn")
 
     if not os.path.exists(config.data.data_path):
         os.makedirs(config.data.data_path)
-
 
     for env_id in [
         "MineRLBasaltFindCave-v0",
@@ -138,6 +143,3 @@ if __name__ == "__main__":
                 kill_process_by_string("build/libs/mcprec-6.13.jar")
                 time.sleep(10)
                 continue
-            
-            
-

@@ -53,15 +53,21 @@ class QGPODataset(torch.utils.data.Dataset):
         """
 
         data = {
-            's': self.states[index % self.len],
-            'a': self.actions[index % self.len],
-            'r': self.rewards[index % self.len],
-            's_': self.next_states[index % self.len],
-            'd': self.is_finished[index % self.len],
-            'fake_a': self.fake_actions[index % self.len]
-            if hasattr(self, "fake_actions") else 0.0,  # self.fake_actions <D, 16, A>
-            'fake_a_': self.fake_next_actions[index % self.len]
-            if hasattr(self, "fake_next_actions") else 0.0,  # self.fake_next_actions <D, 16, A>
+            "s": self.states[index % self.len],
+            "a": self.actions[index % self.len],
+            "r": self.rewards[index % self.len],
+            "s_": self.next_states[index % self.len],
+            "d": self.is_finished[index % self.len],
+            "fake_a": (
+                self.fake_actions[index % self.len]
+                if hasattr(self, "fake_actions")
+                else 0.0
+            ),  # self.fake_actions <D, 16, A>
+            "fake_a_": (
+                self.fake_next_actions[index % self.len]
+                if hasattr(self, "fake_next_actions")
+                else 0.0
+            ),  # self.fake_next_actions <D, 16, A>
         }
         return data
 
@@ -71,6 +77,7 @@ class QGPODataset(torch.utils.data.Dataset):
     @abstractmethod
     def return_range(self, dataset, max_episode_steps):
         raise NotImplementedError
+
 
 class QGPOD4RLDataset(QGPODataset):
     """
@@ -83,10 +90,10 @@ class QGPOD4RLDataset(QGPODataset):
     """
 
     def __init__(
-            self,
-            env_id: str,
-            device: str = None,
-        ):
+        self,
+        env_id: str,
+        device: str = None,
+    ):
         """
         Overview:
             Initialization method of QGPOD4RLDataset class
@@ -97,26 +104,31 @@ class QGPOD4RLDataset(QGPODataset):
 
         super().__init__()
         import d4rl
+
         device = "cpu" if device is None else device
         data = d4rl.qlearning_dataset(gym.make(env_id))
-        self.states = torch.from_numpy(data['observations']).float().to(device)
-        self.actions = torch.from_numpy(data['actions']).float().to(device)
-        self.next_states = torch.from_numpy(data['next_observations']).float().to(device)
-        reward = torch.from_numpy(data['rewards']).view(-1, 1).float().to(device)
-        self.is_finished = torch.from_numpy(data['terminals']).view(-1, 1).float().to(device)
+        self.states = torch.from_numpy(data["observations"]).float().to(device)
+        self.actions = torch.from_numpy(data["actions"]).float().to(device)
+        self.next_states = (
+            torch.from_numpy(data["next_observations"]).float().to(device)
+        )
+        reward = torch.from_numpy(data["rewards"]).view(-1, 1).float().to(device)
+        self.is_finished = (
+            torch.from_numpy(data["terminals"]).view(-1, 1).float().to(device)
+        )
 
         reward_tune = "iql_antmaze" if "antmaze" in env_id else "iql_locomotion"
-        if reward_tune == 'normalize':
+        if reward_tune == "normalize":
             reward = (reward - reward.mean()) / reward.std()
-        elif reward_tune == 'iql_antmaze':
+        elif reward_tune == "iql_antmaze":
             reward = reward - 1.0
-        elif reward_tune == 'iql_locomotion':
+        elif reward_tune == "iql_locomotion":
             min_ret, max_ret = QGPOD4RLDataset.return_range(data, 1000)
-            reward /= (max_ret - min_ret)
+            reward /= max_ret - min_ret
             reward *= 1000
-        elif reward_tune == 'cql_antmaze':
+        elif reward_tune == "cql_antmaze":
             reward = (reward - 0.5) * 4.0
-        elif reward_tune == 'antmaze':
+        elif reward_tune == "antmaze":
             reward = (reward - 0.25) * 2.0
         self.rewards = reward
         self.len = self.states.shape[0]
@@ -124,18 +136,19 @@ class QGPOD4RLDataset(QGPODataset):
 
     def return_range(dataset, max_episode_steps):
         returns, lengths = [], []
-        ep_ret, ep_len = 0., 0
-        for r, d in zip(dataset['rewards'], dataset['terminals']):
+        ep_ret, ep_len = 0.0, 0
+        for r, d in zip(dataset["rewards"], dataset["terminals"]):
             ep_ret += float(r)
             ep_len += 1
             if d or ep_len == max_episode_steps:
                 returns.append(ep_ret)
                 lengths.append(ep_len)
-                ep_ret, ep_len = 0., 0
+                ep_ret, ep_len = 0.0, 0
         # returns.append(ep_ret)    # incomplete trajectory
         lengths.append(ep_len)  # but still keep track of number of steps
-        assert sum(lengths) == len(dataset['rewards'])
+        assert sum(lengths) == len(dataset["rewards"])
         return min(returns), max(returns)
+
 
 class QGPOOnlineDataset(QGPODataset):
     """
@@ -148,11 +161,11 @@ class QGPOOnlineDataset(QGPODataset):
     """
 
     def __init__(
-            self,
-            fake_action_shape: int,
-            data: List = None,
-            device: str = None,
-        ):
+        self,
+        fake_action_shape: int,
+        data: List = None,
+        device: str = None,
+    ):
         """
         Overview:
             Initialization method of QGPOD4RLDataset class
@@ -165,11 +178,15 @@ class QGPOOnlineDataset(QGPODataset):
         self.device = "cpu" if device is None else device
         self.fake_action_shape = fake_action_shape
         if data is not None:
-            self.states = torch.from_numpy(data['observations']).float().to(device)
-            self.actions = torch.from_numpy(data['actions']).float().to(device)
-            self.next_states = torch.from_numpy(data['next_observations']).float().to(device)
-            reward = torch.from_numpy(data['rewards']).view(-1, 1).float().to(device)
-            self.is_finished = torch.from_numpy(data['terminals']).view(-1, 1).float().to(device)
+            self.states = torch.from_numpy(data["observations"]).float().to(device)
+            self.actions = torch.from_numpy(data["actions"]).float().to(device)
+            self.next_states = (
+                torch.from_numpy(data["next_observations"]).float().to(device)
+            )
+            reward = torch.from_numpy(data["rewards"]).view(-1, 1).float().to(device)
+            self.is_finished = (
+                torch.from_numpy(data["terminals"]).view(-1, 1).float().to(device)
+            )
             self.rewards = reward
             # self.fake_actions = torch.zeros_like(self.actions.unsqueeze(1).expand(-1, fake_action_shape, -1))
             # self.fake_next_actions = torch.zeros_like(self.actions.unsqueeze(1).expand(-1, fake_action_shape, -1))
@@ -204,7 +221,7 @@ class QGPOOnlineDataset(QGPODataset):
         # self.fake_next_actions = self.fake_next_actions[keep_mask]
         self.len = self.states.shape[0]
         log.debug(f"{drop_num} data dropped in QGPOOnlineDataset")
-        
+
     def load_data(self, data: List):
         # concatenate the data into the dataset
         device = self.device
@@ -218,11 +235,15 @@ class QGPOOnlineDataset(QGPODataset):
             for i, k in enumerate(keys)
         }
 
-        self.states = torch.cat([self.states, collated_data['obs'].float()], dim=0)
-        self.actions = torch.cat([self.actions, collated_data['action'].float()], dim=0)
-        self.next_states = torch.cat([self.next_states, collated_data['next_obs'].float()], dim=0)
-        reward = collated_data['reward'].view(-1, 1).float()
-        self.is_finished = torch.cat([self.is_finished, collated_data['done'].view(-1, 1).float()], dim=0)
+        self.states = torch.cat([self.states, collated_data["obs"].float()], dim=0)
+        self.actions = torch.cat([self.actions, collated_data["action"].float()], dim=0)
+        self.next_states = torch.cat(
+            [self.next_states, collated_data["next_obs"].float()], dim=0
+        )
+        reward = collated_data["reward"].view(-1, 1).float()
+        self.is_finished = torch.cat(
+            [self.is_finished, collated_data["done"].view(-1, 1).float()], dim=0
+        )
         self.rewards = torch.cat([self.rewards, reward], dim=0)
         # self.fake_actions = torch.cat([self.fake_actions, torch.zeros_like(collated_data['action'].unsqueeze(1).expand(-1, self.fake_action_shape, -1))], dim=0)
         # self.fake_next_actions = torch.cat([self.fake_next_actions, torch.zeros_like(collated_data['action'].unsqueeze(1).expand(-1, self.fake_action_shape, -1))], dim=0)
@@ -231,18 +252,19 @@ class QGPOOnlineDataset(QGPODataset):
 
     def return_range(dataset, max_episode_steps):
         returns, lengths = [], []
-        ep_ret, ep_len = 0., 0
-        for r, d in zip(dataset['rewards'], dataset['terminals']):
+        ep_ret, ep_len = 0.0, 0
+        for r, d in zip(dataset["rewards"], dataset["terminals"]):
             ep_ret += float(r)
             ep_len += 1
             if d or ep_len == max_episode_steps:
                 returns.append(ep_ret)
                 lengths.append(ep_len)
-                ep_ret, ep_len = 0., 0
+                ep_ret, ep_len = 0.0, 0
         # returns.append(ep_ret)    # incomplete trajectory
         lengths.append(ep_len)  # but still keep track of number of steps
-        assert sum(lengths) == len(dataset['rewards'])
+        assert sum(lengths) == len(dataset["rewards"])
         return min(returns), max(returns)
+
 
 class QGPOCustomizedDataset(QGPODataset):
     """
@@ -255,11 +277,11 @@ class QGPOCustomizedDataset(QGPODataset):
     """
 
     def __init__(
-            self,
-            env_id: str = None,
-            device: str = None,
-            numpy_data_path: str = None,
-        ):
+        self,
+        env_id: str = None,
+        device: str = None,
+        numpy_data_path: str = None,
+    ):
         """
         Overview:
             Initialization method of QGPOD4RLDataset class
@@ -274,12 +296,12 @@ class QGPOCustomizedDataset(QGPODataset):
         device = "cpu" if device is None else device
 
         data = np.load(numpy_data_path)
-        
-        self.states = torch.from_numpy(data['obs']).float().to(device)
-        self.actions = torch.from_numpy(data['action']).float().to(device)
-        self.next_states = torch.from_numpy(data['next_obs']).float().to(device)
-        reward = torch.from_numpy(data['reward']).view(-1, 1).float().to(device)
-        self.is_finished = torch.from_numpy(data['done']).view(-1, 1).float().to(device)
+
+        self.states = torch.from_numpy(data["obs"]).float().to(device)
+        self.actions = torch.from_numpy(data["action"]).float().to(device)
+        self.next_states = torch.from_numpy(data["next_obs"]).float().to(device)
+        reward = torch.from_numpy(data["reward"]).view(-1, 1).float().to(device)
+        self.is_finished = torch.from_numpy(data["done"]).view(-1, 1).float().to(device)
 
         self.rewards = reward
         self.len = self.states.shape[0]
