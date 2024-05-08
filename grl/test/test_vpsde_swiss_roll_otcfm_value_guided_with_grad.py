@@ -1,7 +1,7 @@
 import os
 import signal
 import sys
-
+import multiprocessing as mp
 import matplotlib
 import numpy as np
 from easydict import EasyDict
@@ -216,7 +216,6 @@ if __name__ == "__main__":
     loss_sum = 0.0
     counter = 0
     iteration = 0
-    flow_model_iteration = 0
 
     def plot2d(data):
 
@@ -363,13 +362,22 @@ if __name__ == "__main__":
                 path=config.parameter.evaluation.model_save_path,
             )
     data_generator = get_train_data(data_loader)
-
+    subprocess_list = []
     for iteration in track(range(config.parameter.iterations), description="Training"):
         if iteration < flow_model_iteration:
             continue
 
-        if iteration > 0 and iteration % config.parameter.evaluation.eval_freq == 0:
+        if (iteration % 2 == 0 and iteration > 1000) or (
+            iteration > 0 and iteration < 1000 and iteration % 200 == 0
+        ):
             flow_model.eval()
+            save_checkpoint(
+                flow_model=flow_model,
+                value_model=value_function_model,
+                flow_model_iteration=flow_model_iteration,
+                value_model_iteration=value_model_iteration,
+                path=config.parameter.evaluation.model_save_path,
+            )
             t_span = torch.linspace(0.0, 1.0, 1000)
             x_t = (
                 flow_model.sample_forward_process(t_span=t_span, batch_size=500)
@@ -379,20 +387,18 @@ if __name__ == "__main__":
             x_t = [
                 x.squeeze(0) for x in torch.split(x_t, split_size_or_sections=1, dim=0)
             ]
-            render_video(
-                x_t,
-                config.parameter.evaluation.video_save_path,
-                iteration,
-                fps=100,
-                dpi=100,
+            p = mp.Process(
+                target=render_video,
+                args=(
+                    x_t,
+                    config.parameter.evaluation.video_save_path,
+                    f"=flow_model_iteration_{flow_model_iteration}_value_model_iteration_{value_model_iteration}",
+                    100,
+                    100,
+                ),
             )
-            save_checkpoint(
-                flow_model=flow_model,
-                value_model=value_function_model,
-                flow_model_iteration=flow_model_iteration,
-                value_model_iteration=value_model_iteration,
-                path=config.parameter.evaluation.model_save_path,
-            )
+            p.start()
+            subprocess_list.append(p)
         if iteration < 1000:
             batch_data = next(data_generator)
             batch_data = batch_data.to(config.device)
@@ -419,9 +425,7 @@ if __name__ == "__main__":
             )
         if iteration >= 1000:
             t_span = torch.linspace(0.0, 1.0, 1000)
-            x_t = flow_model.sample_forward_process(
-                t_span=t_span, batch_size=500, with_reguired=True
-            )
+            x_t = flow_model.sample(t_span=t_span, batch_size=500, with_grad=True)
             loss = -value_function_model(x_t).mean()
             optimizer.zero_grad()
             loss.backward()
@@ -429,6 +433,7 @@ if __name__ == "__main__":
                 flow_model.parameters(), config.parameter.clip_grad_norm
             )
             optimizer.step()
+            flow_model_iteration = iteration
             log.info(f"iteration {iteration}, gradient {gradien_norm}, loss {loss}")
 
         if iteration >= 0 and iteration % 100 == 0:
@@ -465,3 +470,6 @@ if __name__ == "__main__":
                 fps=100,
                 dpi=100,
             )
+
+    for p in subprocess_list:
+        p.join()
