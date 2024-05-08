@@ -122,7 +122,7 @@ config = EasyDict(
                 stop_training_iterations=50000,
                 learning_rate=1e-4,
                 discount_factor=0.99,
-                update_momentum=0.995,
+                update_momentum=0.005,
             ),
             diffusion_model_important_sampling=dict(
                 batch_size=2048,

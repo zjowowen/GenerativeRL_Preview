@@ -123,7 +123,7 @@ class QGPOCritic(nn.Module):
             torch.nn.functional.mse_loss(q0, targets)
             + torch.nn.functional.mse_loss(q1, targets)
         ) / 2
-        return q_loss
+        return q_loss, torch.mean(q0), torch.mean(targets)
 
 
 class GuidedPolicy(nn.Module):
@@ -608,7 +608,7 @@ class QGPOISAlgorithm:
 
                 data = next(data_generator)
 
-                q_loss = self.model["QGPOPolicy"].q_loss(
+                q_loss, q, q_target = self.model["QGPOPolicy"].q_loss(
                     data["a"],
                     data["s"],
                     data["r"],
@@ -633,7 +633,15 @@ class QGPOISAlgorithm:
                         * target_param.data
                     )
 
-                wandb_run.log(data=dict(q_loss=q_loss.item()), commit=False)
+                wandb_run.log(
+                    data=dict(
+                        train_iter=train_iter,
+                        q_loss=q_loss.item(),
+                        q=q.item(),
+                        q_target=q_target.item(),
+                    ),
+                    commit=True,
+                )
 
             diffusion_model_important_sampling_optimizer = torch.optim.Adam(
                 self.model[

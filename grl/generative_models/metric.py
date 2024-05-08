@@ -121,8 +121,11 @@ def compute_likelihood(
     # x.shape = [batch_size, state_dim]
     x0_and_diff_logp = (x, torch.zeros(x.shape[0], device=x.device))
 
-    eps = 1e-3
-    t_span = torch.linspace(eps, 1.0, 1000).to(x.device)
+    if t is None:
+        eps = 1e-3
+        t_span = torch.linspace(eps, 1.0, 1000).to(x.device)
+    else:
+        t_span = t.to(x.device)
 
     solver = ODESolver(library="torchdiffeq_adjoint")
 
