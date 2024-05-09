@@ -15,7 +15,14 @@ import torch
 from easydict import EasyDict
 from matplotlib import animation
 
-from grl.generative_models.diffusion_model import DiffusionModel
+from grl.generative_models.diffusion_model import (
+    DiffusionModel,
+    EnergyConditionalDiffusionModel,
+)
+from grl.generative_models.diffusion_model.guided_diffusion_model import (
+    GuidedDiffusionModel,
+)
+from grl.rl_modules.value_network.one_shot_value_function import OneShotValueFunction
 from grl.utils import set_seed
 from grl.utils.log import log
 
@@ -32,7 +39,7 @@ t_encoder = dict(
 )
 data_num = 10000
 config = EasyDict(
-    project="diffusion_model_swiss_roll_important_sampling",
+    project="diffusion_model_swiss_roll_important_sampling_flow_matching",
     dataset=dict(
         data_num=data_num,
         noise=0.6,
@@ -80,10 +87,17 @@ config = EasyDict(
         ),
         support_size=data_num,
         sample_per_data=100,
+        value_function_model=dict(
+            batch_size=2048,
+            stop_training_iterations=50000,
+            learning_rate=5e-4,
+            discount_factor=0.99,
+            update_momentum=0.995,
+        ),
         evaluation=dict(
             eval_freq=5000,
-            video_save_path="./video-swiss-roll-diffusion-model-important-sampling",
-            model_save_path="./model-swiss-roll-diffusion-model-important-sampling",
+            video_save_path="./video-swiss-roll-diffusion-model-important-sampling-flow-matching",
+            model_save_path="./model-swiss-roll-diffusion-model-important-sampling-flow-matching",
             guidance_scale=[0, 1, 2, 4, 8, 16],
         ),
     ),
@@ -143,8 +157,14 @@ if __name__ == "__main__":
     diffusion_model = DiffusionModel(config.model.diffusion_model).to(
         config.model.diffusion_model.device
     )
-
+    diffusion_model_important_sampling = DiffusionModel(
+        config.model.diffusion_model
+    ).to(config.model.diffusion_model.device)
+    guidance_model = GuidedDiffusionModel(config.model.diffusion_model)
     diffusion_model = torch.compile(diffusion_model)
+    diffusion_model_important_sampling = torch.compile(
+        diffusion_model_important_sampling
+    )
 
     if config.parameter.evaluation.model_save_path is not None:
 
@@ -176,13 +196,15 @@ if __name__ == "__main__":
                     map_location="cpu",
                 )
                 diffusion_model.load_state_dict(checkpoint["diffusion_model"])
+                diffusion_model_important_sampling.load_state_dict(
+                    checkpoint["diffusion_model"]
+                )
                 diffusion_model_iteration = checkpoint.get(
                     "diffusion_model_iteration", 0
                 )
 
     else:
         diffusion_model_iteration = 0
-        value_model_iteration = 0
 
     # get data
     x_and_t = make_swiss_roll(
@@ -195,7 +217,7 @@ if __name__ == "__main__":
     x[:, 0] = x[:, 0] / np.max(np.abs(x[:, 0]))
     x[:, 1] = x[:, 1] / np.max(np.abs(x[:, 1]))
     x = (x - x.min()) / (x.max() - x.min())
-    x = x * 4 - 2
+    x = x * 10 - 5
 
     # plot data with color of value
     plt.scatter(x[:, 0], x[:, 1], c=value, vmin=-5, vmax=3)
@@ -216,9 +238,6 @@ if __name__ == "__main__":
         while True:
             yield from dataloader
 
-    moving_average_v_loss = 0.0
-    subprocess_list = []
-
     data_loader = torch.utils.data.DataLoader(
         data, batch_size=config.parameter.diffusion_model.batch_size, shuffle=True
     )
@@ -226,6 +245,11 @@ if __name__ == "__main__":
 
     diffusion_model_optimizer = torch.optim.Adam(
         diffusion_model.model.parameters(),
+        lr=config.parameter.diffusion_model.learning_rate,
+    )
+
+    diffusion_model_important_sampling_optimizer = torch.optim.Adam(
+        diffusion_model_important_sampling.model.parameters(),
         lr=config.parameter.diffusion_model.learning_rate,
     )
 
@@ -242,13 +266,7 @@ if __name__ == "__main__":
 
         train_data = next(data_generator).to(config.model.diffusion_model.device)
         train_x, train_value = train_data[:, :x_size], train_data[:, x_size]
-        diffusion_model_training_loss = diffusion_model.score_matching_loss(
-            train_x, average=False
-        )
-
-        diffusion_model_training_loss = torch.mean(
-            diffusion_model_training_loss * torch.exp(train_value)
-        )
+        diffusion_model_training_loss = diffusion_model.score_matching_loss(train_x)
 
         diffusion_model_optimizer.zero_grad()
         diffusion_model_training_loss.backward()
@@ -257,15 +275,33 @@ if __name__ == "__main__":
             config.parameter.diffusion_model.clip_grad_norm,
         )
         diffusion_model_optimizer.step()
+
+        diffusion_model_important_sampling_training_loss = (
+            diffusion_model_important_sampling.score_matching_loss(
+                train_x, average=False
+            )
+        )
+        diffusion_model_important_sampling_training_loss = torch.mean(
+            diffusion_model_important_sampling_training_loss * torch.exp(train_value)
+        )
+
+        diffusion_model_important_sampling_optimizer.zero_grad()
+        diffusion_model_important_sampling_training_loss.backward()
+        gradien_norm = torch.nn.utils.clip_grad_norm_(
+            diffusion_model_important_sampling.parameters(),
+            config.parameter.diffusion_model.clip_grad_norm,
+        )
+        diffusion_model_important_sampling_optimizer.step()
         moving_average_loss = (
-            0.99 * moving_average_loss + 0.01 * diffusion_model_training_loss.item()
+            0.99 * moving_average_loss
+            + 0.01 * diffusion_model_important_sampling_training_loss.item()
             if train_iter > 0
-            else diffusion_model_training_loss.item()
+            else diffusion_model_important_sampling_training_loss.item()
         )
 
         if train_iter % 100 == 0:
             log.info(
-                f"iteration {train_iter}, gradient norm {gradien_norm}, unconditional model loss {diffusion_model_training_loss.item()}, moving average loss {moving_average_loss}"
+                f"iteration {train_iter}, gradient norm {gradien_norm}, unconditional model loss {diffusion_model_training_loss.item()}, model loss {diffusion_model_important_sampling_training_loss.item()}, moving average loss {moving_average_loss}"
             )
 
         diffusion_model_iteration = train_iter
@@ -290,18 +326,67 @@ if __name__ == "__main__":
                 args=(
                     x_t,
                     config.parameter.evaluation.video_save_path,
-                    f"diffusion_model_iteration_{diffusion_model_iteration}",
+                    f"unconditional_diffusion_model_iteration_{diffusion_model_iteration}",
                     100,
                     100,
                 ),
             )
             p.start()
             subprocess_list.append(p)
-            save_checkpoint(
-                diffusion_model=diffusion_model,
-                diffusion_model_iteration=diffusion_model_iteration,
-                path=config.parameter.evaluation.model_save_path,
+
+            x_t = (
+                diffusion_model_important_sampling.sample_forward_process(
+                    t_span=t_span, batch_size=500
+                )
+                .cpu()
+                .detach()
             )
+            x_t = [
+                x.squeeze(0) for x in torch.split(x_t, split_size_or_sections=1, dim=0)
+            ]
+            p1 = mp.Process(
+                target=render_video,
+                args=(
+                    x_t,
+                    config.parameter.evaluation.video_save_path,
+                    f"conditional_diffusion_model_iteration_{diffusion_model_iteration}",
+                    100,
+                    100,
+                ),
+            )
+            p1.start()
+            subprocess_list.append(p1)
+
+            for guidance_scale in config.parameter.evaluation.guidance_scale:
+                x_t = (
+                    guidance_model.sample_forward_process(
+                        base_model=diffusion_model.model,
+                        guided_model=diffusion_model_important_sampling.model,
+                        t_span=t_span,
+                        batch_size=500,
+                        guidance_scale=guidance_scale,
+                    )
+                    .cpu()
+                    .detach()
+                )
+                x_t = [
+                    x.squeeze(0)
+                    for x in torch.split(x_t, split_size_or_sections=1, dim=0)
+                ]
+                p2 = mp.Process(
+                    target=render_video,
+                    args=(
+                        x_t,
+                        config.parameter.evaluation.video_save_path,
+                        f"guidance_diffusion_model_iteration_{diffusion_model_iteration}_scale_{guidance_scale}",
+                        100,
+                        100,
+                    ),
+                )
+                p2.start()
+                subprocess_list.append(p2)
+
+            # save_checkpoint(diffusion_model=diffusion_model, diffusion_model_iteration=diffusion_model_iteration, path=config.parameter.evaluation.model_save_path)
 
     for p in subprocess_list:
         p.join()
