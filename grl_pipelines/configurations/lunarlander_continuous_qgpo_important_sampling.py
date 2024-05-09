@@ -119,14 +119,14 @@ config = EasyDict(
             fake_data_t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
                 batch_size=2048,
-                stop_training_iterations=50000,
+                iterations=100000,
                 learning_rate=1e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
             ),
             diffusion_model_important_sampling=dict(
                 batch_size=2048,
-                iterations=100000,
+                iterations=200000,
                 learning_rate=1e-4,
             ),
             evaluation=dict(

@@ -296,6 +296,7 @@ class QGPOPolicy(nn.Module):
         self,
         action: Union[torch.Tensor, TensorDict],
         state: Union[torch.Tensor, TensorDict],
+        fake_action: Union[torch.Tensor, TensorDict],
     ):
         """
         Overview:
@@ -308,9 +309,33 @@ class QGPOPolicy(nn.Module):
         score_loss = self.diffusion_model.score_matching_loss(
             action, state, weighting_scheme="vanilla", average=False
         )
+
         with torch.no_grad():
-            value = self.critic(action, state).squeeze(dim=-1)
-        return torch.mean(score_loss * torch.exp(value))
+            q_value = self.critic(action, state).squeeze(dim=-1)
+            fake_q_value = (
+                self.critic(
+                    fake_action, torch.stack([state] * fake_action.shape[1], axis=1)
+                )
+                .squeeze(dim=-1)
+                .detach()
+                .squeeze(dim=-1)
+            )
+            # concatenate q_value to fake_q_value
+            fake_q_value_plus_q_value = torch.cat(
+                [fake_q_value, q_value.unsqueeze(1)], dim=1
+            )
+            softmax = nn.Softmax(dim=1)
+            # v_value=torch.sum(
+            #     softmax(self.critic.q_alpha * fake_q_value) * fake_q_value, dim=-1, keepdim=True
+            # ).squeeze(dim=-1)
+            v_value = torch.sum(
+                softmax(self.critic.q_alpha * fake_q_value_plus_q_value)
+                * fake_q_value_plus_q_value,
+                dim=-1,
+                keepdim=True,
+            ).squeeze(dim=-1)
+
+        return torch.mean(score_loss * torch.exp(q_value - v_value))
 
     def energy_guidance_loss(
         self,
@@ -564,7 +589,7 @@ class QGPOISAlgorithm:
                 behaviour_model_optimizer.step()
 
                 if (
-                    train_iter == 0
+                    train_iter < 0
                     or (train_iter + 1)
                     % config.parameter.evaluation.evaluation_interval
                     == 0
@@ -579,6 +604,12 @@ class QGPOISAlgorithm:
                     ),
                     commit=True,
                 )
+
+            self.dataset.fake_actions = generate_fake_action(
+                self.model["QGPOPolicy"],
+                self.dataset.states[:],
+                config.parameter.sample_per_state,
+            )
 
             self.dataset.fake_next_actions = generate_fake_action(
                 self.model["QGPOPolicy"],
@@ -602,7 +633,7 @@ class QGPOISAlgorithm:
             )
 
             for train_iter in track(
-                range(config.parameter.critic.stop_training_iterations),
+                range(config.parameter.critic.iterations),
                 description="Critic training",
             ):
 
@@ -668,13 +699,13 @@ class QGPOISAlgorithm:
 
                 diffusion_model_important_sampling_loss = self.model[
                     "QGPOPolicy"
-                ].policy_loss(data["a"], data["s"])
+                ].policy_loss(data["a"], data["s"], data["fake_a"])
                 diffusion_model_important_sampling_optimizer.zero_grad()
                 diffusion_model_important_sampling_loss.backward()
                 diffusion_model_important_sampling_optimizer.step()
 
                 if (
-                    train_iter == 0
+                    train_iter < 0
                     or (train_iter + 1)
                     % config.parameter.evaluation.evaluation_interval
                     == 0
