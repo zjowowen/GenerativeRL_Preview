@@ -178,6 +178,8 @@ class QGPOPolicy(nn.Module):
         self.diffusion_model_important_sampling = DiffusionModel(config.diffusion_model)
         # self.guidance_model = GuidedDiffusionModel(config.diffusion_model)
 
+        self.softmax = nn.Softmax(dim=1)
+
     def forward(
         self, state: Union[torch.Tensor, TensorDict]
     ) -> Union[torch.Tensor, TensorDict]:
@@ -320,20 +322,23 @@ class QGPOPolicy(nn.Module):
                 .detach()
                 .squeeze(dim=-1)
             )
-            # concatenate q_value to fake_q_value
-            fake_q_value_plus_q_value = torch.cat(
-                [fake_q_value, q_value.unsqueeze(1)], dim=1
-            )
-            softmax = nn.Softmax(dim=1)
-            # v_value=torch.sum(
-            #     softmax(self.critic.q_alpha * fake_q_value) * fake_q_value, dim=-1, keepdim=True
-            # ).squeeze(dim=-1)
-            v_value = torch.sum(
-                softmax(self.critic.q_alpha * fake_q_value_plus_q_value)
-                * fake_q_value_plus_q_value,
-                dim=-1,
-                keepdim=True,
+
+            v_value=torch.sum(
+                self.softmax(self.critic.q_alpha * fake_q_value) * fake_q_value, dim=-1, keepdim=True
             ).squeeze(dim=-1)
+
+            #TODO: which is better? I think maybe the following is incorrect.
+            # concatenate q_value to fake_q_value
+            # fake_q_value_plus_q_value = torch.cat(
+            #     [fake_q_value, q_value.unsqueeze(1)], dim=1
+            # )
+
+            # v_value = torch.sum(
+            #     self.softmax(self.critic.q_alpha * fake_q_value_plus_q_value)
+            #     * fake_q_value_plus_q_value,
+            #     dim=-1,
+            #     keepdim=True,
+            # ).squeeze(dim=-1)
 
         return torch.mean(score_loss * torch.exp(q_value - v_value))
 
