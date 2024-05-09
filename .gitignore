@@ -164,3 +164,4 @@ wandb/
 .vscode/
 *.mp4
 *.npy
+*.png
