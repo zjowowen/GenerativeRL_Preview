@@ -1,18 +1,18 @@
 import gym
 
-from grl.algorithms.qgpo_online import QGPOOnlineAlgorithm
+from grl.algorithms.cps import CPSAlgorithm
 from grl.utils.log import log
-from grl_pipelines.configurations.lunarlander_continuous_qgpo_oneline import config
+from grl_pipelines.diffusion_model.configurations.halfcheetah_cps import config
 
 
-def qgpo_pipeline(config):
+def cps_pipeline(config):
 
-    qgpo = QGPOOnlineAlgorithm(config)
+    cps = CPSAlgorithm(config)
 
     # ---------------------------------------
     # Customized train code ↓
     # ---------------------------------------
-    qgpo.train()
+    cps.train()
     # ---------------------------------------
     # Customized train code ↑
     # ---------------------------------------
@@ -20,12 +20,12 @@ def qgpo_pipeline(config):
     # ---------------------------------------
     # Customized deploy code ↓
     # ---------------------------------------
-    agent = qgpo.deploy()
+    agent = cps.deploy()
     env = gym.make(config.deploy.env.env_id)
-    observation = env.reset()
+    env.reset()
     for _ in range(config.deploy.num_deploy_steps):
         env.render()
-        observation, reward, done, _ = env.step(agent.act(observation))
+        env.step(agent.act(env.observation))
     # ---------------------------------------
     # Customized deploy code ↑
     # ---------------------------------------
@@ -33,4 +33,4 @@ def qgpo_pipeline(config):
 
 if __name__ == "__main__":
     log.info("config: \n{}".format(config))
-    qgpo_pipeline(config)
+    cps_pipeline(config)

@@ -1,18 +1,18 @@
 import gym
 
-from grl.algorithms.sac import SACAlgorithm
+from grl.algorithms.qgpo import QGPOAlgorithm
 from grl.utils.log import log
-from grl_pipelines.configurations.lunarlander_continuous_sac import config
+from grl_pipelines.diffusion_model.configurations.walker2d_qgpo import config
 
 
-def sac_pipeline(config):
+def qgpo_pipeline(config):
 
-    sac = SACAlgorithm(config)
+    qgpo = QGPOAlgorithm(config)
 
     # ---------------------------------------
     # Customized train code ↓
     # ---------------------------------------
-    sac.train()
+    qgpo.train()
     # ---------------------------------------
     # Customized train code ↑
     # ---------------------------------------
@@ -20,7 +20,7 @@ def sac_pipeline(config):
     # ---------------------------------------
     # Customized deploy code ↓
     # ---------------------------------------
-    agent = sac.deploy()
+    agent = qgpo.deploy()
     env = gym.make(config.deploy.env.env_id)
     observation = env.reset()
     for _ in range(config.deploy.num_deploy_steps):
@@ -33,4 +33,4 @@ def sac_pipeline(config):
 
 if __name__ == "__main__":
     log.info("config: \n{}".format(config))
-    sac_pipeline(config)
+    qgpo_pipeline(config)

@@ -1,18 +1,24 @@
 import gym
 
-from grl.algorithms.srpo import SRPOAlgorithm
+from grl.algorithms.qgpo import QGPOAlgorithm
+from grl.datasets import QGPOCustomizedDataset
 from grl.utils.log import log
-from grl_pipelines.configurations.hopper_srpo import config
+from grl_pipelines.diffusion_model.configurations.lunarlander_continuous_qgpo import config
 
 
-def srpo_pipeline(config):
+def qgpo_pipeline(config):
 
-    srpo = SRPOAlgorithm(config)
+    qgpo = QGPOAlgorithm(
+        config,
+        dataset=QGPOCustomizedDataset(
+            numpy_data_path="./data.npz", device=config.train.device
+        ),
+    )
 
     # ---------------------------------------
     # Customized train code ↓
     # ---------------------------------------
-    srpo.train()
+    qgpo.train()
     # ---------------------------------------
     # Customized train code ↑
     # ---------------------------------------
@@ -20,12 +26,12 @@ def srpo_pipeline(config):
     # ---------------------------------------
     # Customized deploy code ↓
     # ---------------------------------------
-    agent = srpo.deploy()
+    agent = qgpo.deploy()
     env = gym.make(config.deploy.env.env_id)
-    env.reset()
+    observation = env.reset()
     for _ in range(config.deploy.num_deploy_steps):
         env.render()
-        env.step(agent.act(env.observation))
+        observation, reward, done, _ = env.step(agent.act(observation))
     # ---------------------------------------
     # Customized deploy code ↑
     # ---------------------------------------
@@ -33,4 +39,4 @@ def srpo_pipeline(config):
 
 if __name__ == "__main__":
     log.info("config: \n{}".format(config))
-    srpo_pipeline(config)
+    qgpo_pipeline(config)

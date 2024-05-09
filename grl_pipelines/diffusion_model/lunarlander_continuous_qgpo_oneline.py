@@ -1,21 +1,13 @@
 import gym
 
-from grl.algorithms.qgpo_important_sampling import QGPOISAlgorithm
-from grl.datasets import QGPOCustomizedDataset
+from grl.algorithms.qgpo_online import QGPOOnlineAlgorithm
 from grl.utils.log import log
-from grl_pipelines.configurations.lunarlander_continuous_qgpo_important_sampling import (
-    config,
-)
+from grl_pipelines.diffusion_model.configurations.lunarlander_continuous_qgpo_oneline import config
 
 
 def qgpo_pipeline(config):
 
-    qgpo = QGPOISAlgorithm(
-        config,
-        dataset=QGPOCustomizedDataset(
-            numpy_data_path="./data.npz", device=config.train.device
-        ),
-    )
+    qgpo = QGPOOnlineAlgorithm(config)
 
     # ---------------------------------------
     # Customized train code ↓

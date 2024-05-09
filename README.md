@@ -37,7 +37,7 @@ import gym
 from grl.algorithms.qgpo import QGPOAlgorithm
 from grl.datasets import QGPOCustomizedDataset
 from grl.utils.log import log
-from grl_pipelines.configurations.lunarlander_continuous_qgpo import config
+from grl_pipelines.diffusion_model.configurations.lunarlander_continuous_qgpo import config
 
 def qgpo_pipeline(config):
     qgpo = QGPOAlgorithm(config, dataset=QGPOCustomizedDataset(numpy_data_path="./data.npz", device=config.train.device))

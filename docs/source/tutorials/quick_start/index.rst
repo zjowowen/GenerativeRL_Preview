@@ -8,7 +8,7 @@ Code Example
 
 .. code-block:: python
 
-    from grl_pipelines.configurations.halfcheetah_qgpo import config
+    from grl_pipelines.diffusion_model.configurations.halfcheetah_qgpo import config
     from grl.algorithms import QGPOAlgorithm
     from grl.utils.log import log
     import gym

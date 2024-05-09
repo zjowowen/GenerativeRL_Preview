@@ -1,18 +1,18 @@
 import gym
 
-from grl.algorithms.cps import CPSAlgorithm
+from grl.algorithms.sac import SACAlgorithm
 from grl.utils.log import log
-from grl_pipelines.configurations.halfcheetah_cps import config
+from grl_pipelines.gaussian_policy.configurations.halfcheetah_sac import config
 
 
-def cps_pipeline(config):
+def sac_pipeline(config):
 
-    cps = CPSAlgorithm(config)
+    sac = SACAlgorithm(config)
 
     # ---------------------------------------
     # Customized train code ↓
     # ---------------------------------------
-    cps.train()
+    sac.train()
     # ---------------------------------------
     # Customized train code ↑
     # ---------------------------------------
@@ -20,12 +20,12 @@ def cps_pipeline(config):
     # ---------------------------------------
     # Customized deploy code ↓
     # ---------------------------------------
-    agent = cps.deploy()
+    agent = sac.deploy()
     env = gym.make(config.deploy.env.env_id)
-    env.reset()
+    observation = env.reset()
     for _ in range(config.deploy.num_deploy_steps):
         env.render()
-        env.step(agent.act(env.observation))
+        observation, reward, done, _ = env.step(agent.act(observation))
     # ---------------------------------------
     # Customized deploy code ↑
     # ---------------------------------------
@@ -33,4 +33,4 @@ def cps_pipeline(config):
 
 if __name__ == "__main__":
     log.info("config: \n{}".format(config))
-    cps_pipeline(config)
+    sac_pipeline(config)
