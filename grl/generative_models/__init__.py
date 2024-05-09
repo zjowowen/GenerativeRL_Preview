@@ -15,6 +15,6 @@ GENERATIVE_MODELS = {
     "DiffusionModel".lower(): DiffusionModel,
     "EnergyConditionalDiffusionModel".lower(): EnergyConditionalDiffusionModel,
     "VariationalAutoencoder".lower(): VariationalAutoencoder,
-    "IndependentConditionalFlowModel": IndependentConditionalFlowModel,
-    "OptimalTransportConditionalFlowModel": OptimalTransportConditionalFlowModel,
+    "IndependentConditionalFlowModel".lower(): IndependentConditionalFlowModel,
+    "OptimalTransportConditionalFlowModel".lower(): OptimalTransportConditionalFlowModel,
 }

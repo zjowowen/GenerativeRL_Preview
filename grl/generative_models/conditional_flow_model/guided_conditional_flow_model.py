@@ -1,5 +1,7 @@
 from typing import Any, Callable, Dict, List, Tuple, Union
 
+import numpy as np
+import ot
 import torch
 import torch.nn as nn
 import treetensor
@@ -30,7 +32,7 @@ from grl.numerical_methods.probability_path import (
 from grl.utils import find_parameters
 
 
-class IndependentConditionalFlowModel(nn.Module):
+class GuidedConditionalFlowModel:
 
     def __init__(
         self,
@@ -57,7 +59,7 @@ class IndependentConditionalFlowModel(nn.Module):
         assert self.model_type in [
             "velocity_function",
         ], "Unknown type of model {}".format(self.model_type)
-        self.model = IntrinsicModel(config.model.args)
+
         self.diffusion_process = StochasticProcess(self.path)
         self.velocity_function_ = VelocityFunction(
             self.model_type, self.diffusion_process
@@ -67,16 +69,22 @@ class IndependentConditionalFlowModel(nn.Module):
             self.solver = get_solver(config.solver.type)(**config.solver.args)
 
     def get_type(self):
-        return "IndependentConditionalFlowModel"
+        return "OptimalTransportConditionalFlowModel"
+
+    def get_type(self):
+        return "GuidedConditionalFlowModel"
 
     def sample(
         self,
+        base_model,
+        guided_model,
         t_span: torch.Tensor = None,
         batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
         x_0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
         condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
         with_grad: bool = False,
         solver_config: EasyDict = None,
+        guidance_scale: float = 1.0,
     ):
         """
         Overview:
@@ -102,22 +110,28 @@ class IndependentConditionalFlowModel(nn.Module):
         """
 
         return self.sample_forward_process(
+            base_model=base_model,
+            guided_model=guided_model,
             t_span=t_span,
             batch_size=batch_size,
             x_0=x_0,
             condition=condition,
             with_grad=with_grad,
             solver_config=solver_config,
+            guidance_scale=guidance_scale,
         )[-1]
 
     def sample_forward_process(
         self,
+        base_model,
+        guided_model,
         t_span: torch.Tensor = None,
         batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
         x_0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
         condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
         with_grad: bool = False,
         solver_config: EasyDict = None,
+        guidance_scale: float = 1.0,
     ):
         """
         Overview:
@@ -214,7 +228,9 @@ class IndependentConditionalFlowModel(nn.Module):
         elif isinstance(solver, ODESolver):
             # TODO: make it compatible with TensorDict
             def drift(t, x):
-                return self.model(t=t, x=x, condition=condition)
+                return (1.0 - guidance_scale) * base_model(
+                    t=t, x=x, condition=condition
+                ) + guidance_scale * guided_model(t=t, x=x, condition=condition)
 
             if solver.library == "torchdiffeq_adjoint":
                 if with_grad:
@@ -222,7 +238,8 @@ class IndependentConditionalFlowModel(nn.Module):
                         drift=drift,
                         x0=x,
                         t_span=t_span,
-                        adjoint_params=find_parameters(self.model),
+                        adjoint_params=find_parameters(base_model)
+                        + find_parameters(guided_model),
                     )
                 else:
                     with torch.no_grad():
@@ -230,7 +247,8 @@ class IndependentConditionalFlowModel(nn.Module):
                             drift=drift,
                             x0=x,
                             t_span=t_span,
-                            adjoint_params=find_parameters(self.model),
+                            adjoint_params=find_parameters(base_model)
+                            + find_parameters(guided_model),
                         )
             else:
                 if with_grad:
@@ -249,7 +267,9 @@ class IndependentConditionalFlowModel(nn.Module):
         elif isinstance(solver, DictTensorODESolver):
             # TODO: make it compatible with TensorDict
             def drift(t, x):
-                return self.model(t=t, x=x, condition=condition)
+                return (1.0 - guidance_scale) * base_model(
+                    t=t, x=x, condition=condition
+                ) + guidance_scale * guided_model(t=t, x=x, condition=condition)
 
             if with_grad:
                 data = solver.integrate(
@@ -377,21 +397,3 @@ class IndependentConditionalFlowModel(nn.Module):
             raise NotImplementedError("Not implemented")
 
         return data
-
-    def flow_matching_loss(
-        self,
-        x0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-        x1: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-    ) -> torch.Tensor:
-        """
-        Overview:
-            Return the flow matching loss function of the model given the initial state and the condition.
-        Arguments:
-            x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
-            condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
-        """
-
-        return self.velocity_function_.flow_matching_loss_icfm(
-            self.model, x0, x1, condition
-        )

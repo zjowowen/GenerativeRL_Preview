@@ -51,8 +51,8 @@ class MonteCarloSampler:
         while len(samples) < num_samples:
             num_to_sample = math.floor((num_samples - len(samples)) * sample_ratio)
             # if num_to_sample is larger than INT_MAX, sample INT_MAX samples
-            if num_to_sample > 2 ** 31 - 1:
-                num_to_sample = 2 ** 31 - 1
+            if num_to_sample > 2**31 - 1:
+                num_to_sample = 2**31 - 1
             samples_ = self._sample(num_to_sample)
             sample_ratio = num_to_sample / samples_.shape[0]
             samples = torch.cat([samples, samples_])

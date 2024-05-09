@@ -10,12 +10,18 @@ from tensordict import TensorDict
 from torch.utils.data import DataLoader
 
 import wandb
-from grl.agents.qgpo import QGPOISAgent
+from grl.agents.gpo import GPOAgent
 from grl.datasets import create_dataset
-from grl.datasets.qgpo import QGPODataset
+from grl.datasets.gpo import GPODataset
 from grl.generative_models.diffusion_model import DiffusionModel
+from grl.generative_models.conditional_flow_model.optimal_transport_conditional_flow_model import (
+    OptimalTransportConditionalFlowModel,
+)
 from grl.generative_models.diffusion_model.guided_diffusion_model import (
     GuidedDiffusionModel,
+)
+from grl.generative_models.conditional_flow_model.guided_conditional_flow_model import (
+    GuidedConditionalFlowModel,
 )
 from grl.rl_modules.simulators import create_simulator
 from grl.rl_modules.value_network.q_network import DoubleQNetwork
@@ -23,10 +29,10 @@ from grl.utils.config import merge_two_dicts_into_newone
 from grl.utils.log import log
 
 
-class QGPOCritic(nn.Module):
+class GPOCritic(nn.Module):
     """
     Overview:
-        Critic network for QGPO algorithm.
+        Critic network for GPO algorithm.
     Interfaces:
         ``__init__``, ``forward``
     """
@@ -34,7 +40,7 @@ class QGPOCritic(nn.Module):
     def __init__(self, config: EasyDict):
         """
         Overview:
-            Initialization of QGPO critic network.
+            Initialization of GPO critic network.
         Arguments:
             config (:obj:`EasyDict`): The configuration dict.
         """
@@ -52,7 +58,7 @@ class QGPOCritic(nn.Module):
     ) -> torch.Tensor:
         """
         Overview:
-            Return the output of QGPO critic.
+            Return the output of GPO critic.
         Arguments:
             action (:obj:`torch.Tensor`): The input action.
             state (:obj:`torch.Tensor`): The input state.
@@ -126,7 +132,13 @@ class GuidedPolicy(nn.Module):
 
     def __init__(self, config):
         super().__init__()
-        self.model = GuidedDiffusionModel(config)
+        self.type = config.model_type
+        if self.type == "DiffusionModel":
+            self.model = GuidedDiffusionModel(config.model)
+        elif self.type in ["OptimalTransportConditionalFlowModel"]:
+            self.model = GuidedConditionalFlowModel(config.model)
+        else:
+            raise NotImplementedError
 
     def sample(
         self,
@@ -140,7 +152,7 @@ class GuidedPolicy(nn.Module):
     ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
-            Return the output of QGPO policy, which is the action conditioned on the state.
+            Return the output of GPO policy, which is the action conditioned on the state.
         Arguments:
             state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
             guidance_scale (:obj:`Union[torch.Tensor, float]`): The guidance scale.
@@ -150,29 +162,54 @@ class GuidedPolicy(nn.Module):
             action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
 
-        return self.model.sample(
-            base_model=base_model,
-            guided_model=guided_model,
-            t_span=t_span,
-            condition=state,
-            batch_size=batch_size,
-            guidance_scale=guidance_scale,
-            with_grad=False,
-            solver_config=solver_config,
-        )
+        if self.type == "DiffusionModel":
+            return self.model.sample(
+                base_model=base_model.model,
+                guided_model=guided_model.model,
+                t_span=t_span,
+                condition=state,
+                batch_size=batch_size,
+                guidance_scale=guidance_scale,
+                with_grad=False,
+                solver_config=solver_config,
+            )
+
+        elif self.type in ["OptimalTransportConditionalFlowModel"]:
+
+            x_0 = base_model.gaussian_generator(batch_size=state.shape[0])
+
+            return self.model.sample(
+                base_model=base_model.model,
+                guided_model=guided_model.model,
+                x_0=x_0,
+                t_span=t_span,
+                condition=state,
+                batch_size=batch_size,
+                guidance_scale=guidance_scale,
+                with_grad=False,
+                solver_config=solver_config,
+            )
 
 
-class QGPOPolicy(nn.Module):
+class GPOPolicy(nn.Module):
 
     def __init__(self, config: EasyDict):
         super().__init__()
         self.config = config
         self.device = config.device
 
-        self.critic = QGPOCritic(config.critic)
-        self.diffusion_model = DiffusionModel(config.diffusion_model)
-        self.diffusion_model_important_sampling = DiffusionModel(config.diffusion_model)
-        # self.guidance_model = GuidedDiffusionModel(config.diffusion_model)
+        self.critic = GPOCritic(config.critic)
+        self.model_type = config.model_type
+        if self.model_type == "DiffusionModel":
+            self.model = DiffusionModel(config.model)
+            self.model_important_sampling = DiffusionModel(config.model)
+        elif self.model_type == "OptimalTransportConditionalFlowModel":
+            self.model = OptimalTransportConditionalFlowModel(config.model)
+            self.model_important_sampling = OptimalTransportConditionalFlowModel(
+                config.model
+            )
+        else:
+            raise NotImplementedError
 
         self.softmax = nn.Softmax(dim=1)
 
@@ -181,7 +218,7 @@ class QGPOPolicy(nn.Module):
     ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
-            Return the output of QGPO policy, which is the action conditioned on the state.
+            Return the output of GPO policy, which is the action conditioned on the state.
         Arguments:
             state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
         Returns:
@@ -193,40 +230,29 @@ class QGPOPolicy(nn.Module):
         self,
         state: Union[torch.Tensor, TensorDict],
         batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
-        guidance_scale: Union[torch.Tensor, float] = torch.tensor(1.0),
         solver_config: EasyDict = None,
         t_span: torch.Tensor = None,
+        with_grad: bool = False,
     ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
-            Return the output of QGPO policy, which is the action conditioned on the state.
+            Return the output of GPO policy, which is the action conditioned on the state.
         Arguments:
             state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            guidance_scale (:obj:`Union[torch.Tensor, float]`): The guidance scale.
+            batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
             solver_config (:obj:`EasyDict`): The configuration for the ODE solver.
             t_span (:obj:`torch.Tensor`): The time span for the ODE solver or SDE solver.
         Returns:
             action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
 
-        return self.diffusion_model.sample(
+        return self.model_important_sampling.sample(
             t_span=t_span,
             condition=state,
             batch_size=batch_size,
-            with_grad=False,
+            with_grad=with_grad,
             solver_config=solver_config,
         )
-
-        # return self.guidance_model.sample(
-        #     base_model=self.diffusion_model.model,
-        #     guided_model=self.diffusion_model_important_sampling.model,
-        #     t_span = t_span,
-        #     condition=state,
-        #     batch_size=batch_size,
-        #     guidance_scale=guidance_scale,
-        #     with_grad=False,
-        #     solver_config=solver_config
-        # )
 
     def behaviour_policy_sample(
         self,
@@ -234,21 +260,25 @@ class QGPOPolicy(nn.Module):
         batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
         solver_config: EasyDict = None,
         t_span: torch.Tensor = None,
+        with_grad: bool = False,
     ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
             Return the output of behaviour policy, which is the action conditioned on the state.
         Arguments:
             state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
             solver_config (:obj:`EasyDict`): The configuration for the ODE solver.
             t_span (:obj:`torch.Tensor`): The time span for the ODE solver or SDE solver.
+            with_grad (:obj:`bool`): Whether to calculate the gradient.
         Returns:
             action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
-        return self.diffusion_model.sample(
+        return self.model.sample(
             t_span=t_span,
             condition=state,
             batch_size=batch_size,
+            with_grad=with_grad,
             solver_config=solver_config,
         )
 
@@ -283,18 +313,23 @@ class QGPOPolicy(nn.Module):
             state (:obj:`torch.Tensor`): The input state.
         """
 
-        if maximum_likelihood:
-            return self.diffusion_model.score_matching_loss(action, state)
-        else:
-            return self.diffusion_model.score_matching_loss(
-                action, state, weighting_scheme="vanilla"
-            )
+        if self.model_type == "DiffusionModel":
+            if maximum_likelihood:
+                return self.model.score_matching_loss(action, state)
+            else:
+                return self.model.score_matching_loss(
+                    action, state, weighting_scheme="vanilla"
+                )
+        elif self.model_type == "OptimalTransportConditionalFlowModel":
+            x0 = self.model.gaussian_generator(batch_size=state.shape[0])
+            return self.model.flow_matching_loss(x0=x0, x1=action, condition=state)
 
     def policy_loss(
         self,
         action: Union[torch.Tensor, TensorDict],
         state: Union[torch.Tensor, TensorDict],
         fake_action: Union[torch.Tensor, TensorDict],
+        maximum_likelihood: bool = False,
     ):
         """
         Overview:
@@ -304,9 +339,24 @@ class QGPOPolicy(nn.Module):
             state (:obj:`torch.Tensor`): The input state.
         """
 
-        score_loss = self.diffusion_model_important_sampling.score_matching_loss(
-            action, state, weighting_scheme="vanilla", average=False
-        )
+        if self.model_type == "DiffusionModel":
+            if maximum_likelihood:
+                model_loss = self.model_important_sampling.score_matching_loss(
+                    action, state, average=False
+                )
+            else:
+                model_loss = self.model_important_sampling.score_matching_loss(
+                    action, state, weighting_scheme="vanilla", average=False
+                )
+        elif self.model_type in ["OptimalTransportConditionalFlowModel"]:
+            x0 = self.model_important_sampling.gaussian_generator(
+                batch_size=state.shape[0]
+            )
+            model_loss = self.model_important_sampling.flow_matching_loss(
+                x0=x0, x1=action, condition=state, average=False
+            )
+        else:
+            raise NotImplementedError
 
         with torch.no_grad():
             q_value = self.critic(action, state).squeeze(dim=-1)
@@ -338,7 +388,7 @@ class QGPOPolicy(nn.Module):
             #     keepdim=True,
             # ).squeeze(dim=-1)
 
-        return torch.mean(score_loss * torch.exp(q_value - v_value))
+        return torch.mean(model_loss * torch.exp(q_value - v_value))
 
     def q_loss(
         self,
@@ -367,24 +417,24 @@ class QGPOPolicy(nn.Module):
         )
 
 
-class QGPOISAlgorithm:
+class GPOAlgorithm:
 
     def __init__(
         self,
         config: EasyDict = None,
         simulator=None,
-        dataset: QGPODataset = None,
+        dataset: GPODataset = None,
         model: Union[torch.nn.Module, torch.nn.ModuleDict] = None,
     ):
         """
         Overview:
-            Initialize the QGPO algorithm.
+            Initialize the GPO algorithm.
         Arguments:
             config (:obj:`EasyDict`): The configuration , which must contain the following keys:
                 train (:obj:`EasyDict`): The training configuration.
                 deploy (:obj:`EasyDict`): The deployment configuration.
             simulator (:obj:`object`): The environment simulator.
-            dataset (:obj:`QGPODataset`): The dataset.
+            dataset (:obj:`GPODataset`): The dataset.
             model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The model.
         Interface:
             ``__init__``, ``train``, ``deploy``
@@ -446,13 +496,13 @@ class QGPOISAlgorithm:
             # Customized model initialization code ↓
             # ---------------------------------------
 
-            if hasattr(config.model, "QGPOPolicy"):
-                self.model["QGPOPolicy"] = QGPOPolicy(config.model.QGPOPolicy)
-                self.model["QGPOPolicy"].to(config.model.QGPOPolicy.device)
+            if hasattr(config.model, "GPOPolicy"):
+                self.model["GPOPolicy"] = GPOPolicy(config.model.GPOPolicy)
+                self.model["GPOPolicy"].to(config.model.GPOPolicy.device)
                 if torch.__version__ >= "2.0.0":
-                    self.model["QGPOPolicy"] = torch.compile(self.model["QGPOPolicy"])
+                    self.model["GPOPolicy"] = torch.compile(self.model["GPOPolicy"])
                 self.model["GuidedPolicy"] = GuidedPolicy(
-                    config=config.model.QGPOPolicy.diffusion_model
+                    config=config.model.GuidedPolicy
                 )
 
             # ---------------------------------------
@@ -474,24 +524,20 @@ class QGPOISAlgorithm:
                     np.array_split(states, states.shape[0] // 4096 + 1),
                     description="Generate fake actions",
                 ):
-                    # TODO: mkae it batchsize
-                    fake_actions_per_state = []
-                    for _ in range(sample_per_state):
-                        fake_actions_per_state.append(
-                            model.behaviour_policy_sample(
-                                state=states,
-                                t_span=(
-                                    torch.linspace(
-                                        0.0, 1.0, config.parameter.fake_data_t_span
-                                    ).to(states.device)
-                                    if config.parameter.fake_data_t_span is not None
-                                    else None
-                                ),
-                            )
-                        )
-                    fake_actions_sampled.append(
-                        torch.stack(fake_actions_per_state, dim=1)
+
+                    fake_actions_ = model.behaviour_policy_sample(
+                        state=states,
+                        batch_size=sample_per_state,
+                        t_span=(
+                            torch.linspace(
+                                0.0, 1.0, config.parameter.fake_data_t_span
+                            ).to(states.device)
+                            if config.parameter.fake_data_t_span is not None
+                            else None
+                        ),
                     )
+                    fake_actions_sampled.append(torch.einsum("nbd->bnd", fake_actions_))
+
                 fake_actions = torch.cat(fake_actions_sampled, dim=0)
                 return fake_actions
 
@@ -503,23 +549,21 @@ class QGPOISAlgorithm:
                         obs = torch.tensor(
                             obs,
                             dtype=torch.float32,
-                            device=config.model.QGPOPolicy.device,
+                            device=config.model.GPOPolicy.device,
                         ).unsqueeze(0)
                         action = (
                             model["GuidedPolicy"]
                             .sample(
-                                base_model=self.model[
-                                    "QGPOPolicy"
-                                ].diffusion_model.model,
+                                base_model=self.model["GPOPolicy"].model,
                                 guided_model=self.model[
-                                    "QGPOPolicy"
-                                ].diffusion_model_important_sampling.model,
+                                    "GPOPolicy"
+                                ].model_important_sampling,
                                 state=obs,
                                 guidance_scale=guidance_scale,
                                 t_span=(
                                     torch.linspace(
                                         0.0, 1.0, config.parameter.fake_data_t_span
-                                    ).to(config.model.QGPOPolicy.device)
+                                    ).to(config.model.GPOPolicy.device)
                                     if config.parameter.fake_data_t_span is not None
                                     else None
                                 ),
@@ -550,7 +594,7 @@ class QGPOISAlgorithm:
             )
 
             behaviour_model_optimizer = torch.optim.Adam(
-                self.model["QGPOPolicy"].diffusion_model.model.parameters(),
+                self.model["GPOPolicy"].model.model.parameters(),
                 lr=config.parameter.behaviour_policy.learning_rate,
             )
 
@@ -560,7 +604,7 @@ class QGPOISAlgorithm:
             ):
                 data = next(data_generator)
                 behaviour_model_training_loss = self.model[
-                    "QGPOPolicy"
+                    "GPOPolicy"
                 ].behaviour_policy_loss(
                     data["a"],
                     data["s"],
@@ -594,13 +638,13 @@ class QGPOISAlgorithm:
                 )
 
             self.dataset.fake_actions = generate_fake_action(
-                self.model["QGPOPolicy"],
+                self.model["GPOPolicy"],
                 self.dataset.states[:],
                 config.parameter.sample_per_state,
             )
 
             self.dataset.fake_next_actions = generate_fake_action(
-                self.model["QGPOPolicy"],
+                self.model["GPOPolicy"],
                 self.dataset.next_states[:],
                 config.parameter.sample_per_state,
             )
@@ -616,7 +660,7 @@ class QGPOISAlgorithm:
             )
 
             q_optimizer = torch.optim.Adam(
-                self.model["QGPOPolicy"].critic.q.parameters(),
+                self.model["GPOPolicy"].critic.q.parameters(),
                 lr=config.parameter.critic.learning_rate,
             )
 
@@ -627,7 +671,7 @@ class QGPOISAlgorithm:
 
                 data = next(data_generator)
 
-                q_loss, q, q_target = self.model["QGPOPolicy"].q_loss(
+                q_loss, q, q_target = self.model["GPOPolicy"].q_loss(
                     data["a"],
                     data["s"],
                     data["r"],
@@ -643,8 +687,8 @@ class QGPOISAlgorithm:
 
                 # Update target
                 for param, target_param in zip(
-                    self.model["QGPOPolicy"].critic.parameters(),
-                    self.model["QGPOPolicy"].critic.q_target.parameters(),
+                    self.model["GPOPolicy"].critic.parameters(),
+                    self.model["GPOPolicy"].critic.q_target.parameters(),
                 ):
                     target_param.data.copy_(
                         config.parameter.critic.update_momentum * param.data
@@ -662,35 +706,33 @@ class QGPOISAlgorithm:
                     commit=True,
                 )
 
-            diffusion_model_important_sampling_optimizer = torch.optim.Adam(
-                self.model[
-                    "QGPOPolicy"
-                ].diffusion_model_important_sampling.parameters(),
-                lr=config.parameter.diffusion_model_important_sampling.learning_rate,
+            model_important_sampling_optimizer = torch.optim.Adam(
+                self.model["GPOPolicy"].model_important_sampling.parameters(),
+                lr=config.parameter.model_important_sampling.learning_rate,
             )
 
             data_generator = get_train_data(
                 DataLoader(
                     self.dataset,
-                    batch_size=config.parameter.diffusion_model_important_sampling.batch_size,
+                    batch_size=config.parameter.model_important_sampling.batch_size,
                     shuffle=True,
                     collate_fn=None,
                 )
             )
 
             for train_iter in track(
-                range(config.parameter.diffusion_model_important_sampling.iterations),
+                range(config.parameter.model_important_sampling.iterations),
                 description="Energy conditioned diffusion model training",
             ):
 
                 data = next(data_generator)
 
-                diffusion_model_important_sampling_loss = self.model[
-                    "QGPOPolicy"
-                ].policy_loss(data["a"], data["s"], data["fake_a"])
-                diffusion_model_important_sampling_optimizer.zero_grad()
-                diffusion_model_important_sampling_loss.backward()
-                diffusion_model_important_sampling_optimizer.step()
+                model_important_sampling_loss = self.model["GPOPolicy"].policy_loss(
+                    data["a"], data["s"], data["fake_a"]
+                )
+                model_important_sampling_optimizer.zero_grad()
+                model_important_sampling_loss.backward()
+                model_important_sampling_optimizer.step()
 
                 if (
                     train_iter < 0
@@ -704,7 +746,7 @@ class QGPOISAlgorithm:
                 wandb_run.log(
                     data=dict(
                         train_iter=train_iter,
-                        diffusion_model_important_sampling_loss=diffusion_model_important_sampling_loss.item(),
+                        model_important_sampling_loss=model_important_sampling_loss.item(),
                     ),
                     commit=True,
                 )
@@ -715,16 +757,16 @@ class QGPOISAlgorithm:
 
             wandb.finish()
 
-    def deploy(self, config: EasyDict = None) -> QGPOISAgent:
+    def deploy(self, config: EasyDict = None) -> GPOAgent:
 
         if config is not None:
             config = merge_two_dicts_into_newone(self.config.deploy, config)
         else:
             config = self.config.deploy
 
-        assert "QGPOPolicy" in self.model, "The model must be trained first."
+        assert "GPOPolicy" in self.model, "The model must be trained first."
         assert "GuidedPolicy" in self.model, "The model must be trained first."
-        return QGPOISAgent(
+        return GPOAgent(
             config=config,
             model=copy.deepcopy(self.model),
         )

@@ -2,7 +2,9 @@ import gym
 
 from grl.algorithms.qgpo_important_sampling import QGPOISAlgorithm
 from grl.utils.log import log
-from grl_pipelines.diffusion_model.configurations.halfcheetah_qgpo_important_sampling import config
+from grl_pipelines.diffusion_model.configurations.d4rl_halfcheetah_qgpo_important_sampling import (
+    config,
+)
 
 
 def qgpo_pipeline(config):

@@ -1,7 +1,3 @@
-#############################################################
-# This QGPO model is a modification implementation from https://github.com/ChenDRAG/CEP-energy-guided-diffusion
-#############################################################
-
 import copy
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 

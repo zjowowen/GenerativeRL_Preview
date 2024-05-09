@@ -2,7 +2,7 @@ import gym
 
 from grl.algorithms.cps import CPSAlgorithm
 from grl.utils.log import log
-from grl_pipelines.diffusion_model.configurations.halfcheetah_cps import config
+from grl_pipelines.diffusion_model.configurations.d4rl_halfcheetah_cps import config
 
 
 def cps_pipeline(config):

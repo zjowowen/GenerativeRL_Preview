@@ -1166,6 +1166,7 @@ class EnergyConditionalDiffusionModel(nn.Module):
         self,
         x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
         condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        average: bool = True,
     ) -> torch.Tensor:
         """
         Overview:
@@ -1177,7 +1178,7 @@ class EnergyConditionalDiffusionModel(nn.Module):
         """
 
         return self.velocity_function_.flow_matching_loss(
-            self.model, x, condition, self.gaussian_generator
+            self.model, x, condition, self.gaussian_generator, average
         )
 
     def noise_function(
