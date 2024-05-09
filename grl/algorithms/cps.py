@@ -154,7 +154,6 @@ class CPSPolicy(nn.Module):
         return policy_loss, LA_loss
 
     def sample(self, state):
-        # state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
         state_rpt = torch.repeat_interleave(state, repeats=50, dim=0)
         action = self.sample_action(state_rpt, with_grad=False)
         q_value = self.critic.q_target(state_rpt, action).flatten()
@@ -162,7 +161,9 @@ class CPSPolicy(nn.Module):
         return action[idx]
 
     def sample_action(self, state, with_grad=False):
+        t_span = torch.linspace(0.0, 1.0, 5).to(self.device)
         action = self.diffusionmodel.sample(
+            t_span=t_span,
             condition=state,
             with_grad=with_grad,
             solver_config=self.config.diffusion_model.solver,
@@ -173,7 +174,9 @@ class CPSPolicy(nn.Module):
         return action
 
     def sample_target_action(self, state, with_grad=False):
+        t_span = torch.linspace(0.0, 1.0, 5).to(self.device)
         action = self.target_model.sample(
+            t_span=t_span,
             condition=state,
             with_grad=with_grad,
             solver_config=self.config.diffusion_model.solver,
@@ -403,7 +406,6 @@ class CPSAlgorithm:
                         norm_type=2,
                     )
                     LA_optimizer.step()
-                    policy_iter += 1
                     wandb.log(
                         {
                             "policy_loss": policy_loss.item(),
@@ -413,6 +415,7 @@ class CPSAlgorithm:
                             "policy_iter": policy_iter,
                         }
                     )
+                    policy_iter += 1
 
                 # update target network
                 if (
@@ -445,7 +448,7 @@ class CPSAlgorithm:
                 if (
                     train_iter + 1
                 ) % config.parameter.behaviour_policy.update_lr_every == 0:
-                    actor_lr_scheduler.step()
+                    policy_lr_scheduler.step()
                     critic_lr_scheduler.step()
                     lambda_lr_scheduler.step()
 
