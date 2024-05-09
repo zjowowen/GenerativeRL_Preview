@@ -15,10 +15,10 @@ import torch.nn as nn
 from easydict import EasyDict
 from matplotlib import animation
 
+from grl.generative_models.metric import compute_likelihood
 from grl.generative_models.sb_flow_model.optimal_transport_conditional_flow_model import (
     SchrodingerBridgeConditionalFlowModel,
 )
-from grl.generative_models.metric import compute_likelihood
 from grl.utils import set_seed
 from grl.utils.log import log
 
