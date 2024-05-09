@@ -27,6 +27,7 @@ from grl.numerical_methods.probability_path import (
     ConditionalProbabilityPath,
     GaussianConditionalProbabilityPath,
 )
+from grl.utils import find_parameters
 
 
 class IndependentConditionalFlowModel(nn.Module):
@@ -217,6 +218,7 @@ class IndependentConditionalFlowModel(nn.Module):
                     drift=self.model,
                     x0=x,
                     t_span=t_span,
+                    adjoint_params=find_parameters(self.model),
                 )
             else:
                 with torch.no_grad():
@@ -224,6 +226,7 @@ class IndependentConditionalFlowModel(nn.Module):
                         drift=self.model,
                         x0=x,
                         t_span=t_span,
+                        adjoint_params=find_parameters(self.model),
                     )
         elif isinstance(solver, DictTensorODESolver):
             # TODO: make it compatible with TensorDict
