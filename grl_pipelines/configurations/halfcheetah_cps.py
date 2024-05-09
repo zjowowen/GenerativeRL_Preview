@@ -60,24 +60,18 @@ config = EasyDict(
                     alpha=1.0,
                     beta=0.01,
                     solver=dict(
-                        # type = "ODESolver",
-                        # args = dict(
-                        #     library="torchdyn",
-                        # ),
-                        type="DPMSolver",
+                        type="ODESolver",
                         args=dict(
-                            order=2,
-                            device=device,
-                            steps=17,
+                            library="torchdiffeq_adjoint",
                         ),
                     ),
                     path=dict(
-                        type="linear_vp_sde",
+                        type="gvp",
                         beta_0=0.1,
                         beta_1=20.0,
                     ),
                     model=dict(
-                        type="noise_function",
+                        type="velocity_function",
                         args=dict(
                             t_encoder=t_encoder,
                             backbone=dict(
@@ -123,7 +117,7 @@ config = EasyDict(
                 learning_rate=3e-4,
             ),
             evaluation=dict(
-                evaluation_interval=1,
+                evaluation_interval=1000,
             ),
         ),
     ),
