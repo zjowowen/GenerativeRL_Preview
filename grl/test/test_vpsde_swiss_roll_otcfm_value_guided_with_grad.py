@@ -159,7 +159,7 @@ if __name__ == "__main__":
             log.warning(
                 f"Checkpoint path {config.parameter.evaluation.model_save_path} does not exist"
             )
-            diffusion_model_iteration = 0
+            flow_model_iteration = 0
             value_model_iteration = 0
         else:
             checkpoint_files = [
@@ -171,7 +171,7 @@ if __name__ == "__main__":
                 log.warning(
                     f"No checkpoint files found in {config.parameter.evaluation.model_save_path}"
                 )
-                diffusion_model_iteration = 0
+                flow_model_iteration = 0
                 value_model_iteration = 0
             else:
                 checkpoint_files = sorted(
@@ -350,10 +350,7 @@ if __name__ == "__main__":
             )
 
         value_model_iteration = train_iter
-        if (
-            train_iter == 0
-            or (train_iter + 1) % config.parameter.evaluation.eval_freq == 0
-        ):
+        if (train_iter + 1) % config.parameter.evaluation.eval_freq == 0:
             save_checkpoint(
                 flow_model=flow_model,
                 value_model=value_function_model,
