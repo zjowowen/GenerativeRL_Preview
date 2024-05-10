@@ -27,9 +27,22 @@ cd generative-rl
 pip install -e .
 ```
 
+Or you can use the docker image:
+```bash
+docker pull zjowowen/grl:torch2.3.0-cuda12.1-cudnn8-runtime
+docker run -it --rm --gpus all zjowowen/grl:torch2.3.0-cuda12.1-cudnn8-runtime /bin/bash
+```
+
 ## Quick Start
 
-Here is an example of how to train a diffusion model for Q-guided policy optimization (QGPO) in the LunarLanderContinuous-v2 environment using GenerativeRL. Download dataset from [here](https://drive.google.com/file/d/1YnT-Oeu9LPKuS_ZqNc5kol_pMlJ1DwyG/view?usp=drive_link) and save it as `data.npz` in the current directory.
+Here is an example of how to train a diffusion model for Q-guided policy optimization (QGPO) in the LunarLanderContinuous-v2 environment using GenerativeRL.
+
+Install the required dependencies:
+```bash
+pip install gym[box2d]==0.23.1
+```
+
+Download dataset from [here](https://drive.google.com/file/d/1YnT-Oeu9LPKuS_ZqNc5kol_pMlJ1DwyG/view?usp=drive_link) and save it as `data.npz` in the current directory.
 
 ```python
 import gym

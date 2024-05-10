@@ -27,9 +27,21 @@ cd generative-rl
 pip install -e .
 ```
 
+或者你可以使用 Docker 镜像：
+```bash
+docker pull zjowowen/grl:torch2.3.0-cuda12.1-cudnn8-runtime
+docker run -it --rm --gpus all zjowowen/grl:torch2.3.0-cuda12.1-cudnn8-runtime /bin/bash
+```
+
 ## 启动
 
 这是一个在 LunarLanderContinuous-v2 环境中训练 Q-guided policy optimization (QGPO) 的扩散模型的示例。
+
+安装所需依赖：
+```bash
+pip install gym[box2d]==0.23.1
+```
+
 数据集可以从 [这里](https://drive.google.com/file/d/1YnT-Oeu9LPKuS_ZqNc5kol_pMlJ1DwyG/view?usp=drive_link) 下载，请将其置于工作路径下，并命名为 `data.npz`。
 
 ```python
