@@ -127,3 +127,32 @@ class StochasticProcess:
         return self.mean(t, x0, x1, condition) + self.std(
             t, x0, x1, condition
         ) * torch.randn_like(x0).to(x0.device)
+
+    def direct_sample_with_noise(
+        self,
+        t: torch.Tensor,
+        x0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        x1: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        condition: Union[torch.Tensor, TensorDict] = None,
+        noise: Union[torch.Tensor, TensorDict] = None,
+    ):
+        return self.mean(t, x0, x1, condition) + self.std(
+            t, x0, x1, condition
+        ) * noise.to(x0.device)
+
+    def velocity_SchrodingerBridge(
+        self,
+        t: torch.Tensor,
+        x0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        x1: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        condition: Union[torch.Tensor, TensorDict] = None,
+        noise: Union[torch.Tensor, TensorDict] = None,
+    ):
+        return (
+            self.path.std_prime(t).unsqueeze(1) * self.std(t, x0, x1, condition) * noise
+            + x1
+            - x0
+        )
+
+    def score_SchrodingerBridge(self, t):
+        return self.path.lambd(t)
