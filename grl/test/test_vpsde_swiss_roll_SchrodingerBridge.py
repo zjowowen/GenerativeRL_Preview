@@ -46,7 +46,7 @@ config = EasyDict(
                 ),
             ),
             path=dict(
-                sigma=0.1,
+                sigma=1,
             ),
             velocity_model=dict(
                 type="velocity_function",
@@ -100,9 +100,8 @@ if __name__ == "__main__":
         config.flow_model.device
     )
     flow_model = torch.compile(flow_model)
-    velocity_model = flow_model.velocity_model
-    score_model = flow_model.score_model
-
+    ver = flow_model.velocity_model
+    scr = flow_model.score_model
     # get data
     data = make_swiss_roll(n_samples=config.parameter.data_num, noise=0.01)[0].astype(
         np.float32
@@ -114,7 +113,7 @@ if __name__ == "__main__":
     data = data * 10 - 5
 
     optimizer = torch.optim.Adam(
-        list(velocity_model.parameters()) + list(score_model.parameters()),
+        list(ver.parameters()) + list(scr.parameters()),
         lr=config.parameter.lr,
     )
 
@@ -215,7 +214,7 @@ if __name__ == "__main__":
 
         signal.signal(signal.SIGINT, exit_handler)
 
-    save_checkpoint_on_exit(velocity_model, optimizer, history_iteration)
+    # save_checkpoint_on_exit(velocity_model, optimizer, history_iteration)
 
     for iteration in track(range(config.parameter.iterations), description="Training"):
 
@@ -240,24 +239,19 @@ if __name__ == "__main__":
         batch_data = next(data_generator)
         batch_data = batch_data.to(config.device)
         # plot2d(batch_data.cpu().numpy())
-        velocity_model.train()
+        flow_model.train()
         if config.parameter.training_loss_type == "flow_matching":
             x0 = flow_model.gaussian_generator(batch_data.shape[0]).to(config.device)
-            velocity_loss, score_loss = flow_model.flow_matching_loss(
-                x0=x0, x1=batch_data
-            )
+            loss = flow_model.flow_matching_loss(x0=x0, x1=batch_data)
         else:
             raise NotImplementedError("Unknown loss type")
-        loss = velocity_loss + score_loss
         optimizer.zero_grad()
         loss.backward()
         # gradien_norm = torch.nn.utils.clip_grad_norm_(
         #     velocity_model.parameters(),config.parameter.clip_grad_norm
         # )
         optimizer.step()
-        log.info(
-            f"iteration {iteration},loss {velocity_loss.item()},sccore {score_loss.item()}"
-        )
+        log.info(f"iteration {iteration},loss {loss.item()}")
 
         # if iteration > 0 and iteration % 100 == 0:
         #     logp = compute_likelihood(

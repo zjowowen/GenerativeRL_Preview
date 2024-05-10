@@ -85,6 +85,7 @@ class SchrodingerBridgeFunction:
         x0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
         x1: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
         condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        average: bool = True,
     ) -> torch.Tensor:
 
         def get_batch_size_and_device(x):
@@ -99,7 +100,12 @@ class SchrodingerBridgeFunction:
 
         def get_loss(velocity_value, velocity):
             if isinstance(velocity_value, torch.Tensor):
-                return torch.mean(torch.sum((velocity_value - velocity) ** 2, dim=(1,)))
+                if average:
+                    return torch.mean(
+                        torch.sum(0.5 * (velocity_value - velocity) ** 2, dim=(1,))
+                    )
+                else:
+                    return torch.sum(0.5 * (velocity_value - velocity) ** 2, dim=(1,))
             elif isinstance(velocity_value, TensorDict):
                 raise NotImplementedError("Not implemented yet")
             elif isinstance(velocity_value, treetensor.torch.Tensor):
@@ -137,14 +143,14 @@ class SchrodingerBridgeFunction:
                 noise,
             )
             velocity_value = vetority_model(t_random, x_t, condition=condition)
-            vetority_loss = get_loss(velocity_value, vetority)
+            velocity_loss = get_loss(velocity_value, vetority)
 
             score_value = self.process.score_SchrodingerBridge(t_random)[
                 :, None
             ] * score_model(t_random, x_t, condition=condition)
             score_loss = get_loss(-score_value, noise)
 
-            return vetority_loss, score_loss
+            return velocity_loss, score_loss
         elif self.model_type == "data_prediction_function":
             raise NotImplementedError("Not implemented yet")
         else:

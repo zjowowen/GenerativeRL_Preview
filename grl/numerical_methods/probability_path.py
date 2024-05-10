@@ -552,3 +552,18 @@ class ConditionalProbabilityPath:
 
         return ((self.config.sigma * t) + 1 - t) ** 2 - (1 - t) ** 2
         # return (self.config.sigma * t)*(self.config.sigma * t + 2*(1 - t))
+
+
+class SchrodingerBridgePath:
+    def __init__(self, config) -> None:
+        self.config = config
+
+    def std(self, t: torch.Tensor) -> torch.Tensor:
+        return self.config.sigma * torch.sqrt(t * (1 - t))
+        # return (self.config.sigma * t)*(self.config.sigma * t + 2*(1 - t))
+
+    def lambd(self, t: torch.Tensor) -> torch.Tensor:
+        return 2 * self.std(t) / (self.config.sigma**2 + 1e-8)
+
+    def std_prime(self, t: torch.Tensor) -> torch.Tensor:
+        return (1 - 2 * t) / (2 * t * (1 - t) + 1e-8)

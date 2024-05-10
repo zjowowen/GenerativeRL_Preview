@@ -17,6 +17,10 @@ from grl.generative_models.diffusion_model import DiffusionModel
 from grl.generative_models.conditional_flow_model.optimal_transport_conditional_flow_model import (
     OptimalTransportConditionalFlowModel,
 )
+from grl.generative_models.bridge_flow_model.schrodinger_bridge_conditional_flow_model import (
+    SchrodingerBridgeConditionalFlowModel,
+    SchrodingerBridgeGuidedConditionalFlowModel,
+)
 from grl.generative_models.diffusion_model.guided_diffusion_model import (
     GuidedDiffusionModel,
 )
@@ -135,8 +139,12 @@ class GuidedPolicy(nn.Module):
         self.type = config.model_type
         if self.type == "DiffusionModel":
             self.model = GuidedDiffusionModel(config.model)
-        elif self.type in ["OptimalTransportConditionalFlowModel"]:
+        elif self.type in [
+            "OptimalTransportConditionalFlowModel",
+        ]:
             self.model = GuidedConditionalFlowModel(config.model)
+        elif self.type == "SchrodingerBridgeConditionalFlowModel":
+            self.model = SchrodingerBridgeGuidedConditionalFlowModel(config.model)
         else:
             raise NotImplementedError
 
@@ -164,8 +172,8 @@ class GuidedPolicy(nn.Module):
 
         if self.type == "DiffusionModel":
             return self.model.sample(
-                base_model=base_model.model,
-                guided_model=guided_model.model,
+                base_model=base_model,
+                guided_model=guided_model,
                 t_span=t_span,
                 condition=state,
                 batch_size=batch_size,
@@ -174,13 +182,16 @@ class GuidedPolicy(nn.Module):
                 solver_config=solver_config,
             )
 
-        elif self.type in ["OptimalTransportConditionalFlowModel"]:
+        elif self.type in [
+            "OptimalTransportConditionalFlowModel",
+            "SchrodingerBridgeConditionalFlowModel",
+        ]:
 
             x_0 = base_model.gaussian_generator(batch_size=state.shape[0])
 
             return self.model.sample(
-                base_model=base_model.model,
-                guided_model=guided_model.model,
+                base_model=base_model,
+                guided_model=guided_model,
                 x_0=x_0,
                 t_span=t_span,
                 condition=state,
@@ -206,6 +217,11 @@ class GPOPolicy(nn.Module):
         elif self.model_type == "OptimalTransportConditionalFlowModel":
             self.model = OptimalTransportConditionalFlowModel(config.model)
             self.model_important_sampling = OptimalTransportConditionalFlowModel(
+                config.model
+            )
+        elif self.model_type == "SchrodingerBridgeConditionalFlowModel":
+            self.model = SchrodingerBridgeConditionalFlowModel(config.model)
+            self.model_important_sampling = SchrodingerBridgeConditionalFlowModel(
                 config.model
             )
         else:
@@ -320,7 +336,10 @@ class GPOPolicy(nn.Module):
                 return self.model.score_matching_loss(
                     action, state, weighting_scheme="vanilla"
                 )
-        elif self.model_type == "OptimalTransportConditionalFlowModel":
+        elif self.model_type in [
+            "OptimalTransportConditionalFlowModel",
+            "SchrodingerBridgeConditionalFlowModel",
+        ]:
             x0 = self.model.gaussian_generator(batch_size=state.shape[0])
             return self.model.flow_matching_loss(x0=x0, x1=action, condition=state)
 
@@ -348,7 +367,10 @@ class GPOPolicy(nn.Module):
                 model_loss = self.model_important_sampling.score_matching_loss(
                     action, state, weighting_scheme="vanilla", average=False
                 )
-        elif self.model_type in ["OptimalTransportConditionalFlowModel"]:
+        elif self.model_type in [
+            "OptimalTransportConditionalFlowModel",
+            "SchrodingerBridgeConditionalFlowModel",
+        ]:
             x0 = self.model_important_sampling.gaussian_generator(
                 batch_size=state.shape[0]
             )
@@ -594,7 +616,7 @@ class GPOAlgorithm:
             )
 
             behaviour_model_optimizer = torch.optim.Adam(
-                self.model["GPOPolicy"].model.model.parameters(),
+                self.model["GPOPolicy"].model.parameters(),
                 lr=config.parameter.behaviour_policy.learning_rate,
             )
 
