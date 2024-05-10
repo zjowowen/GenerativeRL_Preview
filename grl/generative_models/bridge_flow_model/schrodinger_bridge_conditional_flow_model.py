@@ -8,6 +8,7 @@ import treetensor
 from easydict import EasyDict
 from tensordict import TensorDict
 
+from grl.generative_models.bridge_flow_model.function import SchrodingerBridgeFunction
 from grl.generative_models.diffusion_process import DiffusionProcess
 from grl.generative_models.intrinsic_model import IntrinsicModel
 from grl.generative_models.model_functions.data_prediction_function import (
@@ -16,7 +17,6 @@ from grl.generative_models.model_functions.data_prediction_function import (
 from grl.generative_models.model_functions.noise_function import NoiseFunction
 from grl.generative_models.model_functions.score_function import ScoreFunction
 from grl.generative_models.random_generator import gaussian_random_variable
-from grl.generative_models.sb_flow_model.function import SchrodingerBridgeFunction
 from grl.generative_models.stochastic_process import StochasticProcess
 from grl.numerical_methods.numerical_solvers import get_solver
 from grl.numerical_methods.numerical_solvers.dpm_solver import DPMSolver
