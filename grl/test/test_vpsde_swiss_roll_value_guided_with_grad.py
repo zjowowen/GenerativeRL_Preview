@@ -414,7 +414,7 @@ if __name__ == "__main__":
             diffusion_model_iteration = train_iter
 
         if train_iter > 20000:
-            t_span = torch.linspace(0.0, 1.0, 5)
+            t_span = torch.linspace(0.0, 1.0, 1000)
             x = diffusion_model.sample(t_span=t_span, batch_size=1024, with_grad=True)
             loss = -value_function_model(x)
             loss = torch.mean(loss)
@@ -434,11 +434,10 @@ if __name__ == "__main__":
                 )
 
         if (
-            train_iter == 0
-            or (train_iter + 1) % config.parameter.evaluation.eval_freq == 0
-        ):
+            train_iter < 20000
+            and (train_iter + 1) % config.parameter.evaluation.eval_freq == 0
+        ) or (train_iter > 20000 and (train_iter + 1) % 2 == 0):
             diffusion_model.eval()
-
             t_span = torch.linspace(0.0, 1.0, 1000)
             x_t = (
                 diffusion_model.sample_forward_process(t_span=t_span, batch_size=500)

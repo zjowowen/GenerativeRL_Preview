@@ -1,8 +1,10 @@
 import gym
 
-from grl.algorithms.cps import CPSAlgorithm
+from grl.algorithms.cps_tmp import CPSAlgorithm
 from grl.utils.log import log
-from grl_pipelines.configurations.lunarlander_continuous_cps import config
+from grl_pipelines.diffusion_model.configurations.lunarlander_continuous_cps import (
+    config,
+)
 
 
 def cps_pipeline(config):
