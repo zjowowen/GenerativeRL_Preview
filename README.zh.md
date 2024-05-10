@@ -23,7 +23,7 @@ pip install grl
 
 ```bash
 git clone https://github.com/zjowowen/GenerativeRL_Preview.git
-cd generative-rl
+cd GenerativeRL_Preview
 pip install -e .
 ```
 

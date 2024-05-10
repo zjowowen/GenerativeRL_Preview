@@ -23,7 +23,7 @@ Or, if you want to install from source:
 
 ```bash
 git clone https://github.com/zjowowen/GenerativeRL_Preview.git
-cd generative-rl
+cd GenerativeRL_Preview
 pip install -e .
 ```
 
