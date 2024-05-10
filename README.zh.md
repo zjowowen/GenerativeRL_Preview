@@ -44,6 +44,11 @@ pip install gym[box2d]==0.23.1
 
 数据集可以从 [这里](https://drive.google.com/file/d/1YnT-Oeu9LPKuS_ZqNc5kol_pMlJ1DwyG/view?usp=drive_link) 下载，请将其置于工作路径下，并命名为 `data.npz`。
 
+GenerativeRL 使用 WandB 记录训练日志。在使用时会要求你联网登录账号，你可以通过以下方式禁用它：
+```bash
+wandb offline
+```
+
 ```python
 import gym
 

@@ -44,6 +44,11 @@ pip install gym[box2d]==0.23.1
 
 Download dataset from [here](https://drive.google.com/file/d/1YnT-Oeu9LPKuS_ZqNc5kol_pMlJ1DwyG/view?usp=drive_link) and save it as `data.npz` in the current directory.
 
+GenerativeRL uses WandB for logging. It will ask you to log in to your account when you use it. You can disable it by running:
+```bash
+wandb offline
+```
+
 ```python
 import gym
 
