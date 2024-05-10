@@ -215,26 +215,47 @@ class OptimalTransportConditionalFlowModel(nn.Module):
             raise NotImplementedError("Not implemented")
         elif isinstance(solver, ODESolver):
             # TODO: make it compatible with TensorDict
-            if with_grad:
-                data = solver.integrate(
-                    drift=self.model,
-                    x0=x,
-                    t_span=t_span,
-                    adjoint_params=find_parameters(self.model),
-                )
-            else:
-                with torch.no_grad():
+            def drift(t, x):
+                return self.model(t=t, x=x, condition=condition)
+
+            if solver.library == "torchdiffeq_adjoint":
+                if with_grad:
                     data = solver.integrate(
-                        drift=self.model,
+                        drift=drift,
                         x0=x,
                         t_span=t_span,
                         adjoint_params=find_parameters(self.model),
                     )
+                else:
+                    with torch.no_grad():
+                        data = solver.integrate(
+                            drift=drift,
+                            x0=x,
+                            t_span=t_span,
+                            adjoint_params=find_parameters(self.model),
+                        )
+            else:
+                if with_grad:
+                    data = solver.integrate(
+                        drift=drift,
+                        x0=x,
+                        t_span=t_span,
+                    )
+                else:
+                    with torch.no_grad():
+                        data = solver.integrate(
+                            drift=drift,
+                            x0=x,
+                            t_span=t_span,
+                        )
         elif isinstance(solver, DictTensorODESolver):
             # TODO: make it compatible with TensorDict
+            def drift(t, x):
+                return self.model(t=t, x=x, condition=condition)
+
             if with_grad:
                 data = solver.integrate(
-                    drift=self.model,
+                    drift=drift,
                     x0=x,
                     t_span=t_span,
                     batch_size=torch.prod(extra_batch_size) * data_batch_size,
@@ -243,7 +264,7 @@ class OptimalTransportConditionalFlowModel(nn.Module):
             else:
                 with torch.no_grad():
                     data = solver.integrate(
-                        drift=self.model,
+                        drift=drift,
                         x0=x,
                         t_span=t_span,
                         batch_size=torch.prod(extra_batch_size) * data_batch_size,
@@ -364,6 +385,7 @@ class OptimalTransportConditionalFlowModel(nn.Module):
         x0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
         x1: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
         condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        average: bool = True,
     ) -> torch.Tensor:
         """
         Overview:
@@ -397,5 +419,5 @@ class OptimalTransportConditionalFlowModel(nn.Module):
         x1_ot = x1[j]
 
         return self.velocity_function_.flow_matching_loss_icfm(
-            self.model, x0_ot, x1_ot, condition
+            self.model, x0_ot, x1_ot, condition, average
         )

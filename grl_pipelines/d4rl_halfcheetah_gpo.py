@@ -1,18 +1,21 @@
 import gym
-import d4rl
-from grl.algorithms.qgpo import QGPOAlgorithm
+
+from grl.algorithms.gpo import GPOAlgorithm
+from grl.datasets import GPOCustomizedDataset
 from grl.utils.log import log
-from grl_pipelines.diffusion_model.configurations.kitchen_complete_v0_qgpo import config
+from grl_pipelines.configurations.d4rl_halfcheetah_gpo import (
+    config,
+)
 
 
-def qgpo_pipeline(config):
+def gpo_pipeline(config):
 
-    qgpo = QGPOAlgorithm(config)
+    gpo = GPOAlgorithm(config)
 
     # ---------------------------------------
     # Customized train code ↓
     # ---------------------------------------
-    qgpo.train()
+    gpo.train()
     # ---------------------------------------
     # Customized train code ↑
     # ---------------------------------------
@@ -20,7 +23,7 @@ def qgpo_pipeline(config):
     # ---------------------------------------
     # Customized deploy code ↓
     # ---------------------------------------
-    agent = qgpo.deploy()
+    agent = gpo.deploy()
     env = gym.make(config.deploy.env.env_id)
     observation = env.reset()
     for _ in range(config.deploy.num_deploy_steps):
@@ -33,4 +36,4 @@ def qgpo_pipeline(config):
 
 if __name__ == "__main__":
     log.info("config: \n{}".format(config))
-    qgpo_pipeline(config)
+    gpo_pipeline(config)

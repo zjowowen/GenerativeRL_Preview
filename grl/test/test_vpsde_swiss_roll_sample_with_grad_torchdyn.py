@@ -224,9 +224,7 @@ if __name__ == "__main__":
         # plot2d(batch_data.cpu().numpy())
         diffusion_model.train()
         t_span = torch.linspace(0.01, 0.99, 5)
-        x_t = diffusion_model.sample_forward_process_naive(
-            t_span=t_span, with_grad=True
-        )
+        x_t = diffusion_model.sample_forward_process(t_span=t_span, with_grad=True)
         loss = torch.sum(x_t[-1] ** 2 - 200**2) * 0.00001
         optimizer.zero_grad()
         loss.backward()

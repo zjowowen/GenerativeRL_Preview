@@ -223,6 +223,7 @@ class VelocityFunction:
         x0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
         x1: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
         condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        average: bool = True,
     ) -> torch.Tensor:
 
         def get_batch_size_and_device(x):
@@ -237,16 +238,29 @@ class VelocityFunction:
 
         def get_loss(velocity_value, velocity):
             if isinstance(velocity_value, torch.Tensor):
-                return torch.mean(torch.sum((velocity_value - velocity) ** 2, dim=(1,)))
+                if average:
+                    return torch.mean(
+                        torch.sum(0.5 * (velocity_value - velocity) ** 2, dim=(1,))
+                    )
+                else:
+                    return torch.sum(0.5 * (velocity_value - velocity) ** 2, dim=(1,))
             elif isinstance(velocity_value, TensorDict):
                 raise NotImplementedError("Not implemented yet")
             elif isinstance(velocity_value, treetensor.torch.Tensor):
-                return treetensor.torch.mean(
-                    treetensor.torch.sum(
-                        (velocity_value - velocity) * (velocity_value - velocity),
+                if average:
+                    return treetensor.torch.mean(
+                        treetensor.torch.sum(
+                            0.5
+                            * (velocity_value - velocity)
+                            * (velocity_value - velocity),
+                            dim=(1,),
+                        )
+                    )
+                else:
+                    return treetensor.torch.sum(
+                        0.5 * (velocity_value - velocity) * (velocity_value - velocity),
                         dim=(1,),
                     )
-                )
             else:
                 raise NotImplementedError(
                     "Unknown type of velocity_value {}".format(type)

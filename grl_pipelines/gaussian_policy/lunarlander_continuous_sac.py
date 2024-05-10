@@ -2,7 +2,9 @@ import gym
 
 from grl.algorithms.sac import SACAlgorithm
 from grl.utils.log import log
-from grl_pipelines.gaussian_policy.configurations.lunarlander_continuous_sac import config
+from grl_pipelines.gaussian_policy.configurations.lunarlander_continuous_sac import (
+    config,
+)
 
 
 def sac_pipeline(config):

@@ -2,7 +2,7 @@ import gym
 
 from grl.algorithms.srpo import SRPOAlgorithm
 from grl.utils.log import log
-from grl_pipelines.diffusion_model.configurations.walker2d_srpo import config
+from grl_pipelines.diffusion_model.configurations.d4rl_walker2d_srpo import config
 
 
 def srpo_pipeline(config):

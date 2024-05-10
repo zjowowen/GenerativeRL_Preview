@@ -2,7 +2,9 @@ import gym
 
 from grl.algorithms.qgpo_online import QGPOOnlineAlgorithm
 from grl.utils.log import log
-from grl_pipelines.diffusion_model.configurations.lunarlander_continuous_qgpo_oneline import config
+from grl_pipelines.diffusion_model.configurations.lunarlander_continuous_qgpo_oneline import (
+    config,
+)
 
 
 def qgpo_pipeline(config):

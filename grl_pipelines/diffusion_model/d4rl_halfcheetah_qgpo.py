@@ -2,7 +2,7 @@ import gym
 
 from grl.algorithms.qgpo import QGPOAlgorithm
 from grl.utils.log import log
-from grl_pipelines.diffusion_model.configurations.halfcheetah_qgpo import config
+from grl_pipelines.diffusion_model.configurations.d4rl_halfcheetah_qgpo import config
 
 
 def qgpo_pipeline(config):
