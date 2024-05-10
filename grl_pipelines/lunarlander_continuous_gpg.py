@@ -1,20 +1,26 @@
 import gym
 
-from grl.algorithms.cps_tmp import CPSAlgorithm
+from grl.algorithms.gpg import GPGAlgorithm
+from grl.datasets import GPOCustomizedDataset
 from grl.utils.log import log
-from grl_pipelines.diffusion_model.configurations.lunarlander_continuous_cps import (
+from grl_pipelines.configurations.lunarlander_continuous_gpg import (
     config,
 )
 
 
-def cps_pipeline(config):
+def gpg_pipeline(config):
 
-    cps = CPSAlgorithm(config)
+    gpg = GPGAlgorithm(
+        config,
+        dataset=GPOCustomizedDataset(
+            numpy_data_path="./data.npz", device=config.train.device
+        ),
+    )
 
     # ---------------------------------------
     # Customized train code ↓
     # ---------------------------------------
-    cps.train()
+    gpg.train()
     # ---------------------------------------
     # Customized train code ↑
     # ---------------------------------------
@@ -22,12 +28,12 @@ def cps_pipeline(config):
     # ---------------------------------------
     # Customized deploy code ↓
     # ---------------------------------------
-    agent = cps.deploy()
+    agent = gpg.deploy()
     env = gym.make(config.deploy.env.env_id)
-    env.reset()
+    observation = env.reset()
     for _ in range(config.deploy.num_deploy_steps):
         env.render()
-        env.step(agent.act(env.observation))
+        observation, reward, done, _ = env.step(agent.act(observation))
     # ---------------------------------------
     # Customized deploy code ↑
     # ---------------------------------------
@@ -35,4 +41,4 @@ def cps_pipeline(config):
 
 if __name__ == "__main__":
     log.info("config: \n{}".format(config))
-    cps_pipeline(config)
+    gpg_pipeline(config)

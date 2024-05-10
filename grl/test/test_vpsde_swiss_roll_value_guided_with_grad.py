@@ -88,7 +88,7 @@ config = EasyDict(
                 ),
             ),
             path=dict(
-                type="gvp",
+                type="linear_vp_sde",
                 beta_0=0.1,
                 beta_1=20.0,
             ),
@@ -99,7 +99,7 @@ config = EasyDict(
                     backbone=dict(
                         type="TemporalSpatialResidualNet",
                         args=dict(
-                            hidden_sizes=[256, 128, 64],
+                            hidden_sizes=[512, 256, 128],
                             output_dim=x_size,
                             t_dim=t_embedding_dim,
                         ),
@@ -147,7 +147,7 @@ def render_video(data_list, video_save_path, iteration, fps=100, dpi=100):
         # image alpha frm 0 to 1
         im = plt.scatter(data[:, 0], data[:, 1], s=1)
         ims.append([im])
-    ani = animation.ArtistAnimation(fig, ims, interval=0.1, blit=True)
+    ani = animation.ArtistAnimation(fig, ims, interval=10, blit=True)
     ani.save(
         os.path.join(video_save_path, f"iteration_{iteration}.mp4"), fps=fps, dpi=dpi
     )
@@ -253,7 +253,7 @@ if __name__ == "__main__":
     x[:, 0] = x[:, 0] / np.max(np.abs(x[:, 0]))
     x[:, 1] = x[:, 1] / np.max(np.abs(x[:, 1]))
     x = (x - x.min()) / (x.max() - x.min())
-    x = x * 10 - 5
+    x = x * 6 - 3
 
     # plot data with color of value
     plt.scatter(x[:, 0], x[:, 1], c=value, vmin=-5, vmax=3)
@@ -394,7 +394,7 @@ if __name__ == "__main__":
         if train_iter < diffusion_model_iteration:
             continue
 
-        if train_iter < 20000:
+        if train_iter < 12000:
             train_data = next(data_generator).to(config.model.diffusion_model.device)
             train_x, train_value = train_data[:, :x_size], train_data[:, x_size]
             diffusion_model_training_loss = diffusion_model.score_matching_loss(train_x)
@@ -413,15 +413,18 @@ if __name__ == "__main__":
 
             diffusion_model_iteration = train_iter
 
-        if train_iter > 20000:
-            t_span = torch.linspace(0.0, 1.0, 5)
+        if train_iter >= 12000:
+            train_data = next(data_generator).to(config.model.diffusion_model.device)
+            train_x, train_value = train_data[:, :x_size], train_data[:, x_size]
+            diffusion_model_training_loss = diffusion_model.score_matching_loss(train_x)
+
+            t_span = torch.linspace(0.0, 1.0, 1000)
             x = diffusion_model.sample(t_span=t_span, batch_size=1024, with_grad=True)
-            loss = -value_function_model(x)
+            loss = -value_function_model(x) + diffusion_model_training_loss
             loss = torch.mean(loss)
+
             diffusion_model_optimizer.zero_grad()
-
             loss.backward()
-
             gradien_norm = torch.nn.utils.clip_grad_norm_(
                 diffusion_model.parameters(),
                 config.parameter.diffusion_model.clip_grad_norm,
@@ -434,11 +437,10 @@ if __name__ == "__main__":
                 )
 
         if (
-            train_iter == 0
-            or (train_iter + 1) % config.parameter.evaluation.eval_freq == 0
-        ):
+            train_iter < 12000
+            and (train_iter + 1) % config.parameter.evaluation.eval_freq == 0
+        ) or (train_iter >= 12000 and (train_iter + 1) % 2 == 0):
             diffusion_model.eval()
-
             t_span = torch.linspace(0.0, 1.0, 1000)
             x_t = (
                 diffusion_model.sample_forward_process(t_span=t_span, batch_size=500)

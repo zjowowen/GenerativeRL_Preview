@@ -5,15 +5,18 @@ action_size = 2
 state_size = 8
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 
-t_embedding_dim = 16  # CHANGE
+t_embedding_dim = 64  # CHANGE
 t_encoder = dict(
-    type="SinusoidalPosEmb",
-    args=dict(dim=t_embedding_dim),
+    type="GaussianFourierProjectionTimeEncoder",
+    args=dict(
+        embed_dim=t_embedding_dim,
+        scale=30.0,
+    ),
 )
 
 config = EasyDict(
     train=dict(
-        project="LunarLanderContinuous-cps",
+        project="LunarLanderContinuous-cps-srpo",
         device=device,
         simulator=dict(
             type="GymEnvSimulator",
@@ -37,21 +40,19 @@ config = EasyDict(
                     action_dim=action_size,
                     layer=2,
                 ),
-                LA=1.0,
-                LA_min=0,
-                LA_max=100,
-                target_kl=0.04,
                 critic=dict(
                     device=device,
                     adim=action_size,
                     sdim=state_size,
+                    layers=2,
+                    update_momentum=0.95,
                     DoubleQNetwork=dict(
                         backbone=dict(
                             type="ConcatenateMLP",
                             args=dict(
-                                hidden_sizes=[action_size + state_size, 256, 256, 256],
+                                hidden_sizes=[action_size + state_size, 256, 256],
                                 output_size=1,
-                                activation="mish",
+                                activation="relu",
                             ),
                         ),
                     ),
@@ -68,7 +69,7 @@ config = EasyDict(
                         ),
                     ),
                     path=dict(
-                        type="gvp",
+                        type="linear",
                         beta_0=0.1,
                         beta_1=20.0,
                     ),
@@ -77,11 +78,11 @@ config = EasyDict(
                         args=dict(
                             t_encoder=t_encoder,
                             backbone=dict(
-                                type="CONCATMLP",
+                                type="ALLCONCATMLP",
                                 args=dict(
-                                    state_dim=state_size,
-                                    action_dim=action_size,
-                                    t_dim=t_embedding_dim,
+                                    input_dim=state_size + action_size,
+                                    output_dim=action_size,
+                                    num_blocks=3,
                                 ),
                             ),
                         ),
@@ -92,27 +93,18 @@ config = EasyDict(
         parameter=dict(
             training_loss_type="score_matching",
             behaviour_policy=dict(
-                batch_size=256,
-                iterations=2000000,
+                batch_size=2048,
                 learning_rate=3e-4,
-                lr_learning_rate=3e-5,
-                update_momentum=0.005,
-                update_target_every=5,
-                update_policy_every=2,
-                update_lr_every=1000,
-                step_start_target=1000,
-                grad_norm=7.0,
-                t_max=2000,
+                iterations=600000,
             ),
             sample_per_state=16,
             critic=dict(
                 batch_size=256,
+                iterations=600000,
                 learning_rate=3e-4,
                 discount_factor=0.99,
-                update_momentum=0.005,
-                grad_norm=7.0,
-                max_action=1.0,
-                t_max=2000,
+                tau=0.7,
+                moment=0.995,
             ),
             actor=dict(
                 batch_size=256,
