@@ -172,8 +172,8 @@ class GuidedPolicy(nn.Module):
 
         if self.type == "DiffusionModel":
             return self.model.sample(
-                base_model=base_model,
-                guided_model=guided_model,
+                base_model=base_model.model,
+                guided_model=guided_model.model,
                 t_span=t_span,
                 condition=state,
                 batch_size=batch_size,
@@ -190,8 +190,8 @@ class GuidedPolicy(nn.Module):
             x_0 = base_model.gaussian_generator(batch_size=state.shape[0])
 
             return self.model.sample(
-                base_model=base_model,
-                guided_model=guided_model,
+                base_model=base_model.model,
+                guided_model=guided_model.model,
                 x_0=x_0,
                 t_span=t_span,
                 condition=state,
