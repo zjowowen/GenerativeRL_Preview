@@ -165,3 +165,4 @@ wandb/
 *.mp4
 *.npy
 *.png
+*.npz

@@ -13,95 +13,40 @@ t_encoder = dict(
     ),
 )
 solver_type = "ODESolver"
-model_type = "DiffusionModel"
-assert model_type in ["OptimalTransportConditionalFlowModel", "DiffusionModel"]
-project_name = "LunarLanderContinuous-v2-GPG-GVP"
+model_type = "IndependentConditionalFlowModel"
+project_name = "LunarLanderContinuous-v2-GPG-Icfm"
 method = "fine_tune"
 
-if model_type == "DiffusionModel":
-    model = dict(
-        device=device,
-        x_size=action_size,
-        solver=(
-            dict(
-                type="DPMSolver",
+model = dict(
+    device=device,
+    x_size=action_size,
+    solver=dict(
+        type="ODESolver",
+        args=dict(
+            library="torchdiffeq_adjoint",
+        ),
+    ),
+    path=dict(
+        sigma=0.1,
+    ),
+    model=dict(
+        type="velocity_function",
+        args=dict(
+            t_encoder=t_encoder,
+            backbone=dict(
+                type="TemporalSpatialResidualNet",
                 args=dict(
-                    order=2,
-                    device=device,
-                    steps=17,
-                ),
-            )
-            if solver_type == "DPMSolver"
-            else (
-                dict(
-                    type="ODESolver",
-                    args=dict(
-                        library="torchdiffeq_adjoint",
-                    ),
-                )
-                if solver_type == "ODESolver"
-                else dict(
-                    type="SDESolver",
-                    args=dict(
-                        library="torchsde",
-                    ),
-                )
-            )
-        ),
-        path=dict(
-            type="gvp",
-            beta_0=0.1,
-            beta_1=20.0,
-        ),
-        model=dict(
-            type="velocity_function",
-            args=dict(
-                t_encoder=t_encoder,
-                backbone=dict(
-                    type="TemporalSpatialResidualNet",
-                    args=dict(
-                        hidden_sizes=[512, 256, 128],
-                        output_dim=action_size,
-                        t_dim=t_embedding_dim,
-                        condition_dim=state_size,
-                        condition_hidden_dim=32,
-                        t_condition_hidden_dim=128,
-                    ),
+                    hidden_sizes=[512, 256, 128],
+                    output_dim=action_size,
+                    t_dim=t_embedding_dim,
+                    condition_dim=state_size,
+                    condition_hidden_dim=32,
+                    t_condition_hidden_dim=128,
                 ),
             ),
         ),
-    )
-elif model_type == "OptimalTransportConditionalFlowModel":
-    model = dict(
-        device=device,
-        x_size=action_size,
-        solver=dict(
-            type="ODESolver",
-            args=dict(
-                library="torchdiffeq_adjoint",
-            ),
-        ),
-        path=dict(
-            sigma=0.1,
-        ),
-        model=dict(
-            type="velocity_function",
-            args=dict(
-                t_encoder=t_encoder,
-                backbone=dict(
-                    type="TemporalSpatialResidualNet",
-                    args=dict(
-                        hidden_sizes=[512, 256, 128],
-                        output_dim=action_size,
-                        t_dim=t_embedding_dim,
-                        condition_dim=state_size,
-                        condition_hidden_dim=32,
-                        t_condition_hidden_dim=128,
-                    ),
-                ),
-            ),
-        ),
-    )
+    ),
+)
 
 config = EasyDict(
     method=method,
@@ -126,7 +71,6 @@ config = EasyDict(
             GPGPolicy=dict(
                 device=device,
                 model_type=model_type,
-                model_loss_type="flow_matching",
                 model=model,
                 critic=dict(
                     device=device,
@@ -174,11 +118,11 @@ config = EasyDict(
                 lr_decy=True,
             ),
             evaluation=dict(
-                evaluation_interval=1,
+                evaluation_interval=50,
                 guidance_scale=[0.0, 1.0, 2.0],
             ),
             checkpoint_path=f"./{project_name}/checkpoint",
-            checkpoint_freq=20,
+            checkpoint_freq=1,
         ),
     ),
     deploy=dict(
