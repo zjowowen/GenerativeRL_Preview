@@ -192,6 +192,7 @@ class GuidedPolicy(nn.Module):
 
         elif self.type in [
             "OptimalTransportConditionalFlowModel",
+            "IndependentConditionalFlowModel",
             "SchrodingerBridgeConditionalFlowModel",
         ]:
             x_0 = base_model.gaussian_generator(batch_size=state.shape[0])
@@ -226,6 +227,9 @@ class GPGPolicy(nn.Module):
         elif self.model_type == "OptimalTransportConditionalFlowModel":
             self.base_model = OptimalTransportConditionalFlowModel(config.model)
             self.guided_model = OptimalTransportConditionalFlowModel(config.model)
+        elif self.model_type == "IndependentConditionalFlowModel":
+            self.base_model = IndependentConditionalFlowModel(config.model)
+            self.guided_model = IndependentConditionalFlowModel(config.model)
         elif self.model_type == "SchrodingerBridgeConditionalFlowModel":
             self.base_model = SchrodingerBridgeConditionalFlowModel(config.model)
             self.guided_model = SchrodingerBridgeConditionalFlowModel(config.model)
@@ -357,6 +361,7 @@ class GPGPolicy(nn.Module):
         action: Union[torch.Tensor, TensorDict],
         state: Union[torch.Tensor, TensorDict],
         maximum_likelihood: bool = False,
+        loss_type: str = "origin_loss",
     ):
         """
         Overview:
@@ -395,16 +400,24 @@ class GPGPolicy(nn.Module):
         new_action = self.guided_model.sample(
             t_span=t_span, condition=state, with_grad=True
         )
-        # v_value = torch.sum(
-        #     self.softmax(self.critic.q_alpha * fake_q_value) * fake_q_value,
-        #     dim=-1,
-        #     keepdim=True,
-        # ).squeeze(dim=-1)
 
         q_value = self.critic(new_action, state)
-        q_value_detch = q_value.detach()
-        loss = (-q_value / q_value_detch).mean() + model_loss
-        return loss
+        if loss_type == "origin_loss":
+            return -q_value.mean() + model_loss
+        elif loss_type == "detach_loss":
+            return -(q_value / q_value.abs().detach()).mean() + model_loss
+        elif loss_type == "minibatch_loss":
+            q_loss = -q_value.mean() / q_value.abs().mean().detach()
+            return q_loss + model_loss
+        elif loss_type == "double_minibatch_loss":
+            q1, q2 = self.critic.q.compute_double_q(new_action, state)
+            if np.random.uniform() > 0.5:
+                q_loss = -q1.mean() / q2.abs().mean().detach()
+            else:
+                q_loss = -q2.mean() / q1.abs().mean().detach()
+            return q_loss + model_loss
+        else:
+            raise ValueError(("Unknown activation function {}".format(loss_type)))
 
     def q_loss(
         self,
@@ -690,16 +703,6 @@ class GPGAlgorithm:
                 lr=config.parameter.behaviour_policy.learning_rate,
             )
 
-            sampler = torch.utils.data.RandomSampler(self.dataset, replacement=False)
-            data_loader = torch.utils.data.DataLoader(
-                self.dataset,
-                batch_size=config.parameter.behaviour_policy.batch_size,
-                shuffle=False,
-                sampler=sampler,
-                pin_memory=False,
-                drop_last=True,
-            )
-
             behaviour_policy_train_iter = 0
             for epoch in track(
                 range(config.parameter.behaviour_policy.epochs),
@@ -707,6 +710,18 @@ class GPGAlgorithm:
             ):
                 if behaviour_policy_train_epoch > epoch:
                     continue
+
+                sampler = torch.utils.data.RandomSampler(
+                    self.dataset, replacement=False
+                )
+                data_loader = torch.utils.data.DataLoader(
+                    self.dataset,
+                    batch_size=config.parameter.behaviour_policy.batch_size,
+                    shuffle=False,
+                    sampler=sampler,
+                    pin_memory=False,
+                    drop_last=True,
+                )
 
                 if (
                     epoch + 1
@@ -743,9 +758,6 @@ class GPGAlgorithm:
                     behaviour_model_optimizer.zero_grad()
                     behaviour_model_training_loss.backward()
                     behaviour_model_optimizer.step()
-                    log.info(
-                        f"Epoch {epoch}, ITE {behaviour_policy_train_iter}, loss: {behaviour_model_training_loss.item()}"
-                    )
                     wandb_run.log(
                         data=dict(
                             behaviour_policy_train_iter=behaviour_policy_train_iter,
@@ -792,19 +804,21 @@ class GPGAlgorithm:
                 lr=config.parameter.critic.learning_rate,
             )
 
-            sampler = torch.utils.data.RandomSampler(self.dataset, replacement=False)
-            data_loader = torch.utils.data.DataLoader(
-                self.dataset,
-                batch_size=config.parameter.critic.batch_size,
-                shuffle=False,
-                sampler=sampler,
-                pin_memory=False,
-                drop_last=True,
-            )
             critic_train_iter = 0
             for epoch in track(
                 range(config.parameter.critic.epochs), description="Critic training"
             ):
+                sampler = torch.utils.data.RandomSampler(
+                    self.dataset, replacement=False
+                )
+                data_loader = torch.utils.data.DataLoader(
+                    self.dataset,
+                    batch_size=config.parameter.critic.batch_size,
+                    shuffle=False,
+                    sampler=sampler,
+                    pin_memory=False,
+                    drop_last=True,
+                )
                 if critic_train_epoch > epoch:
                     continue
                 for data in data_loader:
@@ -872,6 +886,14 @@ class GPGAlgorithm:
                 lr=config.parameter.guided_policy.learning_rate,
             )
 
+            if config.parameter.guided_policy.lr_decy:
+                from torch.optim.lr_scheduler import CosineAnnealingLR
+
+                guided_lr_scheduler = CosineAnnealingLR(
+                    guided_policy_optimizer,
+                    T_max=config.parameter.guided_policy.epochs,
+                    eta_min=0.0,
+                )
             guided_policy_train_iter = 0
             for epoch in track(
                 range(config.parameter.guided_policy.epochs),
@@ -893,7 +915,7 @@ class GPGAlgorithm:
 
                 if (
                     epoch + 1
-                ) % config.parameter.evaluation.evaluation_interval == 0 or (
+                ) % config.parameter.guided_policy.evaluation_interval == 0 or (
                     epoch + 1
                 ) == config.parameter.guided_policy.epochs:
                     evaluation_results = evaluate(
@@ -910,36 +932,46 @@ class GPGAlgorithm:
 
                 for data in data_loader:
                     guided_model_loss = self.model["GPGPolicy"].policy_loss_withgrade(
-                        data["a"], data["s"]
+                        data["a"],
+                        data["s"],
+                        maximum_likelihood=True,
+                        loss_type=config.parameter.guided_policy.loss_type,
+                    )
+
+                    guided_model_grad_norms = nn.utils.clip_grad_norm_(
+                        self.model["GPGPolicy"].guided_model.parameters(),
+                        max_norm=config.parameter.guided_policy.grad_norm_clip,
+                        norm_type=2,
                     )
                     guided_policy_optimizer.zero_grad()
                     guided_model_loss.backward()
                     guided_policy_optimizer.step()
-                    log.info(
-                        f"Epoch {epoch}, ITE {guided_policy_train_iter}, loss: {guided_model_loss.item()}"
-                    )
                     wandb_run.log(
                         data=dict(
                             guided_policy_train_iter=guided_policy_train_iter,
                             guided_policy_train_epoch=epoch,
                             guided_model_training_loss=guided_model_loss.item(),
+                            guided_model_grad_norms=guided_model_grad_norms,
                         ),
                         commit=True,
                     )
                     guided_policy_train_iter += 1
 
-                    # if (guided_policy_train_iter + 1) % 5 == 0:
-                    #     evaluation_results = evaluate(
-                    #         self.model,
-                    #         train_epoch=epoch,
-                    #         guidance_scales=config.parameter.evaluation.guidance_scale,
-                    #         repeat=(
-                    #             1
-                    #             if not hasattr(config.parameter.evaluation, "repeat")
-                    #             else config.parameter.evaluation.repeat
-                    #         ),
-                    #     )
-                    #     wandb_run.log(data=evaluation_results, commit=False)
+                if config.parameter.guided_policy.lr_decy:
+                    guided_lr_scheduler.step()
+
+                # if (guided_policy_train_iter + 1) % 5 == 0:
+                #     evaluation_results = evaluate(
+                #         self.model,
+                #         train_epoch=epoch,
+                #         guidance_scales=config.parameter.evaluation.guidance_scale,
+                #         repeat=(
+                #             1
+                #             if not hasattr(config.parameter.evaluation, "repeat")
+                #             else config.parameter.evaluation.repeat
+                #         ),
+                #     )
+                #     wandb_run.log(data=evaluation_results, commit=False)
 
             # ---------------------------------------
             # Customized training code ↑
