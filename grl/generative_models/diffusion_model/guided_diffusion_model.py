@@ -24,6 +24,7 @@ from grl.numerical_methods.numerical_solvers.ode_solver import (
 )
 from grl.numerical_methods.numerical_solvers.sde_solver import SDESolver
 from grl.numerical_methods.probability_path import GaussianConditionalProbabilityPath
+from grl.utils import find_parameters
 
 
 class GuidedDiffusionModel:
@@ -304,6 +305,8 @@ class GuidedDiffusionModel:
                     drift=drift,
                     x0=x,
                     t_span=t_span,
+                    adjoint_params=find_parameters(base_model.model)
+                    + find_parameters(guided_model.model),
                 )
             else:
                 with torch.no_grad():
@@ -311,6 +314,8 @@ class GuidedDiffusionModel:
                         drift=drift,
                         x0=x,
                         t_span=t_span,
+                        adjoint_params=find_parameters(base_model.model)
+                        + find_parameters(guided_model.model),
                     )
         elif isinstance(solver, DictTensorODESolver):
             # TODO: make it compatible with TensorDict

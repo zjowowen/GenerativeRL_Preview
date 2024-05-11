@@ -46,7 +46,7 @@ config = EasyDict(
                 ),
             ),
             path=dict(
-                sigma=1.0,
+                sigma=0.1,
             ),
             velocity_model=dict(
                 type="velocity_function",
