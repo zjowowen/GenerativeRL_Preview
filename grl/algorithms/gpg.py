@@ -1,3 +1,4 @@
+import os
 import copy
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
@@ -8,7 +9,7 @@ from easydict import EasyDict
 from rich.progress import Progress, track
 from tensordict import TensorDict
 from torch.utils.data import DataLoader
-import os
+
 import wandb
 from grl.agents.gpo import GPOAgent
 from grl.datasets import create_dataset
@@ -16,6 +17,15 @@ from grl.datasets.gpo import GPODataset
 from grl.generative_models.diffusion_model import DiffusionModel
 from grl.generative_models.conditional_flow_model.optimal_transport_conditional_flow_model import (
     OptimalTransportConditionalFlowModel,
+)
+from grl.generative_models.conditional_flow_model.independent_conditional_flow_model import (
+    IndependentConditionalFlowModel,
+)
+from grl.generative_models.bridge_flow_model.schrodinger_bridge_conditional_flow_model import (
+    SchrodingerBridgeConditionalFlowModel,
+)
+from grl.generative_models.bridge_flow_model.guided_bridge_conditional_flow_model import (
+    GuidedBridgeConditionalFlowModel,
 )
 from grl.generative_models.diffusion_model.guided_diffusion_model import (
     GuidedDiffusionModel,
@@ -27,6 +37,7 @@ from grl.rl_modules.simulators import create_simulator
 from grl.rl_modules.value_network.q_network import DoubleQNetwork
 from grl.utils.config import merge_two_dicts_into_newone
 from grl.utils.log import log
+from grl.utils import set_seed
 
 
 class GPGCritic(nn.Module):
@@ -135,8 +146,13 @@ class GuidedPolicy(nn.Module):
         self.type = config.model_type
         if self.type == "DiffusionModel":
             self.model = GuidedDiffusionModel(config.model)
-        elif self.type in ["OptimalTransportConditionalFlowModel"]:
+        elif self.type in [
+            "OptimalTransportConditionalFlowModel",
+            "IndependentConditionalFlowModel",
+        ]:
             self.model = GuidedConditionalFlowModel(config.model)
+        elif self.type == "SchrodingerBridgeConditionalFlowModel":
+            self.model = GuidedBridgeConditionalFlowModel(config.model)
         else:
             raise NotImplementedError
 
@@ -164,8 +180,8 @@ class GuidedPolicy(nn.Module):
 
         if self.type == "DiffusionModel":
             return self.model.sample(
-                base_model=base_model.model,
-                guided_model=guided_model.model,
+                base_model=base_model,
+                guided_model=guided_model,
                 t_span=t_span,
                 condition=state,
                 batch_size=batch_size,
@@ -174,13 +190,15 @@ class GuidedPolicy(nn.Module):
                 solver_config=solver_config,
             )
 
-        elif self.type in ["OptimalTransportConditionalFlowModel"]:
-
+        elif self.type in [
+            "OptimalTransportConditionalFlowModel",
+            "SchrodingerBridgeConditionalFlowModel",
+        ]:
             x_0 = base_model.gaussian_generator(batch_size=state.shape[0])
 
             return self.model.sample(
-                base_model=base_model.model,
-                guided_model=guided_model.model,
+                base_model=base_model,
+                guided_model=guided_model,
                 x_0=x_0,
                 t_span=t_span,
                 condition=state,
@@ -201,11 +219,16 @@ class GPGPolicy(nn.Module):
         self.critic = GPGCritic(config.critic)
         self.model_type = config.model_type
         if self.model_type == "DiffusionModel":
-            self.model = DiffusionModel(config.model)
-            self.model_fine_tune = DiffusionModel(config.model)
+            self.base_model = DiffusionModel(config.model)
+            self.guided_model = DiffusionModel(config.model)
+            self.model_loss_type = config.model_loss_type
+            assert self.model_loss_type in ["score_matching", "flow_matching"]
         elif self.model_type == "OptimalTransportConditionalFlowModel":
-            self.model = OptimalTransportConditionalFlowModel(config.model)
-            self.model_fine_tune = OptimalTransportConditionalFlowModel(config.model)
+            self.base_model = OptimalTransportConditionalFlowModel(config.model)
+            self.guided_model = OptimalTransportConditionalFlowModel(config.model)
+        elif self.model_type == "SchrodingerBridgeConditionalFlowModel":
+            self.base_model = SchrodingerBridgeConditionalFlowModel(config.model)
+            self.guided_model = SchrodingerBridgeConditionalFlowModel(config.model)
         else:
             raise NotImplementedError
 
@@ -244,7 +267,7 @@ class GPGPolicy(nn.Module):
             action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
 
-        return self.model_fine_tune.sample(
+        return self.guided_model.sample(
             t_span=t_span,
             condition=state,
             batch_size=batch_size,
@@ -272,7 +295,7 @@ class GPGPolicy(nn.Module):
         Returns:
             action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
-        return self.model.sample(
+        return self.base_model.sample(
             t_span=t_span,
             condition=state,
             batch_size=batch_size,
@@ -312,22 +335,27 @@ class GPGPolicy(nn.Module):
         """
 
         if self.model_type == "DiffusionModel":
-            return self.model.flow_matching_loss(action, state)
-            # if maximum_likelihood:
-            #     return self.model.score_matching_loss(action, state)
-            # else:
-            #     return self.model.score_matching_loss(
-            #         action, state, weighting_scheme="vanilla"
-            #     )
-        elif self.model_type == "OptimalTransportConditionalFlowModel":
-            x0 = self.model.gaussian_generator(batch_size=state.shape[0])
-            return self.model.flow_matching_loss(x0=x0, x1=action, condition=state)
+            if self.model_loss_type == "score_matching":
+                if maximum_likelihood:
+                    return self.base_model.score_matching_loss(action, state)
+                else:
+                    return self.base_model.score_matching_loss(
+                        action, state, weighting_scheme="vanilla"
+                    )
+            elif self.model_loss_type == "flow_matching":
+                return self.base_model.flow_matching_loss(action, state)
+        elif self.model_type in [
+            "OptimalTransportConditionalFlowModel",
+            "IndependentConditionalFlowModel",
+            "SchrodingerBridgeConditionalFlowModel",
+        ]:
+            x0 = self.base_model.gaussian_generator(batch_size=state.shape[0])
+            return self.base_model.flow_matching_loss(x0=x0, x1=action, condition=state)
 
     def policy_loss_withgrade(
         self,
         action: Union[torch.Tensor, TensorDict],
         state: Union[torch.Tensor, TensorDict],
-        fake_action: Union[torch.Tensor, TensorDict],
         maximum_likelihood: bool = False,
     ):
         """
@@ -339,25 +367,43 @@ class GPGPolicy(nn.Module):
         """
 
         if self.model_type == "DiffusionModel":
-            if maximum_likelihood:
-                model_loss = self.model_fine_tune.score_matching_loss(
-                    action, state, average=False
+            if self.model_loss_type == "score_matching":
+                if maximum_likelihood:
+                    model_loss = self.guided_model.score_matching_loss(
+                        action, state, average=True
+                    )
+                else:
+                    model_loss = self.guided_model.score_matching_loss(
+                        action, state, weighting_scheme="vanilla", average=True
+                    )
+            elif self.model_loss_type == "flow_matching":
+                model_loss = self.guided_model.flow_matching_loss(
+                    action, state, average=True
                 )
-            else:
-                model_loss = self.model_fine_tune.score_matching_loss(
-                    action, state, weighting_scheme="vanilla", average=False
-                )
-        elif self.model_type in ["OptimalTransportConditionalFlowModel"]:
-            x0 = self.model_fine_tune.gaussian_generator(batch_size=state.shape[0])
-            model_loss = self.model_fine_tune.flow_matching_loss(
-                x0=x0, x1=action, condition=state, average=False
+        elif self.model_type in [
+            "OptimalTransportConditionalFlowModel",
+            "IndependentConditionalFlowModel",
+            "SchrodingerBridgeConditionalFlowModel",
+        ]:
+            x0 = self.guided_model.gaussian_generator(batch_size=state.shape[0])
+            model_loss = self.guided_model.flow_matching_loss(
+                x0=x0, x1=action, condition=state, average=True
             )
         else:
             raise NotImplementedError
+        t_span = torch.linspace(0.0, 1.0, 1000).to(state.device)
+        new_action = self.guided_model.sample(
+            t_span=t_span, condition=state, with_grad=True
+        )
+        # v_value = torch.sum(
+        #     self.softmax(self.critic.q_alpha * fake_q_value) * fake_q_value,
+        #     dim=-1,
+        #     keepdim=True,
+        # ).squeeze(dim=-1)
 
-        new_action = self.model_fine_tune.sample(condition=state, with_grad=True)
-        q_value = self.critic(new_action, state).squeeze(dim=-1)
-        loss = (-q_value + model_loss).mean()
+        q_value = self.critic(new_action, state)
+        q_value_detch = q_value.detach()
+        loss = (-q_value / q_value_detch).mean() + model_loss
         return loss
 
     def q_loss(
@@ -423,7 +469,7 @@ class GPGAlgorithm:
         # Customized model initialization code ↑
         # ---------------------------------------
 
-    def train(self, config: EasyDict = None):
+    def train(self, config: EasyDict = None, seed=None):
         """
         Overview:
             Train the model using the given configuration. \
@@ -431,7 +477,7 @@ class GPGAlgorithm:
         Arguments:
             config (:obj:`EasyDict`): The training configuration.
         """
-
+        seed_value = set_seed(seed_value=seed)
         config = (
             merge_two_dicts_into_newone(
                 self.config.train if hasattr(self.config, "train") else EasyDict(),
@@ -440,6 +486,7 @@ class GPGAlgorithm:
             if config is not None
             else self.config.train
         )
+        config["seed"] = seed_value
 
         with wandb.init(
             project=(
@@ -478,15 +525,75 @@ class GPGAlgorithm:
             # ---------------------------------------
             # Customized model initialization code ↑
             # ---------------------------------------
+            if (
+                hasattr(config.parameter, "checkpoint_path")
+                and config.parameter.checkpoint_path is not None
+            ):
+
+                if not os.path.exists(config.parameter.checkpoint_path):
+                    log.warning(
+                        f"Checkpoint path {config.parameter.checkpoint_path} does not exist"
+                    )
+                    behaviour_policy_train_epoch = 0
+                    critic_train_epoch = 0
+                    guided_policy_train_epoch = 0
+                else:
+                    checkpoint_files = [
+                        f
+                        for f in os.listdir(config.parameter.checkpoint_path)
+                        if f.endswith(".pt")
+                    ]
+                    checkpoint_files = sorted(
+                        checkpoint_files,
+                        key=lambda x: int(x.split("_")[-1].split(".")[0]),
+                    )
+                    checkpoint = torch.load(
+                        os.path.join(
+                            config.parameter.checkpoint_path, checkpoint_files[-1]
+                        ),
+                        map_location="cpu",
+                    )
+                    self.model.load_state_dict(checkpoint["model"])
+                    behaviour_policy_train_epoch = checkpoint.get(
+                        "behaviour_policy_train_epoch", 0
+                    )
+                    critic_train_epoch = checkpoint.get("critic_train_epoch", 0)
+                    guided_policy_train_epoch = checkpoint.get(
+                        "guided_policy_train_epoch", 0
+                    )
+            else:
+                behaviour_policy_train_epoch = 0
+                critic_train_epoch = 0
+                guided_policy_train_epoch = 0
+
+            def save_checkpoint(
+                model,
+                behaviour_policy_train_epoch,
+                critic_train_epoch,
+                guided_policy_train_epoch,
+            ):
+                if (
+                    hasattr(config.parameter, "checkpoint_path")
+                    and config.parameter.checkpoint_path is not None
+                ):
+                    if not os.path.exists(config.parameter.checkpoint_path):
+                        os.makedirs(config.parameter.checkpoint_path)
+                    torch.save(
+                        dict(
+                            model=model.state_dict(),
+                            behaviour_policy_train_epoch=behaviour_policy_train_epoch,
+                            critic_train_epoch=critic_train_epoch,
+                            guided_policy_train_epoch=guided_policy_train_epoch,
+                        ),
+                        f=os.path.join(
+                            config.parameter.checkpoint_path,
+                            f"checkpoint_{behaviour_policy_train_epoch}_{critic_train_epoch}_{guided_policy_train_epoch}.pt",
+                        ),
+                    )
 
             # ---------------------------------------
             # Customized training code ↓
             # ---------------------------------------
-
-            def get_train_data(dataloader):
-                while True:
-                    yield from dataloader
-
             def generate_fake_action(model, states, sample_per_state):
                 # model.eval()
                 fake_actions_sampled = []
@@ -511,9 +618,9 @@ class GPGAlgorithm:
                 fake_actions = torch.cat(fake_actions_sampled, dim=0)
                 return fake_actions
 
-            def evaluate(model, train_iter):
+            def evaluate(model, train_epoch, guidance_scales, repeat=1):
                 evaluation_results = dict()
-                for guidance_scale in config.parameter.evaluation.guidance_scale:
+                for guidance_scale in guidance_scales:
 
                     def policy(obs: np.ndarray) -> np.ndarray:
                         obs = torch.tensor(
@@ -524,8 +631,8 @@ class GPGAlgorithm:
                         action = (
                             model["GuidedPolicy"]
                             .sample(
-                                base_model=self.model["GPGPolicy"].model,
-                                guided_model=self.model["GPGPolicy"].model_fine_tune,
+                                base_model=self.model["GPGPolicy"].base_model,
+                                guided_model=self.model["GPGPolicy"].guided_model,
                                 state=obs,
                                 guidance_scale=guidance_scale,
                                 t_span=(
@@ -543,78 +650,130 @@ class GPGAlgorithm:
                         )
                         return action
 
+                    return_results = [
+                        self.simulator.evaluate(
+                            policy=policy,
+                        )[
+                            0
+                        ]["total_return"]
+                        for _ in range(repeat)
+                    ]
+                    return_mean = np.mean(return_results)
+                    return_std = np.std(return_results)
+                    return_max = np.max(return_results)
+                    return_min = np.min(return_results)
                     evaluation_results[
-                        f"evaluation/guidance_scale:[{guidance_scale}]/total_return"
-                    ] = self.simulator.evaluate(policy=policy,)[0]["total_return"]
-                    log.info(
-                        f"Train iter: {train_iter}, guidance_scale: {guidance_scale}, total_return: {evaluation_results[f'evaluation/guidance_scale:[{guidance_scale}]/total_return']}"
-                    )
+                        f"evaluation/guidance_scale:[{guidance_scale}]/return_mean"
+                    ] = return_mean
+                    evaluation_results[
+                        f"evaluation/guidance_scale:[{guidance_scale}]/return_std"
+                    ] = return_std
+                    evaluation_results[
+                        f"evaluation/guidance_scale:[{guidance_scale}]/return_max"
+                    ] = return_max
+                    evaluation_results[
+                        f"evaluation/guidance_scale:[{guidance_scale}]/return_min"
+                    ] = return_min
+                    if repeat > 1:
+                        log.info(
+                            f"Train epoch: {train_epoch}, guidance_scale: {guidance_scale}, return_mean: {return_mean}, return_std: {return_std}, return_max: {return_max}, return_min: {return_min}"
+                        )
+                    else:
+                        log.info(
+                            f"Train epoch: {train_epoch}, guidance_scale: {guidance_scale}, return: {return_mean}"
+                        )
 
                 return evaluation_results
 
-            data_generator = get_train_data(
-                DataLoader(
-                    self.dataset,
-                    batch_size=config.parameter.behaviour_policy.batch_size,
-                    shuffle=True,
-                    collate_fn=None,
-                )
-            )
-
             behaviour_model_optimizer = torch.optim.Adam(
-                self.model["GPGPolicy"].model.model.parameters(),
+                self.model["GPGPolicy"].base_model.parameters(),
                 lr=config.parameter.behaviour_policy.learning_rate,
             )
 
-            for train_iter in track(
-                range(config.parameter.behaviour_policy.iterations),
+            sampler = torch.utils.data.RandomSampler(self.dataset, replacement=False)
+            data_loader = torch.utils.data.DataLoader(
+                self.dataset,
+                batch_size=config.parameter.behaviour_policy.batch_size,
+                shuffle=False,
+                sampler=sampler,
+                pin_memory=False,
+                drop_last=True,
+            )
+
+            behaviour_policy_train_iter = 0
+            for epoch in track(
+                range(config.parameter.behaviour_policy.epochs),
                 description="Behaviour policy training",
             ):
-                data = next(data_generator)
-                behaviour_model_training_loss = self.model[
-                    "GPGPolicy"
-                ].behaviour_policy_loss(
-                    data["a"],
-                    data["s"],
-                    maximum_likelihood=(
-                        config.parameter.behaviour_policy.maximum_likelihood
-                        if hasattr(
-                            config.parameter.behaviour_policy, "maximum_likelihood"
-                        )
-                        else False
-                    ),
-                )
-                behaviour_model_optimizer.zero_grad()
-                behaviour_model_training_loss.backward()
-                behaviour_model_optimizer.step()
-                wandb_run.log(
-                    data=dict(
-                        train_iter=train_iter,
-                        behaviour_model_training_loss=behaviour_model_training_loss.item(),
-                    ),
-                    commit=True,
-                )
+                if behaviour_policy_train_epoch > epoch:
+                    continue
 
                 if (
-                    train_iter == 0
-                    or (train_iter + 1)
-                    % config.parameter.evaluation.evaluation_interval
-                    == 0
-                ):
-                    evaluation_results = evaluate(self.model, train_iter=train_iter)
+                    epoch + 1
+                ) % config.parameter.evaluation.evaluation_interval == 0 or (
+                    epoch + 1
+                ) == config.parameter.behaviour_policy.epochs:
+                    evaluation_results = evaluate(
+                        self.model,
+                        train_epoch=epoch,
+                        guidance_scales=[0.0],
+                        repeat=(
+                            1
+                            if not hasattr(config.parameter.evaluation, "repeat")
+                            else config.parameter.evaluation.repeat
+                        ),
+                    )
                     wandb_run.log(data=evaluation_results, commit=False)
 
-                if train_iter == config.parameter.behaviour_policy.iterations - 1:
-                    file_path = os.path.join(
-                        f"./model/checkpoint_diffusion_{train_iter+1}.pt"
-                    )
-                    torch.save(
-                        dict(
-                            self.model["GPGPolicy"].model.model.state_dict(),
-                            diffusion_iteration=train_iter + 1,
+                for data in data_loader:
+                    behaviour_model_training_loss = self.model[
+                        "GPGPolicy"
+                    ].behaviour_policy_loss(
+                        data["a"],
+                        data["s"],
+                        maximum_likelihood=(
+                            config.parameter.behaviour_policy.maximum_likelihood
+                            if hasattr(
+                                config.parameter.behaviour_policy, "maximum_likelihood"
+                            )
+                            else False
                         ),
-                        f=file_path,
                     )
+                    behaviour_policy_train_iter += 1
+                    behaviour_model_optimizer.zero_grad()
+                    behaviour_model_training_loss.backward()
+                    behaviour_model_optimizer.step()
+                    log.info(
+                        f"Epoch {epoch}, ITE {behaviour_policy_train_iter}, loss: {behaviour_model_training_loss.item()}"
+                    )
+                    wandb_run.log(
+                        data=dict(
+                            behaviour_policy_train_iter=behaviour_policy_train_iter,
+                            behaviour_policy_train_epoch=epoch,
+                            behaviour_model_training_loss=behaviour_model_training_loss.item(),
+                        ),
+                        commit=True,
+                    )
+                behaviour_policy_train_epoch = epoch
+
+                if (
+                    hasattr(config.parameter, "checkpoint_freq")
+                    and (epoch + 1) % config.parameter.checkpoint_freq == 0
+                ):
+                    save_checkpoint(
+                        self.model,
+                        behaviour_policy_train_epoch + 1,
+                        critic_train_epoch + 1,
+                        guided_policy_train_epoch + 1,
+                    )
+
+                if (
+                    hasattr(config.parameter.behaviour_policy, "iterations")
+                    and behaviour_policy_train_iter
+                    >= config.parameter.behaviour_policy.iterations
+                ):
+                    log.info("Behaviour policy training finished.")
+                    break
 
             self.dataset.fake_actions = generate_fake_action(
                 self.model["GPGPolicy"],
@@ -628,117 +787,159 @@ class GPGAlgorithm:
                 config.parameter.sample_per_state,
             )
 
-            # TODO add notation
-            data_generator = get_train_data(
-                DataLoader(
-                    self.dataset,
-                    batch_size=config.parameter.critic.batch_size,
-                    shuffle=True,
-                    collate_fn=None,
-                )
-            )
-
             q_optimizer = torch.optim.Adam(
                 self.model["GPGPolicy"].critic.q.parameters(),
                 lr=config.parameter.critic.learning_rate,
             )
 
-            for train_iter in track(
-                range(config.parameter.critic.iterations),
-                description="Critic training",
+            sampler = torch.utils.data.RandomSampler(self.dataset, replacement=False)
+            data_loader = torch.utils.data.DataLoader(
+                self.dataset,
+                batch_size=config.parameter.critic.batch_size,
+                shuffle=False,
+                sampler=sampler,
+                pin_memory=False,
+                drop_last=True,
+            )
+            critic_train_iter = 0
+            for epoch in track(
+                range(config.parameter.critic.epochs), description="Critic training"
             ):
-
-                data = next(data_generator)
-
-                q_loss, q, q_target = self.model["GPGPolicy"].q_loss(
-                    data["a"],
-                    data["s"],
-                    data["r"],
-                    data["s_"],
-                    data["d"],
-                    data["fake_a_"],
-                    discount_factor=config.parameter.critic.discount_factor,
-                )
-
-                q_optimizer.zero_grad()
-                q_loss.backward()
-                q_optimizer.step()
-
-                # Update target
-                for param, target_param in zip(
-                    self.model["GPGPolicy"].critic.parameters(),
-                    self.model["GPGPolicy"].critic.q_target.parameters(),
-                ):
-                    target_param.data.copy_(
-                        config.parameter.critic.update_momentum * param.data
-                        + (1 - config.parameter.critic.update_momentum)
-                        * target_param.data
+                if critic_train_epoch > epoch:
+                    continue
+                for data in data_loader:
+                    q_loss, q, q_target = self.model["GPGPolicy"].q_loss(
+                        data["a"],
+                        data["s"],
+                        data["r"],
+                        data["s_"],
+                        data["d"],
+                        data["fake_a_"],
+                        discount_factor=config.parameter.critic.discount_factor,
                     )
 
-                wandb_run.log(
-                    data=dict(
-                        train_iter=train_iter,
-                        q_loss=q_loss.item(),
-                        q=q.item(),
-                        q_target=q_target.item(),
-                    ),
-                    commit=True,
-                )
-                if train_iter == config.parameter.critic.iterations - 1:
-                    file_path = os.path.join(
-                        f"./model/checkpoint_critic_{train_iter+1}.pt"
-                    )
-                    torch.save(
-                        dict(
-                            self.model["GPGPolicy"].critic.q.state_dict(),
-                            diffusion_iteration=train_iter + 1,
+                    q_optimizer.zero_grad()
+                    q_loss.backward()
+                    q_optimizer.step()
+
+                    # Update target
+                    for param, target_param in zip(
+                        self.model["GPGPolicy"].critic.parameters(),
+                        self.model["GPGPolicy"].critic.q_target.parameters(),
+                    ):
+                        target_param.data.copy_(
+                            config.parameter.critic.update_momentum * param.data
+                            + (1 - config.parameter.critic.update_momentum)
+                            * target_param.data
+                        )
+                    wandb_run.log(
+                        data=dict(
+                            critic_train_iter=critic_train_iter,
+                            critic_train_epoch=epoch,
+                            q_loss=q_loss.item(),
+                            q=q.item(),
+                            q_target=q_target.item(),
                         ),
-                        f=file_path,
+                        commit=True,
                     )
-
-            model_fine_tune_optimizer = torch.optim.Adam(
-                self.model["GPGPolicy"].model_finetune.parameters(),
-                lr=config.parameter.model_finetune.learning_rate,
-            )
-
-            data_generator = get_train_data(
-                DataLoader(
-                    self.dataset,
-                    batch_size=config.parameter.model_fine_tune.batch_size,
-                    shuffle=True,
-                    collate_fn=None,
-                )
-            )
-
-            for train_iter in track(
-                range(config.parameter.model_finetune.iterations),
-                description="Energy conditioned diffusion model training",
-            ):
-
-                data = next(data_generator)
-                model_fine_tune_loss = self.model["GPGPolicy"].policy_loss(
-                    data["a"], data["s"], data["fake_a"]
-                )
-                model_fine_tune_optimizer.zero_grad()
-                model_fine_tune_loss.backward()
-                model_fine_tune_optimizer.step()
+                    critic_train_iter += 1
+                    critic_train_epoch = epoch
 
                 if (
-                    train_iter < 0
-                    or (train_iter + 1)
-                    % config.parameter.evaluation.evaluation_interval
-                    == 0
+                    hasattr(config.parameter, "checkpoint_freq")
+                    and (epoch + 1) % config.parameter.checkpoint_freq == 0
                 ):
-                    evaluation_results = evaluate(self.model, train_iter=train_iter)
+                    save_checkpoint(
+                        self.model,
+                        behaviour_policy_train_epoch + 1,
+                        critic_train_epoch + 1,
+                        guided_policy_train_epoch + 1,
+                    )
+
+                if (
+                    hasattr(config.parameter.critic, "iterations")
+                    and critic_train_iter >= config.parameter.critic.iterations
+                ):
+                    log.info("Critic training finished.")
+                    break
+
+            if config.parameter.guided_policy.copy_frome_basemodel:
+                self.model["GPGPolicy"].guided_model.load_state_dict(
+                    self.model["GPGPolicy"].base_model.state_dict()
+                )
+            guided_policy_optimizer = torch.optim.Adam(
+                self.model["GPGPolicy"].guided_model.parameters(),
+                lr=config.parameter.guided_policy.learning_rate,
+            )
+
+            guided_policy_train_iter = 0
+            for epoch in track(
+                range(config.parameter.guided_policy.epochs),
+                description="Guided policy training",
+            ):
+                if guided_policy_train_epoch > epoch:
+                    continue
+                sampler = torch.utils.data.RandomSampler(
+                    self.dataset, replacement=False
+                )
+                data_loader = torch.utils.data.DataLoader(
+                    self.dataset,
+                    batch_size=config.parameter.critic.batch_size,
+                    shuffle=False,
+                    sampler=sampler,
+                    pin_memory=False,
+                    drop_last=True,
+                )
+
+                if (
+                    epoch + 1
+                ) % config.parameter.evaluation.evaluation_interval == 0 or (
+                    epoch + 1
+                ) == config.parameter.guided_policy.epochs:
+                    evaluation_results = evaluate(
+                        self.model,
+                        train_epoch=epoch,
+                        guidance_scales=config.parameter.evaluation.guidance_scale,
+                        repeat=(
+                            1
+                            if not hasattr(config.parameter.evaluation, "repeat")
+                            else config.parameter.evaluation.repeat
+                        ),
+                    )
                     wandb_run.log(data=evaluation_results, commit=False)
 
-                wandb_run.log(
-                    data=dict(
-                        train_iter=train_iter,
-                        model_fine_tune_loss=model_fine_tune_loss.item(),
-                    ),
-                    commit=True,
-                )
+                for data in data_loader:
+                    guided_model_loss = self.model["GPGPolicy"].policy_loss_withgrade(
+                        data["a"], data["s"]
+                    )
+                    guided_policy_optimizer.zero_grad()
+                    guided_model_loss.backward()
+                    guided_policy_optimizer.step()
+                    log.info(
+                        f"Epoch {epoch}, ITE {guided_policy_train_iter}, loss: {guided_model_loss.item()}"
+                    )
+                    wandb_run.log(
+                        data=dict(
+                            guided_policy_train_iter=guided_policy_train_iter,
+                            guided_policy_train_epoch=epoch,
+                            guided_model_training_loss=guided_model_loss.item(),
+                        ),
+                        commit=True,
+                    )
+                    guided_policy_train_iter += 1
+
+                    # if (guided_policy_train_iter + 1) % 5 == 0:
+                    #     evaluation_results = evaluate(
+                    #         self.model,
+                    #         train_epoch=epoch,
+                    #         guidance_scales=config.parameter.evaluation.guidance_scale,
+                    #         repeat=(
+                    #             1
+                    #             if not hasattr(config.parameter.evaluation, "repeat")
+                    #             else config.parameter.evaluation.repeat
+                    #         ),
+                    #     )
+                    #     wandb_run.log(data=evaluation_results, commit=False)
 
             # ---------------------------------------
             # Customized training code ↑
