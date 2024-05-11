@@ -1,8 +1,8 @@
 import torch
 from easydict import EasyDict
 
-action_size = 2
-state_size = 8
+action_size = 8
+state_size = 29
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 t_embedding_dim = 32
 t_encoder = dict(
