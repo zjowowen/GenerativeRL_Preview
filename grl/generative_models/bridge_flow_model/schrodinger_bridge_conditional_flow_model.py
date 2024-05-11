@@ -377,13 +377,15 @@ class SchrodingerBridgeConditionalFlowModel(nn.Module):
         b = ot.unif(x1.shape[0])
         # TODO: make it compatible with TensorDict and treetensor.torch.Tensor
         if x0.dim() > 2:
-            x0 = x0.reshape(x0.shape[0], -1)
+            x0_ = x0.reshape(x0.shape[0], -1)
+        else:
+            x0_ = x0
         if x1.dim() > 2:
-            x1 = x1.reshape(x1.shape[0], -1)
-
+            x1_ = x1.reshape(x1.shape[0], -1)
+        else:
+            x1_ = x1
         #TODO: check if the x.dim == 1
-        
-        M = torch.cdist(x0, x1) ** 2
+        M = torch.cdist(x0_, x1_) ** 2
         p = ot.emd(a, b, M.detach().cpu().numpy())
         assert np.all(np.isfinite(p)), "p is not finite"
 
