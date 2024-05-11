@@ -414,11 +414,15 @@ class OptimalTransportConditionalFlowModel(nn.Module):
                 b = ot.unif(x1_i.shape[0])
                 # TODO: make it compatible with TensorDict and treetensor.torch.Tensor
                 if x0_i.dim() > 2:
-                    x0_i = x0_i.reshape(x0_i.shape[0], -1)
+                    x0_i_ = x0_i.reshape(x0_i.shape[0], -1)
+                else:
+                    x0_i_ = x0_i
                 if x1_i.dim() > 2:
-                    x1_i = x1_i.reshape(x1_i.shape[0], -1)
-                x1_i = x1_i.reshape(x1_i.shape[0], -1)
-                M = torch.cdist(x0_i, x1_i) ** 2
+                    x1_i_ = x1_i.reshape(x1_i.shape[0], -1)
+                else:
+                    x1_i_ = x1_i
+
+                M = torch.cdist(x0_i_, x1_i_) ** 2
                 p = ot.emd(a, b, M.detach().cpu().numpy())
                 assert np.all(np.isfinite(p)), "p is not finite"
 
@@ -464,11 +468,15 @@ class OptimalTransportConditionalFlowModel(nn.Module):
                 b = ot.unif(x1_i.shape[0])
                 # TODO: make it compatible with TensorDict and treetensor.torch.Tensor
                 if x0_i.dim() > 2:
-                    x0_i = x0_i.reshape(x0_i.shape[0], -1)
+                    x0_i_ = x0_i.reshape(x0_i.shape[0], -1)
+                else:
+                    x0_i_ = x0_i
                 if x1_i.dim() > 2:
-                    x1_i = x1_i.reshape(x1_i.shape[0], -1)
-                x1_i = x1_i.reshape(x1_i.shape[0], -1)
-                M = torch.cdist(x0_i, x1_i) ** 2
+                    x1_i_ = x1_i.reshape(x1_i.shape[0], -1)
+                else:
+                    x1_i_ = x1_i
+
+                M = torch.cdist(x0_i_, x1_i_) ** 2
                 p = ot.emd(a, b, M.detach().cpu().numpy())
                 assert np.all(np.isfinite(p)), "p is not finite"
 
@@ -517,11 +525,15 @@ class OptimalTransportConditionalFlowModel(nn.Module):
         b = ot.unif(x1.shape[0])
         # TODO: make it compatible with TensorDict and treetensor.torch.Tensor
         if x0.dim() > 2:
-            x0 = x0.reshape(x0.shape[0], -1)
+            x0_ = x0.reshape(x0.shape[0], -1)
+        else:
+            x0_ = x0
         if x1.dim() > 2:
-            x1 = x1.reshape(x1.shape[0], -1)
-        x1 = x1.reshape(x1.shape[0], -1)
-        M = torch.cdist(x0, x1) ** 2
+            x1_ = x1.reshape(x1.shape[0], -1)
+        else:
+            x1_ = x1
+
+        M = torch.cdist(x0_, x1_) ** 2
         p = ot.emd(a, b, M.detach().cpu().numpy())
         assert np.all(np.isfinite(p)), "p is not finite"
 
@@ -565,11 +577,15 @@ class OptimalTransportConditionalFlowModel(nn.Module):
         b = ot.unif(x1.shape[0])
         # TODO: make it compatible with TensorDict and treetensor.torch.Tensor
         if x0.dim() > 2:
-            x0 = x0.reshape(x0.shape[0], -1)
+            x0_ = x0.reshape(x0.shape[0], -1)
+        else:
+            x0_ = x0
         if x1.dim() > 2:
-            x1 = x1.reshape(x1.shape[0], -1)
-        x1 = x1.reshape(x1.shape[0], -1)
-        M = torch.cdist(x0, x1) ** 2
+            x1_ = x1.reshape(x1.shape[0], -1)
+        else:
+            x1_ = x1
+
+        M = torch.cdist(x0_, x1_) ** 2
         p = ot.emd(a, b, M.detach().cpu().numpy())
         assert np.all(np.isfinite(p)), "p is not finite"
 
