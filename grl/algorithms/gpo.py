@@ -744,8 +744,8 @@ class GPOAlgorithm:
                     behaviour_policy_train_iter += 1
                     behaviour_policy_train_epoch = epoch
 
-                    if hasattr(config.parameter, "checkpoint_freq") and (epoch + 1) % config.parameter.checkpoint_freq == 0:
-                        save_checkpoint(self.model, behaviour_policy_train_epoch+1, critic_train_epoch+1, guided_policy_train_epoch+1)
+                if hasattr(config.parameter, "checkpoint_freq") and (epoch + 1) % config.parameter.checkpoint_freq == 0:
+                    save_checkpoint(self.model, behaviour_policy_train_epoch+1, critic_train_epoch, guided_policy_train_epoch)
 
                 if hasattr(config.parameter.behaviour_policy, "iterations") and behaviour_policy_train_iter >= config.parameter.behaviour_policy.iterations:
                     log.info("Behaviour policy training finished.")
@@ -825,8 +825,8 @@ class GPOAlgorithm:
                     critic_train_iter += 1
                     critic_train_epoch = epoch
 
-                    if hasattr(config.parameter, "checkpoint_freq") and (epoch + 1) % config.parameter.checkpoint_freq == 0:
-                        save_checkpoint(self.model, behaviour_policy_train_epoch+1, critic_train_epoch+1, guided_policy_train_epoch+1)
+                if hasattr(config.parameter, "checkpoint_freq") and (epoch + 1) % config.parameter.checkpoint_freq == 0:
+                    save_checkpoint(self.model, behaviour_policy_train_epoch, critic_train_epoch+1, guided_policy_train_epoch)
 
                 if hasattr(config.parameter.critic, "iterations") and critic_train_iter >= config.parameter.critic.iterations:
                     log.info("Critic training finished.")
@@ -880,8 +880,8 @@ class GPOAlgorithm:
                     guided_policy_train_iter += 1
                     guided_policy_train_epoch = epoch
 
-                    if hasattr(config.parameter, "checkpoint_freq") and (epoch + 1) % config.parameter.checkpoint_freq == 0:
-                        save_checkpoint(self.model, behaviour_policy_train_epoch+1, critic_train_epoch+1, guided_policy_train_epoch+1)
+                if hasattr(config.parameter, "checkpoint_freq") and (epoch + 1) % config.parameter.checkpoint_freq == 0:
+                    save_checkpoint(self.model, behaviour_policy_train_epoch, critic_train_epoch, guided_policy_train_epoch+1)
 
                 if hasattr(config.parameter.guided_policy, "iterations") and guided_policy_train_iter >= config.parameter.guided_policy.iterations:
                     log.info("Guided policy training finished.")
