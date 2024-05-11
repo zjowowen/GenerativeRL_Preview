@@ -72,8 +72,8 @@ config = EasyDict(
             clip_grad_norm=1.0,
             eval_freq=500,
             checkpoint_freq=100,
-            checkpoint_path="./checkpoint",
-            video_save_path="./video",
+            checkpoint_path="./checkpoint-swiss-roll-otcfm",
+            video_save_path="./video-swiss-roll-otcfm",
             device=device,
         ),
     )
@@ -133,7 +133,7 @@ if __name__ == "__main__":
         last_iteration = -1
 
     data_loader = torch.utils.data.DataLoader(
-        data, batch_size=config.parameter.batch_size, shuffle=True
+        data, batch_size=config.parameter.batch_size, shuffle=True, drop_last=True
     )
 
     def get_train_data(dataloader):
@@ -165,7 +165,7 @@ if __name__ == "__main__":
             # image alpha frm 0 to 1
             im = plt.scatter(data[:, 0], data[:, 1], s=1)
             ims.append([im])
-        ani = animation.ArtistAnimation(fig, ims, interval=0.1, blit=True)
+        ani = animation.ArtistAnimation(fig, ims, interval=10, blit=True)
         ani.save(
             os.path.join(video_save_path, f"iteration_{iteration}.mp4"),
             fps=fps,
@@ -218,7 +218,7 @@ if __name__ == "__main__":
             x_t = [
                 x.squeeze(0) for x in torch.split(x_t, split_size_or_sections=1, dim=0)
             ]
-            # render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
+            render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
 
         batch_data = next(data_generator)
         batch_data = batch_data.to(config.device)

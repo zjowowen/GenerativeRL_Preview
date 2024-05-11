@@ -380,7 +380,173 @@ class OptimalTransportConditionalFlowModel(nn.Module):
 
         return data
 
+
+    def flow_matching_loss_2(
+        self,
+        x0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        x1: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        average: bool = True,
+    ) -> torch.Tensor:
+        """
+        Overview:
+            Return the flow matching loss function of the model given the initial state and the condition.
+        Arguments:
+            x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
+        """
+
+        if condition is not None:
+
+            split_size = 128
+            x0_split = torch.split(x0, split_size, dim=0)
+            x1_split = torch.split(x1, split_size, dim=0)
+
+            x0_ot = []
+            x1_ot = []
+
+            condition_split = torch.split(condition, split_size, dim=0)
+            condition_ot = []
+
+            for x0_i, x1_i, condition_i in zip(x0_split, x1_split, condition_split):
+                
+                a = ot.unif(x0_i.shape[0])
+                b = ot.unif(x1_i.shape[0])
+                # TODO: make it compatible with TensorDict and treetensor.torch.Tensor
+                if x0_i.dim() > 2:
+                    x0_i = x0_i.reshape(x0_i.shape[0], -1)
+                if x1_i.dim() > 2:
+                    x1_i = x1_i.reshape(x1_i.shape[0], -1)
+                x1_i = x1_i.reshape(x1_i.shape[0], -1)
+                M = torch.cdist(x0_i, x1_i) ** 2
+                p = ot.emd(a, b, M.detach().cpu().numpy())
+                assert np.all(np.isfinite(p)), "p is not finite"
+
+                p_flatten = p.flatten()
+                p_flatten = p_flatten / p_flatten.sum()
+
+                choices = np.random.choice(
+                    p.shape[0] * p.shape[1], p=p_flatten, size=x0_i.shape[0], replace=True
+                )
+
+                i, j = np.divmod(choices, p.shape[1])
+                x0_ot_i = x0_i[i]
+                x0_ot.append(x0_ot_i)
+                x1_ot_i = x1_i[j]
+                x1_ot.append(x1_ot_i)
+
+                # condition_ot = condition0_ot = condition1_ot = condition[j]
+                condition_ot_i = condition_i[j]
+                condition_ot.append(condition_ot_i)
+
+            # torch stack
+            x0_ot = torch.stack(x0_ot).reshape(x0.shape)
+            x1_ot = torch.stack(x1_ot).reshape(x1.shape)
+            condition_ot = torch.stack(condition_ot).reshape(condition.shape)
+                    
+            return self.velocity_function_.flow_matching_loss_icfm(
+                self.model, x0_ot, x1_ot, condition_ot, average
+            )
+
+        else:
+
+            split_size = 128
+
+            x0_split = torch.split(x0, split_size, dim=0)
+            x1_split = torch.split(x1, split_size, dim=0)
+
+            x0_ot = []
+            x1_ot = []
+
+            for x0_i, x1_i in zip(x0_split, x1_split):
+                
+                a = ot.unif(x0_i.shape[0])
+                b = ot.unif(x1_i.shape[0])
+                # TODO: make it compatible with TensorDict and treetensor.torch.Tensor
+                if x0_i.dim() > 2:
+                    x0_i = x0_i.reshape(x0_i.shape[0], -1)
+                if x1_i.dim() > 2:
+                    x1_i = x1_i.reshape(x1_i.shape[0], -1)
+                x1_i = x1_i.reshape(x1_i.shape[0], -1)
+                M = torch.cdist(x0_i, x1_i) ** 2
+                p = ot.emd(a, b, M.detach().cpu().numpy())
+                assert np.all(np.isfinite(p)), "p is not finite"
+
+                p_flatten = p.flatten()
+                p_flatten = p_flatten / p_flatten.sum()
+
+                choices = np.random.choice(
+                    p.shape[0] * p.shape[1], p=p_flatten, size=x0_i.shape[0], replace=True
+                )
+
+                i, j = np.divmod(choices, p.shape[1])
+                x0_ot_i = x0_i[i]
+                x0_ot.append(x0_ot_i)
+                x1_ot_i = x1_i[j]
+                x1_ot.append(x1_ot_i)
+
+
+
+            # torch stack
+            x0_ot = torch.stack(x0_ot, dim=0).reshape(x0.shape)
+            x1_ot = torch.stack(x1_ot, dim=0).reshape(x1.shape)
+
+                    
+            return self.velocity_function_.flow_matching_loss_icfm(
+                self.model, x0_ot, x1_ot, condition, average
+            )
+
+
+
     def flow_matching_loss(
+        self,
+        x0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        x1: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        average: bool = True,
+    ) -> torch.Tensor:
+        """
+        Overview:
+            Return the flow matching loss function of the model given the initial state and the condition.
+        Arguments:
+            x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
+        """
+
+        a = ot.unif(x0.shape[0])
+        b = ot.unif(x1.shape[0])
+        # TODO: make it compatible with TensorDict and treetensor.torch.Tensor
+        if x0.dim() > 2:
+            x0 = x0.reshape(x0.shape[0], -1)
+        if x1.dim() > 2:
+            x1 = x1.reshape(x1.shape[0], -1)
+        x1 = x1.reshape(x1.shape[0], -1)
+        M = torch.cdist(x0, x1) ** 2
+        p = ot.emd(a, b, M.detach().cpu().numpy())
+        assert np.all(np.isfinite(p)), "p is not finite"
+
+        p_flatten = p.flatten()
+        p_flatten = p_flatten / p_flatten.sum()
+
+        choices = np.random.choice(
+            p.shape[0] * p.shape[1], p=p_flatten, size=x0.shape[0], replace=True
+        )
+
+        i, j = np.divmod(choices, p.shape[1])
+        x0_ot = x0[i]
+        x1_ot = x1[j]
+        if condition is not None:
+            # condition_ot = condition0_ot = condition1_ot = condition[j]
+            condition_ot = condition[j]
+        else:
+            condition_ot = None
+            
+
+        return self.velocity_function_.flow_matching_loss_icfm(
+            self.model, x0_ot, x1_ot, condition_ot, average
+        )
+
+    def flow_matching_loss_backup(
         self,
         x0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
         x1: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
@@ -421,3 +587,4 @@ class OptimalTransportConditionalFlowModel(nn.Module):
         return self.velocity_function_.flow_matching_loss_icfm(
             self.model, x0_ot, x1_ot, condition, average
         )
+

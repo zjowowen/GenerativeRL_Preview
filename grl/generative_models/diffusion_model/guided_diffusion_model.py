@@ -257,8 +257,8 @@ class GuidedDiffusionModel:
                 guidance_scale: float = 1.0,
             ):
                 return self.noise_function(
-                    base_model=base_model,
-                    guided_model=guided_model,
+                    base_model=base_model.model,
+                    guided_model=guided_model.model,
                     t=t,
                     x=x,
                     condition=condition,
@@ -288,11 +288,11 @@ class GuidedDiffusionModel:
             # TODO: make it compatible with TensorDict
             def drift(t, x):
                 return (1.0 - guidance_scale) * self.diffusion_process.reverse_ode(
-                    function=base_model,
+                    function=base_model.model,
                     function_type=self.model_type,
                     condition=condition,
                 ).drift(t, x) + guidance_scale * self.diffusion_process.reverse_ode(
-                    function=guided_model,
+                    function=guided_model.model,
                     function_type=self.model_type,
                     condition=condition,
                 ).drift(
@@ -317,11 +317,11 @@ class GuidedDiffusionModel:
 
             def drift(t, x):
                 return (1.0 - guidance_scale) * self.diffusion_process.reverse_ode(
-                    function=base_model,
+                    function=base_model.model,
                     function_type=self.model_type,
                     condition=condition,
                 ).drift(t, x) + guidance_scale * self.diffusion_process.reverse_ode(
-                    function=guided_model,
+                    function=guided_model.model,
                     function_type=self.model_type,
                     condition=condition,
                 ).drift(
@@ -357,14 +357,14 @@ class GuidedDiffusionModel:
                 )
 
             sde_based = self.diffusion_process.reverse_sde(
-                function=base_model,
+                function=base_model.model,
                 function_type=self.model_type,
                 condition=condition,
                 reverse_diffusion_function=self.reverse_diffusion_process.diffusion,
                 reverse_diffusion_squared_function=self.reverse_diffusion_process.diffusion_squared,
             )
             sde_guided = self.diffusion_process.reverse_sde(
-                function=guided_model,
+                function=guided_model.model,
                 function_type=self.model_type,
                 condition=condition,
                 reverse_diffusion_function=self.reverse_diffusion_process.diffusion,

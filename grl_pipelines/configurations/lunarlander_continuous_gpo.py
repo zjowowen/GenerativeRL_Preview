@@ -13,7 +13,7 @@ t_encoder = dict(
     ),
 )
 solver_type = "ODESolver"
-model_type = "SchrodingerBridgeConditionalFlowModel"
+model_type = "OptimalTransportConditionalFlowModel"
 assert model_type in [
     "OptimalTransportConditionalFlowModel",
     "DiffusionModel",
@@ -207,24 +207,27 @@ config = EasyDict(
             behaviour_policy=dict(
                 batch_size=2048,
                 learning_rate=1e-4,
-                iterations=1,
+                epochs=5,
+                iterations=500,
             ),
-            sample_per_state=50,
+            sample_per_state=16,
             fake_data_t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
                 batch_size=2048,
-                iterations=1,
+                epochs=5,
+                iterations=500,
                 learning_rate=1e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
             ),
-            model_important_sampling=dict(
+            guided_policy=dict(
                 batch_size=2048,
-                iterations=1,
+                epochs=5,
+                iterations=500,
                 learning_rate=1e-4,
             ),
             evaluation=dict(
-                evaluation_interval=5000,
+                evaluation_interval=5,
                 guidance_scale=[0.0, 1.0, 2.0],
             ),
         ),

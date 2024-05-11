@@ -115,7 +115,7 @@ config = EasyDict(
                 learning_rate=1e-4,
                 iterations=50000,
             ),
-            sample_per_state=50,
+            sample_per_state=16,
             fake_data_t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
                 batch_size=2048,

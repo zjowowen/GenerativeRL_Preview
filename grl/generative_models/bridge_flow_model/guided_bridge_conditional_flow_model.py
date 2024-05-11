@@ -1,21 +1,11 @@
 from typing import Any, Callable, Dict, List, Tuple, Union
 
-import numpy as np
-import ot
 import torch
-import torch.nn as nn
 import treetensor
 from easydict import EasyDict
 from tensordict import TensorDict
 
-from grl.generative_models.diffusion_process import DiffusionProcess
-from grl.generative_models.intrinsic_model import IntrinsicModel
-from grl.generative_models.model_functions.data_prediction_function import (
-    DataPredictionFunction,
-)
-from grl.generative_models.model_functions.noise_function import NoiseFunction
-from grl.generative_models.model_functions.score_function import ScoreFunction
-from grl.generative_models.model_functions.velocity_function import VelocityFunction
+from grl.generative_models.bridge_flow_model.function import SchrodingerBridgeFunction
 from grl.generative_models.random_generator import gaussian_random_variable
 from grl.generative_models.stochastic_process import StochasticProcess
 from grl.numerical_methods.numerical_solvers import get_solver
@@ -25,14 +15,11 @@ from grl.numerical_methods.numerical_solvers.ode_solver import (
     ODESolver,
 )
 from grl.numerical_methods.numerical_solvers.sde_solver import SDESolver
-from grl.numerical_methods.probability_path import (
-    ConditionalProbabilityPath,
-    GaussianConditionalProbabilityPath,
-)
+from grl.numerical_methods.probability_path import SchrodingerBridgePath
 from grl.utils import find_parameters
 
 
-class GuidedConditionalFlowModel:
+class GuidedBridgeConditionalFlowModel:
 
     def __init__(
         self,
@@ -50,26 +37,26 @@ class GuidedConditionalFlowModel:
             config.use_tree_tensor if hasattr(config, "use_tree_tensor") else False,
         )
 
-        self.path = ConditionalProbabilityPath(config.path)
+        self.path = SchrodingerBridgePath(config.path)
         if hasattr(config, "reverse_path"):
-            self.reverse_path = ConditionalProbabilityPath(config.reverse_path)
+            self.reverse_path = SchrodingerBridgePath(config.reverse_path)
         else:
             self.reverse_path = None
-        self.model_type = config.model.type
-        assert self.model_type in [
+        self.velocity_model_type = config.velocity_model.type
+        assert self.velocity_model_type in [
             "velocity_function",
-        ], "Unknown type of model {}".format(self.model_type)
+        ], "Unknown type of model {}".format(self.velocity_model_type)
 
         self.diffusion_process = StochasticProcess(self.path)
-        self.velocity_function_ = VelocityFunction(
-            self.model_type, self.diffusion_process
+        self.function_ = SchrodingerBridgeFunction(
+            self.velocity_model_type, self.diffusion_process
         )
 
         if hasattr(config, "solver"):
             self.solver = get_solver(config.solver.type)(**config.solver.args)
 
     def get_type(self):
-        return "GuidedConditionalFlowModel"
+        return "GuidedBridgeConditionalFlowModel"
 
     def sample(
         self,
@@ -225,9 +212,9 @@ class GuidedConditionalFlowModel:
         elif isinstance(solver, ODESolver):
             # TODO: make it compatible with TensorDict
             def drift(t, x):
-                return (1.0 - guidance_scale) * base_model.model(
+                return (1.0 - guidance_scale) * base_model.velocity_model(
                     t=t, x=x, condition=condition
-                ) + guidance_scale * guided_model.model(t=t, x=x, condition=condition)
+                ) + guidance_scale * guided_model.velocity_model(t=t, x=x, condition=condition)
 
             if solver.library == "torchdiffeq_adjoint":
                 if with_grad:
@@ -264,9 +251,9 @@ class GuidedConditionalFlowModel:
         elif isinstance(solver, DictTensorODESolver):
             # TODO: make it compatible with TensorDict
             def drift(t, x):
-                return (1.0 - guidance_scale) * base_model.model(
+                return (1.0 - guidance_scale) * base_model.velocity_model(
                     t=t, x=x, condition=condition
-                ) + guidance_scale * guided_model.model(t=t, x=x, condition=condition)
+                ) + guidance_scale * guided_model.velocity_model(t=t, x=x, condition=condition)
 
             if with_grad:
                 data = solver.integrate(

@@ -172,7 +172,6 @@ class QGPOPolicy(nn.Module):
         self.critic = QGPOCritic(config.critic)
         self.diffusion_model = DiffusionModel(config.diffusion_model)
         self.diffusion_model_important_sampling = DiffusionModel(config.diffusion_model)
-        # self.guidance_model = GuidedDiffusionModel(config.diffusion_model)
 
         self.softmax = nn.Softmax(dim=1)
 
@@ -193,7 +192,7 @@ class QGPOPolicy(nn.Module):
         self,
         state: Union[torch.Tensor, TensorDict],
         batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
-        guidance_scale: Union[torch.Tensor, float] = torch.tensor(1.0),
+        with_grad: bool = False,
         solver_config: EasyDict = None,
         t_span: torch.Tensor = None,
     ) -> Union[torch.Tensor, TensorDict]:
@@ -209,29 +208,19 @@ class QGPOPolicy(nn.Module):
             action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
 
-        return self.diffusion_model.sample(
+        return self.diffusion_model_important_sampling.sample(
             t_span=t_span,
             condition=state,
             batch_size=batch_size,
-            with_grad=False,
+            with_grad=with_grad,
             solver_config=solver_config,
         )
-
-        # return self.guidance_model.sample(
-        #     base_model=self.diffusion_model.model,
-        #     guided_model=self.diffusion_model_important_sampling.model,
-        #     t_span = t_span,
-        #     condition=state,
-        #     batch_size=batch_size,
-        #     guidance_scale=guidance_scale,
-        #     with_grad=False,
-        #     solver_config=solver_config
-        # )
 
     def behaviour_policy_sample(
         self,
         state: Union[torch.Tensor, TensorDict],
         batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
+        with_grad: bool = False,
         solver_config: EasyDict = None,
         t_span: torch.Tensor = None,
     ) -> Union[torch.Tensor, TensorDict]:
@@ -249,6 +238,7 @@ class QGPOPolicy(nn.Module):
             t_span=t_span,
             condition=state,
             batch_size=batch_size,
+            with_grad=with_grad,
             solver_config=solver_config,
         )
 

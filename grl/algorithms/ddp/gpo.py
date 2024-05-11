@@ -532,11 +532,21 @@ class GPOAlgorithm:
             # Customized model initialization code ↓
             # ---------------------------------------
 
+
             if hasattr(config.model, "GPOPolicy"):
-                self.model["GPOPolicy"] = GPOPolicy(config.model.GPOPolicy)
-                self.model["GPOPolicy"].to(config.model.GPOPolicy.device)
                 if torch.__version__ >= "2.0.0":
-                    self.model["GPOPolicy"] = torch.compile(self.model["GPOPolicy"])
+                    self.model["GPOPolicy"] = nn.parallel.DistributedDataParallel(
+                        torch.compile(GPOPolicy(config.model.GPOPolicy).to(config.model.GPOPolicy.device)),
+                        device_ids=[torch.distributed.get_rank()],
+                        find_unused_parameters=True,
+                    )
+                else:
+                    self.model["GPOPolicy"] = nn.parallel.DistributedDataParallel(
+                        GPOPolicy(config.model.GPOPolicy).to(config.model.GPOPolicy.device),
+                        device_ids=[torch.distributed.get_rank()],
+                        find_unused_parameters=True,
+                    )
+
                 self.model["GuidedPolicy"] = GuidedPolicy(
                     config=config.model.GuidedPolicy
                 )
@@ -579,7 +589,7 @@ class GPOAlgorithm:
                 guided_policy_train_epoch = 0
 
             def save_checkpoint(model, behaviour_policy_train_epoch, critic_train_epoch, guided_policy_train_epoch):
-                if hasattr(config.parameter, "checkpoint_path") and config.parameter.checkpoint_path is not None:
+                if torch.distributed.get_rank() == 0 and hasattr(config.parameter, "checkpoint_path") and config.parameter.checkpoint_path is not None:
                     if not os.path.exists(config.parameter.checkpoint_path):
                         os.makedirs(config.parameter.checkpoint_path)
                     torch.save(
@@ -636,10 +646,10 @@ class GPOAlgorithm:
                         action = (
                             model["GuidedPolicy"]
                             .sample(
-                                base_model=self.model["GPOPolicy"].base_model,
+                                base_model=self.model["GPOPolicy"].module.base_model,
                                 guided_model=self.model[
                                     "GPOPolicy"
-                                ].guided_model,
+                                ].module.guided_model,
                                 state=obs,
                                 guidance_scale=guidance_scale,
                                 t_span=(
@@ -686,8 +696,27 @@ class GPOAlgorithm:
                 return evaluation_results
 
             behaviour_policy_optimizer = torch.optim.Adam(
-                self.model["GPOPolicy"].base_model.parameters(),
+                self.model["GPOPolicy"].module.base_model.parameters(),
                 lr=config.parameter.behaviour_policy.learning_rate,
+            )
+
+            sampler = torch.utils.data.DistributedSampler(
+                            self.dataset,
+                            num_replicas=torch.distributed.get_world_size(),
+                            rank=torch.distributed.get_rank(),
+                            shuffle=True,
+                        )
+
+            data_loader = torch.utils.data.DataLoader(
+                self.dataset,
+                batch_size=int(
+                        config.parameter.behaviour_policy.batch_size // torch.distributed.get_world_size()
+                    ),
+                shuffle=False,
+                sampler=sampler,
+                num_workers=0,
+                pin_memory=False,
+                drop_last=True,
             )
 
             behaviour_policy_train_iter = 0
@@ -695,15 +724,7 @@ class GPOAlgorithm:
                 if behaviour_policy_train_epoch > epoch:
                     continue
 
-                sampler = torch.utils.data.RandomSampler(self.dataset, replacement=False)
-                data_loader = torch.utils.data.DataLoader(
-                    self.dataset,
-                    batch_size=config.parameter.behaviour_policy.batch_size,
-                    shuffle=False,
-                    sampler=sampler,
-                    pin_memory=False,
-                    drop_last=True,
-                )
+                sampler.set_epoch(epoch)
 
                 if (
                     (epoch + 1)
@@ -717,7 +738,7 @@ class GPOAlgorithm:
 
                     behaviour_policy_loss = self.model[
                         "GPOPolicy"
-                    ].behaviour_policy_loss(
+                    ].module.behaviour_policy_loss(
                         data["a"],
                         data["s"],
                         maximum_likelihood=(
@@ -751,23 +772,60 @@ class GPOAlgorithm:
                     log.info("Behaviour policy training finished.")
                     break
 
-            self.dataset.fake_actions = generate_fake_action(
-                self.model["GPOPolicy"],
-                self.dataset.states[:],
-                config.parameter.sample_per_state,
-            )
-
-            self.dataset.fake_next_actions = generate_fake_action(
-                self.model["GPOPolicy"],
-                self.dataset.next_states[:],
-                config.parameter.sample_per_state,
-            )
-
-
+            if torch.distributed.get_rank() == 0:
+                fake_actions = generate_fake_action(
+                    self.model["GPOPolicy"].module,
+                    self.dataset.states[:],
+                    config.parameter.sample_per_state,
+                )
+                fake_next_actions = generate_fake_action(
+                    self.model["GPOPolicy"].module,
+                    self.dataset.next_states[:],
+                    config.parameter.sample_per_state,
+                )
+                torch.distributed.barrier()
+            else:
+                fake_actions = torch.zeros(
+                    self.dataset.states.shape[0],
+                    config.parameter.sample_per_state,
+                    self.dataset.actions.shape[-1],
+                    device=self.dataset.states.device,
+                )
+                fake_next_actions = torch.zeros(
+                    self.dataset.next_states.shape[0],
+                    config.parameter.sample_per_state,
+                    self.dataset.actions.shape[-1],
+                    device=self.dataset.next_states.device,
+                )
+                torch.distributed.barrier()
+            
+            torch.distributed.broadcast(fake_actions, src=0)
+            torch.distributed.barrier()
+            torch.distributed.broadcast(fake_next_actions, src=0)
+            torch.distributed.barrier()
 
             q_optimizer = torch.optim.Adam(
-                self.model["GPOPolicy"].critic.q.parameters(),
+                self.model["GPOPolicy"].module.critic.q.parameters(),
                 lr=config.parameter.critic.learning_rate,
+            )
+
+            sampler = torch.utils.data.DistributedSampler(
+                            self.dataset,
+                            num_replicas=torch.distributed.get_world_size(),
+                            rank=torch.distributed.get_rank(),
+                            shuffle=True,
+                        )
+
+            data_loader = torch.utils.data.DataLoader(
+                self.dataset,
+                batch_size=int(
+                        config.parameter.critic.batch_size // torch.distributed.get_world_size()
+                    ),
+                shuffle=False,
+                sampler=sampler,
+                num_workers=0,
+                pin_memory=False,
+                drop_last=True,
             )
 
             critic_train_iter = 0
@@ -775,18 +833,11 @@ class GPOAlgorithm:
                 if critic_train_epoch > epoch:
                     continue
 
-                sampler = torch.utils.data.RandomSampler(self.dataset, replacement=False)
-                data_loader = torch.utils.data.DataLoader(
-                    self.dataset,
-                    batch_size=config.parameter.critic.batch_size,
-                    shuffle=False,
-                    sampler=sampler,
-                    pin_memory=False,
-                    drop_last=True,
-                )
+                sampler.set_epoch(epoch)
+
                 for data in data_loader:
 
-                    q_loss, q, q_target = self.model["GPOPolicy"].q_loss(
+                    q_loss, q, q_target = self.model["GPOPolicy"].module.q_loss(
                         data["a"],
                         data["s"],
                         data["r"],
@@ -802,8 +853,8 @@ class GPOAlgorithm:
 
                     # Update target
                     for param, target_param in zip(
-                        self.model["GPOPolicy"].critic.parameters(),
-                        self.model["GPOPolicy"].critic.q_target.parameters(),
+                        self.model["GPOPolicy"].module.critic.parameters(),
+                        self.model["GPOPolicy"].module.critic.q_target.parameters(),
                     ):
                         target_param.data.copy_(
                             config.parameter.critic.update_momentum * param.data
@@ -833,24 +884,32 @@ class GPOAlgorithm:
                     break
 
             guided_policy_optimizer = torch.optim.Adam(
-                self.model["GPOPolicy"].guided_model.parameters(),
+                self.model["GPOPolicy"].module.guided_model.parameters(),
                 lr=config.parameter.guided_policy.learning_rate,
+            )
+
+            torch.distributed.barrier()
+
+            data_loader = torch.utils.data.DataLoader(
+                self.dataset,
+                batch_size=int(
+                        config.parameter.guided_policy.batch_size // torch.distributed.get_world_size()
+                    ),
+                shuffle=False,
+                sampler=sampler,
+                num_workers=0,
+                pin_memory=False,
+                drop_last=True,
             )
 
             guided_policy_train_iter = 0
             for epoch in track(range(config.parameter.guided_policy.epochs), description="Guided policy training"):
+                
                 if guided_policy_train_epoch > epoch:
                     continue
 
-                sampler = torch.utils.data.RandomSampler(self.dataset, replacement=False)
-                data_loader = torch.utils.data.DataLoader(
-                    self.dataset,
-                    batch_size=config.parameter.guided_policy.batch_size,
-                    shuffle=False,
-                    sampler=sampler,
-                    pin_memory=False,
-                    drop_last=True,
-                )
+                sampler.set_epoch(epoch)
+
                 if (
                     (epoch + 1)
                     % config.parameter.evaluation.evaluation_interval

@@ -71,8 +71,8 @@ class GPOAgent:
             action = (
                 self.model["GuidedPolicy"]
                 .sample(
-                    base_model=self.model["GPOPolicy"].model,
-                    guided_model=self.model["GPOPolicy"].model_important_sampling,
+                    base_model=self.model["GPOPolicy"].base_model,
+                    guided_model=self.model["GPOPolicy"].guided_model,
                     state=obs,
                     t_span=(
                         torch.linspace(0.0, 1.0, self.config.t_span).to(obs.device)

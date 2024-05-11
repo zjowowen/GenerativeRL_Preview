@@ -383,6 +383,7 @@ class IndependentConditionalFlowModel(nn.Module):
         x0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
         x1: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
         condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        average: bool = True,
     ) -> torch.Tensor:
         """
         Overview:
@@ -393,5 +394,5 @@ class IndependentConditionalFlowModel(nn.Module):
         """
 
         return self.velocity_function_.flow_matching_loss_icfm(
-            self.model, x0, x1, condition
+            self.model, x0, x1, condition, average
         )

@@ -46,7 +46,7 @@ config = EasyDict(
                 ),
             ),
             path=dict(
-                sigma=1,
+                sigma=1.0,
             ),
             velocity_model=dict(
                 type="velocity_function",
@@ -86,8 +86,8 @@ config = EasyDict(
             clip_grad_norm=1.0,
             eval_freq=200,
             checkpoint_freq=100,
-            checkpoint_path="./checkpoint",
-            video_save_path="./video",
+            checkpoint_path="./checkpoint-swiss-roll-SchrodingerBridge",
+            video_save_path="./video-swiss-roll-SchrodingerBridge",
             device=device,
         ),
     )
