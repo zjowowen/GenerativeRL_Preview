@@ -972,7 +972,6 @@ class GPAlgorithm:
                 device_ids=[torch.distributed.get_rank()],
             )
         )
-
         q_optimizer = torch.optim.Adam(
             self.model["GPPolicy"].critic.q.parameters(),
             lr=config.parameter.critic.learning_rate,
@@ -1031,7 +1030,7 @@ class GPAlgorithm:
                 q_loss.backward()
                 q_grad_norms = nn.utils.clip_grad_norm_(
                     self.model["GPPolicy"].critic.parameters(),
-                    max_norm=config.parameter.critic_policy.grad_norm_clip,
+                    max_norm=config.parameter.critic.grad_norm_clip,
                     norm_type=2,
                 )
                 q_optimizer.step()
@@ -1076,7 +1075,6 @@ class GPAlgorithm:
                     guided_policy_train_epoch,
                 )
 
-        torch.distributions.destroy_process_group()
         self.model["GPPolicy"].guided_model.model = nn.parallel.DistributedDataParallel(
             self.model["GPPolicy"].guided_model.model,
             device_ids=[torch.distributed.get_rank()],
@@ -1085,6 +1083,11 @@ class GPAlgorithm:
             self.model["GPPolicy"].guided_model.parameters(),
             lr=config.parameter.guided_policy.learning_rate,
         )
+
+        if config.parameter.guided_policy.copy_frome_basemodel:
+            self.model["GPPolicy"].guided_model.load_state_dict(
+                self.model["GPPolicy"].base_model.state_dict()
+            )
 
         if config.parameter.guided_policy.lr_decy:
             from torch.optim.lr_scheduler import CosineAnnealingLR

@@ -214,7 +214,7 @@ def make_config(device):
                     grad_norm_clip=10.0,
                     lr_decy=False,
                 ),
-                model_important_sampling=dict(
+                guided_policy=dict(
                     batch_size=2048,
                     epochs=1,
                     learning_rate=1e-4,
