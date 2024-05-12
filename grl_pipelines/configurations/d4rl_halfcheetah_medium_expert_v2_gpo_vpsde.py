@@ -1,8 +1,8 @@
 import torch
 from easydict import EasyDict
 
-action_size = 2
-state_size = 8
+action_size = 6
+state_size = 17
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 t_embedding_dim = 32
 t_encoder = dict(
@@ -14,7 +14,7 @@ t_encoder = dict(
 )
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
-project_name = "LunarLanderContinuous-v2-GPO-VPSDE"
+project_name = "d4rl-halfcheetah-medium-expert-v2-GPO-VPSDE"
 model = dict(
     device=device,
     x_size=action_size,
@@ -80,22 +80,20 @@ config = EasyDict(
         simulator=dict(
             type="GymEnvSimulator",
             args=dict(
-                env_id="LunarLanderContinuous-v2",
+                env_id="halfcheetah-medium-expert-v2",
             ),
         ),
-        # dataset = dict(
-        #     type = "GPOCustomizedDataset",
-        #     args = dict(
-        #         env_id = "LunarLanderContinuous-v2",
-        #         device = device,
-        #         numpy_data_path = "./data.npz",
-        #     ),
-        # ),
+        dataset=dict(
+            type="GPOD4RLDataset",
+            args=dict(
+                env_id="halfcheetah-medium-expert-v2",
+                device=device,
+            ),
+        ),
         model=dict(
             GPOPolicy=dict(
                 device=device,
                 model_type=model_type,
-                model_loss_type="score_matching",
                 model=model,
                 critic=dict(
                     device=device,
@@ -119,39 +117,39 @@ config = EasyDict(
         ),
         parameter=dict(
             behaviour_policy=dict(
-                batch_size=2048,
+                batch_size=4096,
                 learning_rate=1e-4,
-                epochs=5,
-                iterations=500,
+                epochs=10000,
+                iterations=1000000,
             ),
             sample_per_state=16,
             fake_data_t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
-                batch_size=2048,
-                epochs=5,
-                iterations=500,
+                batch_size=4096,
+                epochs=10000,
+                iterations=1000000,
                 learning_rate=1e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
             ),
             guided_policy=dict(
-                batch_size=2048,
-                epochs=5,
-                iterations=500,
+                batch_size=4096,
+                epochs=10000,
+                iterations=2000000,
                 learning_rate=1e-4,
             ),
             evaluation=dict(
-                evaluation_interval=5,
+                evaluation_interval=500,
                 guidance_scale=[0.0, 1.0, 2.0],
             ),
             checkpoint_path=f"./{project_name}/checkpoint",
-            checkpoint_freq=5,
+            checkpoint_freq=500,
         ),
     ),
     deploy=dict(
         device=device,
         env=dict(
-            env_id="LunarLanderContinuous-v2",
+            env_id="halfcheetah-medium-expert-v2",
             seed=0,
         ),
         num_deploy_steps=1000,

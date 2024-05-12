@@ -384,7 +384,7 @@ class SchrodingerBridgeConditionalFlowModel(nn.Module):
             x1_ = x1.reshape(x1.shape[0], -1)
         else:
             x1_ = x1
-        #TODO: check if the x.dim == 1
+        # TODO: check if the x.dim == 1
         M = torch.cdist(x0_, x1_) ** 2
         p = ot.emd(a, b, M.detach().cpu().numpy())
         assert np.all(np.isfinite(p)), "p is not finite"

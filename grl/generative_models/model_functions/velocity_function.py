@@ -289,7 +289,6 @@ class VelocityFunction:
                 "Unknown type of velocity function {}".format(type)
             )
 
-
     def flow_matching_loss_icfm_backup(
         self,
         model: Union[Callable, nn.Module],

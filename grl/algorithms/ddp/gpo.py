@@ -849,11 +849,20 @@ class GPOAlgorithm:
                     self.dataset.actions.shape[-1],
                     device=self.dataset.next_states.device,
                 )
+                log.info("Waiting for rank 0 to generate fake actions.")
                 torch.distributed.barrier()
 
+            log.info("Broadcasting fake actions.")
             torch.distributed.broadcast(fake_actions, src=0)
+            log.info(
+                f"Test fake actions: {fake_actions[0].detach().cpu().numpy()}, rank: {torch.distributed.get_rank()}"
+            )
             torch.distributed.barrier()
+            log.info("Broadcasting fake next actions.")
             torch.distributed.broadcast(fake_next_actions, src=0)
+            log.info(
+                f"Test fake next actions: {fake_next_actions[0].detach().cpu().numpy()}, rank: {torch.distributed.get_rank()}"
+            )
             torch.distributed.barrier()
 
             self.dataset.fake_actions = fake_actions
@@ -1029,8 +1038,8 @@ class GPOAlgorithm:
                     if torch.distributed.get_rank() == 0:
                         save_checkpoint(
                             self.model,
-                            behaviour_policy_train_epoch ,
-                            critic_train_epoch ,
+                            behaviour_policy_train_epoch,
+                            critic_train_epoch,
                             guided_policy_train_epoch + 1,
                         )
 

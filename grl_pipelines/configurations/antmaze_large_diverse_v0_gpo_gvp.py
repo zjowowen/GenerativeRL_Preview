@@ -32,7 +32,7 @@ model = dict(
             dict(
                 type="ODESolver",
                 args=dict(
-                    library="torchdyn",
+                    library="torchdiffeq",
                 ),
             )
             if solver_type == "ODESolver"

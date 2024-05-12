@@ -3,7 +3,7 @@ import gym
 from grl.algorithms.gpo import GPOAlgorithm
 from grl.datasets import GPOCustomizedDataset
 from grl.utils.log import log
-from grl_pipelines.configurations.d4rl_walker2d_gpo_icfm import (
+from grl_pipelines.configurations.d4rl_hopper_medium_expert_v2_gpo_vpsde import (
     config,
 )
 

@@ -11,7 +11,7 @@ from tensordict import TensorDict
 from torch.utils.data import DataLoader
 
 import wandb
-from grl.agents.gpo import GPOAgent
+from grl.agents.gp import GPAgent
 
 from grl.datasets import create_dataset
 from grl.datasets.gpo import GPODataset
@@ -516,7 +516,6 @@ class GPAlgorithm:
         simulator=None,
         dataset: GPODataset = None,
         model: Union[torch.nn.Module, torch.nn.ModuleDict] = None,
-        seed=None,
     ):
         """
         Overview:
@@ -534,11 +533,108 @@ class GPAlgorithm:
         self.config = config
         self.simulator = simulator
         self.dataset = dataset
-        self.model = model if model is not None else torch.nn.ModuleDict()
+
         # ---------------------------------------
         # Customized model initialization code ↓
         # ---------------------------------------
+
+        if model is not None:
+            self.model = model
+            self.behaviour_policy_train_epoch = 0
+            self.critic_train_epoch = 0
+            self.guided_policy_train_epoch = 0
+        else:
+            self.model = torch.nn.ModuleDict()
+            config = self.config.train
+            assert hasattr(config.model, "GPPolicy")
+
+            if torch.__version__ >= "2.0.0":
+                self.model["GPPolicy"] = torch.compile(
+                    GPPolicy(config.model.GPPolicy).to(config.model.GPPolicy.device)
+                )
+            else:
+                self.model["GPPolicy"] = GPPolicy(config.model.GPPolicy).to(
+                    config.model.GPPolicy.device
+                )
+            self.model["GuidedPolicy"] = GuidedPolicy(config=config.model.GuidedPolicy)
+
+            if (
+                hasattr(config.parameter, "checkpoint_path")
+                and config.parameter.checkpoint_path is not None
+            ):
+
+                if not os.path.exists(config.parameter.checkpoint_path):
+                    log.warning(
+                        f"Checkpoint path {config.parameter.checkpoint_path} does not exist"
+                    )
+                    self.behaviour_policy_train_epoch = 0
+                    self.critic_train_epoch = 0
+                    self.guided_policy_train_epoch = 0
+                else:
+                    checkpoint_files = [
+                        f
+                        for f in os.listdir(config.parameter.checkpoint_path)
+                        if f.endswith(".pt")
+                    ]
+                    if len(checkpoint_files) == 0:
+                        self.behaviour_policy_train_epoch = 0
+                        self.critic_train_epoch = 0
+                        self.guided_policy_train_epoch = 0
+                        log.warning(
+                            f"No checkpoint file found in {config.parameter.checkpoint_path}"
+                        )
+                    else:
+                        checkpoint_files = sorted(
+                            checkpoint_files,
+                            key=lambda x: int(x.split("_")[-1].split(".")[0]),
+                        )
+                        checkpoint = torch.load(
+                            os.path.join(
+                                config.parameter.checkpoint_path, checkpoint_files[-1]
+                            ),
+                            map_location="cpu",
+                        )
+
+                        from collections import OrderedDict
+
+                        checkpoint_sorted = OrderedDict()
+                        for key, value in checkpoint["model"].items():
+                            name = key.replace("module.", "")
+                            checkpoint_sorted[name] = value
+                        self.model.load_state_dict(checkpoint_sorted)
+                        self.behaviour_policy_train_epoch = checkpoint.get(
+                            "behaviour_policy_train_epoch", 0
+                        )
+                        self.critic_train_epoch = checkpoint.get(
+                            "critic_train_epoch", 0
+                        )
+                        self.guided_policy_train_epoch = checkpoint.get(
+                            "guided_policy_train_epoch", 0
+                        )
+                        log.info(
+                            f"Load checkpoint from {checkpoint_files[-1]}, behaviour_policy_train_epoch: {self.behaviour_policy_train_epoch}, critic_train_epoch: {self.critic_train_epoch}, guided_policy_train_epoch: {self.guided_policy_train_epoch}"
+                        )
+            else:
+                self.behaviour_policy_train_epoch = 0
+                self.critic_train_epoch = 0
+                self.guided_policy_train_epoch = 0
+
+        # ---------------------------------------
+        # Customized model initialization code ↑
+        # ---------------------------------------
+
+    def train(self, config: EasyDict = None, seed=None):
+        """
+        Overview:
+            Train the model using the given configuration. \
+            A weight-and-bias run will be created automatically when this function is called.
+        Arguments:
+            config (:obj:`EasyDict`): The training configuration.
+            seed (:obj:`int`): The random seed.
+        """
+
         seed_value = set_seed(seed_value=seed)
+
         config = (
             merge_two_dicts_into_newone(
                 self.config.train if hasattr(self.config, "train") else EasyDict(),
@@ -549,308 +645,566 @@ class GPAlgorithm:
         )
 
         config["seed"] = seed_value
-        wandb.init(
+
+        with wandb.init(
             project=(
                 config.project if hasattr(config, "project") else __class__.__name__
             ),
             **config.wandb if hasattr(config, "wandb") else {},
-        )
-        config = merge_two_dicts_into_newone(EasyDict(wandb.config), config)
-        wandb.config.update(config)
-        self.config.train = config
-        self.simulator = (
-            create_simulator(config.simulator)
-            if hasattr(config, "simulator")
-            else self.simulator
-        )
+        ) as wandb_run:
+            config = merge_two_dicts_into_newone(EasyDict(wandb_run.config), config)
+            wandb_run.config.update(config)
+            self.config.train = config
 
-        dataset_path = os.path.join(
-            config.parameter.checkpoint_path,
-            f"dataset_with_fakeaction.npz",
-        )
-
-        if os.path.exists(dataset_path):
+            self.simulator = (
+                create_simulator(config.simulator)
+                if hasattr(config, "simulator")
+                else self.simulator
+            )
             self.dataset = (
                 create_dataset(config.dataset)
                 if hasattr(config, "dataset")
                 else self.dataset
             )
-            # self.dataset = GPODataset.load(dataset_path)
-            self.need_fake_action = False
-        else:
-            self.dataset = (
-                create_dataset(config.dataset)
-                if hasattr(config, "dataset")
-                else self.dataset
-            )
-            self.need_fake_action = True
 
-        # ---------------------------------------
-        # Customized model initialization code ↓
-        # ---------------------------------------
-
-        if hasattr(config.model, "GPPolicy"):
-            if torch.__version__ >= "2.0.0":
-                self.model["GPPolicy"] = torch.compile(
-                    GPPolicy(config.model.GPPolicy).to(config.model.GPPolicy.device)
-                )
-
-            else:
-                self.model["GPPolicy"] = GPPolicy(config.model.GPPolicy).to(
-                    config.model.GPPolicy.device
-                )
-
-        self.model["GuidedPolicy"] = GuidedPolicy(config=config.model.GuidedPolicy)
-
-        # ---------------------------------------
-        # Customized model initialization code ↑
-        # ---------------------------------------
-
-        if (
-            hasattr(config.parameter, "checkpoint_path")
-            and config.parameter.checkpoint_path is not None
-        ):
-
-            if not os.path.exists(config.parameter.checkpoint_path):
-                log.warning(
-                    f"Checkpoint path {config.parameter.checkpoint_path} does not exist"
-                )
-                self.behaviour_policy_train_epoch = 0
-                self.critic_train_epoch = 0
-                self.guided_policy_train_epoch = 0
-            else:
-                checkpoint_files = [
-                    f
-                    for f in os.listdir(config.parameter.checkpoint_path)
-                    if f.endswith(".pt")
-                ]
-                checkpoint_files = sorted(
-                    checkpoint_files,
-                    key=lambda x: int(x.split("_")[-1].split(".")[0]),
-                )
-                checkpoint = torch.load(
-                    os.path.join(
-                        config.parameter.checkpoint_path, checkpoint_files[-1]
-                    ),
-                    map_location="cpu",
-                )
-                self.model.load_state_dict(checkpoint["model"])
-                self.behaviour_policy_train_epoch = checkpoint.get(
-                    "behaviour_policy_train_epoch", 0
-                )
-                self.critic_train_epoch = checkpoint.get("critic_train_epoch", 0)
-                self.guided_policy_train_epoch = checkpoint.get(
-                    "guided_policy_train_epoch", 0
-                )
-        else:
-            self.behaviour_policy_train_epoch = 0
-            self.critic_train_epoch = 0
-            self.guided_policy_train_epoch = 0
-
-        # ---------------------------------------
-        # Customized model initialization code ↑
-        # ---------------------------------------
-
-    def train(self, seed=None):
-        """
-        Overview:
-            Train the model using the given configuration. \
-            A weight-and-bias run will be created automatically when this function is called.
-        Arguments:
-            config (:obj:`EasyDict`): The training configuration.
-            seed (:obj:`int`): The random seed.
-        """
-        behaviour_policy_train_epoch = self.behaviour_policy_train_epoch
-        critic_train_epoch = self.critic_train_epoch
-        guided_policy_train_epoch = self.guided_policy_train_epoch
-        config = self.config.train.train
-
-        # ---------------------------------------
-        # Customized training code ↓
-        # ---------------------------------------
-        def save_checkpoint(
-            model,
-            behaviour_policy_train_epoch,
-            critic_train_epoch,
-            guided_policy_train_epoch,
-        ):
-            if (
-                torch.distributed.get_rank() == 0
-                and hasattr(config.parameter, "checkpoint_path")
-                and config.parameter.checkpoint_path is not None
-            ):
-                if not os.path.exists(config.parameter.checkpoint_path):
-                    os.makedirs(config.parameter.checkpoint_path)
-                torch.save(
-                    dict(
-                        base_model=model.state_dict(),
-                        behaviour_policy_train_epoch=behaviour_policy_train_epoch,
-                        critic_train_epoch=critic_train_epoch,
-                        guided_policy_train_epoch=guided_policy_train_epoch,
-                    ),
-                    f=os.path.join(
-                        config.parameter.checkpoint_path,
-                        f"checkpoint_{behaviour_policy_train_epoch}_{critic_train_epoch}_{guided_policy_train_epoch}.pt",
-                    ),
-                )
-
-        def generate_fake_action(model, states, sample_per_state):
-
-            fake_actions_sampled = []
-            for states in track(
-                np.array_split(states, states.shape[0] // 4096 + 1),
-                description="Generate fake actions",
-            ):
-
-                fake_actions_ = model.behaviour_policy_sample(
-                    state=states,
-                    batch_size=sample_per_state,
-                    t_span=(
-                        torch.linspace(0.0, 1.0, config.parameter.fake_data_t_span).to(
-                            states.device
-                        )
-                        if config.parameter.fake_data_t_span is not None
-                        else None
-                    ),
-                )
-                fake_actions_sampled.append(torch.einsum("nbd->bnd", fake_actions_))
-
-            fake_actions = torch.cat(fake_actions_sampled, dim=0)
-            return fake_actions
-
-        def evaluate(model, train_epoch, guidance_scales, repeat=1):
-            evaluation_results = dict()
-            for guidance_scale in guidance_scales:
-
-                def policy(obs: np.ndarray) -> np.ndarray:
-                    obs = torch.tensor(
-                        obs,
-                        dtype=torch.float32,
-                        device=config.model.GPPolicy.device,
-                    ).unsqueeze(0)
-                    action = (
-                        model["GuidedPolicy"]
-                        .sample(
-                            base_model=self.model["GPPolicy"].base_model,
-                            guided_model=self.model["GPPolicy"].guided_model,
-                            state=obs,
-                            guidance_scale=guidance_scale,
-                            t_span=(
-                                torch.linspace(
-                                    0.0, 1.0, config.parameter.fake_data_t_span
-                                ).to(config.model.GPPolicy.device)
-                                if config.parameter.fake_data_t_span is not None
-                                else None
-                            ),
-                        )
-                        .squeeze(0)
-                        .cpu()
-                        .detach()
-                        .numpy()
-                    )
-                    return action
-
-                return_results = [
-                    self.simulator.evaluate(
-                        policy=policy,
-                    )[
-                        0
-                    ]["total_return"]
-                    for _ in range(repeat)
-                ]
-                return_mean = np.mean(return_results)
-                return_std = np.std(return_results)
-                return_max = np.max(return_results)
-                return_min = np.min(return_results)
-                evaluation_results[
-                    f"evaluation/guidance_scale:[{guidance_scale}]/return_mean"
-                ] = return_mean
-                evaluation_results[
-                    f"evaluation/guidance_scale:[{guidance_scale}]/return_std"
-                ] = return_std
-                evaluation_results[
-                    f"evaluation/guidance_scale:[{guidance_scale}]/return_max"
-                ] = return_max
-                evaluation_results[
-                    f"evaluation/guidance_scale:[{guidance_scale}]/return_min"
-                ] = return_min
-                if repeat > 1:
-                    log.info(
-                        f"Train epoch: {train_epoch}, guidance_scale: {guidance_scale}, return_mean: {return_mean}, return_std: {return_std}, return_max: {return_max}, return_min: {return_min}"
-                    )
-                else:
-                    log.info(
-                        f"Train epoch: {train_epoch}, guidance_scale: {guidance_scale}, return: {return_mean}"
-                    )
-
-            return evaluation_results
-
-        # ---------------------------------------
-        # behavior training code ↓
-        # ---------------------------------------
-        behaviour_policy_optimizer = torch.optim.Adam(
-            self.model["GPPolicy"].base_model.model.parameters(),
-            lr=config.parameter.behaviour_policy.learning_rate,
-        )
-        if config.parameter.behaviour_policy.lr_decy:
-            from torch.optim.lr_scheduler import CosineAnnealingLR
-
-            behaviour_lr_scheduler = CosineAnnealingLR(
-                behaviour_policy_optimizer,
-                T_max=config.parameter.behaviour_policy.epochs,
-                eta_min=0.0,
+            fake_dataset_path = os.path.join(
+                config.parameter.checkpoint_path,
+                f"dataset_with_fakeaction.npz",
             )
 
-        sampler = torch.utils.data.DistributedSampler(
-            self.dataset,
-            num_replicas=torch.distributed.get_world_size(),
-            rank=torch.distributed.get_rank(),
-            shuffle=True,
-        )
-        assert (
-            config.parameter.behaviour_policy.batch_size
-            % torch.distributed.get_world_size()
-            == 0
-        )
-        data_loader = torch.utils.data.DataLoader(
-            self.dataset,
-            batch_size=int(
-                config.parameter.behaviour_policy.batch_size
-                // torch.distributed.get_world_size()
-            ),
-            shuffle=False,
-            sampler=sampler,
-            num_workers=0,
-            pin_memory=False,
-            drop_last=True,
-        )
+            if os.path.exists(fake_dataset_path):
+                fake_dataset = np.load(fake_dataset_path)
 
-        behaviour_policy_train_iter = 0
-        self.model["GPPolicy"].base_model.model = nn.parallel.DistributedDataParallel(
-            self.model["GPPolicy"].base_model.model,
-            device_ids=[torch.distributed.get_rank()],
-        )
-        for epoch in track(
-            range(config.parameter.behaviour_policy.epochs),
-            description="Behaviour policy training",
-        ):
-            if behaviour_policy_train_epoch > epoch:
-                continue
+                self.dataset.fake_actions = torch.from_numpy(
+                    fake_dataset["fake_actions"]
+                ).to(self.dataset.device)
+                log.info(
+                    f"Test fake actions: {self.dataset.fake_actions[0].cpu().numpy().mean()}, rank: {torch.distributed.get_rank()}"
+                )
+                self.dataset.fake_next_actions = torch.from_numpy(
+                    fake_dataset["fake_next_actions"]
+                ).to(self.dataset.device)
+                log.info(
+                    f"Test fake next actions: {self.dataset.fake_next_actions[0].cpu().numpy().mean()}, rank: {torch.distributed.get_rank()}"
+                )
+                self.need_fake_action = False
+            else:
+                self.need_fake_action = True
 
-            sampler.set_epoch(epoch)
+            # ---------------------------------------
+            # Customized training code ↓
+            # ---------------------------------------
 
-            if config.parameter.evaluation.eval:
+            def save_checkpoint(model):
                 if (
-                    (epoch + 1)
-                    % config.parameter.evaluation.evaluation_behavior_interval
-                    == 0
-                    or (epoch + 1) == config.parameter.behaviour_policy.epochs
+                    torch.distributed.get_rank() == 0
+                    and hasattr(config.parameter, "checkpoint_path")
+                    and config.parameter.checkpoint_path is not None
                 ):
-                    if torch.distributed.get_rank() == 0:
+                    if not os.path.exists(config.parameter.checkpoint_path):
+                        os.makedirs(config.parameter.checkpoint_path)
+                    torch.save(
+                        dict(
+                            model=model.state_dict(),
+                            behaviour_policy_train_epoch=self.behaviour_policy_train_epoch,
+                            critic_train_epoch=self.critic_train_epoch,
+                            guided_policy_train_epoch=self.guided_policy_train_epoch,
+                        ),
+                        f=os.path.join(
+                            config.parameter.checkpoint_path,
+                            f"checkpoint_{self.behaviour_policy_train_epoch}_{self.critic_train_epoch}_{self.guided_policy_train_epoch}.pt",
+                        ),
+                    )
+
+            def generate_fake_action(model, states, sample_per_state):
+
+                fake_actions_sampled = []
+                for states in track(
+                    np.array_split(states, states.shape[0] // 4096 + 1),
+                    description="Generate fake actions",
+                ):
+
+                    fake_actions_ = model.behaviour_policy_sample(
+                        state=states,
+                        batch_size=sample_per_state,
+                        t_span=(
+                            torch.linspace(
+                                0.0, 1.0, config.parameter.fake_data_t_span
+                            ).to(states.device)
+                            if config.parameter.fake_data_t_span is not None
+                            else None
+                        ),
+                    )
+                    fake_actions_sampled.append(torch.einsum("nbd->bnd", fake_actions_))
+
+                fake_actions = torch.cat(fake_actions_sampled, dim=0)
+                return fake_actions
+
+            def evaluate(model, train_epoch, guidance_scales, repeat=1):
+                evaluation_results = dict()
+                for guidance_scale in guidance_scales:
+
+                    def policy(obs: np.ndarray) -> np.ndarray:
+                        obs = torch.tensor(
+                            obs,
+                            dtype=torch.float32,
+                            device=config.model.GPPolicy.device,
+                        ).unsqueeze(0)
+                        action = (
+                            model["GuidedPolicy"]
+                            .sample(
+                                base_model=self.model["GPPolicy"].base_model,
+                                guided_model=self.model["GPPolicy"].guided_model,
+                                state=obs,
+                                guidance_scale=guidance_scale,
+                                t_span=(
+                                    torch.linspace(
+                                        0.0, 1.0, config.parameter.fake_data_t_span
+                                    ).to(config.model.GPPolicy.device)
+                                    if config.parameter.fake_data_t_span is not None
+                                    else None
+                                ),
+                            )
+                            .squeeze(0)
+                            .cpu()
+                            .detach()
+                            .numpy()
+                        )
+                        return action
+
+                    return_results = [
+                        self.simulator.evaluate(
+                            policy=policy,
+                        )[
+                            0
+                        ]["total_return"]
+                        for _ in range(repeat)
+                    ]
+                    return_mean = np.mean(return_results)
+                    return_std = np.std(return_results)
+                    return_max = np.max(return_results)
+                    return_min = np.min(return_results)
+                    evaluation_results[
+                        f"evaluation/guidance_scale:[{guidance_scale}]/return_mean"
+                    ] = return_mean
+                    evaluation_results[
+                        f"evaluation/guidance_scale:[{guidance_scale}]/return_std"
+                    ] = return_std
+                    evaluation_results[
+                        f"evaluation/guidance_scale:[{guidance_scale}]/return_max"
+                    ] = return_max
+                    evaluation_results[
+                        f"evaluation/guidance_scale:[{guidance_scale}]/return_min"
+                    ] = return_min
+                    if repeat > 1:
+                        log.info(
+                            f"Train epoch: {train_epoch}, guidance_scale: {guidance_scale}, return_mean: {return_mean}, return_std: {return_std}, return_max: {return_max}, return_min: {return_min}"
+                        )
+                    else:
+                        log.info(
+                            f"Train epoch: {train_epoch}, guidance_scale: {guidance_scale}, return: {return_mean}"
+                        )
+
+                return evaluation_results
+
+            # ---------------------------------------
+            # behavior training code ↓
+            # ---------------------------------------
+
+            sampler = torch.utils.data.DistributedSampler(
+                self.dataset,
+                num_replicas=torch.distributed.get_world_size(),
+                rank=torch.distributed.get_rank(),
+                shuffle=True,
+            )
+            assert (
+                config.parameter.behaviour_policy.batch_size
+                % torch.distributed.get_world_size()
+                == 0
+            )
+            data_loader = torch.utils.data.DataLoader(
+                self.dataset,
+                batch_size=int(
+                    config.parameter.behaviour_policy.batch_size
+                    // torch.distributed.get_world_size()
+                ),
+                shuffle=False,
+                sampler=sampler,
+                num_workers=0,
+                pin_memory=False,
+                drop_last=True,
+            )
+
+            self.model["GPPolicy"].base_model.model = (
+                nn.parallel.DistributedDataParallel(
+                    self.model["GPPolicy"].base_model.model,
+                    device_ids=[torch.distributed.get_rank()],
+                )
+            )
+
+            behaviour_policy_optimizer = torch.optim.Adam(
+                self.model["GPPolicy"].base_model.model.parameters(),
+                lr=config.parameter.behaviour_policy.learning_rate,
+            )
+            if config.parameter.behaviour_policy.lr_decy:
+                from torch.optim.lr_scheduler import CosineAnnealingLR
+
+                behaviour_lr_scheduler = CosineAnnealingLR(
+                    behaviour_policy_optimizer,
+                    T_max=config.parameter.behaviour_policy.epochs,
+                    eta_min=0.0,
+                )
+
+            behaviour_policy_train_iter = 0
+            for epoch in track(
+                range(config.parameter.behaviour_policy.epochs),
+                description="Behaviour policy training",
+            ):
+                if self.behaviour_policy_train_epoch >= epoch:
+                    if config.parameter.behaviour_policy.lr_decy:
+                        behaviour_lr_scheduler.step()
+                    continue
+
+                sampler.set_epoch(epoch)
+
+                if config.parameter.evaluation.eval:
+                    if (
+                        (epoch + 1)
+                        % config.parameter.evaluation.evaluation_behavior_policy_interval
+                        == 0
+                        or (epoch + 1) == config.parameter.behaviour_policy.epochs
+                    ):
+                        if torch.distributed.get_rank() == 0:
+                            evaluation_results = evaluate(
+                                self.model,
+                                train_epoch=epoch,
+                                guidance_scales=[0.0],
+                                repeat=(
+                                    1
+                                    if not hasattr(
+                                        config.parameter.evaluation, "repeat"
+                                    )
+                                    else config.parameter.evaluation.repeat
+                                ),
+                            )
+                            wandb.log(data=evaluation_results, commit=False)
+
+                for data in data_loader:
+                    behaviour_policy_loss = self.model[
+                        "GPPolicy"
+                    ].behaviour_policy_loss(
+                        data["a"],
+                        data["s"],
+                        maximum_likelihood=(
+                            config.parameter.behaviour_policy.maximum_likelihood
+                            if hasattr(
+                                config.parameter.behaviour_policy, "maximum_likelihood"
+                            )
+                            else False
+                        ),
+                    )
+                    behaviour_policy_optimizer.zero_grad()
+                    behaviour_policy_loss.backward()
+                    behaviour_model_grad_norms = nn.utils.clip_grad_norm_(
+                        self.model["GPPolicy"].base_model.parameters(),
+                        max_norm=config.parameter.behaviour_policy.grad_norm_clip,
+                        norm_type=2,
+                    )
+                    behaviour_policy_optimizer.step()
+
+                    wandb.log(
+                        data=dict(
+                            behaviour_policy_train_iter=behaviour_policy_train_iter,
+                            behaviour_policy_train_epoch=epoch,
+                            behaviour_policy_loss=behaviour_policy_loss.item(),
+                            behaviour_model_grad_norms=behaviour_model_grad_norms.item(),
+                        ),
+                        commit=True,
+                    )
+
+                    behaviour_policy_train_iter += 1
+                    self.behaviour_policy_train_epoch = epoch
+
+                if config.parameter.behaviour_policy.lr_decy:
+                    behaviour_lr_scheduler.step()
+                if (
+                    hasattr(config.parameter, "checkpoint_freq")
+                    and (epoch + 1) % config.parameter.checkpoint_freq == 0
+                ):
+                    save_checkpoint(self.model)
+
+            # ---------------------------------------
+            # behavior training code ↑
+            # ---------------------------------------
+
+            # ---------------------------------------
+            # make fake action ↓
+            # ---------------------------------------
+
+            if self.need_fake_action:
+                if torch.distributed.get_rank() == 0:
+                    fake_actions = generate_fake_action(
+                        self.model["GPPolicy"],
+                        self.dataset.states[:],
+                        config.parameter.sample_per_state,
+                    )
+                    fake_next_actions = generate_fake_action(
+                        self.model["GPPolicy"],
+                        self.dataset.next_states[:],
+                        config.parameter.sample_per_state,
+                    )
+                    torch.distributed.barrier()
+                else:
+                    fake_actions = torch.zeros(
+                        self.dataset.states.shape[0],
+                        config.parameter.sample_per_state,
+                        self.dataset.actions.shape[-1],
+                        device=self.dataset.states.device,
+                    )
+                    fake_next_actions = torch.zeros(
+                        self.dataset.next_states.shape[0],
+                        config.parameter.sample_per_state,
+                        self.dataset.actions.shape[-1],
+                        device=self.dataset.next_states.device,
+                    )
+                    torch.distributed.barrier()
+
+                torch.distributed.broadcast(fake_actions, src=0)
+                log.info(
+                    f"Test fake actions: {fake_actions[0].detach().cpu().numpy().mean()}, rank: {torch.distributed.get_rank()}"
+                )
+                torch.distributed.barrier()
+                torch.distributed.broadcast(fake_next_actions, src=0)
+                log.info(
+                    f"Test fake next actions: {fake_next_actions[0].detach().cpu().numpy().mean()}, rank: {torch.distributed.get_rank()}"
+                )
+                torch.distributed.barrier()
+
+                self.dataset.fake_actions = fake_actions
+                self.dataset.fake_next_actions = fake_next_actions
+
+                if torch.distributed.get_rank() == 0:
+                    filename = os.path.join(
+                        config.parameter.checkpoint_path,
+                        f"dataset_with_fakeaction.npz",
+                    )
+                    fake_data = dict(
+                        fake_actions=fake_actions.cpu().numpy(),
+                        fake_next_actions=fake_next_actions.cpu().numpy(),
+                    )
+                    np.savez(filename, **fake_data)
+                    torch.distributed.barrier()
+                else:
+                    torch.distributed.barrier()
+
+            # ---------------------------------------
+            # make fake action ↑
+            # ---------------------------------------
+
+            # ---------------------------------------
+            # critic training code ↓
+            # ---------------------------------------
+
+            self.model["GPPolicy"].critic.q.model["q1"] = (
+                nn.parallel.DistributedDataParallel(
+                    self.model["GPPolicy"].critic.q.model["q1"],
+                    device_ids=[torch.distributed.get_rank()],
+                )
+            )
+            self.model["GPPolicy"].critic.q.model["q2"] = (
+                nn.parallel.DistributedDataParallel(
+                    self.model["GPPolicy"].critic.q.model["q2"],
+                    device_ids=[torch.distributed.get_rank()],
+                )
+            )
+            q_optimizer = torch.optim.Adam(
+                self.model["GPPolicy"].critic.q.parameters(),
+                lr=config.parameter.critic.learning_rate,
+            )
+
+            if config.parameter.critic.lr_decy:
+                from torch.optim.lr_scheduler import CosineAnnealingLR
+
+                critic_lr_scheduler = CosineAnnealingLR(
+                    q_optimizer,
+                    T_max=config.parameter.critic_policy.epochs,
+                    eta_min=0.0,
+                )
+
+            sampler = torch.utils.data.DistributedSampler(
+                self.dataset,
+                num_replicas=torch.distributed.get_world_size(),
+                rank=torch.distributed.get_rank(),
+                shuffle=True,
+            )
+
+            data_loader = torch.utils.data.DataLoader(
+                self.dataset,
+                batch_size=int(
+                    config.parameter.critic.batch_size
+                    // torch.distributed.get_world_size()
+                ),
+                shuffle=False,
+                sampler=sampler,
+                num_workers=0,
+                pin_memory=False,
+                drop_last=True,
+            )
+
+            critic_train_iter = 0
+            for epoch in track(
+                range(config.parameter.critic.epochs), description="Critic training"
+            ):
+                if self.critic_train_epoch >= epoch:
+                    if config.parameter.critic.lr_decy:
+                        critic_lr_scheduler.step()
+                    continue
+
+                sampler.set_epoch(epoch)
+
+                for data in data_loader:
+
+                    q_loss, q, q_target = self.model["GPPolicy"].q_loss(
+                        data["a"],
+                        data["s"],
+                        data["r"],
+                        data["s_"],
+                        data["d"],
+                        data["fake_a_"],
+                        discount_factor=config.parameter.critic.discount_factor,
+                    )
+
+                    q_optimizer.zero_grad()
+                    q_loss.backward()
+                    q_grad_norms = nn.utils.clip_grad_norm_(
+                        self.model["GPPolicy"].critic.parameters(),
+                        max_norm=config.parameter.critic.grad_norm_clip,
+                        norm_type=2,
+                    )
+                    q_optimizer.step()
+
+                    # Update target
+                    for param, target_param in zip(
+                        self.model["GPPolicy"].critic.parameters(),
+                        self.model["GPPolicy"].critic.q_target.parameters(),
+                    ):
+                        target_param.data.copy_(
+                            config.parameter.critic.update_momentum * param.data
+                            + (1 - config.parameter.critic.update_momentum)
+                            * target_param.data
+                        )
+
+                    wandb.log(
+                        data=dict(
+                            critic_train_iter=critic_train_iter,
+                            critic_train_epoch=epoch,
+                            q_loss=q_loss.item(),
+                            q=q.item(),
+                            q_target=q_target.item(),
+                            q_grad_norms=q_grad_norms.item(),
+                        ),
+                        commit=True,
+                    )
+
+                    critic_train_iter += 1
+                    self.critic_train_epoch = epoch
+
+                if config.parameter.critic.lr_decy:
+                    critic_lr_scheduler.step()
+
+                if (
+                    hasattr(config.parameter, "checkpoint_freq")
+                    and (epoch + 1) % config.parameter.checkpoint_freq == 0
+                ):
+                    save_checkpoint(self.model)
+
+            # ---------------------------------------
+            # critic training code ↑
+            # ---------------------------------------
+
+            # ---------------------------------------
+            # guided policy training code ↓
+            # ---------------------------------------
+
+            if config.parameter.guided_policy.copy_frome_basemodel:
+                self.model["GPPolicy"].guided_model.model.load_state_dict(
+                    self.model["GPPolicy"].base_model.model.module.state_dict()
+                )
+
+                for param, target_param in zip(
+                    self.model["GPPolicy"].guided_model.model.parameters(),
+                    self.model["GPPolicy"].base_model.model.module.parameters(),
+                ):
+                    assert torch.equal(
+                        param, target_param
+                    ), f"The model is not copied correctly. rank: {torch.distributed.get_rank()}"
+
+                torch.distributed.barrier()
+
+            self.model["GPPolicy"].guided_model.model = (
+                nn.parallel.DistributedDataParallel(
+                    self.model["GPPolicy"].guided_model.model,
+                    device_ids=[torch.distributed.get_rank()],
+                )
+            )
+            guided_policy_optimizer = torch.optim.Adam(
+                self.model["GPPolicy"].guided_model.parameters(),
+                lr=config.parameter.guided_policy.learning_rate,
+            )
+
+            if config.parameter.guided_policy.lr_decy:
+                from torch.optim.lr_scheduler import CosineAnnealingLR
+
+                guided_lr_scheduler = CosineAnnealingLR(
+                    guided_policy_optimizer,
+                    T_max=config.parameter.guided_policy.epochs,
+                    eta_min=0.0,
+                )
+
+            sampler = torch.utils.data.DistributedSampler(
+                self.dataset,
+                num_replicas=torch.distributed.get_world_size(),
+                rank=torch.distributed.get_rank(),
+                shuffle=True,
+            )
+
+            data_loader = torch.utils.data.DataLoader(
+                self.dataset,
+                batch_size=int(
+                    config.parameter.guided_policy.batch_size
+                    // torch.distributed.get_world_size()
+                ),
+                shuffle=False,
+                sampler=sampler,
+                num_workers=0,
+                pin_memory=False,
+                drop_last=True,
+            )
+
+            guided_policy_train_iter = 0
+            for epoch in track(
+                range(config.parameter.guided_policy.epochs),
+                description="Guided policy training",
+            ):
+
+                if self.guided_policy_train_epoch >= epoch:
+                    if config.parameter.guided_policy.lr_decy:
+                        guided_lr_scheduler.step()
+                    continue
+
+                sampler.set_epoch(epoch)
+
+                if config.parameter.evaluation.eval:
+                    if (
+                        (epoch + 1)
+                        % config.parameter.evaluation.evaluation_guided_policy_interval
+                        == 0
+                        or (epoch + 1) == config.parameter.guided_policy.epochs
+                    ):
                         evaluation_results = evaluate(
                             self.model,
                             train_epoch=epoch,
-                            guidance_scales=[0.0],
+                            guidance_scales=config.parameter.evaluation.guidance_scale,
                             repeat=(
                                 1
                                 if not hasattr(config.parameter.evaluation, "repeat")
@@ -859,352 +1213,79 @@ class GPAlgorithm:
                         )
                         wandb.log(data=evaluation_results, commit=False)
 
-            for data in data_loader:
-                behaviour_policy_loss = self.model["GPPolicy"].behaviour_policy_loss(
-                    data["a"],
-                    data["s"],
-                    maximum_likelihood=(
-                        config.parameter.behaviour_policy.maximum_likelihood
-                        if hasattr(
-                            config.parameter.behaviour_policy, "maximum_likelihood"
+                for data in data_loader:
+                    if config.parameter.algorithm_type == "GPO":
+                        guided_policy_loss = self.model["GPPolicy"].policy_loss(
+                            data["a"],
+                            data["s"],
+                            data["fake_a"],
+                            maximum_likelihood=(
+                                config.parameter.guided_policy.maximum_likelihood
+                                if hasattr(
+                                    config.parameter.guided_policy, "maximum_likelihood"
+                                )
+                                else False
+                            ),
                         )
-                        else False
-                    ),
-                )
-                behaviour_policy_optimizer.zero_grad()
-                behaviour_policy_loss.backward()
-                behaviour_model_grad_norms = nn.utils.clip_grad_norm_(
-                    self.model["GPPolicy"].base_model.parameters(),
-                    max_norm=config.parameter.behaviour_policy.grad_norm_clip,
-                    norm_type=2,
-                )
-                behaviour_policy_optimizer.step()
-
-                wandb.log(
-                    data=dict(
-                        behaviour_policy_train_iter=behaviour_policy_train_iter,
-                        behaviour_policy_train_epoch=epoch,
-                        behaviour_policy_loss=behaviour_policy_loss.item(),
-                        behaviour_model_grad_norms=behaviour_model_grad_norms,
-                    ),
-                    commit=True,
-                )
-
-                behaviour_policy_train_iter += 1
-                behaviour_policy_train_epoch = epoch
-
-            if config.parameter.behaviour_policy.lr_decy:
-                behaviour_lr_scheduler.step()
-            if (
-                hasattr(config.parameter, "checkpoint_freq")
-                and (epoch + 1) % config.parameter.checkpoint_freq == 0
-            ):
-
-                save_checkpoint(
-                    self.model,
-                    behaviour_policy_train_epoch + 1,
-                    critic_train_epoch,
-                    guided_policy_train_epoch,
-                )
-
-        # ---------------------------------------
-        # make fake action
-        # ---------------------------------------
-        self.model["GPPolicy"].guided_model.model = nn.parallel.DistributedDataParallel(
-            self.model["GPPolicy"].guided_model.model,
-            device_ids=[torch.distributed.get_rank()],
-        )
-        if self.need_fake_action:
-            if torch.distributed.get_rank() == 0:
-                fake_actions = generate_fake_action(
-                    self.model["GPPolicy"],
-                    self.dataset.states[:],
-                    config.parameter.sample_per_state,
-                )
-                fake_next_actions = generate_fake_action(
-                    self.model["GPPolicy"],
-                    self.dataset.next_states[:],
-                    config.parameter.sample_per_state,
-                )
-                torch.distributed.barrier()
-            else:
-                fake_actions = torch.zeros(
-                    self.dataset.states.shape[0],
-                    config.parameter.sample_per_state,
-                    self.dataset.actions.shape[-1],
-                    device=self.dataset.states.device,
-                )
-                fake_next_actions = torch.zeros(
-                    self.dataset.next_states.shape[0],
-                    config.parameter.sample_per_state,
-                    self.dataset.actions.shape[-1],
-                    device=self.dataset.next_states.device,
-                )
-                torch.distributed.barrier()
-
-            torch.distributed.broadcast(fake_actions, src=0)
-            torch.distributed.barrier()
-            torch.distributed.broadcast(fake_next_actions, src=0)
-            torch.distributed.barrier()
-
-            self.dataset.fake_actions = fake_actions
-            self.dataset.fake_next_actions = fake_next_actions
-
-            if torch.distributed.get_rank() == 0:
-                filename = os.path.join(
-                    config.parameter.checkpoint_path,
-                    f"dataset_with_fakeaction.npz",
-                )
-                # np.savez(filename, self.dataset)
-
-        # ---------------------------------------
-        # critic training code ↓
-        # ---------------------------------------
-        self.model["GPPolicy"].critic.q.model["q1"] = (
-            nn.parallel.DistributedDataParallel(
-                self.model["GPPolicy"].critic.q.model["q1"],
-                device_ids=[torch.distributed.get_rank()],
-            )
-        )
-        self.model["GPPolicy"].critic.q.model["q2"] = (
-            nn.parallel.DistributedDataParallel(
-                self.model["GPPolicy"].critic.q.model["q2"],
-                device_ids=[torch.distributed.get_rank()],
-            )
-        )
-        q_optimizer = torch.optim.Adam(
-            self.model["GPPolicy"].critic.q.parameters(),
-            lr=config.parameter.critic.learning_rate,
-        )
-
-        if config.parameter.critic.lr_decy:
-            from torch.optim.lr_scheduler import CosineAnnealingLR
-
-            critic_lr_scheduler = CosineAnnealingLR(
-                q_optimizer,
-                T_max=config.parameter.critic_policy.epochs,
-                eta_min=0.0,
-            )
-
-        sampler = torch.utils.data.DistributedSampler(
-            self.dataset,
-            num_replicas=torch.distributed.get_world_size(),
-            rank=torch.distributed.get_rank(),
-            shuffle=True,
-        )
-
-        data_loader = torch.utils.data.DataLoader(
-            self.dataset,
-            batch_size=int(
-                config.parameter.critic.batch_size // torch.distributed.get_world_size()
-            ),
-            shuffle=False,
-            sampler=sampler,
-            num_workers=0,
-            pin_memory=False,
-            drop_last=True,
-        )
-
-        critic_train_iter = 0
-        for epoch in track(
-            range(config.parameter.critic.epochs), description="Critic training"
-        ):
-            if critic_train_epoch > epoch:
-                continue
-
-            sampler.set_epoch(epoch)
-
-            for data in data_loader:
-
-                q_loss, q, q_target = self.model["GPPolicy"].q_loss(
-                    data["a"],
-                    data["s"],
-                    data["r"],
-                    data["s_"],
-                    data["d"],
-                    data["fake_a_"],
-                    discount_factor=config.parameter.critic.discount_factor,
-                )
-
-                q_optimizer.zero_grad()
-                q_loss.backward()
-                q_grad_norms = nn.utils.clip_grad_norm_(
-                    self.model["GPPolicy"].critic.parameters(),
-                    max_norm=config.parameter.critic.grad_norm_clip,
-                    norm_type=2,
-                )
-                q_optimizer.step()
-
-                # Update target
-                for param, target_param in zip(
-                    self.model["GPPolicy"].critic.parameters(),
-                    self.model["GPPolicy"].critic.q_target.parameters(),
-                ):
-                    target_param.data.copy_(
-                        config.parameter.critic.update_momentum * param.data
-                        + (1 - config.parameter.critic.update_momentum)
-                        * target_param.data
+                    elif config.parameter.algorithm_type == "GPG":
+                        guided_policy_loss = self.model[
+                            "GPPolicy"
+                        ].policy_loss_withgrade(
+                            data["a"],
+                            data["s"],
+                            maximum_likelihood=(
+                                config.parameter.guided_policy.maximum_likelihood
+                                if hasattr(
+                                    config.parameter.guided_policy, "maximum_likelihood"
+                                )
+                                else False
+                            ),
+                            loss_type=config.parameter.guided_policy.loss_type,
+                        )
+                    else:
+                        raise NotImplementedError
+                    guided_policy_optimizer.zero_grad()
+                    guided_policy_loss.backward()
+                    guided_model_grad_norms = nn.utils.clip_grad_norm_(
+                        self.model["GPPolicy"].guided_model.parameters(),
+                        max_norm=config.parameter.guided_policy.grad_norm_clip,
+                        norm_type=2,
                     )
+                    guided_policy_optimizer.step()
 
-                wandb.log(
-                    data=dict(
-                        critic_train_iter=critic_train_iter,
-                        critic_train_epoch=epoch,
-                        q_loss=q_loss.item(),
-                        q=q.item(),
-                        q_target=q_target.item(),
-                        q_grad_norms=q_grad_norms,
-                    ),
-                    commit=True,
-                )
-
-                critic_train_iter += 1
-                critic_train_epoch = epoch
-
-            if config.parameter.critic.lr_decy:
-                critic_lr_scheduler.step()
-
-            if (
-                hasattr(config.parameter, "checkpoint_freq")
-                and (epoch + 1) % config.parameter.checkpoint_freq == 0
-            ):
-                save_checkpoint(
-                    self.model,
-                    behaviour_policy_train_epoch,
-                    critic_train_epoch + 1,
-                    guided_policy_train_epoch,
-                )
-
-        self.model["GPPolicy"].guided_model.model = nn.parallel.DistributedDataParallel(
-            self.model["GPPolicy"].guided_model.model,
-            device_ids=[torch.distributed.get_rank()],
-        )
-        guided_policy_optimizer = torch.optim.Adam(
-            self.model["GPPolicy"].guided_model.parameters(),
-            lr=config.parameter.guided_policy.learning_rate,
-        )
-
-        if config.parameter.guided_policy.copy_frome_basemodel:
-            self.model["GPPolicy"].guided_model.load_state_dict(
-                self.model["GPPolicy"].base_model.state_dict()
-            )
-
-        if config.parameter.guided_policy.lr_decy:
-            from torch.optim.lr_scheduler import CosineAnnealingLR
-
-            guided_lr_scheduler = CosineAnnealingLR(
-                guided_policy_optimizer,
-                T_max=config.parameter.guided_policy.epochs,
-                eta_min=0.0,
-            )
-
-        sampler = torch.utils.data.DistributedSampler(
-            self.dataset,
-            num_replicas=torch.distributed.get_world_size(),
-            rank=torch.distributed.get_rank(),
-            shuffle=True,
-        )
-
-        data_loader = torch.utils.data.DataLoader(
-            self.dataset,
-            batch_size=int(
-                config.parameter.guided_policy.batch_size
-                // torch.distributed.get_world_size()
-            ),
-            shuffle=False,
-            sampler=sampler,
-            num_workers=0,
-            pin_memory=False,
-            drop_last=True,
-        )
-
-        torch.distributed.barrier()
-        guided_policy_train_iter = 0
-        for epoch in track(
-            range(config.parameter.guided_policy.epochs),
-            description="Guided policy training",
-        ):
-
-            if guided_policy_train_epoch > epoch:
-                continue
-
-            sampler.set_epoch(epoch)
-
-            if config.parameter.evaluation.eval:
-                if (
-                    epoch + 1
-                ) % config.parameter.evaluation.evaluation_interval == 0 or (
-                    epoch + 1
-                ) == config.parameter.guided_policy.epochs:
-                    evaluation_results = evaluate(
-                        self.model,
-                        train_epoch=epoch,
-                        guidance_scales=config.parameter.evaluation.guidance_scale,
-                        repeat=(
-                            1
-                            if not hasattr(config.parameter.evaluation, "repeat")
-                            else config.parameter.evaluation.repeat
+                    wandb.log(
+                        data=dict(
+                            guided_policy_train_iter=guided_policy_train_iter,
+                            guided_policy_train_epoch=epoch,
+                            guided_policy_loss=guided_policy_loss.item(),
+                            guided_model_grad_norms=guided_model_grad_norms.item(),
                         ),
-                    )
-                    wandb.log(data=evaluation_results, commit=False)
-
-            for data in data_loader:
-                if self.algorithm == "GPO":
-                    guided_policy_loss = self.model["GPPolicy"].policy_loss(
-                        data["a"], data["s"], data["fake_a"]
-                    )
-                elif self.algorithm == "GPG":
-                    guided_policy_loss = self.model["GPPolicy"].policy_loss_withgrade(
-                        data["a"],
-                        data["s"],
-                        maximum_likelihood=True,
-                        loss_type=config.parameter.guided_policy.loss_type,
-                    )
-                else:
-                    raise NotImplementedError
-                guided_policy_optimizer.zero_grad()
-                guided_policy_loss.backward()
-                guided_model_grad_norms = nn.utils.clip_grad_norm_(
-                    self.model["GPPolicy"].guided_model.parameters(),
-                    max_norm=config.parameter.guided_policy.grad_norm_clip,
-                    norm_type=2,
-                )
-                guided_policy_optimizer.step()
-
-                wandb.log(
-                    data=dict(
-                        guided_policy_train_iter=guided_policy_train_iter,
-                        guided_policy_train_epoch=epoch,
-                        guided_policy_loss=guided_policy_loss.item(),
-                        guided_model_grad_norms=guided_model_grad_norms,
-                    ),
-                    commit=True,
-                )
-
-                guided_policy_train_iter += 1
-                guided_policy_train_epoch = epoch
-
-            if config.parameter.guided_policy.lr_decy:
-                guided_lr_scheduler.step()
-            if (
-                hasattr(config.parameter, "checkpoint_freq")
-                and (epoch + 1) % config.parameter.checkpoint_freq == 0
-            ):
-                if torch.distributed.get_rank() == 0:
-                    save_checkpoint(
-                        self.model,
-                        behaviour_policy_train_epoch,
-                        critic_train_epoch,
-                        guided_policy_train_epoch + 1,
+                        commit=True,
                     )
 
-        # ---------------------------------------
-        # Customized training code ↑
-        # ---------------------------------------
+                    guided_policy_train_iter += 1
+                    self.guided_policy_train_epoch = epoch
+
+                if config.parameter.guided_policy.lr_decy:
+                    guided_lr_scheduler.step()
+                if (
+                    hasattr(config.parameter, "checkpoint_freq")
+                    and (epoch + 1) % config.parameter.checkpoint_freq == 0
+                ):
+                    if torch.distributed.get_rank() == 0:
+                        save_checkpoint(self.model)
+
+            # ---------------------------------------
+            # guided policy training code ↑
+            # ---------------------------------------
+
+            # ---------------------------------------
+            # Customized training code ↑
+            # ---------------------------------------
 
         wandb.finish()
 
-    def deploy(self, config: EasyDict = None) -> GPOAgent:
+    def deploy(self, config: EasyDict = None) -> GPAgent:
 
         if config is not None:
             config = merge_two_dicts_into_newone(self.config.deploy, config)
@@ -1213,7 +1294,7 @@ class GPAlgorithm:
 
         assert "GPPolicy" in self.model, "The model must be trained first."
         assert "GuidedPolicy" in self.model, "The model must be trained first."
-        return GPOAgent(
+        return GPAgent(
             config=config,
             model=copy.deepcopy(self.model),
         )

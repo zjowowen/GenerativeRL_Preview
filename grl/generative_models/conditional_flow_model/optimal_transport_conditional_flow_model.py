@@ -380,7 +380,6 @@ class OptimalTransportConditionalFlowModel(nn.Module):
 
         return data
 
-
     def flow_matching_loss_2(
         self,
         x0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
@@ -409,7 +408,7 @@ class OptimalTransportConditionalFlowModel(nn.Module):
             condition_ot = []
 
             for x0_i, x1_i, condition_i in zip(x0_split, x1_split, condition_split):
-                
+
                 a = ot.unif(x0_i.shape[0])
                 b = ot.unif(x1_i.shape[0])
                 # TODO: make it compatible with TensorDict and treetensor.torch.Tensor
@@ -430,7 +429,10 @@ class OptimalTransportConditionalFlowModel(nn.Module):
                 p_flatten = p_flatten / p_flatten.sum()
 
                 choices = np.random.choice(
-                    p.shape[0] * p.shape[1], p=p_flatten, size=x0_i.shape[0], replace=True
+                    p.shape[0] * p.shape[1],
+                    p=p_flatten,
+                    size=x0_i.shape[0],
+                    replace=True,
                 )
 
                 i, j = np.divmod(choices, p.shape[1])
@@ -447,7 +449,7 @@ class OptimalTransportConditionalFlowModel(nn.Module):
             x0_ot = torch.stack(x0_ot).reshape(x0.shape)
             x1_ot = torch.stack(x1_ot).reshape(x1.shape)
             condition_ot = torch.stack(condition_ot).reshape(condition.shape)
-                    
+
             return self.velocity_function_.flow_matching_loss_icfm(
                 self.model, x0_ot, x1_ot, condition_ot, average
             )
@@ -463,7 +465,7 @@ class OptimalTransportConditionalFlowModel(nn.Module):
             x1_ot = []
 
             for x0_i, x1_i in zip(x0_split, x1_split):
-                
+
                 a = ot.unif(x0_i.shape[0])
                 b = ot.unif(x1_i.shape[0])
                 # TODO: make it compatible with TensorDict and treetensor.torch.Tensor
@@ -484,7 +486,10 @@ class OptimalTransportConditionalFlowModel(nn.Module):
                 p_flatten = p_flatten / p_flatten.sum()
 
                 choices = np.random.choice(
-                    p.shape[0] * p.shape[1], p=p_flatten, size=x0_i.shape[0], replace=True
+                    p.shape[0] * p.shape[1],
+                    p=p_flatten,
+                    size=x0_i.shape[0],
+                    replace=True,
                 )
 
                 i, j = np.divmod(choices, p.shape[1])
@@ -493,18 +498,13 @@ class OptimalTransportConditionalFlowModel(nn.Module):
                 x1_ot_i = x1_i[j]
                 x1_ot.append(x1_ot_i)
 
-
-
             # torch stack
             x0_ot = torch.stack(x0_ot, dim=0).reshape(x0.shape)
             x1_ot = torch.stack(x1_ot, dim=0).reshape(x1.shape)
 
-                    
             return self.velocity_function_.flow_matching_loss_icfm(
                 self.model, x0_ot, x1_ot, condition, average
             )
-
-
 
     def flow_matching_loss(
         self,
@@ -552,7 +552,6 @@ class OptimalTransportConditionalFlowModel(nn.Module):
             condition_ot = condition[j]
         else:
             condition_ot = None
-            
 
         return self.velocity_function_.flow_matching_loss_icfm(
             self.model, x0_ot, x1_ot, condition_ot, average
@@ -603,4 +602,3 @@ class OptimalTransportConditionalFlowModel(nn.Module):
         return self.velocity_function_.flow_matching_loss_icfm(
             self.model, x0_ot, x1_ot, condition, average
         )
-

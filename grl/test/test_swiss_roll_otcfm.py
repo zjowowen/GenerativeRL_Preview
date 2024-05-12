@@ -218,7 +218,9 @@ if __name__ == "__main__":
             x_t = [
                 x.squeeze(0) for x in torch.split(x_t, split_size_or_sections=1, dim=0)
             ]
-            render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
+            render_video(
+                x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100
+            )
 
         batch_data = next(data_generator)
         batch_data = batch_data.to(config.device)

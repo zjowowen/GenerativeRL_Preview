@@ -13,19 +13,42 @@ t_encoder = dict(
     ),
 )
 solver_type = "ODESolver"
-model_type = "IndependentConditionalFlowModel"
-
+model_type = "DiffusionModel"
+project_name = "d4rl-hopper-medium-expert-GPO-GVP"
 model = dict(
     device=device,
     x_size=action_size,
-    solver=dict(
-        type="ODESolver",
-        args=dict(
-            library="torchdyn",
-        ),
+    solver=(
+        dict(
+            type="DPMSolver",
+            args=dict(
+                order=2,
+                device=device,
+                steps=17,
+            ),
+        )
+        if solver_type == "DPMSolver"
+        else (
+            dict(
+                type="ODESolver",
+                args=dict(
+                    library="torchdiffeq",
+                ),
+            )
+            if solver_type == "ODESolver"
+            else dict(
+                type="SDESolver",
+                args=dict(
+                    library="torchsde",
+                ),
+            )
+        )
     ),
     path=dict(
-        sigma=0.1,
+        type="gvp",
+    ),
+    reverse_path=dict(
+        type="gvp",
     ),
     model=dict(
         type="velocity_function",
@@ -48,12 +71,12 @@ model = dict(
 
 config = EasyDict(
     train=dict(
-        project="d4rl-hopper-medium-expert-GPO-IndependentConditionalFlowModel",
+        project=project_name,
         device=device,
         simulator=dict(
             type="GymEnvSimulator",
             args=dict(
-                env_id="Hopper-v2",
+                env_id="hopper-medium-expert-v2",
             ),
         ),
         dataset=dict(
@@ -90,7 +113,7 @@ config = EasyDict(
         ),
         parameter=dict(
             behaviour_policy=dict(
-                batch_size=2048,
+                batch_size=4096,
                 learning_rate=1e-4,
                 epochs=10000,
                 iterations=1000000,
@@ -98,7 +121,7 @@ config = EasyDict(
             sample_per_state=16,
             fake_data_t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
-                batch_size=2048,
+                batch_size=4096,
                 epochs=10000,
                 iterations=1000000,
                 learning_rate=1e-4,
@@ -106,21 +129,23 @@ config = EasyDict(
                 update_momentum=0.005,
             ),
             guided_policy=dict(
-                batch_size=2048,
+                batch_size=4096,
                 epochs=10000,
-                iterations=1000000,
+                iterations=2000000,
                 learning_rate=1e-4,
             ),
             evaluation=dict(
                 evaluation_interval=500,
                 guidance_scale=[0.0, 1.0, 2.0],
             ),
+            checkpoint_path=f"./{project_name}/checkpoint",
+            checkpoint_freq=500,
         ),
     ),
     deploy=dict(
         device=device,
         env=dict(
-            env_id="Hopper-v2",
+            env_id="hopper-medium-expert-v2",
             seed=0,
         ),
         num_deploy_steps=1000,

@@ -105,7 +105,7 @@ class QGPOD4RLDataset(QGPODataset):
         super().__init__()
         import d4rl
 
-        device = "cpu" if device is None else device
+        self.device = "cpu" if device is None else device
         data = d4rl.qlearning_dataset(gym.make(env_id))
         self.states = torch.from_numpy(data["observations"]).float().to(device)
         self.actions = torch.from_numpy(data["actions"]).float().to(device)
@@ -293,7 +293,7 @@ class QGPOCustomizedDataset(QGPODataset):
 
         super().__init__()
 
-        device = "cpu" if device is None else device
+        self.device = "cpu" if device is None else device
 
         data = np.load(numpy_data_path)
 

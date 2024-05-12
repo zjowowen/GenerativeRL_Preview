@@ -21,7 +21,7 @@ model = dict(
     solver=dict(
         type="ODESolver",
         args=dict(
-            library="torchdyn",
+            library="torchdiffeq",
         ),
     ),
     path=dict(

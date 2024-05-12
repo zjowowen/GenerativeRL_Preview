@@ -214,7 +214,9 @@ class GuidedBridgeConditionalFlowModel:
             def drift(t, x):
                 return (1.0 - guidance_scale) * base_model.velocity_model(
                     t=t, x=x, condition=condition
-                ) + guidance_scale * guided_model.velocity_model(t=t, x=x, condition=condition)
+                ) + guidance_scale * guided_model.velocity_model(
+                    t=t, x=x, condition=condition
+                )
 
             if solver.library == "torchdiffeq_adjoint":
                 if with_grad:
@@ -253,7 +255,9 @@ class GuidedBridgeConditionalFlowModel:
             def drift(t, x):
                 return (1.0 - guidance_scale) * base_model.velocity_model(
                     t=t, x=x, condition=condition
-                ) + guidance_scale * guided_model.velocity_model(t=t, x=x, condition=condition)
+                ) + guidance_scale * guided_model.velocity_model(
+                    t=t, x=x, condition=condition
+                )
 
             if with_grad:
                 data = solver.integrate(

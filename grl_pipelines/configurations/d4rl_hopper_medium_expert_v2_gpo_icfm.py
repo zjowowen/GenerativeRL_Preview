@@ -1,8 +1,8 @@
 import torch
 from easydict import EasyDict
 
-action_size = 6
-state_size = 17
+action_size = 3
+state_size = 11
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 t_embedding_dim = 32
 t_encoder = dict(
@@ -14,14 +14,14 @@ t_encoder = dict(
 )
 solver_type = "ODESolver"
 model_type = "IndependentConditionalFlowModel"
-
+project_name = "d4rl-hopper-medium-expert-GPO-IndependentConditionalFlowModel"
 model = dict(
     device=device,
     x_size=action_size,
     solver=dict(
         type="ODESolver",
         args=dict(
-            library="torchdyn",
+            library="torchdiffeq",
         ),
     ),
     path=dict(
@@ -48,18 +48,18 @@ model = dict(
 
 config = EasyDict(
     train=dict(
-        project="d4rl-walker2d-medium-expert-v2-GPO-IndependentConditionalFlowModel",
+        project=project_name,
         device=device,
         simulator=dict(
             type="GymEnvSimulator",
             args=dict(
-                env_id="Walker2d-v2",
+                env_id="hopper-medium-expert-v2",
             ),
         ),
         dataset=dict(
             type="GPOD4RLDataset",
             args=dict(
-                env_id="walker2d-medium-expert-v2",
+                env_id="hopper-medium-expert-v2",
                 device=device,
             ),
         ),
@@ -90,7 +90,7 @@ config = EasyDict(
         ),
         parameter=dict(
             behaviour_policy=dict(
-                batch_size=2048,
+                batch_size=4096,
                 learning_rate=1e-4,
                 epochs=10000,
                 iterations=1000000,
@@ -98,7 +98,7 @@ config = EasyDict(
             sample_per_state=16,
             fake_data_t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
-                batch_size=2048,
+                batch_size=4096,
                 epochs=10000,
                 iterations=1000000,
                 learning_rate=1e-4,
@@ -106,21 +106,23 @@ config = EasyDict(
                 update_momentum=0.005,
             ),
             guided_policy=dict(
-                batch_size=2048,
+                batch_size=4096,
                 epochs=10000,
-                iterations=1000000,
+                iterations=2000000,
                 learning_rate=1e-4,
             ),
             evaluation=dict(
                 evaluation_interval=500,
                 guidance_scale=[0.0, 1.0, 2.0],
             ),
+            checkpoint_path=f"./{project_name}/checkpoint",
+            checkpoint_freq=500,
         ),
     ),
     deploy=dict(
         device=device,
         env=dict(
-            env_id="Walker2d-v2",
+            env_id="hopper-medium-expert-v2",
             seed=0,
         ),
         num_deploy_steps=1000,

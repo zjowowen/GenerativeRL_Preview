@@ -13,22 +13,27 @@ import gym
 import torch
 import torch.multiprocessing as mp
 
-from grl.algorithms.ddp.gpo import GPOAlgorithm
+from grl.algorithms.ddp.gp import GPAlgorithm
 from grl.datasets import GPOCustomizedDataset
 from grl.utils.log import log
-from grl_pipelines.ddp.configurations.d4rl_hopper_gpo import (
+from grl_pipelines.ddp.configurations.lunarlander_continuous_gpo_vpsde import (
     make_config,
 )
 
 
-def gpo_pipeline(config):
+def gp_pipeline(config):
 
-    gpo = GPOAlgorithm(config)
+    gp = GPAlgorithm(
+        config,
+        dataset=GPOCustomizedDataset(
+            numpy_data_path="./data.npz", device=config.train.device
+        ),
+    )
 
     # ---------------------------------------
     # Customized train code ↓
     # ---------------------------------------
-    gpo.train()
+    gp.train()
     # ---------------------------------------
     # Customized train code ↑
     # ---------------------------------------
@@ -37,7 +42,7 @@ def gpo_pipeline(config):
     # Customized deploy code ↓
     # ---------------------------------------
     if torch.distributed.get_rank() == 0:
-        agent = gpo.deploy()
+        agent = gp.deploy()
         env = gym.make(config.deploy.env.env_id)
         observation = env.reset()
         for _ in range(config.deploy.num_deploy_steps):
@@ -58,7 +63,7 @@ def main(rank, world_size):
     )
 
     log.info("config: \n{}".format(config))
-    gpo_pipeline(config)
+    gp_pipeline(config)
 
 
 def parallel_process(rank, world_size):
