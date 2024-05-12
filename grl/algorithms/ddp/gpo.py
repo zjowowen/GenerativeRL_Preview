@@ -39,6 +39,7 @@ from grl.utils.config import merge_two_dicts_into_newone
 from grl.utils.log import log
 from grl.utils import set_seed
 
+
 class GPOCritic(nn.Module):
     """
     Overview:
@@ -145,7 +146,10 @@ class GuidedPolicy(nn.Module):
         self.type = config.model_type
         if self.type == "DiffusionModel":
             self.model = GuidedDiffusionModel(config.model)
-        elif self.type in ["OptimalTransportConditionalFlowModel", "IndependentConditionalFlowModel"]:
+        elif self.type in [
+            "OptimalTransportConditionalFlowModel",
+            "IndependentConditionalFlowModel",
+        ]:
             self.model = GuidedConditionalFlowModel(config.model)
         elif self.type in ["SchrodingerBridgeConditionalFlowModel"]:
             self.model = GuidedBridgeConditionalFlowModel(config.model)
@@ -223,19 +227,13 @@ class GPOPolicy(nn.Module):
             assert self.model_loss_type in ["score_matching", "flow_matching"]
         elif self.model_type == "OptimalTransportConditionalFlowModel":
             self.base_model = OptimalTransportConditionalFlowModel(config.model)
-            self.guided_model = OptimalTransportConditionalFlowModel(
-                config.model
-            )
+            self.guided_model = OptimalTransportConditionalFlowModel(config.model)
         elif self.model_type == "IndependentConditionalFlowModel":
             self.base_model = IndependentConditionalFlowModel(config.model)
-            self.guided_model = IndependentConditionalFlowModel(
-                config.model
-            )
+            self.guided_model = IndependentConditionalFlowModel(config.model)
         elif self.model_type == "SchrodingerBridgeConditionalFlowModel":
             self.base_model = SchrodingerBridgeConditionalFlowModel(config.model)
-            self.guided_model = SchrodingerBridgeConditionalFlowModel(
-                config.model
-            )
+            self.guided_model = SchrodingerBridgeConditionalFlowModel(config.model)
         else:
             raise NotImplementedError
 
@@ -393,9 +391,7 @@ class GPOPolicy(nn.Module):
             "IndependentConditionalFlowModel",
             "SchrodingerBridgeConditionalFlowModel",
         ]:
-            x0 = self.guided_model.gaussian_generator(
-                batch_size=state.shape[0]
-            )
+            x0 = self.guided_model.gaussian_generator(batch_size=state.shape[0])
             model_loss = self.guided_model.flow_matching_loss(
                 x0=x0, x1=action, condition=state, average=False
             )
@@ -484,7 +480,7 @@ class GPOAlgorithm:
         # Customized model initialization code ↑
         # ---------------------------------------
 
-    def train(self, config: EasyDict = None, seed = None):
+    def train(self, config: EasyDict = None, seed=None):
         """
         Overview:
             Train the model using the given configuration. \
@@ -505,7 +501,7 @@ class GPOAlgorithm:
             else self.config.train
         )
 
-        config["seed"]=seed_value
+        config["seed"] = seed_value
 
         with wandb.init(
             project=(
@@ -532,17 +528,22 @@ class GPOAlgorithm:
             # Customized model initialization code ↓
             # ---------------------------------------
 
-
             if hasattr(config.model, "GPOPolicy"):
                 if torch.__version__ >= "2.0.0":
                     self.model["GPOPolicy"] = nn.parallel.DistributedDataParallel(
-                        torch.compile(GPOPolicy(config.model.GPOPolicy).to(config.model.GPOPolicy.device)),
+                        torch.compile(
+                            GPOPolicy(config.model.GPOPolicy).to(
+                                config.model.GPOPolicy.device
+                            )
+                        ),
                         device_ids=[torch.distributed.get_rank()],
                         find_unused_parameters=True,
                     )
                 else:
                     self.model["GPOPolicy"] = nn.parallel.DistributedDataParallel(
-                        GPOPolicy(config.model.GPOPolicy).to(config.model.GPOPolicy.device),
+                        GPOPolicy(config.model.GPOPolicy).to(
+                            config.model.GPOPolicy.device
+                        ),
                         device_ids=[torch.distributed.get_rank()],
                         find_unused_parameters=True,
                     )
@@ -555,7 +556,10 @@ class GPOAlgorithm:
             # Customized model initialization code ↑
             # ---------------------------------------
 
-            if hasattr(config.parameter, "checkpoint_path") and config.parameter.checkpoint_path is not None:
+            if (
+                hasattr(config.parameter, "checkpoint_path")
+                and config.parameter.checkpoint_path is not None
+            ):
 
                 if not os.path.exists(config.parameter.checkpoint_path):
                     log.warning(
@@ -571,7 +575,8 @@ class GPOAlgorithm:
                         if f.endswith(".pt")
                     ]
                     checkpoint_files = sorted(
-                        checkpoint_files, key=lambda x: int(x.split("_")[-1].split(".")[0])
+                        checkpoint_files,
+                        key=lambda x: int(x.split("_")[-1].split(".")[0]),
                     )
                     checkpoint = torch.load(
                         os.path.join(
@@ -580,16 +585,29 @@ class GPOAlgorithm:
                         map_location="cpu",
                     )
                     self.model.load_state_dict(checkpoint["model"])
-                    behaviour_policy_train_epoch = checkpoint.get("behaviour_policy_train_epoch", 0)
+                    behaviour_policy_train_epoch = checkpoint.get(
+                        "behaviour_policy_train_epoch", 0
+                    )
                     critic_train_epoch = checkpoint.get("critic_train_epoch", 0)
-                    guided_policy_train_epoch = checkpoint.get("guided_policy_train_epoch", 0)
+                    guided_policy_train_epoch = checkpoint.get(
+                        "guided_policy_train_epoch", 0
+                    )
             else:
                 behaviour_policy_train_epoch = 0
                 critic_train_epoch = 0
                 guided_policy_train_epoch = 0
 
-            def save_checkpoint(model, behaviour_policy_train_epoch, critic_train_epoch, guided_policy_train_epoch):
-                if torch.distributed.get_rank() == 0 and hasattr(config.parameter, "checkpoint_path") and config.parameter.checkpoint_path is not None:
+            def save_checkpoint(
+                model,
+                behaviour_policy_train_epoch,
+                critic_train_epoch,
+                guided_policy_train_epoch,
+            ):
+                if (
+                    torch.distributed.get_rank() == 0
+                    and hasattr(config.parameter, "checkpoint_path")
+                    and config.parameter.checkpoint_path is not None
+                ):
                     if not os.path.exists(config.parameter.checkpoint_path):
                         os.makedirs(config.parameter.checkpoint_path)
                     torch.save(
@@ -600,10 +618,10 @@ class GPOAlgorithm:
                             guided_policy_train_epoch=guided_policy_train_epoch,
                         ),
                         f=os.path.join(
-                            config.parameter.checkpoint_path, f"checkpoint_{behaviour_policy_train_epoch}_{critic_train_epoch}_{guided_policy_train_epoch}.pt"
+                            config.parameter.checkpoint_path,
+                            f"checkpoint_{behaviour_policy_train_epoch}_{critic_train_epoch}_{guided_policy_train_epoch}.pt",
                         ),
                     )
-
 
             # ---------------------------------------
             # Customized training code ↓
@@ -667,7 +685,14 @@ class GPOAlgorithm:
                         )
                         return action
 
-                    return_results = [self.simulator.evaluate(policy=policy,)[0]["total_return"] for _ in range(repeat)]
+                    return_results = [
+                        self.simulator.evaluate(
+                            policy=policy,
+                        )[
+                            0
+                        ]["total_return"]
+                        for _ in range(repeat)
+                    ]
                     return_mean = np.mean(return_results)
                     return_std = np.std(return_results)
                     return_max = np.max(return_results)
@@ -701,17 +726,18 @@ class GPOAlgorithm:
             )
 
             sampler = torch.utils.data.DistributedSampler(
-                            self.dataset,
-                            num_replicas=torch.distributed.get_world_size(),
-                            rank=torch.distributed.get_rank(),
-                            shuffle=True,
-                        )
+                self.dataset,
+                num_replicas=torch.distributed.get_world_size(),
+                rank=torch.distributed.get_rank(),
+                shuffle=True,
+            )
 
             data_loader = torch.utils.data.DataLoader(
                 self.dataset,
                 batch_size=int(
-                        config.parameter.behaviour_policy.batch_size // torch.distributed.get_world_size()
-                    ),
+                    config.parameter.behaviour_policy.batch_size
+                    // torch.distributed.get_world_size()
+                ),
                 shuffle=False,
                 sampler=sampler,
                 num_workers=0,
@@ -720,18 +746,30 @@ class GPOAlgorithm:
             )
 
             behaviour_policy_train_iter = 0
-            for epoch in track(range(config.parameter.behaviour_policy.epochs), description="Behaviour policy training"):
+            for epoch in track(
+                range(config.parameter.behaviour_policy.epochs),
+                description="Behaviour policy training",
+            ):
                 if behaviour_policy_train_epoch > epoch:
                     continue
 
                 sampler.set_epoch(epoch)
 
                 if (
-                    (epoch + 1)
-                    % config.parameter.evaluation.evaluation_interval
-                    == 0 or (epoch + 1) == config.parameter.behaviour_policy.epochs
-                ):
-                    evaluation_results = evaluate(self.model, train_epoch=epoch, guidance_scales=[0.0], repeat=1 if not hasattr(config.parameter.evaluation, "repeat") else config.parameter.evaluation.repeat)
+                    epoch + 1
+                ) % config.parameter.evaluation.evaluation_interval == 0 or (
+                    epoch + 1
+                ) == config.parameter.behaviour_policy.epochs:
+                    evaluation_results = evaluate(
+                        self.model,
+                        train_epoch=epoch,
+                        guidance_scales=[0.0],
+                        repeat=(
+                            1
+                            if not hasattr(config.parameter.evaluation, "repeat")
+                            else config.parameter.evaluation.repeat
+                        ),
+                    )
                     wandb_run.log(data=evaluation_results, commit=False)
 
                 for data in data_loader:
@@ -765,12 +803,26 @@ class GPOAlgorithm:
                     behaviour_policy_train_iter += 1
                     behaviour_policy_train_epoch = epoch
 
-                    if hasattr(config.parameter, "checkpoint_freq") and (epoch + 1) % config.parameter.checkpoint_freq == 0:
-                        save_checkpoint(self.model, behaviour_policy_train_epoch+1, critic_train_epoch+1, guided_policy_train_epoch+1)
+                if (
+                    hasattr(config.parameter, "checkpoint_freq")
+                    and (epoch + 1) % config.parameter.checkpoint_freq == 0
+                ):
+                    if torch.distributed.get_rank() == 0:
+                        save_checkpoint(
+                            self.model,
+                            behaviour_policy_train_epoch + 1,
+                            critic_train_epoch,
+                            guided_policy_train_epoch,
+                        )
 
-                if hasattr(config.parameter.behaviour_policy, "iterations") and behaviour_policy_train_iter >= config.parameter.behaviour_policy.iterations:
-                    log.info("Behaviour policy training finished.")
-                    break
+                if (
+                    hasattr(config.parameter.behaviour_policy, "iterations")
+                    and behaviour_policy_train_iter
+                    >= config.parameter.behaviour_policy.iterations
+                ):
+                    if torch.distributed.get_rank() == 0:
+                        log.info("Behaviour policy training finished.")
+                        break
 
             if torch.distributed.get_rank() == 0:
                 fake_actions = generate_fake_action(
@@ -798,11 +850,14 @@ class GPOAlgorithm:
                     device=self.dataset.next_states.device,
                 )
                 torch.distributed.barrier()
-            
+
             torch.distributed.broadcast(fake_actions, src=0)
             torch.distributed.barrier()
             torch.distributed.broadcast(fake_next_actions, src=0)
             torch.distributed.barrier()
+
+            self.dataset.fake_actions = fake_actions
+            self.dataset.fake_next_actions = fake_next_actions
 
             q_optimizer = torch.optim.Adam(
                 self.model["GPOPolicy"].module.critic.q.parameters(),
@@ -810,17 +865,18 @@ class GPOAlgorithm:
             )
 
             sampler = torch.utils.data.DistributedSampler(
-                            self.dataset,
-                            num_replicas=torch.distributed.get_world_size(),
-                            rank=torch.distributed.get_rank(),
-                            shuffle=True,
-                        )
+                self.dataset,
+                num_replicas=torch.distributed.get_world_size(),
+                rank=torch.distributed.get_rank(),
+                shuffle=True,
+            )
 
             data_loader = torch.utils.data.DataLoader(
                 self.dataset,
                 batch_size=int(
-                        config.parameter.critic.batch_size // torch.distributed.get_world_size()
-                    ),
+                    config.parameter.critic.batch_size
+                    // torch.distributed.get_world_size()
+                ),
                 shuffle=False,
                 sampler=sampler,
                 num_workers=0,
@@ -829,7 +885,9 @@ class GPOAlgorithm:
             )
 
             critic_train_iter = 0
-            for epoch in track(range(config.parameter.critic.epochs), description="Critic training"):
+            for epoch in track(
+                range(config.parameter.critic.epochs), description="Critic training"
+            ):
                 if critic_train_epoch > epoch:
                     continue
 
@@ -876,10 +934,22 @@ class GPOAlgorithm:
                     critic_train_iter += 1
                     critic_train_epoch = epoch
 
-                    if hasattr(config.parameter, "checkpoint_freq") and (epoch + 1) % config.parameter.checkpoint_freq == 0:
-                        save_checkpoint(self.model, behaviour_policy_train_epoch+1, critic_train_epoch+1, guided_policy_train_epoch+1)
+                if (
+                    hasattr(config.parameter, "checkpoint_freq")
+                    and (epoch + 1) % config.parameter.checkpoint_freq == 0
+                ):
+                    if torch.distributed.get_rank() == 0:
+                        save_checkpoint(
+                            self.model,
+                            behaviour_policy_train_epoch,
+                            critic_train_epoch + 1,
+                            guided_policy_train_epoch,
+                        )
 
-                if hasattr(config.parameter.critic, "iterations") and critic_train_iter >= config.parameter.critic.iterations:
+                if (
+                    hasattr(config.parameter.critic, "iterations")
+                    and critic_train_iter >= config.parameter.critic.iterations
+                ):
                     log.info("Critic training finished.")
                     break
 
@@ -893,8 +963,9 @@ class GPOAlgorithm:
             data_loader = torch.utils.data.DataLoader(
                 self.dataset,
                 batch_size=int(
-                        config.parameter.guided_policy.batch_size // torch.distributed.get_world_size()
-                    ),
+                    config.parameter.guided_policy.batch_size
+                    // torch.distributed.get_world_size()
+                ),
                 shuffle=False,
                 sampler=sampler,
                 num_workers=0,
@@ -903,19 +974,31 @@ class GPOAlgorithm:
             )
 
             guided_policy_train_iter = 0
-            for epoch in track(range(config.parameter.guided_policy.epochs), description="Guided policy training"):
-                
+            for epoch in track(
+                range(config.parameter.guided_policy.epochs),
+                description="Guided policy training",
+            ):
+
                 if guided_policy_train_epoch > epoch:
                     continue
 
                 sampler.set_epoch(epoch)
 
                 if (
-                    (epoch + 1)
-                    % config.parameter.evaluation.evaluation_interval
-                    == 0 or (epoch + 1) == config.parameter.guided_policy.epochs
-                ):
-                    evaluation_results = evaluate(self.model, train_epoch=epoch, guidance_scales=config.parameter.evaluation.guidance_scale, repeat=1 if not hasattr(config.parameter.evaluation, "repeat") else config.parameter.evaluation.repeat)
+                    epoch + 1
+                ) % config.parameter.evaluation.evaluation_interval == 0 or (
+                    epoch + 1
+                ) == config.parameter.guided_policy.epochs:
+                    evaluation_results = evaluate(
+                        self.model,
+                        train_epoch=epoch,
+                        guidance_scales=config.parameter.evaluation.guidance_scale,
+                        repeat=(
+                            1
+                            if not hasattr(config.parameter.evaluation, "repeat")
+                            else config.parameter.evaluation.repeat
+                        ),
+                    )
                     wandb_run.log(data=evaluation_results, commit=False)
 
                 for data in data_loader:
@@ -939,10 +1022,23 @@ class GPOAlgorithm:
                     guided_policy_train_iter += 1
                     guided_policy_train_epoch = epoch
 
-                    if hasattr(config.parameter, "checkpoint_freq") and (epoch + 1) % config.parameter.checkpoint_freq == 0:
-                        save_checkpoint(self.model, behaviour_policy_train_epoch+1, critic_train_epoch+1, guided_policy_train_epoch+1)
+                if (
+                    hasattr(config.parameter, "checkpoint_freq")
+                    and (epoch + 1) % config.parameter.checkpoint_freq == 0
+                ):
+                    if torch.distributed.get_rank() == 0:
+                        save_checkpoint(
+                            self.model,
+                            behaviour_policy_train_epoch ,
+                            critic_train_epoch ,
+                            guided_policy_train_epoch + 1,
+                        )
 
-                if hasattr(config.parameter.guided_policy, "iterations") and guided_policy_train_iter >= config.parameter.guided_policy.iterations:
+                if (
+                    hasattr(config.parameter.guided_policy, "iterations")
+                    and guided_policy_train_iter
+                    >= config.parameter.guided_policy.iterations
+                ):
                     log.info("Guided policy training finished.")
                     break
 
