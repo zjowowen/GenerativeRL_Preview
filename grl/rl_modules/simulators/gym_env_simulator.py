@@ -297,53 +297,51 @@ class GymEnvSimulator:
             data_list = []
             with torch.no_grad():
                 if gym.__version__ >= "0.26.0":
-                    for i in range(num_episodes):
-                        obs, _ = env.reset()
-                        if render:
-                            render_output.append(render_env(env, render_args))
-                        done = False
-                        truncated = False
-                        while not done and not truncated:
-                            action = policy(obs)
-                            next_obs, reward, done, truncated, _ = env.step(action)
-                            data_list.append(
-                                dict(
-                                    obs=obs,
-                                    action=action,
-                                    reward=reward,
-                                    truncated=truncated,
-                                    done=done,
-                                    next_obs=next_obs,
-                                )
+                    obs, _ = env.reset()
+                    if render:
+                        render_output.append(render_env(env, render_args))
+                    done = False
+                    truncated = False
+                    while not done and not truncated:
+                        action = policy(obs)
+                        next_obs, reward, done, truncated, _ = env.step(action)
+                        data_list.append(
+                            dict(
+                                obs=obs,
+                                action=action,
+                                reward=reward,
+                                truncated=truncated,
+                                done=done,
+                                next_obs=next_obs,
                             )
-                            obs = next_obs
-                        if render:
-                            render_output.append(render_env(env, render_args))
+                        )
+                        obs = next_obs
+                    if render:
+                        render_output.append(render_env(env, render_args))
                 else:
-                    for i in range(num_episodes):
-                        step = 0
-                        obs = env.reset()
+                    step = 0
+                    obs = env.reset()
+                    if render:
+                        render_output.append(render_env(env, render_args))
+                    done = False
+                    while not done:
+                        action = policy(obs)
+                        next_obs, reward, done, _ = env.step(action)
+                        step += 1
                         if render:
                             render_output.append(render_env(env, render_args))
-                        done = False
-                        while not done:
-                            action = policy(obs)
-                            next_obs, reward, done, _ = env.step(action)
-                            step += 1
-                            if render:
-                                render_output.append(render_env(env, render_args))
-                            data_list.append(
-                                dict(
-                                    obs=obs,
-                                    action=action,
-                                    reward=reward,
-                                    done=done,
-                                    next_obs=next_obs,
-                                )
+                        data_list.append(
+                            dict(
+                                obs=obs,
+                                action=action,
+                                reward=reward,
+                                done=done,
+                                next_obs=next_obs,
                             )
-                            obs = next_obs
-                        if render:
-                            render_output.append(render_env(env, render_args))
+                        )
+                        obs = next_obs
+                    if render:
+                        render_output.append(render_env(env, render_args))
 
             eval_results.append(
                 dict(
