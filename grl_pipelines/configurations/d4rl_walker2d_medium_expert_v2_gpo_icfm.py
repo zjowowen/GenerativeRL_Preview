@@ -92,7 +92,7 @@ config = EasyDict(
             behaviour_policy=dict(
                 batch_size=4096,
                 learning_rate=1e-4,
-                epochs=10000,
+                epochs=2000,
                 iterations=1000000,
             ),
             sample_per_state=16,
@@ -116,7 +116,7 @@ config = EasyDict(
                 guidance_scale=[0.0, 1.0, 2.0],
             ),
             checkpoint_path=f"./{project_name}/checkpoint",
-            checkpoint_freq=500,
+            checkpoint_freq=100,
         ),
     ),
     deploy=dict(

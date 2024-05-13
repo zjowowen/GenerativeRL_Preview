@@ -1,4 +1,5 @@
 import gym
+import d4rl
 
 from grl.algorithms.gpo import GPOAlgorithm
 from grl.datasets import GPOCustomizedDataset
