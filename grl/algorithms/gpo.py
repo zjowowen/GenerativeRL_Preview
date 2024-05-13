@@ -773,12 +773,7 @@ class GPOAlgorithm:
                     hasattr(config.parameter, "checkpoint_freq")
                     and (epoch + 1) % config.parameter.checkpoint_freq == 0
                 ):
-                    save_checkpoint(
-                        self.model,
-                        self.behaviour_policy_train_epoch + 1,
-                        self.critic_train_epoch,
-                        self.guided_policy_train_epoch,
-                    )
+                    save_checkpoint(self.model)
 
                 if (
                     hasattr(config.parameter.behaviour_policy, "iterations")
@@ -868,12 +863,7 @@ class GPOAlgorithm:
                     hasattr(config.parameter, "checkpoint_freq")
                     and (epoch + 1) % config.parameter.checkpoint_freq == 0
                 ):
-                    save_checkpoint(
-                        self.model,
-                        self.behaviour_policy_train_epoch,
-                        self.critic_train_epoch + 1,
-                        self.guided_policy_train_epoch,
-                    )
+                    save_checkpoint(self.model)
 
                 if (
                     hasattr(config.parameter.critic, "iterations")
@@ -955,12 +945,7 @@ class GPOAlgorithm:
                     hasattr(config.parameter, "checkpoint_freq")
                     and (epoch + 1) % config.parameter.checkpoint_freq == 0
                 ):
-                    save_checkpoint(
-                        self.model,
-                        self.behaviour_policy_train_epoch,
-                        self.critic_train_epoch,
-                        self.guided_policy_train_epoch + 1,
-                    )
+                    save_checkpoint(self.model)
 
                 if (
                     hasattr(config.parameter.guided_policy, "iterations")
