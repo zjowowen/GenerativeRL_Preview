@@ -1203,7 +1203,6 @@ class GPAlgorithm:
                     hasattr(config.parameter, "checkpoint_freq")
                     and (epoch + 1) % config.parameter.checkpoint_freq == 0
                 ):
-                    if torch.distributed.get_rank() == 0:
                         save_checkpoint(self.model)
 
             # ---------------------------------------
