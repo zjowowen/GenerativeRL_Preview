@@ -121,14 +121,14 @@ config = EasyDict(
             behaviour_policy=dict(
                 batch_size=2048,
                 learning_rate=1e-4,
-                epochs=5,
+                epochs=500,
                 iterations=500,
             ),
             sample_per_state=16,
             fake_data_t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
                 batch_size=2048,
-                epochs=5,
+                epochs=500,
                 iterations=500,
                 learning_rate=1e-4,
                 discount_factor=0.99,
@@ -136,7 +136,7 @@ config = EasyDict(
             ),
             guided_policy=dict(
                 batch_size=2048,
-                epochs=5,
+                epochs=500,
                 iterations=500,
                 learning_rate=1e-4,
             ),
