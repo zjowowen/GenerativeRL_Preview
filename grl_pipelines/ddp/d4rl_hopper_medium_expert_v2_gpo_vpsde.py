@@ -5,7 +5,7 @@ import torch
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
 from grl.algorithms.ddp.gp import GPAlgorithm
-from grl_pipelines.ddp.configurations.lunarlander_continuous_gpo_vpsde import (
+from grl_pipelines.ddp.configurations.d4rl_hopper_medium_expert_v2_gpo_vpsde import (
     make_config,
 )
 
