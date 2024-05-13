@@ -6,7 +6,7 @@ torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
 from grl.algorithms.ddp.gp import GPAlgorithm
 from grl.datasets import GPOCustomizedDataset
-from grl_pipelines.ddp.configurations.lunarlander_continuous_gpo_vpsde import (
+from grl_pipelines.ddp.configurations.lunarlander_continuous_gpo_gvp import (
     make_config,
 )
 

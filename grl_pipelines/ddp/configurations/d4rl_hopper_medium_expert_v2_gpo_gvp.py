@@ -4,8 +4,8 @@ from easydict import EasyDict
 
 def make_config(device, batch_size_ratio=1):
 
-    action_size = 2
-    state_size = 8
+    action_size = 3
+    state_size = 11
 
     t_embedding_dim = 32
     t_encoder = dict(
@@ -18,7 +18,7 @@ def make_config(device, batch_size_ratio=1):
     algorithm_type = "GPO"
     solver_type = "ODESolver"
     model_type = "DiffusionModel"
-    project_name = "LunarLanderContinuous-v2-GPO-VPSDE-DDP"
+    project_name = "d4rl-hopper-medium-expert-v2-GPO-GVP-DDP"
 
     model = dict(
         device=device,
@@ -50,17 +50,13 @@ def make_config(device, batch_size_ratio=1):
             )
         ),
         path=dict(
-            type="linear_vp_sde",
-            beta_0=0.1,
-            beta_1=20.0,
+            type="gvp",
         ),
         reverse_path=dict(
-            type="linear_vp_sde",
-            beta_0=0.1,
-            beta_1=20.0,
+            type="gvp",
         ),
         model=dict(
-            type="noise_function",
+            type="velocity_function",
             args=dict(
                 t_encoder=t_encoder,
                 backbone=dict(
@@ -85,17 +81,16 @@ def make_config(device, batch_size_ratio=1):
             simulator=dict(
                 type="GymEnvSimulator",
                 args=dict(
-                    env_id="LunarLanderContinuous-v2",
+                    env_id="hopper-medium-expert-v2",
                 ),
             ),
-            # dataset=dict(
-            #     type="QGPOCustomizedDataset",
-            #     args=dict(
-            #         env_id="LunarLanderContinuous-v2",
-            #         device=device,
-            #         numpy_data_path = "./data.npz",
-            #     ),
-            # ),
+            dataset=dict(
+                type="GPOD4RLDataset",
+                args=dict(
+                    env_id="hopper-medium-expert-v2",
+                    device=device,
+                ),
+            ),
             model=dict(
                 GPPolicy=dict(
                     device=device,
@@ -125,9 +120,9 @@ def make_config(device, batch_size_ratio=1):
             parameter=dict(
                 algorithm_type=algorithm_type,
                 behaviour_policy=dict(
-                    batch_size=2048 * batch_size_ratio,
+                    batch_size=4096 * batch_size_ratio,
                     learning_rate=1e-4,
-                    epochs=1000,
+                    epochs=10000,
                     # new add below
                     grad_norm_clip=10.0,
                     lr_decy=False,
@@ -135,8 +130,8 @@ def make_config(device, batch_size_ratio=1):
                 sample_per_state=16,
                 fake_data_t_span=None if solver_type == "DPMSolver" else 32,
                 critic=dict(
-                    batch_size=2048 * batch_size_ratio,
-                    epochs=1000,
+                    batch_size=4096 * batch_size_ratio,
+                    epochs=20000,
                     learning_rate=3e-4,
                     discount_factor=0.99,
                     update_momentum=0.005,
@@ -145,8 +140,8 @@ def make_config(device, batch_size_ratio=1):
                     lr_decy=False,
                 ),
                 guided_policy=dict(
-                    batch_size=2048 * batch_size_ratio,
-                    epochs=1000,
+                    batch_size=4096 * batch_size_ratio,
+                    epochs=20000,
                     learning_rate=1e-4,
                     # new add below
                     copy_frome_basemodel=True,
@@ -155,8 +150,8 @@ def make_config(device, batch_size_ratio=1):
                 ),
                 evaluation=dict(
                     eval=True,
-                    evaluation_behavior_policy_interval=20,
-                    evaluation_guided_policy_interval=20,
+                    evaluation_behavior_policy_interval=200,
+                    evaluation_guided_policy_interval=200,
                     guidance_scale=[0.0, 1.0, 2.0],
                 ),
                 checkpoint_path=f"./{project_name}/checkpoint",
@@ -166,7 +161,7 @@ def make_config(device, batch_size_ratio=1):
         deploy=dict(
             device=device,
             env=dict(
-                env_id="LunarLanderContinuous-v2",
+                env_id="hopper-medium-expert-v2",
                 seed=0,
             ),
             num_deploy_steps=1000,

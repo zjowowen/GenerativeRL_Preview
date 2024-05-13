@@ -798,11 +798,11 @@ class GPAlgorithm:
                     ] = return_min
                     if repeat > 1:
                         log.info(
-                            f"Train epoch: {train_epoch}, guidance_scale: {guidance_scale}, return_mean: {return_mean}, return_std: {return_std}, return_max: {return_max}, return_min: {return_min}"
+                            f"{torch.distributed.get_rank()}: Train epoch: {train_epoch}, guidance_scale: {guidance_scale}, return_mean: {return_mean}, return_std: {return_std}, return_max: {return_max}, return_min: {return_min}"
                         )
                     else:
                         log.info(
-                            f"Train epoch: {train_epoch}, guidance_scale: {guidance_scale}, return: {return_mean}"
+                            f"{torch.distributed.get_rank()}: Train epoch: {train_epoch}, guidance_scale: {guidance_scale}, return: {return_mean}"
                         )
 
                 return evaluation_results
@@ -874,20 +874,19 @@ class GPAlgorithm:
                         == 0
                         or (epoch + 1) == config.parameter.behaviour_policy.epochs
                     ):
-                        if torch.distributed.get_rank() == 0:
-                            evaluation_results = evaluate(
-                                self.model,
-                                train_epoch=epoch,
-                                guidance_scales=[0.0],
-                                repeat=(
-                                    1
-                                    if not hasattr(
-                                        config.parameter.evaluation, "repeat"
-                                    )
-                                    else config.parameter.evaluation.repeat
-                                ),
-                            )
-                            wandb.log(data=evaluation_results, commit=False)
+                        evaluation_results = evaluate(
+                            self.model,
+                            train_epoch=epoch,
+                            guidance_scales=[0.0],
+                            repeat=(
+                                1
+                                if not hasattr(
+                                    config.parameter.evaluation, "repeat"
+                                )
+                                else config.parameter.evaluation.repeat
+                            ),
+                        )
+                        wandb.log(data=evaluation_results, commit=False)
 
                 for data in data_loader:
                     behaviour_policy_loss = self.model[

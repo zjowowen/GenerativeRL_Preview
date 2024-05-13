@@ -18,7 +18,7 @@ def make_config(device, batch_size_ratio=1):
     algorithm_type = "GPO"
     solver_type = "ODESolver"
     model_type = "DiffusionModel"
-    project_name = "LunarLanderContinuous-v2-GPO-VPSDE-DDP"
+    project_name = "LunarLanderContinuous-v2-GPO-GVP-DDP"
 
     model = dict(
         device=device,
@@ -50,17 +50,13 @@ def make_config(device, batch_size_ratio=1):
             )
         ),
         path=dict(
-            type="linear_vp_sde",
-            beta_0=0.1,
-            beta_1=20.0,
+            type="gvp",
         ),
         reverse_path=dict(
-            type="linear_vp_sde",
-            beta_0=0.1,
-            beta_1=20.0,
+            type="gvp",
         ),
         model=dict(
-            type="noise_function",
+            type="velocity_function",
             args=dict(
                 t_encoder=t_encoder,
                 backbone=dict(
@@ -100,7 +96,7 @@ def make_config(device, batch_size_ratio=1):
                 GPPolicy=dict(
                     device=device,
                     model_type=model_type,
-                    model_loss_type="score_matching",
+                    model_loss_type="flow_matching",
                     model=model,
                     critic=dict(
                         device=device,

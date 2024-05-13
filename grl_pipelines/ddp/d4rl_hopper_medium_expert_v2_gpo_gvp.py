@@ -1,24 +1,18 @@
-# torchrun --nproc_per_node=1 --nnodes=gpu grl_pipelines/ddp/lunarlander_continuous_gpo_vpsde_torchrun.py
+# torchrun --nproc_per_node=8 this file
 import gym
 import torch
 
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
 from grl.algorithms.ddp.gp import GPAlgorithm
-from grl.datasets import GPOCustomizedDataset
-from grl_pipelines.ddp.configurations.lunarlander_continuous_gpo_vpsde import (
+from grl_pipelines.ddp.configurations.lunarlander_continuous_gpo_gvp import (
     make_config,
 )
 
 
 def gp_pipeline(config):
 
-    gp = GPAlgorithm(
-        config,
-        dataset=GPOCustomizedDataset(
-            numpy_data_path="./data.npz", device=config.train.device
-        ),
-    )
+    gp = GPAlgorithm(config)
 
     # ---------------------------------------
     # Customized train code ↓
@@ -47,5 +41,5 @@ if __name__ == "__main__":
     torch.distributed.init_process_group("nccl")
     device = torch.distributed.get_rank() % torch.cuda.device_count()
     torch.cuda.set_device(device)
-    config = make_config(device=device)
+    config = make_config(device=device, batch_size_ratio=torch.cuda.device_count())
     gp_pipeline(config)
