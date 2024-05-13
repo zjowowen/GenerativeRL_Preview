@@ -1,5 +1,6 @@
 # torchrun --nproc_per_node=8 this file
 import gym
+import d4rl
 import torch
 
 torch.backends.cuda.matmul.allow_tf32 = True

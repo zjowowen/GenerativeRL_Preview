@@ -149,7 +149,6 @@ def make_config(device, batch_size_ratio=1):
                     grad_norm_clip=10.0,
                     lr_decy=True,
                     loss_type="double_minibatch_loss",
-
                 ),
                 evaluation=dict(
                     eval=True,

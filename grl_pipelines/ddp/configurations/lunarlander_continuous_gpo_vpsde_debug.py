@@ -18,7 +18,7 @@ def make_config(device, batch_size_ratio=1):
     algorithm_type = "GPO"
     solver_type = "ODESolver"
     model_type = "DiffusionModel"
-    project_name = "LunarLanderContinuous-v2-GPO-VPSDE-DDP"
+    project_name = "LunarLanderContinuous-v2-GPO-VPSDE-DDP-DEBUG"
 
     model = dict(
         device=device,
@@ -127,7 +127,7 @@ def make_config(device, batch_size_ratio=1):
                 behaviour_policy=dict(
                     batch_size=2048 * batch_size_ratio,
                     learning_rate=1e-4,
-                    epochs=1000,
+                    epochs=200,
                     # new add below
                     lr_decy=False,
                 ),
@@ -135,7 +135,7 @@ def make_config(device, batch_size_ratio=1):
                 fake_data_t_span=None if solver_type == "DPMSolver" else 32,
                 critic=dict(
                     batch_size=2048 * batch_size_ratio,
-                    epochs=1000,
+                    epochs=200,
                     learning_rate=3e-4,
                     discount_factor=0.99,
                     update_momentum=0.005,
@@ -144,7 +144,7 @@ def make_config(device, batch_size_ratio=1):
                 ),
                 guided_policy=dict(
                     batch_size=2048 * batch_size_ratio,
-                    epochs=1000,
+                    epochs=200,
                     learning_rate=1e-4,
                     # new add below
                     copy_frome_basemodel=False,
@@ -152,12 +152,13 @@ def make_config(device, batch_size_ratio=1):
                 ),
                 evaluation=dict(
                     eval=True,
-                    evaluation_behavior_policy_interval=20,
-                    evaluation_guided_policy_interval=20,
+                    repeat=5,
+                    evaluation_behavior_policy_interval=2,
+                    evaluation_guided_policy_interval=2,
                     guidance_scale=[0.0, 1.0, 2.0],
                 ),
                 checkpoint_path=f"./{project_name}/checkpoint",
-                checkpoint_freq=100,
+                checkpoint_freq=2,
             ),
         ),
         deploy=dict(

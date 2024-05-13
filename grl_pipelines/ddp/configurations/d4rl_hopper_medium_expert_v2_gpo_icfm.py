@@ -18,7 +18,9 @@ def make_config(device, batch_size_ratio=1):
     algorithm_type = "GPO"
     solver_type = "ODESolver"
     model_type = "IndependentConditionalFlowModel"
-    project_name = "d4rl-hopper-medium-expert-v2-GPO-IndependentConditionalFlowModel-DDP"
+    project_name = (
+        "d4rl-hopper-medium-expert-v2-GPO-IndependentConditionalFlowModel-DDP"
+    )
 
     model = dict(
         device=device,
@@ -100,7 +102,6 @@ def make_config(device, batch_size_ratio=1):
                     learning_rate=1e-4,
                     epochs=10000,
                     # new add below
-                    grad_norm_clip=10.0,
                     lr_decy=False,
                 ),
                 sample_per_state=16,
@@ -112,7 +113,6 @@ def make_config(device, batch_size_ratio=1):
                     discount_factor=0.99,
                     update_momentum=0.005,
                     # new add below
-                    grad_norm_clip=10.0,
                     lr_decy=False,
                 ),
                 guided_policy=dict(
@@ -120,8 +120,7 @@ def make_config(device, batch_size_ratio=1):
                     epochs=20000,
                     learning_rate=1e-4,
                     # new add below
-                    copy_frome_basemodel=True,
-                    grad_norm_clip=10.0,
+                    copy_frome_basemodel=False,
                     lr_decy=False,
                 ),
                 evaluation=dict(

@@ -679,13 +679,13 @@ class GPAlgorithm:
                     fake_dataset["fake_actions"]
                 ).to(self.dataset.device)
                 log.info(
-                    f"Test fake actions: {self.dataset.fake_actions[0].cpu().numpy().mean()}, rank: {torch.distributed.get_rank()}"
+                    f"Test fake actions: {self.dataset.fake_actions[0].cpu().numpy().mean()}"
                 )
                 self.dataset.fake_next_actions = torch.from_numpy(
                     fake_dataset["fake_next_actions"]
                 ).to(self.dataset.device)
                 log.info(
-                    f"Test fake next actions: {self.dataset.fake_next_actions[0].cpu().numpy().mean()}, rank: {torch.distributed.get_rank()}"
+                    f"Test fake next actions: {self.dataset.fake_next_actions[0].cpu().numpy().mean()}"
                 )
                 self.need_fake_action = False
             else:
@@ -697,8 +697,7 @@ class GPAlgorithm:
 
             def save_checkpoint(model):
                 if (
-                    torch.distributed.get_rank() == 0
-                    and hasattr(config.parameter, "checkpoint_path")
+                    hasattr(config.parameter, "checkpoint_path")
                     and config.parameter.checkpoint_path is not None
                 ):
                     if not os.path.exists(config.parameter.checkpoint_path):
@@ -778,6 +777,7 @@ class GPAlgorithm:
                     return_results = [
                         eval_results[i]["total_return"] for i in range(repeat)
                     ]
+                    log.info(f"Return: {return_results}")
                     return_mean = np.mean(return_results)
                     return_std = np.std(return_results)
                     return_max = np.max(return_results)
@@ -796,11 +796,11 @@ class GPAlgorithm:
                     ] = return_min
                     if repeat > 1:
                         log.info(
-                            f"{torch.distributed.get_rank()}: Train epoch: {train_epoch}, guidance_scale: {guidance_scale}, return_mean: {return_mean}, return_std: {return_std}, return_max: {return_max}, return_min: {return_min}"
+                            f"Train epoch: {train_epoch}, guidance_scale: {guidance_scale}, return_mean: {return_mean}, return_std: {return_std}, return_max: {return_max}, return_min: {return_min}"
                         )
                     else:
                         log.info(
-                            f"{torch.distributed.get_rank()}: Train epoch: {train_epoch}, guidance_scale: {guidance_scale}, return: {return_mean}"
+                            f"Train epoch: {train_epoch}, guidance_scale: {guidance_scale}, return: {return_mean}"
                         )
 
                 return evaluation_results
@@ -808,37 +808,6 @@ class GPAlgorithm:
             # ---------------------------------------
             # behavior training code ↓
             # ---------------------------------------
-
-            sampler = torch.utils.data.DistributedSampler(
-                self.dataset,
-                num_replicas=torch.distributed.get_world_size(),
-                rank=torch.distributed.get_rank(),
-                shuffle=True,
-            )
-            assert (
-                config.parameter.behaviour_policy.batch_size
-                % torch.distributed.get_world_size()
-                == 0
-            )
-            data_loader = torch.utils.data.DataLoader(
-                self.dataset,
-                batch_size=int(
-                    config.parameter.behaviour_policy.batch_size
-                    // torch.distributed.get_world_size()
-                ),
-                shuffle=False,
-                sampler=sampler,
-                num_workers=0,
-                pin_memory=False,
-                drop_last=True,
-            )
-
-            self.model["GPPolicy"].base_model.model = (
-                nn.parallel.DistributedDataParallel(
-                    self.model["GPPolicy"].base_model.model,
-                    device_ids=[torch.distributed.get_rank()],
-                )
-            )
 
             behaviour_policy_optimizer = torch.optim.Adam(
                 self.model["GPPolicy"].base_model.model.parameters(),
@@ -863,7 +832,17 @@ class GPAlgorithm:
                         behaviour_lr_scheduler.step()
                     continue
 
-                sampler.set_epoch(epoch)
+                sampler = torch.utils.data.RandomSampler(
+                    self.dataset, replacement=False
+                )
+                data_loader = torch.utils.data.DataLoader(
+                    self.dataset,
+                    batch_size=config.parameter.behaviour_policy.batch_size,
+                    shuffle=False,
+                    sampler=sampler,
+                    pin_memory=False,
+                    drop_last=True,
+                )
 
                 if config.parameter.evaluation.eval:
                     if (
@@ -944,60 +923,38 @@ class GPAlgorithm:
             # ---------------------------------------
 
             if self.need_fake_action:
-                if torch.distributed.get_rank() == 0:
-                    fake_actions = generate_fake_action(
-                        self.model["GPPolicy"],
-                        self.dataset.states[:],
-                        config.parameter.sample_per_state,
-                    )
-                    fake_next_actions = generate_fake_action(
-                        self.model["GPPolicy"],
-                        self.dataset.next_states[:],
-                        config.parameter.sample_per_state,
-                    )
-                    torch.distributed.barrier()
-                else:
-                    fake_actions = torch.zeros(
-                        self.dataset.states.shape[0],
-                        config.parameter.sample_per_state,
-                        self.dataset.actions.shape[-1],
-                        device=self.dataset.states.device,
-                    )
-                    fake_next_actions = torch.zeros(
-                        self.dataset.next_states.shape[0],
-                        config.parameter.sample_per_state,
-                        self.dataset.actions.shape[-1],
-                        device=self.dataset.next_states.device,
-                    )
-                    torch.distributed.barrier()
 
-                torch.distributed.broadcast(fake_actions, src=0)
-                log.info(
-                    f"Test fake actions: {fake_actions[0].detach().cpu().numpy().mean()}, rank: {torch.distributed.get_rank()}"
+                fake_actions = generate_fake_action(
+                    self.model["GPPolicy"],
+                    self.dataset.states[:],
+                    config.parameter.sample_per_state,
                 )
-                torch.distributed.barrier()
-                torch.distributed.broadcast(fake_next_actions, src=0)
-                log.info(
-                    f"Test fake next actions: {fake_next_actions[0].detach().cpu().numpy().mean()}, rank: {torch.distributed.get_rank()}"
+                fake_next_actions = generate_fake_action(
+                    self.model["GPPolicy"],
+                    self.dataset.next_states[:],
+                    config.parameter.sample_per_state,
                 )
-                torch.distributed.barrier()
+
+                log.info(
+                    f"Test fake actions: {fake_actions[0].detach().cpu().numpy().mean()}"
+                )
+
+                log.info(
+                    f"Test fake next actions: {fake_next_actions[0].detach().cpu().numpy().mean()}"
+                )
 
                 self.dataset.fake_actions = fake_actions
                 self.dataset.fake_next_actions = fake_next_actions
 
-                if torch.distributed.get_rank() == 0:
-                    filename = os.path.join(
-                        config.parameter.checkpoint_path,
-                        f"dataset_with_fakeaction.npz",
-                    )
-                    fake_data = dict(
-                        fake_actions=fake_actions.cpu().numpy(),
-                        fake_next_actions=fake_next_actions.cpu().numpy(),
-                    )
-                    np.savez(filename, **fake_data)
-                    torch.distributed.barrier()
-                else:
-                    torch.distributed.barrier()
+                filename = os.path.join(
+                    config.parameter.checkpoint_path,
+                    f"dataset_with_fakeaction.npz",
+                )
+                fake_data = dict(
+                    fake_actions=fake_actions.cpu().numpy(),
+                    fake_next_actions=fake_next_actions.cpu().numpy(),
+                )
+                np.savez(filename, **fake_data)
 
             # ---------------------------------------
             # make fake action ↑
@@ -1007,18 +964,6 @@ class GPAlgorithm:
             # critic training code ↓
             # ---------------------------------------
 
-            self.model["GPPolicy"].critic.q.model["q1"] = (
-                nn.parallel.DistributedDataParallel(
-                    self.model["GPPolicy"].critic.q.model["q1"],
-                    device_ids=[torch.distributed.get_rank()],
-                )
-            )
-            self.model["GPPolicy"].critic.q.model["q2"] = (
-                nn.parallel.DistributedDataParallel(
-                    self.model["GPPolicy"].critic.q.model["q2"],
-                    device_ids=[torch.distributed.get_rank()],
-                )
-            )
             q_optimizer = torch.optim.Adam(
                 self.model["GPPolicy"].critic.q.parameters(),
                 lr=config.parameter.critic.learning_rate,
@@ -1033,26 +978,6 @@ class GPAlgorithm:
                     eta_min=0.0,
                 )
 
-            sampler = torch.utils.data.DistributedSampler(
-                self.dataset,
-                num_replicas=torch.distributed.get_world_size(),
-                rank=torch.distributed.get_rank(),
-                shuffle=True,
-            )
-
-            data_loader = torch.utils.data.DataLoader(
-                self.dataset,
-                batch_size=int(
-                    config.parameter.critic.batch_size
-                    // torch.distributed.get_world_size()
-                ),
-                shuffle=False,
-                sampler=sampler,
-                num_workers=0,
-                pin_memory=False,
-                drop_last=True,
-            )
-
             critic_train_iter = 0
             for epoch in track(
                 range(config.parameter.critic.epochs), description="Critic training"
@@ -1062,7 +987,17 @@ class GPAlgorithm:
                         critic_lr_scheduler.step()
                     continue
 
-                sampler.set_epoch(epoch)
+                sampler = torch.utils.data.RandomSampler(
+                    self.dataset, replacement=False
+                )
+                data_loader = torch.utils.data.DataLoader(
+                    self.dataset,
+                    batch_size=config.parameter.critic.batch_size,
+                    shuffle=False,
+                    sampler=sampler,
+                    pin_memory=False,
+                    drop_last=True,
+                )
 
                 for data in data_loader:
 
@@ -1135,25 +1070,17 @@ class GPAlgorithm:
 
             if config.parameter.guided_policy.copy_frome_basemodel:
                 self.model["GPPolicy"].guided_model.model.load_state_dict(
-                    self.model["GPPolicy"].base_model.model.module.state_dict()
+                    self.model["GPPolicy"].base_model.model.state_dict()
                 )
 
                 for param, target_param in zip(
                     self.model["GPPolicy"].guided_model.model.parameters(),
-                    self.model["GPPolicy"].base_model.model.module.parameters(),
+                    self.model["GPPolicy"].base_model.model.parameters(),
                 ):
                     assert torch.equal(
                         param, target_param
-                    ), f"The model is not copied correctly. rank: {torch.distributed.get_rank()}"
+                    ), f"The model is not copied correctly."
 
-                torch.distributed.barrier()
-
-            self.model["GPPolicy"].guided_model.model = (
-                nn.parallel.DistributedDataParallel(
-                    self.model["GPPolicy"].guided_model.model,
-                    device_ids=[torch.distributed.get_rank()],
-                )
-            )
             guided_policy_optimizer = torch.optim.Adam(
                 self.model["GPPolicy"].guided_model.parameters(),
                 lr=config.parameter.guided_policy.learning_rate,
@@ -1168,26 +1095,6 @@ class GPAlgorithm:
                     eta_min=0.0,
                 )
 
-            sampler = torch.utils.data.DistributedSampler(
-                self.dataset,
-                num_replicas=torch.distributed.get_world_size(),
-                rank=torch.distributed.get_rank(),
-                shuffle=True,
-            )
-
-            data_loader = torch.utils.data.DataLoader(
-                self.dataset,
-                batch_size=int(
-                    config.parameter.guided_policy.batch_size
-                    // torch.distributed.get_world_size()
-                ),
-                shuffle=False,
-                sampler=sampler,
-                num_workers=0,
-                pin_memory=False,
-                drop_last=True,
-            )
-
             guided_policy_train_iter = 0
             for epoch in track(
                 range(config.parameter.guided_policy.epochs),
@@ -1199,7 +1106,17 @@ class GPAlgorithm:
                         guided_lr_scheduler.step()
                     continue
 
-                sampler.set_epoch(epoch)
+                sampler = torch.utils.data.RandomSampler(
+                    self.dataset, replacement=False
+                )
+                data_loader = torch.utils.data.DataLoader(
+                    self.dataset,
+                    batch_size=config.parameter.guided_policy.batch_size,
+                    shuffle=False,
+                    sampler=sampler,
+                    pin_memory=False,
+                    drop_last=True,
+                )
 
                 if config.parameter.evaluation.eval:
                     if (

@@ -101,7 +101,6 @@ def make_config(device, batch_size_ratio=1):
                     learning_rate=1e-4,
                     epochs=1000,
                     # new add below
-                    grad_norm_clip=10.0,
                     lr_decy=False,
                 ),
                 sample_per_state=16,
@@ -113,7 +112,6 @@ def make_config(device, batch_size_ratio=1):
                     discount_factor=0.99,
                     update_momentum=0.005,
                     # new add below
-                    grad_norm_clip=10.0,
                     lr_decy=False,
                 ),
                 guided_policy=dict(
@@ -121,8 +119,7 @@ def make_config(device, batch_size_ratio=1):
                     epochs=1000,
                     learning_rate=1e-4,
                     # new add below
-                    copy_frome_basemodel=True,
-                    grad_norm_clip=10.0,
+                    copy_frome_basemodel=False,
                     lr_decy=False,
                 ),
                 evaluation=dict(

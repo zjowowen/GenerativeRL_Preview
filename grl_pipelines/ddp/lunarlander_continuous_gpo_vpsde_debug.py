@@ -16,7 +16,7 @@ import torch.multiprocessing as mp
 from grl.algorithms.ddp.gp import GPAlgorithm
 from grl.datasets import GPOCustomizedDataset
 from grl.utils.log import log
-from grl_pipelines.ddp.configurations.lunarlander_continuous_gpo_vpsde import (
+from grl_pipelines.ddp.configurations.lunarlander_continuous_gpo_vpsde_debug import (
     make_config,
 )
 

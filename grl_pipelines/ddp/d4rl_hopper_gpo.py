@@ -9,6 +9,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(
 )
 
 import gym
+import d4rl
 
 import torch
 import torch.multiprocessing as mp
