@@ -401,53 +401,51 @@
             <span class="n">data_list</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
                 <span class="k">if</span> <span class="n">gym</span><span class="o">.</span><span class="n">__version__</span> <span class="o">&gt;=</span> <span class="s2">&quot;0.26.0&quot;</span><span class="p">:</span>
-                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_episodes</span><span class="p">):</span>
-                        <span class="n">obs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
-                        <span class="k">if</span> <span class="n">render</span><span class="p">:</span>
-                            <span class="n">render_output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">render_env</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">render_args</span><span class="p">))</span>
-                        <span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
-                        <span class="n">truncated</span> <span class="o">=</span> <span class="kc">False</span>
-                        <span class="k">while</span> <span class="ow">not</span> <span class="n">done</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">truncated</span><span class="p">:</span>
-                            <span class="n">action</span> <span class="o">=</span> <span class="n">policy</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
-                            <span class="n">next_obs</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">truncated</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
-                            <span class="n">data_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                                <span class="nb">dict</span><span class="p">(</span>
-                                    <span class="n">obs</span><span class="o">=</span><span class="n">obs</span><span class="p">,</span>
-                                    <span class="n">action</span><span class="o">=</span><span class="n">action</span><span class="p">,</span>
-                                    <span class="n">reward</span><span class="o">=</span><span class="n">reward</span><span class="p">,</span>
-                                    <span class="n">truncated</span><span class="o">=</span><span class="n">truncated</span><span class="p">,</span>
-                                    <span class="n">done</span><span class="o">=</span><span class="n">done</span><span class="p">,</span>
-                                    <span class="n">next_obs</span><span class="o">=</span><span class="n">next_obs</span><span class="p">,</span>
-                                <span class="p">)</span>
+                    <span class="n">obs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">render</span><span class="p">:</span>
+                        <span class="n">render_output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">render_env</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">render_args</span><span class="p">))</span>
+                    <span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="n">truncated</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="k">while</span> <span class="ow">not</span> <span class="n">done</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">truncated</span><span class="p">:</span>
+                        <span class="n">action</span> <span class="o">=</span> <span class="n">policy</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
+                        <span class="n">next_obs</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">truncated</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+                        <span class="n">data_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="nb">dict</span><span class="p">(</span>
+                                <span class="n">obs</span><span class="o">=</span><span class="n">obs</span><span class="p">,</span>
+                                <span class="n">action</span><span class="o">=</span><span class="n">action</span><span class="p">,</span>
+                                <span class="n">reward</span><span class="o">=</span><span class="n">reward</span><span class="p">,</span>
+                                <span class="n">truncated</span><span class="o">=</span><span class="n">truncated</span><span class="p">,</span>
+                                <span class="n">done</span><span class="o">=</span><span class="n">done</span><span class="p">,</span>
+                                <span class="n">next_obs</span><span class="o">=</span><span class="n">next_obs</span><span class="p">,</span>
                             <span class="p">)</span>
-                            <span class="n">obs</span> <span class="o">=</span> <span class="n">next_obs</span>
-                        <span class="k">if</span> <span class="n">render</span><span class="p">:</span>
-                            <span class="n">render_output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">render_env</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">render_args</span><span class="p">))</span>
+                        <span class="p">)</span>
+                        <span class="n">obs</span> <span class="o">=</span> <span class="n">next_obs</span>
+                    <span class="k">if</span> <span class="n">render</span><span class="p">:</span>
+                        <span class="n">render_output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">render_env</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">render_args</span><span class="p">))</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_episodes</span><span class="p">):</span>
-                        <span class="n">step</span> <span class="o">=</span> <span class="mi">0</span>
-                        <span class="n">obs</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+                    <span class="n">step</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="n">obs</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">render</span><span class="p">:</span>
+                        <span class="n">render_output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">render_env</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">render_args</span><span class="p">))</span>
+                    <span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="k">while</span> <span class="ow">not</span> <span class="n">done</span><span class="p">:</span>
+                        <span class="n">action</span> <span class="o">=</span> <span class="n">policy</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
+                        <span class="n">next_obs</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+                        <span class="n">step</span> <span class="o">+=</span> <span class="mi">1</span>
                         <span class="k">if</span> <span class="n">render</span><span class="p">:</span>
                             <span class="n">render_output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">render_env</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">render_args</span><span class="p">))</span>
-                        <span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
-                        <span class="k">while</span> <span class="ow">not</span> <span class="n">done</span><span class="p">:</span>
-                            <span class="n">action</span> <span class="o">=</span> <span class="n">policy</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
-                            <span class="n">next_obs</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
-                            <span class="n">step</span> <span class="o">+=</span> <span class="mi">1</span>
-                            <span class="k">if</span> <span class="n">render</span><span class="p">:</span>
-                                <span class="n">render_output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">render_env</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">render_args</span><span class="p">))</span>
-                            <span class="n">data_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                                <span class="nb">dict</span><span class="p">(</span>
-                                    <span class="n">obs</span><span class="o">=</span><span class="n">obs</span><span class="p">,</span>
-                                    <span class="n">action</span><span class="o">=</span><span class="n">action</span><span class="p">,</span>
-                                    <span class="n">reward</span><span class="o">=</span><span class="n">reward</span><span class="p">,</span>
-                                    <span class="n">done</span><span class="o">=</span><span class="n">done</span><span class="p">,</span>
-                                    <span class="n">next_obs</span><span class="o">=</span><span class="n">next_obs</span><span class="p">,</span>
-                                <span class="p">)</span>
+                        <span class="n">data_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="nb">dict</span><span class="p">(</span>
+                                <span class="n">obs</span><span class="o">=</span><span class="n">obs</span><span class="p">,</span>
+                                <span class="n">action</span><span class="o">=</span><span class="n">action</span><span class="p">,</span>
+                                <span class="n">reward</span><span class="o">=</span><span class="n">reward</span><span class="p">,</span>
+                                <span class="n">done</span><span class="o">=</span><span class="n">done</span><span class="p">,</span>
+                                <span class="n">next_obs</span><span class="o">=</span><span class="n">next_obs</span><span class="p">,</span>
                             <span class="p">)</span>
-                            <span class="n">obs</span> <span class="o">=</span> <span class="n">next_obs</span>
-                        <span class="k">if</span> <span class="n">render</span><span class="p">:</span>
-                            <span class="n">render_output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">render_env</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">render_args</span><span class="p">))</span>
+                        <span class="p">)</span>
+                        <span class="n">obs</span> <span class="o">=</span> <span class="n">next_obs</span>
+                    <span class="k">if</span> <span class="n">render</span><span class="p">:</span>
+                        <span class="n">render_output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">render_env</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">render_args</span><span class="p">))</span>
 
             <span class="n">eval_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="nb">dict</span><span class="p">(</span>
