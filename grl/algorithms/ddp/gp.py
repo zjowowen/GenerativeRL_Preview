@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
+import torch.distributed
 import torch.nn as nn
 from easydict import EasyDict
 from rich.progress import Progress, track
@@ -661,11 +662,15 @@ class GPAlgorithm:
                 if hasattr(config, "simulator")
                 else self.simulator
             )
-            self.dataset = (
-                create_dataset(config.dataset)
-                if hasattr(config, "dataset")
-                else self.dataset
-            )
+
+            for _ in range(torch.distributed.get_world_size()):
+                if torch.distributed.get_rank() == _:
+                    self.dataset = (
+                        create_dataset(config.dataset)
+                        if hasattr(config, "dataset")
+                        else self.dataset
+                    )
+                    torch.distributed.barrier()
 
             fake_dataset_path = os.path.join(
                 config.parameter.checkpoint_path,
