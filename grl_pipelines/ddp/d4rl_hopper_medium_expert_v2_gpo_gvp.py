@@ -1,7 +1,6 @@
 # torchrun --nproc_per_node=8 this file
 import gym
 import d4rl
-
 import torch
 
 torch.backends.cuda.matmul.allow_tf32 = True
@@ -43,5 +42,5 @@ if __name__ == "__main__":
     torch.distributed.init_process_group("nccl")
     device = torch.distributed.get_rank() % torch.cuda.device_count()
     torch.cuda.set_device(device)
-    config = make_config(device=device, batch_size_ratio=torch.cuda.device_count())
+    config = make_config(device=device)
     gp_pipeline(config)

@@ -124,7 +124,7 @@ def make_config(device, batch_size_ratio=1):
             parameter=dict(
                 algorithm_type=algorithm_type,
                 behaviour_policy=dict(
-                    batch_size=4096 * batch_size_ratio,
+                    batch_size=4096,
                     learning_rate=1e-4,
                     epochs=10000,
                     # new add below
@@ -133,7 +133,7 @@ def make_config(device, batch_size_ratio=1):
                 sample_per_state=16,
                 fake_data_t_span=None if solver_type == "DPMSolver" else 32,
                 critic=dict(
-                    batch_size=4096 * batch_size_ratio,
+                    batch_size=4096,
                     epochs=20000,
                     learning_rate=3e-4,
                     discount_factor=0.99,
@@ -142,7 +142,7 @@ def make_config(device, batch_size_ratio=1):
                     lr_decy=False,
                 ),
                 guided_policy=dict(
-                    batch_size=4096 * batch_size_ratio,
+                    batch_size=4096,
                     epochs=20000,
                     learning_rate=1e-4,
                     # new add below

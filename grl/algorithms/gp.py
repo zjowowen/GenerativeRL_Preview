@@ -1203,7 +1203,7 @@ class GPAlgorithm:
                     hasattr(config.parameter, "checkpoint_freq")
                     and (epoch + 1) % config.parameter.checkpoint_freq == 0
                 ):
-                        save_checkpoint(self.model)
+                    save_checkpoint(self.model)
 
             # ---------------------------------------
             # guided policy training code ↑
