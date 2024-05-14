@@ -1,5 +1,5 @@
 import gym
-
+import d4rl
 from grl.algorithms.gp import GPAlgorithm
 from grl.datasets import GPOCustomizedDataset
 from grl.utils.log import log

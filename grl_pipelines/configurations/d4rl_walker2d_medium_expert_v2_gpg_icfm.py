@@ -14,7 +14,7 @@ t_encoder = dict(
 )
 algorithm_type = "GPG"
 solver_type = "ODESolver"
-model_type = "DiffusionModel"
+model_type = "IndependentConditionalFlowModel"
 project_name = "d4rl-walked2d-medium-expert-v2-GPG-ICFM"
 
 model = dict(
@@ -125,7 +125,7 @@ config = EasyDict(
                 eval=True,
                 repeat=3,
                 evaluation_behavior_policy_interval=500,
-                evaluation_guided_policy_interval=5,
+                evaluation_guided_policy_interval=1,
                 guidance_scale=[0.0, 1.0, 2.0],
             ),
             checkpoint_path=f"./{project_name}/checkpoint",

@@ -14,7 +14,7 @@ t_encoder = dict(
 )
 algorithm_type = "GPG"
 solver_type = "ODESolver"
-model_type = "DiffusionModel"
+model_type = "IndependentConditionalFlowModel"
 project_name = "d4rl-hopper-medium-expert-v2-GPG-ICFM"
 
 model = dict(
