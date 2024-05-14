@@ -517,6 +517,7 @@ class GPAlgorithm:
         simulator=None,
         dataset: GPODataset = None,
         model: Union[torch.nn.Module, torch.nn.ModuleDict] = None,
+        seed: int = None,
     ):
         """
         Overview:
@@ -534,6 +535,7 @@ class GPAlgorithm:
         self.config = config
         self.simulator = simulator
         self.dataset = dataset
+        self.seed_value = set_seed(seed_value=seed + torch.distributed.get_rank())
 
         # ---------------------------------------
         # Customized model initialization code ↓
@@ -634,8 +636,6 @@ class GPAlgorithm:
             seed (:obj:`int`): The random seed.
         """
 
-        seed_value = set_seed(seed_value=seed)
-
         config = (
             merge_two_dicts_into_newone(
                 self.config.train if hasattr(self.config, "train") else EasyDict(),
@@ -645,7 +645,7 @@ class GPAlgorithm:
             else self.config.train
         )
 
-        config["seed"] = seed_value
+        config["seed"] = self.seed_value
 
         with wandb.init(
             project=(

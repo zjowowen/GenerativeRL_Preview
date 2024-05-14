@@ -517,6 +517,7 @@ class GPAlgorithm:
         simulator=None,
         dataset: GPODataset = None,
         model: Union[torch.nn.Module, torch.nn.ModuleDict] = None,
+        seed=None,
     ):
         """
         Overview:
@@ -534,6 +535,7 @@ class GPAlgorithm:
         self.config = config
         self.simulator = simulator
         self.dataset = dataset
+        self.seed_value = set_seed(seed_value=seed)
 
         # ---------------------------------------
         # Customized model initialization code ↓
@@ -634,8 +636,6 @@ class GPAlgorithm:
             seed (:obj:`int`): The random seed.
         """
 
-        seed_value = set_seed(seed_value=seed)
-
         config = (
             merge_two_dicts_into_newone(
                 self.config.train if hasattr(self.config, "train") else EasyDict(),
@@ -645,7 +645,7 @@ class GPAlgorithm:
             else self.config.train
         )
 
-        config["seed"] = seed_value
+        config["seed"] = self.seed_value
 
         with wandb.init(
             project=(
@@ -656,12 +656,12 @@ class GPAlgorithm:
             if not hasattr(config.model.GPPolicy, "model_loss_type"):
                 config.model.GPPolicy["model_loss_type"] = "flow_matching"
             if config.parameter.algorithm_type == "GPO":
-                run_name = f"{config.model.GPPolicy.model_loss_type}-{config.model.GPPolicy.model.model.type}-{seed_value}"
+                run_name = f"{config.model.GPPolicy.model_loss_type}-{config.model.GPPolicy.model.model.type}-{self.seed_value}"
                 wandb.run.name = run_name
                 wandb.run.save()
 
             elif config.parameter.algorithm_type == "GPG":
-                run_name = f"{config.model.GPPolicy.model_loss_type}-{config.model.GPPolicy.model.model.type}-{config.parameter.guided_policy.gradtime_step}-{config.parameter.guided_policy.loss_type}-{config.parameter.guided_policy.lr_decy}-{seed_value}"
+                run_name = f"{config.model.GPPolicy.model_loss_type}-{config.model.GPPolicy.model.model.type}-{config.parameter.guided_policy.gradtime_step}-{config.parameter.guided_policy.loss_type}-{config.parameter.guided_policy.lr_decy}-{self.seed_value}"
                 wandb.run.name = run_name
                 wandb.run.save()
             config = merge_two_dicts_into_newone(EasyDict(wandb_run.config), config)
