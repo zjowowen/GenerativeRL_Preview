@@ -365,7 +365,7 @@ class GPPolicy(nn.Module):
         maximum_likelihood: bool = False,
         loss_type: str = "origin_loss",
         gradtime_step: int = 1000,
-        eta: int=1,
+        eta: int = 1,
     ):
         """
         Overview:
@@ -409,17 +409,17 @@ class GPPolicy(nn.Module):
         if loss_type == "origin_loss":
             return -q_value.mean() + model_loss
         elif loss_type == "detach_loss":
-            return -(q_value / q_value.abs().detach()).mean()*eta + model_loss
+            return -(q_value / q_value.abs().detach()).mean() * eta + model_loss
         elif loss_type == "minibatch_loss":
             q_loss = -q_value.mean() / q_value.abs().mean().detach()
-            return eta*q_loss + model_loss
+            return eta * q_loss + model_loss
         elif loss_type == "double_minibatch_loss":
             q1, q2 = self.critic.q.compute_double_q(new_action, state)
             if np.random.uniform() > 0.5:
                 q_loss = -q1.mean() / q2.abs().mean().detach()
             else:
                 q_loss = -q2.mean() / q1.abs().mean().detach()
-            return eta*q_loss + model_loss
+            return eta * q_loss + model_loss
         else:
             raise ValueError(("Unknown activation function {}".format(loss_type)))
 
@@ -712,7 +712,9 @@ class GPAlgorithm:
             # Customized training code ↓
             # ---------------------------------------
 
-            def save_checkpoint(model):
+            def save_checkpoint(model, iteration=None):
+                if iteration == None:
+                    iteration = 0
                 if (
                     hasattr(config.parameter, "checkpoint_path")
                     and config.parameter.checkpoint_path is not None
@@ -728,7 +730,7 @@ class GPAlgorithm:
                         ),
                         f=os.path.join(
                             config.parameter.checkpoint_path,
-                            f"checkpoint_{self.behaviour_policy_train_epoch}_{self.critic_train_epoch}_{self.guided_policy_train_epoch}.pt",
+                            f"checkpoint_{self.behaviour_policy_train_epoch}_{self.critic_train_epoch}_{self.guided_policy_train_epoch}_{iteration}.pt",
                         ),
                     )
 
@@ -1216,6 +1218,27 @@ class GPAlgorithm:
 
                     guided_policy_train_iter += 1
                     self.guided_policy_train_epoch = epoch
+                    if (
+                        config.parameter.evaluation.eval
+                        and hasattr(
+                            config.parameter.evaluation, "evaluation_iteration_interval"
+                        )
+                        and (guided_policy_train_iter + 1)
+                        % config.parameter.evaluation.evaluation_iteration_interval
+                        == 0
+                    ):
+                        evaluation_results = evaluate(
+                            self.model,
+                            train_epoch=epoch,
+                            guidance_scales=config.parameter.evaluation.guidance_scale,
+                            repeat=(
+                                1
+                                if not hasattr(config.parameter.evaluation, "repeat")
+                                else config.parameter.evaluation.repeat
+                            ),
+                        )
+                        wandb.log(data=evaluation_results, commit=False)
+                        save_checkpoint(self.model, iteration=guided_policy_train_iter)
 
                 if config.parameter.guided_policy.lr_decy:
                     guided_lr_scheduler.step()
