@@ -364,6 +364,7 @@ class GPPolicy(nn.Module):
         state: Union[torch.Tensor, TensorDict],
         maximum_likelihood: bool = False,
         loss_type: str = "origin_loss",
+        gradtime_step: int = 1000,
     ):
         """
         Overview:
@@ -398,7 +399,7 @@ class GPPolicy(nn.Module):
             )
         else:
             raise NotImplementedError
-        t_span = torch.linspace(0.0, 1.0, 1000).to(state.device)
+        t_span = torch.linspace(0.0, 1.0, gradtime_step).to(state.device)
         new_action = self.guided_model.sample(
             t_span=t_span, condition=state, with_grad=True
         )
@@ -1165,6 +1166,7 @@ class GPAlgorithm:
                                 else False
                             ),
                             loss_type=config.parameter.guided_policy.loss_type,
+                            gradtime_step=config.parameter.guided_policy.gradtime_step,
                         )
                     else:
                         raise NotImplementedError

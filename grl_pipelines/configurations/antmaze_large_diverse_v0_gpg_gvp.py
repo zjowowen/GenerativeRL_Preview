@@ -136,6 +136,7 @@ config = EasyDict(
                 copy_frome_basemodel=True,
                 lr_decy=False,
                 loss_type="double_minibatch_loss",
+                gradtime_step=1000,
             ),
             evaluation=dict(
                 eval=True,
