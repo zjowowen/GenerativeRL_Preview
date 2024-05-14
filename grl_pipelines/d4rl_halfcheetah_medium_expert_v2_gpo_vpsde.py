@@ -1,7 +1,7 @@
 import gym
 import d4rl
 
-from grl.algorithms.gpo import GPAlgorithm
+from grl.algorithms.gp import GPAlgorithm
 from grl.utils.log import log
 from grl_pipelines.configurations.d4rl_halfcheetah_medium_expert_v2_gpo_vpsde import (
     config,
