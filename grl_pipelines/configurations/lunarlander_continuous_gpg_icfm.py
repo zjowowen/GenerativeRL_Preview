@@ -1,8 +1,8 @@
 import torch
 from easydict import EasyDict
 
-action_size = 3
-state_size = 11
+action_size = 2
+state_size = 8
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 t_embedding_dim = 32
 t_encoder = dict(
@@ -13,42 +13,21 @@ t_encoder = dict(
     ),
 )
 solver_type = "ODESolver"
-model_type = "DiffusionModel"
-project_name = "d4rl-hopper-medium-expert-GPO-GVP"
+model_type = "IndependentConditionalFlowModel"
+project_name = "LunarLanderContinuous-v2-GPG-Icfm"
+method = "fine_tune"
+
 model = dict(
     device=device,
     x_size=action_size,
-    solver=(
-        dict(
-            type="DPMSolver",
-            args=dict(
-                order=2,
-                device=device,
-                steps=17,
-            ),
-        )
-        if solver_type == "DPMSolver"
-        else (
-            dict(
-                type="ODESolver",
-                args=dict(
-                    library="torchdiffeq",
-                ),
-            )
-            if solver_type == "ODESolver"
-            else dict(
-                type="SDESolver",
-                args=dict(
-                    library="torchsde",
-                ),
-            )
-        )
+    solver=dict(
+        type="ODESolver",
+        args=dict(
+            library="torchdiffeq_adjoint",
+        ),
     ),
     path=dict(
-        type="gvp",
-    ),
-    reverse_path=dict(
-        type="gvp",
+        sigma=0.1,
     ),
     model=dict(
         type="velocity_function",
@@ -70,27 +49,28 @@ model = dict(
 )
 
 config = EasyDict(
+    method=method,
     train=dict(
         project=project_name,
         device=device,
         simulator=dict(
             type="GymEnvSimulator",
             args=dict(
-                env_id="hopper-medium-expert-v2",
+                env_id="LunarLanderContinuous-v2",
             ),
         ),
-        dataset=dict(
-            type="GPOD4RLDataset",
-            args=dict(
-                env_id="hopper-medium-expert-v2",
-                device=device,
-            ),
-        ),
+        # dataset = dict(
+        #     type = "GPOCustomizedDataset",
+        #     args = dict(
+        #         env_id = "LunarLanderContinuous-v2",
+        #         device = device,
+        #         numpy_data_path = "./data.npz",
+        #     ),
+        # ),
         model=dict(
-            GPOPolicy=dict(
+            GPGPolicy=dict(
                 device=device,
                 model_type=model_type,
-                model_loss_type="score_matching",
                 model=model,
                 critic=dict(
                     device=device,
@@ -114,39 +94,41 @@ config = EasyDict(
         ),
         parameter=dict(
             behaviour_policy=dict(
-                batch_size=4096,
+                batch_size=2048,
                 learning_rate=1e-4,
-                epochs=2000,
-                iterations=1000000,
+                epochs=1000,
             ),
             sample_per_state=16,
             fake_data_t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
-                batch_size=4096,
-                epochs=10000,
-                iterations=1000000,
+                batch_size=2048,
+                epochs=1000,
                 learning_rate=1e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
             ),
             guided_policy=dict(
-                batch_size=4096,
-                epochs=10000,
-                iterations=2000000,
+                batch_size=2048,
+                epochs=5000,
                 learning_rate=1e-4,
+                evaluation_interval=2,
+                copy_frome_basemodel=True,  # if
+                loss_type="double_minibatch_loss",  # copy from diffusionQLearning
+                grad_norm_clip=7.0,
+                lr_decy=True,
             ),
             evaluation=dict(
-                evaluation_interval=500,
+                evaluation_interval=50,
                 guidance_scale=[0.0, 1.0, 2.0],
             ),
             checkpoint_path=f"./{project_name}/checkpoint",
-            checkpoint_freq=100,
+            checkpoint_freq=1,
         ),
     ),
     deploy=dict(
         device=device,
         env=dict(
-            env_id="hopper-medium-expert-v2",
+            env_id="LunarLanderContinuous-v2",
             seed=0,
         ),
         num_deploy_steps=1000,

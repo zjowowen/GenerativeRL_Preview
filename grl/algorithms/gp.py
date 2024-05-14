@@ -601,8 +601,12 @@ class GPAlgorithm:
                         from collections import OrderedDict
 
                         checkpoint_sorted = OrderedDict()
+                        checkpoint_sorted_2 = OrderedDict()
                         for key, value in checkpoint["model"].items():
                             name = key.replace("module.", "")
+                            checkpoint_sorted_2[name] = value
+                        for key, value in checkpoint_sorted_2.items():
+                            name = key.replace("GPOPolicy.", "GPPolicy.")
                             checkpoint_sorted[name] = value
                         self.model.load_state_dict(checkpoint_sorted)
                         self.behaviour_policy_train_epoch = checkpoint.get(
@@ -707,9 +711,7 @@ class GPAlgorithm:
             # Customized training code ↓
             # ---------------------------------------
 
-            def save_checkpoint(model, iteration=None):
-                if iteration == None:
-                    iteration = 0
+            def save_checkpoint(model):
                 if (
                     hasattr(config.parameter, "checkpoint_path")
                     and config.parameter.checkpoint_path is not None
@@ -725,7 +727,7 @@ class GPAlgorithm:
                         ),
                         f=os.path.join(
                             config.parameter.checkpoint_path,
-                            f"checkpoint_{self.behaviour_policy_train_epoch}_{self.critic_train_epoch}_{self.guided_policy_train_epoch}_{iteration}.pt",
+                            f"checkpoint_{self.behaviour_policy_train_epoch}_{self.critic_train_epoch}_{self.guided_policy_train_epoch}.pt",
                         ),
                     )
 
@@ -1104,13 +1106,9 @@ class GPAlgorithm:
             if config.parameter.guided_policy.lr_decy:
                 from torch.optim.lr_scheduler import CosineAnnealingLR
 
-                if not hasattr(config.parameter.guided_policy, "lr_epochs"):
-                    lr_epochs = config.parameter.guided_policy.epochs
-                else:
-                    lr_epochs = config.parameter.guided_policy.lr_epochs
                 guided_lr_scheduler = CosineAnnealingLR(
                     guided_policy_optimizer,
-                    T_max=lr_epochs,
+                    T_max=config.parameter.guided_policy.epochs,
                     eta_min=0.0,
                 )
 
@@ -1216,28 +1214,6 @@ class GPAlgorithm:
 
                     guided_policy_train_iter += 1
                     self.guided_policy_train_epoch = epoch
-
-                    if (
-                        config.parameter.evaluation.eval
-                        and hasattr(
-                            config.parameter.evaluation, "evaluation_iteration_interval"
-                        )
-                        and (epoch + 1)
-                        % config.parameter.evaluation.evaluation_iteration_interval
-                        == 0
-                    ):
-                        evaluation_results = evaluate(
-                            self.model,
-                            train_epoch=epoch,
-                            guidance_scales=config.parameter.evaluation.guidance_scale,
-                            repeat=(
-                                1
-                                if not hasattr(config.parameter.evaluation, "repeat")
-                                else config.parameter.evaluation.repeat
-                            ),
-                        )
-                        wandb.log(data=evaluation_results, commit=False)
-                        save_checkpoint(self.model, iteration=guided_policy_train_iter)
 
                 if config.parameter.guided_policy.lr_decy:
                     guided_lr_scheduler.step()

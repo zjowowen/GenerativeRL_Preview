@@ -93,7 +93,7 @@ config = EasyDict(
                 beta_1=20.0,
             ),
             model=dict(
-                type="velocity_function",
+                type="noise_function",
                 args=dict(
                     t_encoder=t_encoder,
                     backbone=dict(

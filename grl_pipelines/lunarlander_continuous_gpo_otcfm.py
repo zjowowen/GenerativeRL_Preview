@@ -3,7 +3,7 @@ import gym
 from grl.algorithms.gpo import GPOAlgorithm
 from grl.datasets import GPOCustomizedDataset
 from grl.utils.log import log
-from grl_pipelines.configurations.lunarlander_continuous_v2_gpo_otcfm import (
+from grl_pipelines.configurations.lunarlander_continuous_gpo_otcfm import (
     config,
 )
 
