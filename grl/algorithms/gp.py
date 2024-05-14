@@ -365,6 +365,7 @@ class GPPolicy(nn.Module):
         maximum_likelihood: bool = False,
         loss_type: str = "origin_loss",
         gradtime_step: int = 1000,
+        eta: int=1,
     ):
         """
         Overview:
@@ -408,17 +409,17 @@ class GPPolicy(nn.Module):
         if loss_type == "origin_loss":
             return -q_value.mean() + model_loss
         elif loss_type == "detach_loss":
-            return -(q_value / q_value.abs().detach()).mean() + model_loss
+            return -(q_value / q_value.abs().detach()).mean()*eta + model_loss
         elif loss_type == "minibatch_loss":
             q_loss = -q_value.mean() / q_value.abs().mean().detach()
-            return q_loss + model_loss
+            return eta*q_loss + model_loss
         elif loss_type == "double_minibatch_loss":
             q1, q2 = self.critic.q.compute_double_q(new_action, state)
             if np.random.uniform() > 0.5:
                 q_loss = -q1.mean() / q2.abs().mean().detach()
             else:
                 q_loss = -q2.mean() / q1.abs().mean().detach()
-            return q_loss + model_loss
+            return eta*q_loss + model_loss
         else:
             raise ValueError(("Unknown activation function {}".format(loss_type)))
 
@@ -1183,6 +1184,7 @@ class GPAlgorithm:
                             ),
                             loss_type=config.parameter.guided_policy.loss_type,
                             gradtime_step=config.parameter.guided_policy.gradtime_step,
+                            eta=config.parameter.guided_policy.eta,
                         )
                     else:
                         raise NotImplementedError
