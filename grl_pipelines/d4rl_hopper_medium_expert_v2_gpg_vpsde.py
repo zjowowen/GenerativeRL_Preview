@@ -1,7 +1,6 @@
 import gym
 import d4rl
 from grl.algorithms.gp import GPAlgorithm
-from grl.datasets import GPOCustomizedDataset
 from grl.utils.log import log
 from grl_pipelines.configurations.d4rl_hopper_medium_expert_v2_gpg_vpsde import (
     config,

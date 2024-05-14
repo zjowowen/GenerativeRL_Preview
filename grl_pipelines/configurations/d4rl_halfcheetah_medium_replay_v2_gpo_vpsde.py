@@ -15,10 +15,10 @@ t_encoder = dict(
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
 path = dict(
-        type="linear_vp_sde",
-        beta_0=0.1,
-        beta_1=20.0,
-    )
+    type="linear_vp_sde",
+    beta_0=0.1,
+    beta_1=20.0,
+)
 model_loss_type = "score_matching"
 env_id = "halfcheetah-medium-replay-v2"
 project_name = f"d4rl-{env_id}-GPO-VPSDE"

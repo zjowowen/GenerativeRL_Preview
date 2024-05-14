@@ -1,8 +1,7 @@
 import gym
 import d4rl
 
-from grl.algorithms.gpo import GPOAlgorithm
-from grl.datasets import GPOCustomizedDataset
+from grl.algorithms.gpo import GPAlgorithm
 from grl.utils.log import log
 from grl_pipelines.configurations.d4rl_walker2d_medium_replay_v2_gpo_gvp import (
     config,
@@ -11,7 +10,7 @@ from grl_pipelines.configurations.d4rl_walker2d_medium_replay_v2_gpo_gvp import 
 
 def gpo_pipeline(config):
 
-    gpo = GPOAlgorithm(config)
+    gpo = GPAlgorithm(config)
 
     # ---------------------------------------
     # Customized train code ↓
