@@ -653,6 +653,8 @@ class GPAlgorithm:
             ),
             **config.wandb if hasattr(config, "wandb") else {},
         ) as wandb_run:
+            if not hasattr(config.model.GPPolicy, "model_loss_type"):
+                config.model.GPPolicy["model_loss_type"] = "flow_matching"
             if config.parameter.algorithm_type == "GPO":
                 run_name = f"{config.model.GPPolicy.model_loss_type}-{config.model.GPPolicy.model.model.type}-{seed_value}"
                 wandb.run.name = run_name
@@ -932,6 +934,7 @@ class GPAlgorithm:
             # make fake action ↓
             # ---------------------------------------
 
+            self.model["GPPolicy"].base_model.eval()
             if self.need_fake_action:
 
                 fake_actions = generate_fake_action(
