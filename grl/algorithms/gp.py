@@ -9,6 +9,7 @@ from easydict import EasyDict
 from rich.progress import Progress, track
 from tensordict import TensorDict
 from torch.utils.data import DataLoader
+from torch.optim.lr_scheduler import CosineAnnealingLR
 
 import wandb
 from grl.agents.gp import GPAgent
@@ -832,8 +833,8 @@ class GPAlgorithm:
                 self.model["GPPolicy"].base_model.model.parameters(),
                 lr=config.parameter.behaviour_policy.learning_rate,
             )
-            if config.parameter.behaviour_policy.lr_decy:
-                from torch.optim.lr_scheduler import CosineAnnealingLR
+            if hasattr(config.parameter.behaviour_policy, "lr_decy") and config.parameter.behaviour_policy.lr_decy is True:
+                
 
                 behaviour_lr_scheduler = CosineAnnealingLR(
                     behaviour_policy_optimizer,
@@ -847,7 +848,7 @@ class GPAlgorithm:
                 description="Behaviour policy training",
             ):
                 if self.behaviour_policy_train_epoch >= epoch:
-                    if config.parameter.behaviour_policy.lr_decy:
+                    if hasattr(config.parameter.behaviour_policy, "lr_decy") and config.parameter.behaviour_policy.lr_decy is True:
                         behaviour_lr_scheduler.step()
                     continue
 
@@ -925,7 +926,7 @@ class GPAlgorithm:
                     behaviour_policy_train_iter += 1
                     self.behaviour_policy_train_epoch = epoch
 
-                if config.parameter.behaviour_policy.lr_decy:
+                if hasattr(config.parameter.behaviour_policy, "lr_decy") and config.parameter.behaviour_policy.lr_decy is True:
                     behaviour_lr_scheduler.step()
                 if (
                     hasattr(config.parameter, "checkpoint_freq")
@@ -989,8 +990,8 @@ class GPAlgorithm:
                 lr=config.parameter.critic.learning_rate,
             )
 
-            if config.parameter.critic.lr_decy:
-                from torch.optim.lr_scheduler import CosineAnnealingLR
+            if hasattr(config.parameter.critic, "lr_decy") and config.parameter.critic.lr_decy is True:
+                
 
                 critic_lr_scheduler = CosineAnnealingLR(
                     q_optimizer,
@@ -1003,7 +1004,7 @@ class GPAlgorithm:
                 range(config.parameter.critic.epochs), description="Critic training"
             ):
                 if self.critic_train_epoch >= epoch:
-                    if config.parameter.critic.lr_decy:
+                    if hasattr(config.parameter.critic, "lr_decy") and config.parameter.critic.lr_decy is True:
                         critic_lr_scheduler.step()
                     continue
 
@@ -1071,7 +1072,7 @@ class GPAlgorithm:
                     critic_train_iter += 1
                     self.critic_train_epoch = epoch
 
-                if config.parameter.critic.lr_decy:
+                if hasattr(config.parameter.critic, "lr_decy") and config.parameter.critic.lr_decy is True:
                     critic_lr_scheduler.step()
 
                 if (
@@ -1106,8 +1107,8 @@ class GPAlgorithm:
                 lr=config.parameter.guided_policy.learning_rate,
             )
 
-            if config.parameter.guided_policy.lr_decy:
-                from torch.optim.lr_scheduler import CosineAnnealingLR
+            if hasattr(config.parameter.guided_policy, "lr_decy") and config.parameter.guided_policy.lr_decy is True:
+                
 
                 guided_lr_scheduler = CosineAnnealingLR(
                     guided_policy_optimizer,
@@ -1122,7 +1123,7 @@ class GPAlgorithm:
             ):
 
                 if self.guided_policy_train_epoch >= epoch:
-                    if config.parameter.guided_policy.lr_decy:
+                    if hasattr(config.parameter.guided_policy, "lr_decy") and config.parameter.guided_policy.lr_decy is True:
                         guided_lr_scheduler.step()
                     continue
 
@@ -1240,7 +1241,7 @@ class GPAlgorithm:
                         wandb.log(data=evaluation_results, commit=False)
                         save_checkpoint(self.model, iteration=guided_policy_train_iter)
 
-                if config.parameter.guided_policy.lr_decy:
+                if hasattr(config.parameter.guided_policy, "lr_decy") and config.parameter.guided_policy.lr_decy is True:
                     guided_lr_scheduler.step()
                 if (
                     hasattr(config.parameter, "checkpoint_freq")
