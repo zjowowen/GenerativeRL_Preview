@@ -14,7 +14,8 @@ t_encoder = dict(
 )
 solver_type = "ODESolver"
 model_type = "IndependentConditionalFlowModel"
-project_name = "d4rl-hopper-medium-expert-GPO-IndependentConditionalFlowModel"
+env_id = "hopper-medium-expert-v2"
+project_name = f"d4rl-{env_id}-GPO-IndependentConditionalFlowModel"
 model = dict(
     device=device,
     x_size=action_size,
@@ -53,13 +54,13 @@ config = EasyDict(
         simulator=dict(
             type="GymEnvSimulator",
             args=dict(
-                env_id="hopper-medium-expert-v2",
+                env_id=env_id,
             ),
         ),
         dataset=dict(
             type="GPOD4RLDataset",
             args=dict(
-                env_id="hopper-medium-expert-v2",
+                env_id=env_id,
                 device=device,
             ),
         ),
@@ -122,7 +123,7 @@ config = EasyDict(
     deploy=dict(
         device=device,
         env=dict(
-            env_id="hopper-medium-expert-v2",
+            env_id=env_id,
             seed=0,
         ),
         num_deploy_steps=1000,

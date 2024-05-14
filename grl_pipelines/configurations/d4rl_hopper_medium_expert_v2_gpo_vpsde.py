@@ -14,7 +14,14 @@ t_encoder = dict(
 )
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
-project_name = "d4rl-hopper-medium-expert-GPO-VPSDE"
+path = dict(
+        type="linear_vp_sde",
+        beta_0=0.1,
+        beta_1=20.0,
+    )
+model_loss_type = "score_matching"
+env_id = "hopper-medium-expert-v2"
+project_name = f"d4rl-{env_id}-GPO-VPSDE"
 model = dict(
     device=device,
     x_size=action_size,
@@ -44,16 +51,8 @@ model = dict(
             )
         )
     ),
-    path=dict(
-        type="linear_vp_sde",
-        beta_0=0.1,
-        beta_1=20.0,
-    ),
-    reverse_path=dict(
-        type="linear_vp_sde",
-        beta_0=0.1,
-        beta_1=20.0,
-    ),
+    path=path,
+    reverse_path=path,
     model=dict(
         type="noise_function",
         args=dict(
@@ -80,13 +79,13 @@ config = EasyDict(
         simulator=dict(
             type="GymEnvSimulator",
             args=dict(
-                env_id="hopper-medium-expert-v2",
+                env_id=env_id,
             ),
         ),
         dataset=dict(
             type="GPOD4RLDataset",
             args=dict(
-                env_id="hopper-medium-expert-v2",
+                env_id=env_id,
                 device=device,
             ),
         ),
@@ -94,7 +93,7 @@ config = EasyDict(
             GPOPolicy=dict(
                 device=device,
                 model_type=model_type,
-                model_loss_type="score_matching",
+                model_loss_type=model_loss_type,
                 model=model,
                 critic=dict(
                     device=device,
@@ -150,7 +149,7 @@ config = EasyDict(
     deploy=dict(
         device=device,
         env=dict(
-            env_id="hopper-medium-expert-v2",
+            env_id=env_id,
             seed=0,
         ),
         num_deploy_steps=1000,
