@@ -12,6 +12,7 @@ t_encoder = dict(
         scale=30.0,
     ),
 )
+algorithm_type = "GPO"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
 path = dict(type="gvp")
@@ -112,6 +113,7 @@ config = EasyDict(
             ),
         ),
         parameter=dict(
+            algorithm_type=algorithm_type,
             behaviour_policy=dict(
                 batch_size=4096,
                 learning_rate=1e-4,
@@ -139,7 +141,7 @@ config = EasyDict(
                 guidance_scale=[0.0, 1.0, 2.0],
             ),
             checkpoint_path=f"./{project_name}/checkpoint",
-            checkpoint_freq=100,
+            checkpoint_freq=10,
         ),
     ),
     deploy=dict(
