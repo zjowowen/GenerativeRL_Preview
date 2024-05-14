@@ -653,6 +653,15 @@ class GPAlgorithm:
             ),
             **config.wandb if hasattr(config, "wandb") else {},
         ) as wandb_run:
+            if config.parameter.algorithm_type == "GPO":
+                run_name = f"{config.model.GPPolicy.model_loss_type}-{config.model.GPPolicy.model.model.type}-{seed_value}"
+                wandb.run.name = run_name
+                wandb.run.save()
+
+            elif config.parameter.algorithm_type == "GPG":
+                run_name = f"{config.model.GPPolicy.model_loss_type}-{config.model.GPPolicy.model.model.type}-{config.parameter.guided_policy.gradtime_step}-{config.parameter.guided_policy.loss_type}-{config.parameter.guided_policy.lr_decy}-{seed_value}"
+                wandb.run.name = run_name
+                wandb.run.save()
             config = merge_two_dicts_into_newone(EasyDict(wandb_run.config), config)
             wandb_run.config.update(config)
             self.config.train = config
