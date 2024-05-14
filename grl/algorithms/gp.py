@@ -864,7 +864,7 @@ class GPAlgorithm:
                     drop_last=True,
                 )
 
-                if config.parameter.evaluation.eval:
+                if hasattr(config.parameter.evaluation, "eval") and config.parameter.evaluation.eval:
                     if (
                         (epoch + 1)
                         % config.parameter.evaluation.evaluation_behavior_policy_interval
@@ -1139,7 +1139,7 @@ class GPAlgorithm:
                     drop_last=True,
                 )
 
-                if config.parameter.evaluation.eval:
+                if hasattr(config.parameter.evaluation, "eval") and config.parameter.evaluation.eval:
                     if (
                         (epoch + 1)
                         % config.parameter.evaluation.evaluation_guided_policy_interval
