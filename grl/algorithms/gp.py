@@ -708,6 +708,8 @@ class GPAlgorithm:
             # ---------------------------------------
 
             def save_checkpoint(model, iteration=None):
+                if iteration == None:
+                    iteration = 0
                 if (
                     hasattr(config.parameter, "checkpoint_path")
                     and config.parameter.checkpoint_path is not None
@@ -1216,8 +1218,7 @@ class GPAlgorithm:
                     self.guided_policy_train_epoch = epoch
 
                     if (
-                        config.parameter.algorithm_type == "GPG"
-                        and config.parameter.evaluation.eval
+                        config.parameter.evaluation.eval
                         and hasattr(
                             config.parameter.evaluation, "evaluation_iteration_interval"
                         )
@@ -1236,7 +1237,7 @@ class GPAlgorithm:
                             ),
                         )
                         wandb.log(data=evaluation_results, commit=False)
-                        save_checkpoint(self.model,iteration=guided_policy_train_iter)
+                        save_checkpoint(self.model, iteration=guided_policy_train_iter)
 
                 if config.parameter.guided_policy.lr_decy:
                     guided_lr_scheduler.step()
