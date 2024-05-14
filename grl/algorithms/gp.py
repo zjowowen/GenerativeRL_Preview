@@ -932,6 +932,7 @@ class GPAlgorithm:
             # make fake action ↓
             # ---------------------------------------
 
+            self.model["GPPolicy"].base_model.eval()
             if self.need_fake_action:
 
                 fake_actions = generate_fake_action(
