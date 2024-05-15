@@ -875,9 +875,7 @@ class GPAlgorithm:
                     and config.parameter.evaluation.eval
                 ):
                     if (
-                        (epoch + 1)
-                        % config.parameter.evaluation.evaluation_behavior_policy_interval
-                        == 0
+                        epoch % config.parameter.evaluation.evaluation_behavior_policy_interval == 0
                         or (epoch + 1) == config.parameter.behaviour_policy.epochs
                     ):
                         evaluation_results = evaluate(
@@ -1175,9 +1173,7 @@ class GPAlgorithm:
                     and config.parameter.evaluation.eval
                 ):
                     if (
-                        (epoch + 1)
-                        % config.parameter.evaluation.evaluation_guided_policy_interval
-                        == 0
+                        epoch % config.parameter.evaluation.evaluation_guided_policy_interval == 0
                         or (epoch + 1) == config.parameter.guided_policy.epochs
                     ):
                         evaluation_results = evaluate(
