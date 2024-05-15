@@ -1,8 +1,8 @@
 import torch
 from easydict import EasyDict
 
-action_size = 3
-state_size = 11
+action_size = 6
+state_size = 17
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 t_embedding_dim = 32
 t_encoder = dict(
@@ -14,20 +14,48 @@ t_encoder = dict(
 )
 algorithm_type = "GPG"
 solver_type = "ODESolver"
-model_type = "IndependentConditionalFlowModel"
-project_name = "d4rl-hopper-medium-expert-v2-GPG-ICFM"
+model_type = "DiffusionModel"
+env_id="walker2d-medium-expert-v2"
+project_name = f"d4rl-{env_id}-GPG-VPSDE-score"
 
 model = dict(
     device=device,
     x_size=action_size,
-    solver=dict(
-        type="ODESolver",
-        args=dict(
-            library="torchdiffeq_adjoint",
-        ),
+    solver=(
+        dict(
+            type="DPMSolver",
+            args=dict(
+                order=2,
+                device=device,
+                steps=17,
+            ),
+        )
+        if solver_type == "DPMSolver"
+        else (
+            dict(
+                type="ODESolver",
+                args=dict(
+                    library="torchdiffeq_adjoint",
+                ),
+            )
+            if solver_type == "ODESolver"
+            else dict(
+                type="SDESolver",
+                args=dict(
+                    library="torchsde",
+                ),
+            )
+        )
     ),
     path=dict(
-        sigma=0.1,
+        type="linear_vp_sde",
+        beta_0=0.1,
+        beta_1=20.0,
+    ),
+    reverse_path=dict(
+        type="linear_vp_sde",
+        beta_0=0.1,
+        beta_1=20.0,
     ),
     model=dict(
         type="velocity_function",
@@ -52,16 +80,19 @@ config = EasyDict(
     train=dict(
         project=project_name,
         device=device,
+        wandb=dict(
+            dir=f"{project_name}",
+        ),
         simulator=dict(
             type="GymEnvSimulator",
             args=dict(
-                env_id="hopper-medium-expert-v2",
+                env_id=env_id,
             ),
         ),
         dataset=dict(
             type="GPOD4RLDataset",
             args=dict(
-                env_id="hopper-medium-expert-v2",
+                env_id=env_id,
                 device=device,
             ),
         ),
@@ -112,14 +143,17 @@ config = EasyDict(
                 lr_decy=False,
             ),
             guided_policy=dict(
-                batch_size=2048,
+                batch_size=4096,
                 epochs=10000,
                 learning_rate=1e-4,
                 # new add below
-                copy_frome_basemodel=True,
-                lr_decy=False,
+                copy_from_basemodel=True,
+                lr_decy=True,
                 loss_type="double_minibatch_loss",
-                gradtime_step=1000,
+                grad_norm_clip=10,
+                gradtime_step=100,
+                lr_epochs=50,
+                eta=1,
             ),
             evaluation=dict(
                 eval=True,
@@ -135,7 +169,7 @@ config = EasyDict(
     deploy=dict(
         device=device,
         env=dict(
-            env_id="hopper-medium-expert-v2",
+            env_id=env_id,
             seed=0,
         ),
         num_deploy_steps=1000,

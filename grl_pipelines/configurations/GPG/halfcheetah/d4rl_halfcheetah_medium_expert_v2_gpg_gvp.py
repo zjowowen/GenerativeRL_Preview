@@ -1,8 +1,8 @@
 import torch
 from easydict import EasyDict
 
-action_size = 3
-state_size = 11
+action_size = 6
+state_size = 17
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 t_embedding_dim = 32
 t_encoder = dict(
@@ -14,8 +14,9 @@ t_encoder = dict(
 )
 algorithm_type = "GPG"
 solver_type = "ODESolver"
-model_type = "DiffusionModel"
-project_name = "halfcheetah-medium-expert-v2-GPG-VPSDE"
+model_type = "DiffusionModel" 
+env_id="halfcheetah-medium-expert-v2"
+project_name = f"d4rl-{env_id}-GPG-GVP"
 
 model = dict(
     device=device,
@@ -47,14 +48,10 @@ model = dict(
         )
     ),
     path=dict(
-        type="linear_vp_sde",
-        beta_0=0.1,
-        beta_1=20.0,
+        type="gvp",
     ),
     reverse_path=dict(
-        type="linear_vp_sde",
-        beta_0=0.1,
-        beta_1=20.0,
+        type="gvp",
     ),
     model=dict(
         type="velocity_function",
@@ -79,16 +76,19 @@ config = EasyDict(
     train=dict(
         project=project_name,
         device=device,
+        wandb=dict(
+            dir=f"{project_name}",
+        ),
         simulator=dict(
             type="GymEnvSimulator",
             args=dict(
-                env_id="hopper-medium-expert-v2",
+                env_id=env_id,
             ),
         ),
         dataset=dict(
             type="GPOD4RLDataset",
             args=dict(
-                env_id="hopper-medium-expert-v2",
+                env_id=env_id,
                 device=device,
             ),
         ),
@@ -96,7 +96,7 @@ config = EasyDict(
             GPPolicy=dict(
                 device=device,
                 model_type=model_type,
-                model_loss_type="score_matching",
+                model_loss_type="flow_matching",
                 model=model,
                 critic=dict(
                     device=device,
@@ -139,14 +139,17 @@ config = EasyDict(
                 lr_decy=False,
             ),
             guided_policy=dict(
-                batch_size=2048,
+                batch_size=4096,
                 epochs=10000,
                 learning_rate=1e-4,
                 # new add below
                 copy_frome_basemodel=True,
-                lr_decy=False,
+                lr_decy=True,
                 loss_type="double_minibatch_loss",
-                gradtime_step=1000,
+                grad_norm_clip=10,
+                gradtime_step=100,
+                lr_epochs=50,
+                eta=1,
             ),
             evaluation=dict(
                 eval=True,
@@ -162,7 +165,7 @@ config = EasyDict(
     deploy=dict(
         device=device,
         env=dict(
-            env_id="hopper-medium-expert-v2",
+            env_id=env_id,
             seed=0,
         ),
         num_deploy_steps=1000,

@@ -1,8 +1,8 @@
 import torch
 from easydict import EasyDict
 
-action_size = 8
-state_size = 29
+action_size = 3
+state_size = 11
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 t_embedding_dim = 32
 t_encoder = dict(
@@ -12,9 +12,12 @@ t_encoder = dict(
         scale=30.0,
     ),
 )
+algorithm_type = "GPG"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
-project_name = "antmaze-large-diverse-v0-GPG-GVP"
+env_id="hopper-medium-v2"
+project_name = f"d4rl-{env_id}-GPG-VPSDE-score"
+
 model = dict(
     device=device,
     x_size=action_size,
@@ -45,10 +48,14 @@ model = dict(
         )
     ),
     path=dict(
-        type="gvp",
+        type="linear_vp_sde",
+        beta_0=0.1,
+        beta_1=20.0,
     ),
     reverse_path=dict(
-        type="gvp",
+        type="linear_vp_sde",
+        beta_0=0.1,
+        beta_1=20.0,
     ),
     model=dict(
         type="velocity_function",
@@ -73,21 +80,24 @@ config = EasyDict(
     train=dict(
         project=project_name,
         device=device,
+        wandb=dict(
+            dir=f"{project_name}",
+        ),
         simulator=dict(
             type="GymEnvSimulator",
             args=dict(
-                env_id="antmaze-large-diverse-v0",
+                env_id=env_id,
             ),
         ),
         dataset=dict(
             type="GPOD4RLDataset",
             args=dict(
-                env_id="antmaze-large-diverse-v0",
+                env_id=env_id,
                 device=device,
             ),
         ),
         model=dict(
-            GPOPolicy=dict(
+            GPPolicy=dict(
                 device=device,
                 model_type=model_type,
                 model_loss_type="score_matching",
@@ -113,30 +123,37 @@ config = EasyDict(
             ),
         ),
         parameter=dict(
+            algorithm_type=algorithm_type,
             behaviour_policy=dict(
-                batch_size=2048,
+                batch_size=4096,
                 learning_rate=1e-4,
-                epochs=10000,
+                epochs=2000,
+                # new add below
                 lr_decy=False,
             ),
             sample_per_state=16,
             fake_data_t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
-                batch_size=2048,
+                batch_size=4096,
                 epochs=10000,
                 learning_rate=1e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
+                # new add below
                 lr_decy=False,
             ),
             guided_policy=dict(
-                batch_size=2048,
+                batch_size=4096,
                 epochs=10000,
                 learning_rate=1e-4,
-                copy_frome_basemodel=True,
-                lr_decy=False,
+                # new add below
+                copy_from_basemodel=True,
+                lr_decy=True,
                 loss_type="double_minibatch_loss",
-                gradtime_step=1000,
+                grad_norm_clip=10,
+                gradtime_step=100,
+                lr_epochs=50,
+                eta=1,
             ),
             evaluation=dict(
                 eval=True,
@@ -152,7 +169,7 @@ config = EasyDict(
     deploy=dict(
         device=device,
         env=dict(
-            env_id="antmaze-large-diverse-v0",
+            env_id=env_id,
             seed=0,
         ),
         num_deploy_steps=1000,
