@@ -366,7 +366,7 @@ class GPPolicy(nn.Module):
         maximum_likelihood: bool = False,
         loss_type: str = "origin_loss",
         gradtime_step: int = 1000,
-        eta: int = 1,
+        eta: float = 1.0,
     ):
         """
         Overview:
@@ -430,6 +430,7 @@ class GPPolicy(nn.Module):
         state: Union[torch.Tensor, TensorDict],
         fake_action: Union[torch.Tensor, TensorDict],
         maximum_likelihood: bool = False,
+        eta: float = 1.0,
     ):
         """
         Overview:
@@ -482,7 +483,7 @@ class GPPolicy(nn.Module):
                 keepdim=True,
             ).squeeze(dim=-1)
 
-        return torch.mean(model_loss * torch.exp(q_value - v_value))
+        return torch.mean(model_loss * torch.exp(eta * (q_value - v_value)))
 
     def q_loss(
         self,
@@ -833,8 +834,10 @@ class GPAlgorithm:
                 self.model["GPPolicy"].base_model.model.parameters(),
                 lr=config.parameter.behaviour_policy.learning_rate,
             )
-            if hasattr(config.parameter.behaviour_policy, "lr_decy") and config.parameter.behaviour_policy.lr_decy is True:
-                
+            if (
+                hasattr(config.parameter.behaviour_policy, "lr_decy")
+                and config.parameter.behaviour_policy.lr_decy is True
+            ):
 
                 behaviour_lr_scheduler = CosineAnnealingLR(
                     behaviour_policy_optimizer,
@@ -848,7 +851,10 @@ class GPAlgorithm:
                 description="Behaviour policy training",
             ):
                 if self.behaviour_policy_train_epoch >= epoch:
-                    if hasattr(config.parameter.behaviour_policy, "lr_decy") and config.parameter.behaviour_policy.lr_decy is True:
+                    if (
+                        hasattr(config.parameter.behaviour_policy, "lr_decy")
+                        and config.parameter.behaviour_policy.lr_decy is True
+                    ):
                         behaviour_lr_scheduler.step()
                     continue
 
@@ -864,7 +870,10 @@ class GPAlgorithm:
                     drop_last=True,
                 )
 
-                if hasattr(config.parameter.evaluation, "eval") and config.parameter.evaluation.eval:
+                if (
+                    hasattr(config.parameter.evaluation, "eval")
+                    and config.parameter.evaluation.eval
+                ):
                     if (
                         (epoch + 1)
                         % config.parameter.evaluation.evaluation_behavior_policy_interval
@@ -926,7 +935,10 @@ class GPAlgorithm:
                     behaviour_policy_train_iter += 1
                     self.behaviour_policy_train_epoch = epoch
 
-                if hasattr(config.parameter.behaviour_policy, "lr_decy") and config.parameter.behaviour_policy.lr_decy is True:
+                if (
+                    hasattr(config.parameter.behaviour_policy, "lr_decy")
+                    and config.parameter.behaviour_policy.lr_decy is True
+                ):
                     behaviour_lr_scheduler.step()
                 if (
                     hasattr(config.parameter, "checkpoint_freq")
@@ -990,8 +1002,10 @@ class GPAlgorithm:
                 lr=config.parameter.critic.learning_rate,
             )
 
-            if hasattr(config.parameter.critic, "lr_decy") and config.parameter.critic.lr_decy is True:
-                
+            if (
+                hasattr(config.parameter.critic, "lr_decy")
+                and config.parameter.critic.lr_decy is True
+            ):
 
                 critic_lr_scheduler = CosineAnnealingLR(
                     q_optimizer,
@@ -1004,7 +1018,10 @@ class GPAlgorithm:
                 range(config.parameter.critic.epochs), description="Critic training"
             ):
                 if self.critic_train_epoch >= epoch:
-                    if hasattr(config.parameter.critic, "lr_decy") and config.parameter.critic.lr_decy is True:
+                    if (
+                        hasattr(config.parameter.critic, "lr_decy")
+                        and config.parameter.critic.lr_decy is True
+                    ):
                         critic_lr_scheduler.step()
                     continue
 
@@ -1072,7 +1089,10 @@ class GPAlgorithm:
                     critic_train_iter += 1
                     self.critic_train_epoch = epoch
 
-                if hasattr(config.parameter.critic, "lr_decy") and config.parameter.critic.lr_decy is True:
+                if (
+                    hasattr(config.parameter.critic, "lr_decy")
+                    and config.parameter.critic.lr_decy is True
+                ):
                     critic_lr_scheduler.step()
 
                 if (
@@ -1107,8 +1127,10 @@ class GPAlgorithm:
                 lr=config.parameter.guided_policy.learning_rate,
             )
 
-            if hasattr(config.parameter.guided_policy, "lr_decy") and config.parameter.guided_policy.lr_decy is True:
-                
+            if (
+                hasattr(config.parameter.guided_policy, "lr_decy")
+                and config.parameter.guided_policy.lr_decy is True
+            ):
 
                 guided_lr_scheduler = CosineAnnealingLR(
                     guided_policy_optimizer,
@@ -1123,7 +1145,10 @@ class GPAlgorithm:
             ):
 
                 if self.guided_policy_train_epoch >= epoch:
-                    if hasattr(config.parameter.guided_policy, "lr_decy") and config.parameter.guided_policy.lr_decy is True:
+                    if (
+                        hasattr(config.parameter.guided_policy, "lr_decy")
+                        and config.parameter.guided_policy.lr_decy is True
+                    ):
                         guided_lr_scheduler.step()
                     continue
 
@@ -1139,7 +1164,10 @@ class GPAlgorithm:
                     drop_last=True,
                 )
 
-                if hasattr(config.parameter.evaluation, "eval") and config.parameter.evaluation.eval:
+                if (
+                    hasattr(config.parameter.evaluation, "eval")
+                    and config.parameter.evaluation.eval
+                ):
                     if (
                         (epoch + 1)
                         % config.parameter.evaluation.evaluation_guided_policy_interval
@@ -1171,6 +1199,7 @@ class GPAlgorithm:
                                 )
                                 else False
                             ),
+                            eta=config.parameter.guided_policy.eta,
                         )
                     elif config.parameter.algorithm_type == "GPG":
                         guided_policy_loss = self.model[
@@ -1241,7 +1270,10 @@ class GPAlgorithm:
                         wandb.log(data=evaluation_results, commit=False)
                         save_checkpoint(self.model, iteration=guided_policy_train_iter)
 
-                if hasattr(config.parameter.guided_policy, "lr_decy") and config.parameter.guided_policy.lr_decy is True:
+                if (
+                    hasattr(config.parameter.guided_policy, "lr_decy")
+                    and config.parameter.guided_policy.lr_decy is True
+                ):
                     guided_lr_scheduler.step()
                 if (
                     hasattr(config.parameter, "checkpoint_freq")
