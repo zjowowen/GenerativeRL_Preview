@@ -16,7 +16,7 @@ t_encoder = dict(
 algorithm_type = "GPG"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
-env_id = "walker2d-medium-repaly-v2"
+env_id = "walker2d-medium-v2"
 project_name = f"d4rl-{env_id}-GPG-VPSDE"
 
 model = dict(
