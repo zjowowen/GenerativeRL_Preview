@@ -2,7 +2,7 @@ import gym
 import d4rl
 from grl.algorithms.gp import GPAlgorithm
 from grl.utils.log import log
-from grl_pipelines.configurations.d4rl_hopper_medium_expert_v2_gpg_vpsde import (
+from grl_pipelines.configurations.GPG.hopper.d4rl_hopper_medium_expert_v2_gpg_vpsde import (
     config,
 )
 
