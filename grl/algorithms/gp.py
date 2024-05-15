@@ -1139,6 +1139,12 @@ class GPAlgorithm:
                 )
 
             guided_policy_train_iter = 0
+
+            if hasattr(config.parameter.guided_policy, "eta"):
+                eta=config.parameter.guided_policy.eta
+            else :
+                eta=1.0
+                
             for epoch in track(
                 range(config.parameter.guided_policy.epochs),
                 description="Guided policy training",
@@ -1199,7 +1205,7 @@ class GPAlgorithm:
                                 )
                                 else False
                             ),
-                            eta=config.parameter.guided_policy.eta,
+                            eta=eta,
                         )
                     elif config.parameter.algorithm_type == "GPG":
                         guided_policy_loss = self.model[
@@ -1216,7 +1222,7 @@ class GPAlgorithm:
                             ),
                             loss_type=config.parameter.guided_policy.loss_type,
                             gradtime_step=config.parameter.guided_policy.gradtime_step,
-                            eta=config.parameter.guided_policy.eta,
+                            eta=eta,
                         )
                     else:
                         raise NotImplementedError
