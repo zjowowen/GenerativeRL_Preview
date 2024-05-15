@@ -15,8 +15,8 @@ t_encoder = dict(
 algorithm_type = "GPG"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
-env_id = "antmaze-large-diverse-v0"
-project_name = f"d{env_id}-GPG-VPSDE"
+env_id = "antmaze-umaze-diverse-v0"
+project_name = f"{env_id}-GPG-GVP"
 
 model = dict(
     device=device,
@@ -48,14 +48,10 @@ model = dict(
         )
     ),
     path=dict(
-        type="linear_vp_sde",
-        beta_0=0.1,
-        beta_1=20.0,
+        type="gvp",
     ),
     reverse_path=dict(
-        type="linear_vp_sde",
-        beta_0=0.1,
-        beta_1=20.0,
+        type="gvp",
     ),
     model=dict(
         type="velocity_function",
@@ -136,7 +132,7 @@ config = EasyDict(
             critic=dict(
                 batch_size=4096,
                 epochs=1000,
-                learning_rate=1e-4,
+                learning_rate=3e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
                 # new add below
@@ -157,7 +153,7 @@ config = EasyDict(
             ),
             evaluation=dict(
                 eval=True,
-                repeat=3,
+                repeat=5,
                 evaluation_behavior_policy_interval=500,
                 evaluation_guided_policy_interval=5,
                 guidance_scale=[0.0, 1.0, 2.0],

@@ -12,12 +12,11 @@ t_encoder = dict(
         scale=30.0,
     ),
 )
-algorithm_type = "GPG"
+algorithm_type = "GPO"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
-env_id = "antmaze-large-diverse-v0"
+env_id = "antmaze-umze-diverse-v0"
 project_name = f"d{env_id}-GPG-VPSDE"
-
 model = dict(
     device=device,
     x_size=action_size,
@@ -35,7 +34,7 @@ model = dict(
             dict(
                 type="ODESolver",
                 args=dict(
-                    library="torchdiffeq_adjoint",
+                    library="torchdiffeq",
                 ),
             )
             if solver_type == "ODESolver"
@@ -58,7 +57,7 @@ model = dict(
         beta_1=20.0,
     ),
     model=dict(
-        type="velocity_function",
+        type="noise_function",
         args=dict(
             t_encoder=t_encoder,
             backbone=dict(
@@ -92,15 +91,15 @@ config = EasyDict(
         dataset=dict(
             type="GPOD4RLDataset",
             args=dict(
-                env_id=env_id,
-                device=device,
+                env_id="antmaze-large-diverse-v0",
+                device=env_id,
             ),
         ),
         model=dict(
-            GPPolicy=dict(
+            GPOPolicy=dict(
                 device=device,
                 model_type=model_type,
-                model_loss_type="flow_matching",
+                model_loss_type="score_matching",
                 model=model,
                 critic=dict(
                     device=device,
@@ -128,7 +127,6 @@ config = EasyDict(
                 batch_size=4096,
                 learning_rate=1e-4,
                 epochs=1000,
-                # new add below
                 lr_decy=False,
             ),
             sample_per_state=16,
@@ -136,34 +134,26 @@ config = EasyDict(
             critic=dict(
                 batch_size=4096,
                 epochs=1000,
-                learning_rate=1e-4,
+                learning_rate=3e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
-                # new add below
                 lr_decy=False,
             ),
             guided_policy=dict(
                 batch_size=4096,
                 epochs=1000,
                 learning_rate=1e-4,
-                # new add below
-                copy_from_basemodel=True,
-                lr_decy=True,
-                loss_type="double_minibatch_loss",
-                grad_norm_clip=10,
-                gradtime_step=100,
-                lr_epochs=50,
-                eta=1,
+                lr_decy=False,
+                eta=1.0,
             ),
             evaluation=dict(
                 eval=True,
-                repeat=3,
-                evaluation_behavior_policy_interval=500,
+                repeat=5,
                 evaluation_guided_policy_interval=5,
                 guidance_scale=[0.0, 1.0, 2.0],
             ),
             checkpoint_path=f"./{project_name}/checkpoint",
-            checkpoint_freq=10,
+            checkpoint_freq=20,
         ),
     ),
     deploy=dict(

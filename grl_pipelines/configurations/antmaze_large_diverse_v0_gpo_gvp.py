@@ -12,6 +12,7 @@ t_encoder = dict(
         scale=30.0,
     ),
 )
+algorithm_type = "GPO"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
 project_name = "antmaze-large-diverse-v0-GPO-GVP"
@@ -113,6 +114,7 @@ config = EasyDict(
             ),
         ),
         parameter=dict(
+            algorithm_type=algorithm_type,
             behaviour_policy=dict(
                 batch_size=2048,
                 learning_rate=1e-4,
@@ -123,7 +125,7 @@ config = EasyDict(
             critic=dict(
                 batch_size=2048,
                 epochs=10000,
-                learning_rate=1e-4,
+                learning_rate=3e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
             ),

@@ -14,48 +14,21 @@ t_encoder = dict(
 )
 algorithm_type = "GPG"
 solver_type = "ODESolver"
-model_type = "DiffusionModel"
-env_id = "antmaze-large-diverse-v0"
-project_name = f"d{env_id}-GPG-VPSDE"
+model_type = "IndependentConditionalFlowModel"
+env_id = "antmaze-umaze-diverse-v0"
+project_name = f"{env_id}-GPG-ICFM"
 
 model = dict(
     device=device,
     x_size=action_size,
-    solver=(
-        dict(
-            type="DPMSolver",
-            args=dict(
-                order=2,
-                device=device,
-                steps=17,
-            ),
-        )
-        if solver_type == "DPMSolver"
-        else (
-            dict(
-                type="ODESolver",
-                args=dict(
-                    library="torchdiffeq_adjoint",
-                ),
-            )
-            if solver_type == "ODESolver"
-            else dict(
-                type="SDESolver",
-                args=dict(
-                    library="torchsde",
-                ),
-            )
-        )
+    solver=dict(
+        type="ODESolver",
+        args=dict(
+            library="torchdiffeq_adjoint",
+        ),
     ),
     path=dict(
-        type="linear_vp_sde",
-        beta_0=0.1,
-        beta_1=20.0,
-    ),
-    reverse_path=dict(
-        type="linear_vp_sde",
-        beta_0=0.1,
-        beta_1=20.0,
+        sigma=0.1,
     ),
     model=dict(
         type="velocity_function",
@@ -100,7 +73,6 @@ config = EasyDict(
             GPPolicy=dict(
                 device=device,
                 model_type=model_type,
-                model_loss_type="flow_matching",
                 model=model,
                 critic=dict(
                     device=device,
@@ -136,7 +108,7 @@ config = EasyDict(
             critic=dict(
                 batch_size=4096,
                 epochs=1000,
-                learning_rate=1e-4,
+                learning_rate=3e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
                 # new add below
@@ -158,6 +130,7 @@ config = EasyDict(
             evaluation=dict(
                 eval=True,
                 repeat=3,
+                evaluation_iteration_interval=100,
                 evaluation_behavior_policy_interval=500,
                 evaluation_guided_policy_interval=5,
                 guidance_scale=[0.0, 1.0, 2.0],
