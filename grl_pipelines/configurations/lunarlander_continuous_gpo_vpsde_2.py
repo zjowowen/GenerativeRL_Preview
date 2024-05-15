@@ -15,7 +15,7 @@ t_encoder = dict(
 algorithm_type = "GPO"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
-project_name = "LunarLanderContinuous-v2-GPO-VPSDE-DEBUG"
+project_name = "LunarLanderContinuous-v2-GPO-VPSDE-nocopy"
 
 model = dict(
     device=device,
@@ -79,6 +79,9 @@ config = EasyDict(
     train=dict(
         project=project_name,
         device=device,
+        wandb=dict(
+            dir=f"{project_name}",
+        ),
         simulator=dict(
             type="GymEnvSimulator",
             args=dict(
@@ -128,11 +131,11 @@ config = EasyDict(
                 # new add below
                 lr_decy=False,
             ),
-            sample_per_state=16,
+            sample_per_state=25,
             fake_data_t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
                 batch_size=2048,
-                epochs=500,
+                epochs=1000,
                 learning_rate=3e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
@@ -144,14 +147,15 @@ config = EasyDict(
                 epochs=500,
                 learning_rate=1e-4,
                 # new add below
-                copy_frome_basemodel=False,
+                copy_from_basemodel=True,
                 lr_decy=False,
+                eta=1.0,
             ),
             evaluation=dict(
                 eval=True,
                 repeat=3,
                 evaluation_behavior_policy_interval=50,
-                evaluation_guided_policy_interval=50,
+                evaluation_guided_policy_interval=5,
                 guidance_scale=[0.0, 1.0, 2.0],
             ),
             checkpoint_path=f"./{project_name}/checkpoint",
