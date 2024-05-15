@@ -662,7 +662,7 @@ class GPAlgorithm:
                 wandb.run.save()
 
             elif config.parameter.algorithm_type == "GPG":
-                run_name = f"eta-{config.parameter.guided_policy.eta}-T-{config.parameter.guided_policy.gradtime_step}-Lrdecy-{config.parameter.guided_policy.lr_epoch}-seed-{self.seed_value}"
+                run_name = f"eta-{config.parameter.guided_policy.eta}-T-{config.parameter.guided_policy.gradtime_step}-Lrdecy-{config.parameter.guided_policy.lr_epochs}-seed-{self.seed_value}"
                 wandb.run.name = run_name
                 wandb.run.save()
             config = merge_two_dicts_into_newone(EasyDict(wandb_run.config), config)
