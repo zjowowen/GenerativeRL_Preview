@@ -80,9 +80,7 @@ config = EasyDict(
     train=dict(
         project=project_name,
         device=device,
-        wandb=dict(
-            dir=f"{project_name}",
-        ),
+        wandb=dict(project=f"{env_id}-{algorithm_type}-{model_type}"),
         simulator=dict(
             type="GymEnvSimulator",
             args=dict(
@@ -144,25 +142,25 @@ config = EasyDict(
             ),
             guided_policy=dict(
                 batch_size=4096,
-                epochs=1000,
+                epochs=200,
                 learning_rate=1e-4,
                 # new add below
                 copy_from_basemodel=True,
                 lr_decy=True,
                 loss_type="double_minibatch_loss",
                 grad_norm_clip=10,
-                gradtime_step=100,
-                lr_epochs=50,
+                gradtime_step=32,
+                lr_epochs=200,
                 eta=1,
             ),
             evaluation=dict(
                 eval=True,
                 repeat=3,
                 evaluation_behavior_policy_interval=500,
-                evaluation_guided_policy_interval=5,
+                evaluation_guided_policy_interval=10,
                 guidance_scale=[0.0, 1.0, 2.0],
             ),
-            checkpoint_path=f"./{project_name}/checkpoint",
+            checkpoint_path="./checkpoint",
             checkpoint_freq=10,
         ),
     ),
