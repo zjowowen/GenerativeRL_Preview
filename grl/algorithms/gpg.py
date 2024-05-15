@@ -877,7 +877,7 @@ class GPGAlgorithm:
                     log.info("Critic training finished.")
                     break
 
-            if config.parameter.guided_policy.copy_frome_basemodel:
+            if config.parameter.guided_policy.copy_from_basemodel:
                 self.model["GPGPolicy"].guided_model.load_state_dict(
                     self.model["GPGPolicy"].base_model.state_dict()
                 )

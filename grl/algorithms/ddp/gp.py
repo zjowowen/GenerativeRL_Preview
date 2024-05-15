@@ -1138,7 +1138,7 @@ class GPAlgorithm:
             # guided policy training code ↓
             # ---------------------------------------
 
-            if config.parameter.guided_policy.copy_frome_basemodel:
+            if config.parameter.guided_policy.copy_from_basemodel:
                 self.model["GPPolicy"].guided_model.model.load_state_dict(
                     self.model["GPPolicy"].base_model.model.module.state_dict()
                 )

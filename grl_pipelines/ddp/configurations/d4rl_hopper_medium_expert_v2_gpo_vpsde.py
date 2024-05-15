@@ -146,7 +146,7 @@ def make_config(device, batch_size_ratio=1):
                     epochs=20000,
                     learning_rate=1e-4,
                     # new add below
-                    copy_frome_basemodel=False,
+                    copy_from_basemodel=False,
                     lr_decy=False,
                 ),
                 evaluation=dict(
