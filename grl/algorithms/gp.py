@@ -646,12 +646,12 @@ class GPAlgorithm:
 
         config["seed"] = self.seed_value
 
-        with wandb.init(
-            project=(
-                config.project if hasattr(config, "project") else __class__.__name__
-            ),
-            **config.wandb if hasattr(config, "wandb") else {},
-        ) as wandb_run:
+        if not hasattr(config, "wandb"):
+            config["wandb"]=dict(project=config.project)
+        elif not hasattr(config.wandb, "project"):
+            config.wandb["project"]=config.project
+
+        with wandb.init( **config.wandb) as wandb_run:
             if not hasattr(config.model.GPPolicy, "model_loss_type"):
                 config.model.GPPolicy["model_loss_type"] = "flow_matching"
             if config.parameter.algorithm_type == "GPO":
