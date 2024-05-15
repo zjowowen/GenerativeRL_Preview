@@ -218,7 +218,7 @@ config = EasyDict(
                 update_momentum=0.005,
             ),
             guided_policy=dict(
-                copy_frome_basemodel=True,
+                copy_from_basemodel=True,
                 batch_size=2048,
                 epochs=500,
                 learning_rate=1e-4,

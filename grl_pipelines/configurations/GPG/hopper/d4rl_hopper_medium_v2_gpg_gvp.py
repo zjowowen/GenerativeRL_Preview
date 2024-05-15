@@ -15,7 +15,7 @@ t_encoder = dict(
 algorithm_type = "GPG"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
-env_id="hopper-medium-v2"
+env_id = "hopper-medium-v2"
 project_name = f"d4rl-{env_id}-GPG-GVP"
 
 model = dict(
@@ -143,7 +143,7 @@ config = EasyDict(
                 epochs=10000,
                 learning_rate=1e-4,
                 # new add below
-                copy_frome_basemodel=True,
+                copy_from_basemodel=True,
                 lr_decy=True,
                 loss_type="double_minibatch_loss",
                 grad_norm_clip=10,

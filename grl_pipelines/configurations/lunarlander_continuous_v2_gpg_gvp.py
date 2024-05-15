@@ -140,7 +140,7 @@ config = EasyDict(
                 epochs=500,
                 learning_rate=1e-4,
                 # new add below
-                copy_frome_basemodel=True,
+                copy_from_basemodel=True,
                 lr_decy=False,
                 loss_type="double_minibatch_loss",
                 gradtime_step=1000,
