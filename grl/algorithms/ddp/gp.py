@@ -40,7 +40,7 @@ from grl.rl_modules.value_network.q_network import DoubleQNetwork
 from grl.utils.config import merge_two_dicts_into_newone
 from grl.utils.log import log
 from grl.utils import set_seed
-
+from grl.utils.statistics import sort_files_by_criteria
 
 class GPCritic(nn.Module):
     """
@@ -574,11 +574,7 @@ class GPAlgorithm:
                     self.critic_train_epoch = 0
                     self.guided_policy_train_epoch = 0
                 else:
-                    checkpoint_files = [
-                        f
-                        for f in os.listdir(config.parameter.checkpoint_path)
-                        if f.endswith(".pt")
-                    ]
+                    checkpoint_files = sort_files_by_criteria(folder_path=config.parameter.checkpoint_path, start_string="checkpoint_", end_string=".pt")
                     if len(checkpoint_files) == 0:
                         self.behaviour_policy_train_epoch = 0
                         self.critic_train_epoch = 0
@@ -587,13 +583,9 @@ class GPAlgorithm:
                             f"No checkpoint file found in {config.parameter.checkpoint_path}"
                         )
                     else:
-                        checkpoint_files = sorted(
-                            checkpoint_files,
-                            key=lambda x: int(x.split("_")[-1].split(".")[0]),
-                        )
                         checkpoint = torch.load(
                             os.path.join(
-                                config.parameter.checkpoint_path, checkpoint_files[-1]
+                                config.parameter.checkpoint_path, checkpoint_files[0]
                             ),
                             map_location="cpu",
                         )
