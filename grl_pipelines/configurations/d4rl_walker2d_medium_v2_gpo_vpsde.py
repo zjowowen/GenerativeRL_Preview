@@ -117,6 +117,7 @@ config = EasyDict(
             ),
         ),
         parameter=dict(
+            algorithm_type=algorithm_type,
             behaviour_policy=dict(
                 batch_size=4096,
                 learning_rate=1e-4,
