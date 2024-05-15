@@ -12,6 +12,7 @@ t_encoder = dict(
         scale=30.0,
     ),
 )
+algorithm_type = "GPO"
 solver_type = "ODESolver"
 model_type = "IndependentConditionalFlowModel"
 env_id = "hopper-medium-v2"
