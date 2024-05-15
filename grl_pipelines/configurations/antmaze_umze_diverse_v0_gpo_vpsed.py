@@ -15,8 +15,8 @@ t_encoder = dict(
 algorithm_type = "GPO"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
-env_id = "antmaze-umze-diverse-v0"
-project_name = f"d{env_id}-GPG-VPSDE"
+env_id = "antmaze-umaze-diverse-v0"
+project_name = f"{env_id}-GPO-VPSDE"
 model = dict(
     device=device,
     x_size=action_size,
@@ -91,12 +91,12 @@ config = EasyDict(
         dataset=dict(
             type="GPOD4RLDataset",
             args=dict(
-                env_id="antmaze-large-diverse-v0",
-                device=env_id,
+                env_id=env_id,
+                device=device,
             ),
         ),
         model=dict(
-            GPOPolicy=dict(
+            GPPolicy=dict(
                 device=device,
                 model_type=model_type,
                 model_loss_type="score_matching",
@@ -149,6 +149,7 @@ config = EasyDict(
             evaluation=dict(
                 eval=True,
                 repeat=5,
+                evaluation_behavior_policy_interval=500,
                 evaluation_guided_policy_interval=5,
                 guidance_scale=[0.0, 1.0, 2.0],
             ),

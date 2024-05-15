@@ -15,8 +15,8 @@ t_encoder = dict(
 algorithm_type = "GPG"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
-env_id = "antmaze-umze-diverse-v0"
-project_name = f"d{env_id}-GPG-VPSDE"
+env_id = "antmaze-umaze-diverse-v0"
+project_name = f"{env_id}-GPG-VPSDE"
 
 model = dict(
     device=device,
@@ -127,7 +127,7 @@ config = EasyDict(
             behaviour_policy=dict(
                 batch_size=4096,
                 learning_rate=1e-4,
-                epochs=2000,
+                epochs=1000,
                 # new add below
                 lr_decy=False,
             ),
@@ -135,7 +135,7 @@ config = EasyDict(
             fake_data_t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
                 batch_size=4096,
-                epochs=10000,
+                epochs=1000,
                 learning_rate=3e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
@@ -144,7 +144,7 @@ config = EasyDict(
             ),
             guided_policy=dict(
                 batch_size=4096,
-                epochs=10000,
+                epochs=1000,
                 learning_rate=1e-4,
                 # new add below
                 copy_from_basemodel=True,
