@@ -15,6 +15,7 @@ t_encoder = dict(
 algorithm_type = "GPG"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
+env_id = "LunarLanderContinuous-v2"
 project_name = "LunarLanderContinuous-v2-GPG-GVP"
 
 model = dict(
@@ -75,9 +76,7 @@ config = EasyDict(
     train=dict(
         project=project_name,
         device=device,
-        wandb=dict(
-            dir=f"{project_name}",
-        ),
+        wandb=dict(project=f"{env_id}-{algorithm_type}-{model_type}"),
         simulator=dict(
             type="GymEnvSimulator",
             args=dict(
@@ -113,7 +112,7 @@ config = EasyDict(
         parameter=dict(
             algorithm_type=algorithm_type,
             behaviour_policy=dict(
-                batch_size=2048,
+                batch_size=4096,
                 learning_rate=1e-4,
                 epochs=500,
                 # new add below
@@ -122,7 +121,7 @@ config = EasyDict(
             sample_per_state=16,
             fake_data_t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
-                batch_size=2048,
+                batch_size=4096,
                 epochs=500,
                 learning_rate=3e-4,
                 discount_factor=0.99,
@@ -131,27 +130,27 @@ config = EasyDict(
                 lr_decy=False,
             ),
             guided_policy=dict(
-                batch_size=2048,
-                epochs=500,
+                batch_size=4096,
+                epochs=200,
                 learning_rate=1e-4,
                 # new add below
                 copy_from_basemodel=True,
                 lr_decy=True,
                 loss_type="double_minibatch_loss",
                 grad_norm_clip=10,
-                gradtime_step=100,
-                lr_epochs=50,
+                gradtime_step=32,
+                lr_epochs=200,
                 eta=1,
             ),
             evaluation=dict(
                 eval=True,
                 repeat=3,
-                evaluation_iteration_interval=10,
+                evaluation_iteration_interval=200,
                 evaluation_behavior_policy_interval=50,
-                evaluation_guided_policy_interval=5,
+                evaluation_guided_policy_interval=10,
                 guidance_scale=[0.0, 1.0, 2.0],
             ),
-            checkpoint_path=f"./{project_name}/checkpoint",
+            checkpoint_path="./checkpoint",
             checkpoint_freq=10,
         ),
     ),
