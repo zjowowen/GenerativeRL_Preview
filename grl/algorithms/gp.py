@@ -164,7 +164,7 @@ class GuidedPolicy(nn.Module):
         guided_model,
         state: Union[torch.Tensor, TensorDict],
         batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
-        guidance_scale: Union[torch.Tensor, float] = torch.tensor(1.0),
+        guidance_scale: Union[torch.Tensor, float] = 1.0,
         solver_config: EasyDict = None,
         t_span: torch.Tensor = None,
     ) -> Union[torch.Tensor, TensorDict]:
@@ -181,16 +181,35 @@ class GuidedPolicy(nn.Module):
         """
 
         if self.type == "DiffusionModel":
-            return self.model.sample(
-                base_model=base_model,
-                guided_model=guided_model,
-                t_span=t_span,
-                condition=state,
-                batch_size=batch_size,
-                guidance_scale=guidance_scale,
-                with_grad=False,
-                solver_config=solver_config,
-            )
+            if guidance_scale == 0.0:
+                return self.base_model.sample(
+                    t_span=t_span,
+                    condition=state,
+                    batch_size=batch_size,
+                    guidance_scale=guidance_scale,
+                    with_grad=False,
+                    solver_config=solver_config,
+                )
+            elif guidance_scale == 1.0:
+                return self.guided_model.sample(
+                    t_span=t_span,
+                    condition=state,
+                    batch_size=batch_size,
+                    guidance_scale=guidance_scale,
+                    with_grad=False,
+                    solver_config=solver_config,
+                )
+            else:
+                return self.model.sample(
+                    base_model=base_model,
+                    guided_model=guided_model,
+                    t_span=t_span,
+                    condition=state,
+                    batch_size=batch_size,
+                    guidance_scale=guidance_scale,
+                    with_grad=False,
+                    solver_config=solver_config,
+                )
 
         elif self.type in [
             "OptimalTransportConditionalFlowModel",
@@ -200,17 +219,38 @@ class GuidedPolicy(nn.Module):
 
             x_0 = base_model.gaussian_generator(batch_size=state.shape[0])
 
-            return self.model.sample(
-                base_model=base_model,
-                guided_model=guided_model,
-                x_0=x_0,
-                t_span=t_span,
-                condition=state,
-                batch_size=batch_size,
-                guidance_scale=guidance_scale,
-                with_grad=False,
-                solver_config=solver_config,
-            )
+            if guidance_scale == 0.0:
+                return self.base_model.sample(
+                    x_0=x_0,
+                    t_span=t_span,
+                    condition=state,
+                    batch_size=batch_size,
+                    guidance_scale=guidance_scale,
+                    with_grad=False,
+                    solver_config=solver_config,
+                )
+            elif guidance_scale == 1.0:
+                return self.guided_model.sample(
+                    x_0=x_0,
+                    t_span=t_span,
+                    condition=state,
+                    batch_size=batch_size,
+                    guidance_scale=guidance_scale,
+                    with_grad=False,
+                    solver_config=solver_config,
+                )
+            else:
+                return self.model.sample(
+                    base_model=base_model,
+                    guided_model=guided_model,
+                    x_0=x_0,
+                    t_span=t_span,
+                    condition=state,
+                    batch_size=batch_size,
+                    guidance_scale=guidance_scale,
+                    with_grad=False,
+                    solver_config=solver_config,
+                )
 
 
 class GPPolicy(nn.Module):
@@ -614,7 +654,7 @@ class GPAlgorithm:
                             "guided_policy_train_epoch", 0
                         )
                         log.info(
-                            f"Load checkpoint from {checkpoint_files[-1]}, behaviour_policy_train_epoch: {self.behaviour_policy_train_epoch}, critic_train_epoch: {self.critic_train_epoch}, guided_policy_train_epoch: {self.guided_policy_train_epoch}"
+                            f"Load checkpoint: behaviour_policy_train_epoch: {self.behaviour_policy_train_epoch}, critic_train_epoch: {self.critic_train_epoch}, guided_policy_train_epoch: {self.guided_policy_train_epoch}"
                         )
             else:
                 self.behaviour_policy_train_epoch = 0
@@ -767,8 +807,8 @@ class GPAlgorithm:
                         action = (
                             model["GuidedPolicy"]
                             .sample(
-                                base_model=self.model["GPPolicy"].base_model,
-                                guided_model=self.model["GPPolicy"].guided_model,
+                                base_model=model["GPPolicy"].base_model,
+                                guided_model=model["GPPolicy"].guided_model,
                                 state=obs,
                                 guidance_scale=guidance_scale,
                                 t_span=(
