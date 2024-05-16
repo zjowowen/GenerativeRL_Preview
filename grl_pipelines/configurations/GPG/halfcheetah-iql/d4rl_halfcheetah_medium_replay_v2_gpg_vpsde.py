@@ -15,8 +15,8 @@ t_encoder = dict(
 algorithm_type = "GPG"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
-env_id = "walker2d-medium-expert-v2"
-project_name = f"d4rl-{env_id}-GPG-VPSDE-score"
+env_id = "halfcheetah-medium-replay-v2"
+project_name = f"d4rl-{env_id}-GPG-VPSDE"
 
 model = dict(
     device=device,
@@ -80,7 +80,7 @@ config = EasyDict(
     train=dict(
         project=project_name,
         device=device,
-        wandb=dict(project=f"IQL-{env_id}-{algorithm_type}-{model_type}"),
+        wandb=dict(project=f"IQL_{env_id}-{algorithm_type}-{model_type}"),
         simulator=dict(
             type="GymEnvSimulator",
             args=dict(
@@ -98,7 +98,7 @@ config = EasyDict(
             GPPolicy=dict(
                 device=device,
                 model_type=model_type,
-                model_loss_type="score_matching",
+                model_loss_type="flow_matching",
                 model=model,
                 critic=dict(
                     device=device,
@@ -133,7 +133,7 @@ config = EasyDict(
             fake_data_t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
                 batch_size=256,
-                epochs=1000,
+                epochs=8000,
                 learning_rate=3e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
@@ -157,7 +157,7 @@ config = EasyDict(
             evaluation=dict(
                 eval=True,
                 repeat=3,
-                # evaluation_behavior_policy_interval=500,
+                evaluation_behavior_policy_interval=500,
                 evaluation_guided_policy_interval=10,
                 guidance_scale=[0.0, 1.0, 2.0],
             ),

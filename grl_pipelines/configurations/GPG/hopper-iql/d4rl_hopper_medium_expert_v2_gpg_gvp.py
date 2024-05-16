@@ -1,8 +1,8 @@
 import torch
 from easydict import EasyDict
 
-action_size = 6
-state_size = 17
+action_size = 3
+state_size = 11
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 t_embedding_dim = 32
 t_encoder = dict(
@@ -12,12 +12,11 @@ t_encoder = dict(
         scale=30.0,
     ),
 )
-
 algorithm_type = "GPG"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
-env_id = "walker2d-medium-repaly-v2"
-project_name = f"d4rl-{env_id}-GPG-VPSDE"
+env_id = "hopper-medium-expert-v2"
+project_name = f"d4rl-{env_id}-GPG-GVP"
 
 model = dict(
     device=device,
@@ -49,14 +48,10 @@ model = dict(
         )
     ),
     path=dict(
-        type="linear_vp_sde",
-        beta_0=0.1,
-        beta_1=20.0,
+        type="gvp",
     ),
     reverse_path=dict(
-        type="linear_vp_sde",
-        beta_0=0.1,
-        beta_1=20.0,
+        type="gvp",
     ),
     model=dict(
         type="velocity_function",
@@ -153,7 +148,7 @@ config = EasyDict(
                 grad_norm_clip=10,
                 gradtime_step=32,
                 lr_epochs=200,
-                eta=1,
+                eta=0.5,
             ),
             evaluation=dict(
                 eval=True,

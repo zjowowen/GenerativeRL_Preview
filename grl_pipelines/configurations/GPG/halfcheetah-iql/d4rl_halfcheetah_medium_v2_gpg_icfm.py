@@ -14,48 +14,21 @@ t_encoder = dict(
 )
 algorithm_type = "GPG"
 solver_type = "ODESolver"
-model_type = "DiffusionModel"
-env_id = "walker2d-medium-v2"
-project_name = f"d4rl-{env_id}-GPG-VPSDE-score"
+model_type = "IndependentConditionalFlowModel"
+env_id = "halfcheetah-medium-v2"
+project_name = f"d4rl-{env_id}-GPG-ICFM"
 
 model = dict(
     device=device,
     x_size=action_size,
-    solver=(
-        dict(
-            type="DPMSolver",
-            args=dict(
-                order=2,
-                device=device,
-                steps=17,
-            ),
-        )
-        if solver_type == "DPMSolver"
-        else (
-            dict(
-                type="ODESolver",
-                args=dict(
-                    library="torchdiffeq_adjoint",
-                ),
-            )
-            if solver_type == "ODESolver"
-            else dict(
-                type="SDESolver",
-                args=dict(
-                    library="torchsde",
-                ),
-            )
-        )
+    solver=dict(
+        type="ODESolver",
+        args=dict(
+            library="torchdiffeq_adjoint",
+        ),
     ),
     path=dict(
-        type="linear_vp_sde",
-        beta_0=0.1,
-        beta_1=20.0,
-    ),
-    reverse_path=dict(
-        type="linear_vp_sde",
-        beta_0=0.1,
-        beta_1=20.0,
+        sigma=0.1,
     ),
     model=dict(
         type="velocity_function",
@@ -80,7 +53,7 @@ config = EasyDict(
     train=dict(
         project=project_name,
         device=device,
-        wandb=dict(project=f"IQL-{env_id}-{algorithm_type}-{model_type}"),
+        wandb=dict(project=f"IQL_{env_id}-{algorithm_type}-{model_type}"),
         simulator=dict(
             type="GymEnvSimulator",
             args=dict(
@@ -98,7 +71,6 @@ config = EasyDict(
             GPPolicy=dict(
                 device=device,
                 model_type=model_type,
-                model_loss_type="score_matching",
                 model=model,
                 critic=dict(
                     device=device,
@@ -133,7 +105,7 @@ config = EasyDict(
             fake_data_t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
                 batch_size=256,
-                epochs=1000,
+                epochs=8000,
                 learning_rate=3e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
@@ -157,7 +129,8 @@ config = EasyDict(
             evaluation=dict(
                 eval=True,
                 repeat=3,
-                # evaluation_behavior_policy_interval=500,
+                evaluation_iteration_interval=200,
+                evaluation_behavior_policy_interval=500,
                 evaluation_guided_policy_interval=10,
                 guidance_scale=[0.0, 1.0, 2.0],
             ),
