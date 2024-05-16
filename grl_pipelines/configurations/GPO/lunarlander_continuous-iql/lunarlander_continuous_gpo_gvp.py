@@ -18,7 +18,7 @@ model_type = "DiffusionModel"
 path = dict(type="gvp")
 model_loss_type = "flow_matching"
 env_id = "LunarLanderContinuous-v2"
-project_name = f"d4rl-{env_id}-GPO-GVP"
+project_name = f"{env_id}-GPO-GVP"
 model = dict(
     device=device,
     x_size=action_size,
@@ -85,7 +85,7 @@ config = EasyDict(
             ),
         ),
         model=dict(
-            GPOPolicy=dict(
+            GPPolicy=dict(
                 device=device,
                 model_type=model_type,
                 model_loss_type="flow_matching",
@@ -136,7 +136,10 @@ config = EasyDict(
                 learning_rate=1e-4,
             ),
             evaluation=dict(
-                evaluation_interval=5,
+                eval=True,
+                repeat=10,
+                evaluation_behavior_policy_interval=5,
+                evaluation_guided_policy_interval=5,
                 guidance_scale=[0.0, 1.0, 2.0],
             ),
             checkpoint_path=f"./{project_name}/checkpoint",

@@ -65,7 +65,7 @@ config = EasyDict(
         #     ),
         # ),
         model=dict(
-            GPOPolicy=dict(
+            GPPolicy=dict(
                 device=device,
                 model_type=model_type,
                 model=model,
@@ -113,7 +113,10 @@ config = EasyDict(
                 learning_rate=1e-4,
             ),
             evaluation=dict(
-                evaluation_interval=50,
+                eval=True,
+                repeat=10,
+                evaluation_behavior_policy_interval=5,
+                evaluation_guided_policy_interval=5,
                 guidance_scale=[0.0, 1.0, 2.0],
             ),
         ),
