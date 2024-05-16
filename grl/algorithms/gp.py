@@ -507,9 +507,10 @@ class GPPolicy(nn.Module):
         self,
         action: Union[torch.Tensor, TensorDict],
         state: Union[torch.Tensor, TensorDict],
-        fake_action: Union[torch.Tensor, TensorDict],
+        fake_action: Union[torch.Tensor, TensorDict] = None,
         maximum_likelihood: bool = False,
         eta: float = 1.0,
+        regularize_method: str = "minus_value",
     ):
         """
         Overview:
@@ -545,24 +546,42 @@ class GPPolicy(nn.Module):
         else:
             raise NotImplementedError
 
-        with torch.no_grad():
-            q_value = self.critic(action, state).squeeze(dim=-1)
-            fake_q_value = (
-                self.critic(
-                    fake_action, torch.stack([state] * fake_action.shape[1], axis=1)
+        if regularize_method == "origin":
+
+            with torch.no_grad():
+                q_value = self.critic(action, state).squeeze(dim=-1)
+                fake_q_value = (
+                    self.critic(
+                        fake_action, torch.stack([state] * fake_action.shape[1], axis=1)
+                    )
+                    .squeeze(dim=-1)
+                    .detach()
+                    .squeeze(dim=-1)
                 )
-                .squeeze(dim=-1)
-                .detach()
-                .squeeze(dim=-1)
-            )
 
-            v_value = torch.sum(
-                self.softmax(self.critic.q_alpha * fake_q_value) * fake_q_value,
-                dim=-1,
-                keepdim=True,
-            ).squeeze(dim=-1)
+            return torch.mean(model_loss * torch.exp(eta * q_value))
+        
+        elif regularize_method == "minus_value":
 
-        return torch.mean(model_loss * torch.exp(eta * (q_value - v_value)))
+            with torch.no_grad():
+                q_value = self.critic(action, state).squeeze(dim=-1)
+                fake_q_value = (
+                    self.critic(
+                        fake_action, torch.stack([state] * fake_action.shape[1], axis=1)
+                    )
+                    .squeeze(dim=-1)
+                    .detach()
+                    .squeeze(dim=-1)
+                )
+
+                v_value = torch.sum(
+                    self.softmax(self.critic.q_alpha * fake_q_value) * fake_q_value,
+                    dim=-1,
+                    keepdim=True,
+                ).squeeze(dim=-1)
+
+            return torch.mean(model_loss * torch.exp(eta * (q_value - v_value)))
+        
 
     def q_loss(
         self,
@@ -1356,6 +1375,7 @@ class GPAlgorithm:
                                 else False
                             ),
                             eta=eta,
+                            regularize_method=config.parameter.guided_policy.regularize_method if hasattr(config.parameter.guided_policy, "regularize_method") else "minus_value",
                         )
                     elif config.parameter.algorithm_type == "GPG":
                         guided_policy_loss = self.model[
