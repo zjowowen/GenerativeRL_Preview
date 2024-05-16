@@ -4,7 +4,9 @@ import torch
 import torch.nn as nn
 
 
-def sort_files_by_criteria(folder_path: str, start_string: str="checkpoint_", end_string: str=".pt") -> List[str]:
+def sort_files_by_criteria(
+    folder_path: str, start_string: str = "checkpoint_", end_string: str = ".pt"
+) -> List[str]:
     """
     Overview:
         Sort the files in the specified folder by the criteria specified in the filename.
@@ -18,15 +20,21 @@ def sort_files_by_criteria(folder_path: str, start_string: str="checkpoint_", en
 
     for file in files:
         if file.startswith(start_string) and file.endswith(end_string):
-            parts = file[11:-3].split("_")  # Split the filename by "_" and remove "checkpoint_" and ".pt"
+            parts = file[len(start_string) : -len(end_string)].split(
+                "_"
+            )  # Split the filename by "_" and remove "checkpoint_" and ".pt"
             try:
                 values = list(map(int, parts))  # Convert all parts to integers
-                file_list.append(tuple(reversed(values)) + (file,))  # Append a tuple (N, N-1, ..., 1, filename) to the list
+                file_list.append(
+                    tuple(reversed(values)) + (file,)
+                )  # Append a tuple (N, N-1, ..., 1, filename) to the list
             except ValueError:
                 pass  # Ignore files that don't match the expected pattern
 
     file_list.sort(reverse=True)  # Sort the list in descending order
-    sorted_files = [file for values in file_list for file in [values[-1]]]  # Extract the filenames from the sorted tuples
+    sorted_files = [
+        file for values in file_list for file in [values[-1]]
+    ]  # Extract the filenames from the sorted tuples
     return sorted_files
 
 
