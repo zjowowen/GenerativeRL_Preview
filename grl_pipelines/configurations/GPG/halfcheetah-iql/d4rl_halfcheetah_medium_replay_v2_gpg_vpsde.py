@@ -80,7 +80,7 @@ config = EasyDict(
     train=dict(
         project=project_name,
         device=device,
-        wandb=dict(project=f"IQL_{env_id}-{algorithm_type}-{model_type}"),
+        wandb=dict(project=f"IQL-{env_id}-{algorithm_type}-{model_type}"),
         simulator=dict(
             type="GymEnvSimulator",
             args=dict(
@@ -133,7 +133,7 @@ config = EasyDict(
             fake_data_t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
                 batch_size=256,
-                epochs=8000,
+                epochs=500,
                 learning_rate=3e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,

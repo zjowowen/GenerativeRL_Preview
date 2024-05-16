@@ -511,6 +511,7 @@ class GPPolicy(nn.Module):
         maximum_likelihood: bool = False,
         eta: float = 1.0,
         regularize_method: str = "minus_value",
+        value_function: ValueFunction = None,
     ):
         """
         Overview:
@@ -550,38 +551,36 @@ class GPPolicy(nn.Module):
 
             with torch.no_grad():
                 q_value = self.critic(action, state).squeeze(dim=-1)
-                fake_q_value = (
-                    self.critic(
-                        fake_action, torch.stack([state] * fake_action.shape[1], axis=1)
-                    )
-                    .squeeze(dim=-1)
-                    .detach()
-                    .squeeze(dim=-1)
-                )
 
             return torch.mean(model_loss * torch.exp(eta * q_value))
-        
+
         elif regularize_method == "minus_value":
 
             with torch.no_grad():
                 q_value = self.critic(action, state).squeeze(dim=-1)
-                fake_q_value = (
-                    self.critic(
-                        fake_action, torch.stack([state] * fake_action.shape[1], axis=1)
-                    )
-                    .squeeze(dim=-1)
-                    .detach()
-                    .squeeze(dim=-1)
-                )
 
-                v_value = torch.sum(
-                    self.softmax(self.critic.q_alpha * fake_q_value) * fake_q_value,
-                    dim=-1,
-                    keepdim=True,
-                ).squeeze(dim=-1)
+                if value_function is not None:
+                    v_value = value_function(state).squeeze(dim=-1)
+
+                else:
+
+                    fake_q_value = (
+                        self.critic(
+                            fake_action,
+                            torch.stack([state] * fake_action.shape[1], axis=1),
+                        )
+                        .squeeze(dim=-1)
+                        .detach()
+                        .squeeze(dim=-1)
+                    )
+
+                    v_value = torch.sum(
+                        self.softmax(self.critic.q_alpha * fake_q_value) * fake_q_value,
+                        dim=-1,
+                        keepdim=True,
+                    ).squeeze(dim=-1)
 
             return torch.mean(model_loss * torch.exp(eta * (q_value - v_value)))
-        
 
     def q_loss(
         self,
@@ -697,7 +696,7 @@ class GPAlgorithm:
                         end_string=".pt",
                     )
                     if not self.iql:
-                        log.info("we don't use iql")
+                        log.info("we don't use iql for critic training")
                     elif len(value_function_files) == 0:
                         critic_train_epoch_1 = 0
                     else:
@@ -1089,7 +1088,7 @@ class GPAlgorithm:
             # ---------------------------------------
             # behavior training code ↑
             # ---------------------------------------
-            if self.iql and config.parameter.algorithm_type == "GPG":
+            if self.iql:
                 self.need_fake_action = False
             # ---------------------------------------
             # make fake action ↓
@@ -1130,17 +1129,19 @@ class GPAlgorithm:
                 )
                 np.savez(filename, **fake_data)
 
-                # ---------------------------------------
-                # make fake action ↑
-                # ---------------------------------------
+            # ---------------------------------------
+            # make fake action ↑
+            # ---------------------------------------
+
+            # ---------------------------------------
+            # critic training code ↓
+            # ---------------------------------------
+
             if self.iql:
                 v_optimizer = torch.optim.Adam(
                     self.vf.parameters(),
                     lr=config.parameter.critic.learning_rate,
                 )
-            # ---------------------------------------
-            # critic training code ↓
-            # ---------------------------------------
 
             q_optimizer = torch.optim.Adam(
                 self.model["GPPolicy"].critic.q.parameters(),
@@ -1231,17 +1232,18 @@ class GPAlgorithm:
                             + (1 - config.parameter.critic.update_momentum)
                             * target_param.data
                         )
-                    if not self.iql:
-                        v = 0
-                    else:
-                        v = next_v.mean().item()
+                    if self.iql:
+                        wandb.log(
+                            data=dict(v_loss=v_loss.item(), v=next_v.mean().item()),
+                            commit=False,
+                        )
+
                     wandb.log(
                         data=dict(
                             critic_train_iter=critic_train_iter,
                             critic_train_epoch=epoch,
                             q_loss=q_loss.item(),
                             q=q.item(),
-                            v=v,
                             q_target=q_target.item(),
                             q_grad_norms=(
                                 q_grad_norms.item()
@@ -1266,7 +1268,8 @@ class GPAlgorithm:
                     and (epoch + 1) % config.parameter.checkpoint_freq == 0
                 ):
                     save_checkpoint(self.model)
-                    save_checkpoint(self.vf, iteration=None, value_function=True)
+                    if self.iql:
+                        save_checkpoint(self.vf, iteration=None, value_function=True)
             # ---------------------------------------
             # critic training code ↑
             # ---------------------------------------
@@ -1375,7 +1378,14 @@ class GPAlgorithm:
                                 else False
                             ),
                             eta=eta,
-                            regularize_method=config.parameter.guided_policy.regularize_method if hasattr(config.parameter.guided_policy, "regularize_method") else "minus_value",
+                            regularize_method=(
+                                config.parameter.guided_policy.regularize_method
+                                if hasattr(
+                                    config.parameter.guided_policy, "regularize_method"
+                                )
+                                else "minus_value"
+                            ),
+                            value_function=self.vf if self.iql else None,
                         )
                     elif config.parameter.algorithm_type == "GPG":
                         guided_policy_loss = self.model[

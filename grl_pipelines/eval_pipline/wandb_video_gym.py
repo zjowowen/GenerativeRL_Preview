@@ -15,7 +15,7 @@ from grl.utils.log import log
 from typing import Any, Dict, List, Tuple, Union
 
 
-def zuobi(agent, obs):
+def QLearningAction(agent, obs):
     if isinstance(obs, np.ndarray):
         obs = torch.from_numpy(obs).float().to(config.train.device)
     elif isinstance(obs, Dict):
@@ -72,7 +72,7 @@ def gp_pipeline(config):
     # ---------------------------------------
     # Customized deploy code ↓
     # ---------------------------------------
-    with wandb.init(project="Test_GPG_experiments") as wandb_run:
+    with wandb.init(project="Test_experiments") as wandb_run:
 
         def run_experiment(
             env,
@@ -100,7 +100,7 @@ def gp_pipeline(config):
                 render_output.append(render_env(env, render_args))
             for step in range(num_steps):
                 if batch_action:
-                    action = zuobi(agent=agent, obs=observation)
+                    action = QLearningAction(agent=agent, obs=observation)
                 else:
                     action = agent.act(observation)
                 if clip:

@@ -42,6 +42,7 @@ from grl.utils.log import log
 from grl.utils import set_seed
 from grl.utils.statistics import sort_files_by_criteria
 
+
 class GPCritic(nn.Module):
     """
     Overview:
@@ -574,7 +575,11 @@ class GPAlgorithm:
                     self.critic_train_epoch = 0
                     self.guided_policy_train_epoch = 0
                 else:
-                    checkpoint_files = sort_files_by_criteria(folder_path=config.parameter.checkpoint_path, start_string="checkpoint_", end_string=".pt")
+                    checkpoint_files = sort_files_by_criteria(
+                        folder_path=config.parameter.checkpoint_path,
+                        start_string="checkpoint_",
+                        end_string=".pt",
+                    )
                     if len(checkpoint_files) == 0:
                         self.behaviour_policy_train_epoch = 0
                         self.critic_train_epoch = 0
