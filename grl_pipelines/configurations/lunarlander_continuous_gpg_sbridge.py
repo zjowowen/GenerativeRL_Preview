@@ -228,7 +228,7 @@ config = EasyDict(
                 guidance_scale=[0.0, 1.0, 2.0],
             ),
             checkpoint_path=f"./{project_name}/checkpoint",
-            checkpoint_freq=10,
+            checkpoint_freq=100,
         ),
     ),
     deploy=dict(

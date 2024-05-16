@@ -2,10 +2,6 @@ import os
 
 # xvfb-run -s "-screen 0 1400x900x24" python train.py
 # 设置HTTP和HTTPS代理
-os.environ["http_proxy"] = "http://xuerongkun:Xue2025pro%40@10.1.8.50:33128/"
-os.environ["https_proxy"] = "http://xuerongkun:Xue2025pro%40@10.1.8.50:33128/"
-os.environ["HTTP_PROXY"] = "http://xuerongkun:Xue2025pro%40@10.1.8.50:33128/"
-os.environ["HTTPS_PROXY"] = "http://xuerongkun:Xue2025pro%40@10.1.8.50:33128/"
 
 import d4rl
 import gym
