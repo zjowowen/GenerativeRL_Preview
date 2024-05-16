@@ -109,9 +109,9 @@ config = EasyDict(
                 learning_rate=3e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
+                tau=0.7,
                 # new add below
                 lr_decy=False,
-                tau=0.7,
             ),
             guided_policy=dict(
                 batch_size=4096,
