@@ -182,20 +182,18 @@ class GuidedPolicy(nn.Module):
 
         if self.type == "DiffusionModel":
             if guidance_scale == 0.0:
-                return self.base_model.sample(
+                return base_model.sample(
                     t_span=t_span,
                     condition=state,
                     batch_size=batch_size,
-                    guidance_scale=guidance_scale,
                     with_grad=False,
                     solver_config=solver_config,
                 )
             elif guidance_scale == 1.0:
-                return self.guided_model.sample(
+                return guided_model.sample(
                     t_span=t_span,
                     condition=state,
                     batch_size=batch_size,
-                    guidance_scale=guidance_scale,
                     with_grad=False,
                     solver_config=solver_config,
                 )
@@ -220,22 +218,20 @@ class GuidedPolicy(nn.Module):
             x_0 = base_model.gaussian_generator(batch_size=state.shape[0])
 
             if guidance_scale == 0.0:
-                return self.base_model.sample(
+                return base_model.sample(
                     x_0=x_0,
                     t_span=t_span,
                     condition=state,
                     batch_size=batch_size,
-                    guidance_scale=guidance_scale,
                     with_grad=False,
                     solver_config=solver_config,
                 )
             elif guidance_scale == 1.0:
-                return self.guided_model.sample(
+                return guided_model.sample(
                     x_0=x_0,
                     t_span=t_span,
                     condition=state,
                     batch_size=batch_size,
-                    guidance_scale=guidance_scale,
                     with_grad=False,
                     solver_config=solver_config,
                 )
