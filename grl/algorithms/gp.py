@@ -35,12 +35,31 @@ from grl.generative_models.diffusion_model.guided_diffusion_model import (
 from grl.generative_models.conditional_flow_model.guided_conditional_flow_model import (
     GuidedConditionalFlowModel,
 )
+from grl.neural_network import MultiLayerPerceptron
 from grl.rl_modules.simulators import create_simulator
 from grl.rl_modules.value_network.q_network import DoubleQNetwork
 from grl.utils.config import merge_two_dicts_into_newone
 from grl.utils.log import log
 from grl.utils import set_seed
 from grl.utils.statistics import sort_files_by_criteria
+
+
+def asymmetric_l2_loss(u, tau):
+    return torch.mean(torch.abs(tau - (u < 0).float()) * u**2)
+
+
+class ValueFunction(nn.Module):
+    def __init__(self, state_dim):
+        super().__init__()
+        self.v = MultiLayerPerceptron(
+            hidden_sizes=[state_dim, 256, 256],
+            output_size=1,
+            activation="relu",
+        )
+
+    def forward(self, state):
+        return self.v(state)
+
 
 class GPCritic(nn.Module):
     """
@@ -139,6 +158,31 @@ class GPCritic(nn.Module):
             + torch.nn.functional.mse_loss(q1, targets)
         ) / 2
         return q_loss, torch.mean(q0), torch.mean(targets)
+
+    def v_loss(self, vf, data, tau):
+        s = data["s"]
+        a = data["a"]
+        r = data["r"]
+        s_ = data["s_"]
+        d = data["d"]
+        with torch.no_grad():
+            target_q = self.q_target(a, s).detach()
+            next_v = vf(s_).detach()
+        # Update value function
+        v = vf(s)
+        adv = target_q - v
+        v_loss = asymmetric_l2_loss(adv, tau)
+        return v_loss, next_v
+
+    def iql_q_loss(self, data, next_v, discount):
+        s = data["s"]
+        a = data["a"]
+        r = data["r"]
+        d = data["d"]
+        q_target = r + (1.0 - d.float()) * discount * next_v.detach()
+        qs = self.q.compute_double_q(a, s)
+        q_loss = sum(torch.nn.functional.mse_loss(q, q_target) for q in qs) / len(qs)
+        return q_loss, torch.mean(qs[0]), torch.mean(q_target)
 
 
 class GuidedPolicy(nn.Module):
@@ -258,7 +302,6 @@ class GPPolicy(nn.Module):
 
         self.critic = GPCritic(config.critic)
         self.model_type = config.model_type
-
         if self.model_type == "DiffusionModel":
             self.base_model = DiffusionModel(config.model)
             self.guided_model = DiffusionModel(config.model)
@@ -620,6 +663,17 @@ class GPAlgorithm:
             self.model["GuidedPolicy"] = GuidedPolicy(config=config.model.GuidedPolicy)
 
             if (
+                hasattr(config.parameter.critic, "tau")
+                and config.parameter.critic.tau > 0
+            ):
+                self.iql = True
+                self.vf = ValueFunction(
+                    config.model.GPPolicy.model.model.args.backbone.args.condition_dim
+                ).to(config.model.GPPolicy.device)
+            else:
+                self.iql = False
+
+            if (
                 hasattr(config.parameter, "checkpoint_path")
                 and config.parameter.checkpoint_path is not None
             ):
@@ -632,7 +686,31 @@ class GPAlgorithm:
                     self.critic_train_epoch = 0
                     self.guided_policy_train_epoch = 0
                 else:
-                    checkpoint_files = sort_files_by_criteria(folder_path=config.parameter.checkpoint_path, start_string="checkpoint_", end_string=".pt")
+                    checkpoint_files = sort_files_by_criteria(
+                        folder_path=config.parameter.checkpoint_path,
+                        start_string="checkpoint_",
+                        end_string=".pt",
+                    )
+                    value_function_files = sort_files_by_criteria(
+                        folder_path=config.parameter.checkpoint_path,
+                        start_string="valuefunction_",
+                        end_string=".pt",
+                    )
+                    if not self.iql:
+                        log.info("we don't use iql")
+                    elif len(value_function_files) == 0:
+                        critic_train_epoch_1 = 0
+                    else:
+                        checkpoint = torch.load(
+                            os.path.join(
+                                config.parameter.checkpoint_path,
+                                value_function_files[0],
+                            ),
+                            map_location="cpu",
+                        )
+                        self.vf.load_state_dict(checkpoint["model"])
+                        critic_train_epoch_1 = checkpoint.get("critic_train_epoch", 0)
+
                     if len(checkpoint_files) == 0:
                         self.behaviour_policy_train_epoch = 0
                         self.critic_train_epoch = 0
@@ -668,6 +746,7 @@ class GPAlgorithm:
                         self.guided_policy_train_epoch = checkpoint.get(
                             "guided_policy_train_epoch", 0
                         )
+                        assert critic_train_epoch_1 == self.critic_train_epoch
                         log.info(
                             f"Load checkpoint: behaviour_policy_train_epoch: {self.behaviour_policy_train_epoch}, critic_train_epoch: {self.critic_train_epoch}, guided_policy_train_epoch: {self.guided_policy_train_epoch}"
                         )
@@ -702,13 +781,13 @@ class GPAlgorithm:
         config["seed"] = self.seed_value
 
         if not hasattr(config, "wandb"):
-            config["wandb"]=dict(project=config.project)
+            config["wandb"] = dict(project=config.project)
         elif not hasattr(config.wandb, "project"):
-            config.wandb["project"]=config.project
+            config.wandb["project"] = config.project
 
-        with wandb.init( **config.wandb) as wandb_run:
+        with wandb.init(**config.wandb) as wandb_run:
             if not hasattr(config.parameter.guided_policy, "eta"):
-                config.parameter.guided_policy.eta=1.0
+                config.parameter.guided_policy.eta = 1.0
             if not hasattr(config.model.GPPolicy, "model_loss_type"):
                 config.model.GPPolicy["model_loss_type"] = "flow_matching"
             if config.parameter.algorithm_type == "GPO":
@@ -763,25 +842,37 @@ class GPAlgorithm:
             # Customized training code ↓
             # ---------------------------------------
 
-            def save_checkpoint(model, iteration=None):
+            def save_checkpoint(model, iteration=None, value_function=False):
                 if iteration == None:
                     iteration = 0
-                if (
-                    hasattr(config.parameter, "checkpoint_path")
-                    and config.parameter.checkpoint_path is not None
-                ):
-                    if not os.path.exists(config.parameter.checkpoint_path):
-                        os.makedirs(config.parameter.checkpoint_path)
+                if not value_function:
+                    if (
+                        hasattr(config.parameter, "checkpoint_path")
+                        and config.parameter.checkpoint_path is not None
+                    ):
+                        if not os.path.exists(config.parameter.checkpoint_path):
+                            os.makedirs(config.parameter.checkpoint_path)
+                        torch.save(
+                            dict(
+                                model=model.state_dict(),
+                                behaviour_policy_train_epoch=self.behaviour_policy_train_epoch,
+                                critic_train_epoch=self.critic_train_epoch,
+                                guided_policy_train_epoch=self.guided_policy_train_epoch,
+                            ),
+                            f=os.path.join(
+                                config.parameter.checkpoint_path,
+                                f"checkpoint_{self.behaviour_policy_train_epoch}_{self.critic_train_epoch}_{self.guided_policy_train_epoch}_{iteration}.pt",
+                            ),
+                        )
+                else:
                     torch.save(
                         dict(
                             model=model.state_dict(),
-                            behaviour_policy_train_epoch=self.behaviour_policy_train_epoch,
                             critic_train_epoch=self.critic_train_epoch,
-                            guided_policy_train_epoch=self.guided_policy_train_epoch,
                         ),
                         f=os.path.join(
                             config.parameter.checkpoint_path,
-                            f"checkpoint_{self.behaviour_policy_train_epoch}_{self.critic_train_epoch}_{self.guided_policy_train_epoch}_{iteration}.pt",
+                            f"valuefunction_{self.behaviour_policy_train_epoch}_{self.critic_train_epoch}_{self.guided_policy_train_epoch}_{iteration}.pt",
                         ),
                     )
 
@@ -924,7 +1015,9 @@ class GPAlgorithm:
                     and config.parameter.evaluation.eval
                 ):
                     if (
-                        epoch % config.parameter.evaluation.evaluation_behavior_policy_interval == 0
+                        epoch
+                        % config.parameter.evaluation.evaluation_behavior_policy_interval
+                        == 0
                         or (epoch + 1) == config.parameter.behaviour_policy.epochs
                     ):
                         evaluation_results = evaluate(
@@ -996,7 +1089,8 @@ class GPAlgorithm:
             # ---------------------------------------
             # behavior training code ↑
             # ---------------------------------------
-
+            if self.iql and config.parameter.algorithm_type == "GPG":
+                self.need_fake_action = False
             # ---------------------------------------
             # make fake action ↓
             # ---------------------------------------
@@ -1036,10 +1130,14 @@ class GPAlgorithm:
                 )
                 np.savez(filename, **fake_data)
 
-            # ---------------------------------------
-            # make fake action ↑
-            # ---------------------------------------
-
+                # ---------------------------------------
+                # make fake action ↑
+                # ---------------------------------------
+            if self.iql:
+                v_optimizer = torch.optim.Adam(
+                    self.vf.parameters(),
+                    lr=config.parameter.critic.learning_rate,
+                )
             # ---------------------------------------
             # critic training code ↓
             # ---------------------------------------
@@ -1053,7 +1151,6 @@ class GPAlgorithm:
                 hasattr(config.parameter.critic, "lr_decy")
                 and config.parameter.critic.lr_decy is True
             ):
-
                 critic_lr_scheduler = CosineAnnealingLR(
                     q_optimizer,
                     T_max=config.parameter.critic_policy.epochs,
@@ -1086,25 +1183,43 @@ class GPAlgorithm:
 
                 for data in data_loader:
 
-                    q_loss, q, q_target = self.model["GPPolicy"].q_loss(
-                        data["a"],
-                        data["s"],
-                        data["r"],
-                        data["s_"],
-                        data["d"],
-                        data["fake_a_"],
-                        discount_factor=config.parameter.critic.discount_factor,
-                    )
-
-                    q_optimizer.zero_grad()
-                    q_loss.backward()
-                    if hasattr(config.parameter.critic, "grad_norm_clip"):
-                        q_grad_norms = nn.utils.clip_grad_norm_(
-                            self.model["GPPolicy"].critic.parameters(),
-                            max_norm=config.parameter.critic.grad_norm_clip,
-                            norm_type=2,
+                    if self.iql:
+                        v_loss, next_v = self.model["GPPolicy"].critic.v_loss(
+                            self.vf,
+                            data,
+                            config.parameter.critic.tau,
                         )
-                    q_optimizer.step()
+                        v_optimizer.zero_grad(set_to_none=True)
+                        v_loss.backward()
+                        v_optimizer.step()
+                        q_loss, q, q_target = self.model["GPPolicy"].critic.iql_q_loss(
+                            data,
+                            next_v,
+                            config.parameter.critic.discount_factor,
+                        )
+                        q_optimizer.zero_grad(set_to_none=True)
+                        q_loss.backward()
+                        q_optimizer.step()
+                    else:
+                        q_loss, q, q_target = self.model["GPPolicy"].q_loss(
+                            data["a"],
+                            data["s"],
+                            data["r"],
+                            data["s_"],
+                            data["d"],
+                            data["fake_a_"],
+                            discount_factor=config.parameter.critic.discount_factor,
+                        )
+
+                        q_optimizer.zero_grad()
+                        q_loss.backward()
+                        if hasattr(config.parameter.critic, "grad_norm_clip"):
+                            q_grad_norms = nn.utils.clip_grad_norm_(
+                                self.model["GPPolicy"].critic.parameters(),
+                                max_norm=config.parameter.critic.grad_norm_clip,
+                                norm_type=2,
+                            )
+                        q_optimizer.step()
 
                     # Update target
                     for param, target_param in zip(
@@ -1116,13 +1231,17 @@ class GPAlgorithm:
                             + (1 - config.parameter.critic.update_momentum)
                             * target_param.data
                         )
-
+                    if not self.iql:
+                        v = 0
+                    else:
+                        v = next_v.mean().item()
                     wandb.log(
                         data=dict(
                             critic_train_iter=critic_train_iter,
                             critic_train_epoch=epoch,
                             q_loss=q_loss.item(),
                             q=q.item(),
+                            v=v,
                             q_target=q_target.item(),
                             q_grad_norms=(
                                 q_grad_norms.item()
@@ -1147,7 +1266,7 @@ class GPAlgorithm:
                     and (epoch + 1) % config.parameter.checkpoint_freq == 0
                 ):
                     save_checkpoint(self.model)
-
+                    save_checkpoint(self.vf, iteration=None, value_function=True)
             # ---------------------------------------
             # critic training code ↑
             # ---------------------------------------
@@ -1156,7 +1275,10 @@ class GPAlgorithm:
             # guided policy training code ↓
             # ---------------------------------------
 
-            if  hasattr(config.parameter.guided_policy,"copy_from_basemodel") and config.parameter.guided_policy.copy_from_basemodel:
+            if (
+                hasattr(config.parameter.guided_policy, "copy_from_basemodel")
+                and config.parameter.guided_policy.copy_from_basemodel
+            ):
                 self.model["GPPolicy"].guided_model.model.load_state_dict(
                     self.model["GPPolicy"].base_model.model.state_dict()
                 )
@@ -1188,10 +1310,10 @@ class GPAlgorithm:
             guided_policy_train_iter = 0
 
             if hasattr(config.parameter.guided_policy, "eta"):
-                eta=config.parameter.guided_policy.eta
-            else :
-                eta=1.0
-                
+                eta = config.parameter.guided_policy.eta
+            else:
+                eta = 1.0
+
             for epoch in track(
                 range(config.parameter.guided_policy.epochs),
                 description="Guided policy training",
@@ -1222,7 +1344,9 @@ class GPAlgorithm:
                     and config.parameter.evaluation.eval
                 ):
                     if (
-                        epoch % config.parameter.evaluation.evaluation_guided_policy_interval == 0
+                        epoch
+                        % config.parameter.evaluation.evaluation_guided_policy_interval
+                        == 0
                         or (epoch + 1) == config.parameter.guided_policy.epochs
                     ):
                         evaluation_results = evaluate(
