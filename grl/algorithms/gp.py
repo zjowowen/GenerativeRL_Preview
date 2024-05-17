@@ -790,15 +790,19 @@ class GPAlgorithm:
         with wandb.init(**config.wandb) as wandb_run:
             if not hasattr(config.parameter.guided_policy, "eta"):
                 config.parameter.guided_policy.eta = 1.0
+            if not config.model.GPPolicy.model_type == "DiffusionModel":
+                path_type = "ICFM"
+            else:
+                path_type = config.model.GPPolicy.model.path.type
             if not hasattr(config.model.GPPolicy, "model_loss_type"):
                 config.model.GPPolicy["model_loss_type"] = "flow_matching"
             if config.parameter.algorithm_type == "GPO":
-                run_name = f"eta-{config.parameter.guided_policy.eta}-{config.model.GPPolicy.model.model.type}-{self.seed_value}"
+                run_name = f"path-{path_type}-eta-{config.parameter.guided_policy.eta}-{config.model.GPPolicy.model.model.type}-{self.seed_value}"
                 wandb.run.name = run_name
                 wandb.run.save()
 
             elif config.parameter.algorithm_type == "GPG":
-                run_name = f"eta-{config.parameter.guided_policy.eta}-T-{config.parameter.guided_policy.gradtime_step}-Lrdecy-{config.parameter.guided_policy.lr_epochs}-seed-{self.seed_value}"
+                run_name = f"path-{path_type}-eta-{config.parameter.guided_policy.eta}-T-{config.parameter.guided_policy.gradtime_step}-Lrdecy-{config.parameter.guided_policy.lr_epochs}-seed-{self.seed_value}"
                 wandb.run.name = run_name
                 wandb.run.save()
             config = merge_two_dicts_into_newone(EasyDict(wandb_run.config), config)
@@ -1507,7 +1511,15 @@ class GPAlgorithm:
                     and config.parameter.guided_policy.lr_decy is True
                 ):
                     guided_lr_scheduler.step()
+                
+
+
                 if (
+                    hasattr(config.parameter, "checkpoint_guided_freq")
+                    and (epoch + 1) % config.parameter.checkpoint_guided_freq == 0
+                ):
+                    save_checkpoint(self.model)
+                elif (
                     hasattr(config.parameter, "checkpoint_freq")
                     and (epoch + 1) % config.parameter.checkpoint_freq == 0
                 ):
