@@ -582,7 +582,7 @@ class GPPolicy(nn.Module):
 
                 weight = torch.exp(eta * (q_value - v_value))
 
-        return torch.mean(model_loss * weight.clamp(max=100.0))
+        return torch.mean(model_loss * weight.clamp(max=100.0)), weight
 
     def q_loss(
         self,
@@ -637,7 +637,7 @@ class GPAlgorithm:
         self.config = config
         self.simulator = simulator
         self.dataset = dataset
-        self.seed_value = set_seed(seed_value=seed)
+        self.seed_value = set_seed(284075985) # set_seed(seed_value=seed)
 
         # ---------------------------------------
         # Customized model initialization code ↓
@@ -699,6 +699,7 @@ class GPAlgorithm:
                     )
                     if not self.iql:
                         log.info("we don't use iql for critic training")
+                        critic_train_epoch_1 = 0
                     elif len(value_function_files) == 0:
                         critic_train_epoch_1 = 0
                     else:
@@ -1033,7 +1034,11 @@ class GPAlgorithm:
                         )
                         wandb.log(data=evaluation_results, commit=False)
 
+                counter = 0
+                behaviour_policy_loss_sum = 0
                 for data in data_loader:
+                    
+
                     behaviour_policy_loss = self.model[
                         "GPPolicy"
                     ].behaviour_policy_loss(
@@ -1057,24 +1062,29 @@ class GPAlgorithm:
                         )
                     behaviour_policy_optimizer.step()
 
-                    wandb.log(
-                        data=dict(
-                            behaviour_policy_train_iter=behaviour_policy_train_iter,
-                            behaviour_policy_train_epoch=epoch,
-                            behaviour_policy_loss=behaviour_policy_loss.item(),
-                            behaviour_model_grad_norms=(
-                                behaviour_model_grad_norms.item()
-                                if hasattr(
-                                    config.parameter.behaviour_policy, "grad_norm_clip"
-                                )
-                                else 0.0
-                            ),
-                        ),
-                        commit=True,
-                    )
+                    counter += 1
+                    behaviour_policy_loss_sum += behaviour_policy_loss.item()
+
 
                     behaviour_policy_train_iter += 1
                     self.behaviour_policy_train_epoch = epoch
+
+                wandb.log(
+                    data=dict(
+                        behaviour_policy_train_iter=behaviour_policy_train_iter,
+                        behaviour_policy_train_epoch=epoch,
+                        behaviour_policy_loss=behaviour_policy_loss_sum / counter,
+                        behaviour_model_grad_norms=(
+                            behaviour_model_grad_norms.item()
+                            if hasattr(
+                                config.parameter.behaviour_policy, "grad_norm_clip"
+                            )
+                            else 0.0
+                        ),
+                    ),
+                    commit=True,
+                )
+
 
                 if (
                     hasattr(config.parameter.behaviour_policy, "lr_decy")
@@ -1184,6 +1194,14 @@ class GPAlgorithm:
                     drop_last=True,
                 )
 
+                counter=0
+                if self.iql:
+                    v_loss_sum=0.0
+                    v_sum=0.0
+                q_loss_sum=0.0
+                q_sum=0.0
+                q_target_sum=0.0
+                q_grad_norms_sum=0.0
                 for data in data_loader:
 
                     if self.iql:
@@ -1234,30 +1252,43 @@ class GPAlgorithm:
                             + (1 - config.parameter.critic.update_momentum)
                             * target_param.data
                         )
-                    if self.iql:
-                        wandb.log(
-                            data=dict(v_loss=v_loss.item(), v=next_v.mean().item()),
-                            commit=False,
-                        )
 
-                    wandb.log(
-                        data=dict(
-                            critic_train_iter=critic_train_iter,
-                            critic_train_epoch=epoch,
-                            q_loss=q_loss.item(),
-                            q=q.item(),
-                            q_target=q_target.item(),
-                            q_grad_norms=(
-                                q_grad_norms.item()
-                                if hasattr(config.parameter.critic, "grad_norm_clip")
-                                else 0.0
-                            ),
-                        ),
-                        commit=True,
-                    )
+                    counter += 1
+                    if self.iql:
+                        v_loss_sum+=v_loss.item()
+                        v_sum+=next_v.mean().item()
+                    q_loss_sum+=q_loss.item()
+                    q_sum+=q.mean().item()
+                    q_target_sum+=q_target.mean().item()
+                    if hasattr(config.parameter.critic, "grad_norm_clip"):
+                        q_grad_norms_sum+=q_grad_norms.item()
 
                     critic_train_iter += 1
                     self.critic_train_epoch = epoch
+
+                if self.iql:
+                    wandb.log(
+                        data=dict(v_loss=v_loss_sum/counter, v=v_sum/counter),
+                        commit=False,
+                    )
+
+                wandb.log(
+                    data=dict(
+                        critic_train_iter=critic_train_iter,
+                        critic_train_epoch=epoch,
+                        q_loss=q_loss_sum/counter,
+                        q=q_sum/counter,
+                        q_target=q_target_sum/counter,
+                        q_grad_norms=(
+                            q_grad_norms_sum/counter
+                            if hasattr(config.parameter.critic, "grad_norm_clip")
+                            else 0.0
+                        ),
+                    ),
+                    commit=True,
+                )
+
+                    
 
                 if (
                     hasattr(config.parameter.critic, "lr_decy")
@@ -1366,9 +1397,12 @@ class GPAlgorithm:
                         )
                         wandb.log(data=evaluation_results, commit=False)
 
+                counter=0
+                guided_policy_loss_sum=0.0
+                guided_model_grad_norms_sum=0.0
                 for data in data_loader:
                     if config.parameter.algorithm_type == "GPO":
-                        guided_policy_loss = self.model["GPPolicy"].policy_loss(
+                        guided_policy_loss, weight = self.model["GPPolicy"].policy_loss(
                             data["a"],
                             data["s"],
                             data["fake_a"],
@@ -1418,21 +1452,10 @@ class GPAlgorithm:
                         )
                     guided_policy_optimizer.step()
 
-                    wandb.log(
-                        data=dict(
-                            guided_policy_train_iter=guided_policy_train_iter,
-                            guided_policy_train_epoch=epoch,
-                            guided_policy_loss=guided_policy_loss.item(),
-                            guided_model_grad_norms=(
-                                guided_model_grad_norms.item()
-                                if hasattr(
-                                    config.parameter.guided_policy, "grad_norm_clip"
-                                )
-                                else 0.0
-                            ),
-                        ),
-                        commit=True,
-                    )
+                    counter += 1
+                    guided_policy_loss_sum += guided_policy_loss.item()
+                    if hasattr(config.parameter.guided_policy, "grad_norm_clip"):
+                        guided_model_grad_norms_sum += guided_model_grad_norms.item()
 
                     guided_policy_train_iter += 1
                     self.guided_policy_train_epoch = epoch
@@ -1456,7 +1479,28 @@ class GPAlgorithm:
                             ),
                         )
                         wandb.log(data=evaluation_results, commit=False)
+                        wandb.log(data=dict(
+                            guided_policy_train_iter=guided_policy_train_iter,
+                            guided_policy_train_epoch=epoch,
+                        ), commit=True)
                         save_checkpoint(self.model, iteration=guided_policy_train_iter)
+
+                wandb.log(
+                    data=dict(
+                        guided_policy_train_iter=guided_policy_train_iter,
+                        guided_policy_train_epoch=epoch,
+                        guided_policy_loss=guided_policy_loss_sum / counter,
+                        guided_model_grad_norms=(
+                            guided_model_grad_norms_sum / counter
+                            if hasattr(
+                                config.parameter.guided_policy, "grad_norm_clip"
+                            )
+                            else 0.0
+                        ),
+                    ),
+                    commit=True,
+                )
+
 
                 if (
                     hasattr(config.parameter.guided_policy, "lr_decy")
