@@ -552,7 +552,7 @@ class GPPolicy(nn.Module):
             with torch.no_grad():
                 q_value = self.critic(action, state).squeeze(dim=-1)
 
-            return torch.mean(model_loss * torch.exp(eta * q_value))
+            return torch.mean(model_loss * torch.exp(eta * q_value).clamp(max=100.0))
 
         elif regularize_method == "minus_value":
 
@@ -580,7 +580,7 @@ class GPPolicy(nn.Module):
                         keepdim=True,
                     ).squeeze(dim=-1)
 
-            return torch.mean(model_loss * torch.exp(eta * (q_value - v_value)))
+            return torch.mean(model_loss * torch.exp(eta * (q_value - v_value)).clamp(max=100.0))
 
     def q_loss(
         self,
