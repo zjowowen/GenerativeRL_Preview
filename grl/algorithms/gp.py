@@ -446,6 +446,7 @@ class GPPolicy(nn.Module):
         loss_type: str = "origin_loss",
         gradtime_step: int = 1000,
         eta: float = 1.0,
+        repeats: int = 10,
     ):
         """
         Overview:
@@ -481,11 +482,25 @@ class GPPolicy(nn.Module):
         else:
             raise NotImplementedError
         t_span = torch.linspace(0.0, 1.0, gradtime_step).to(state.device)
-        new_action = self.guided_model.sample(
-            t_span=t_span, condition=state, with_grad=True
-        )
 
-        q_value = self.critic(new_action, state)
+        state_repeated = torch.repeat_interleave(state, repeats=repeats, dim=0)
+        new_action = self.guided_model.sample(
+            t_span=t_span, condition=state_repeated, with_grad=True
+        )
+        state_split = state_repeated.view(-1, repeats, *state.size()[1:])
+        action_split = new_action.view(-1, repeats, *new_action.size()[1:])
+        q_values = []
+        for i in range(repeats):
+            state_i = state_split[:, i, :]
+            action_i = action_split[:, i, :]
+            q_value_i = self.critic(
+                action_i,
+                state_i,
+            )
+            q_values.append(q_value_i)
+        q_values_stack = torch.stack(q_values, dim=0)
+        q_values_sum = q_values_stack.sum(dim=0)
+        q_value = q_values_sum / repeats
         if loss_type == "origin_loss":
             return -q_value.mean() + model_loss
         elif loss_type == "detach_loss":
@@ -494,12 +509,14 @@ class GPPolicy(nn.Module):
             q_loss = -q_value.mean() / q_value.abs().mean().detach()
             return eta * q_loss + model_loss
         elif loss_type == "double_minibatch_loss":
-            q1, q2 = self.critic.q.compute_double_q(new_action, state)
-            if np.random.uniform() > 0.5:
-                q_loss = -q1.mean() / q2.abs().mean().detach()
-            else:
-                q_loss = -q2.mean() / q1.abs().mean().detach()
+            q_loss = -q_value.mean() / q_value.abs().mean().detach()
             return eta * q_loss + model_loss
+            # q1, q2 = self.critic.q.compute_double_q(new_action, state)
+            # if np.random.uniform() > 0.5:
+            #     q_loss = -q1.mean() / q2.abs().mean().detach()
+            # else:
+            #     q_loss = -q2.mean() / q1.abs().mean().detach()
+            # return eta * q_loss + model_loss
         else:
             raise ValueError(("Unknown activation function {}".format(loss_type)))
 
@@ -637,7 +654,7 @@ class GPAlgorithm:
         self.config = config
         self.simulator = simulator
         self.dataset = dataset
-        self.seed_value = set_seed(284075985) # set_seed(seed_value=seed)
+        self.seed_value = set_seed(284075985)  # set_seed(seed_value=seed)
 
         # ---------------------------------------
         # Customized model initialization code ↓
@@ -1041,7 +1058,6 @@ class GPAlgorithm:
                 counter = 0
                 behaviour_policy_loss_sum = 0
                 for data in data_loader:
-                    
 
                     behaviour_policy_loss = self.model[
                         "GPPolicy"
@@ -1069,7 +1085,6 @@ class GPAlgorithm:
                     counter += 1
                     behaviour_policy_loss_sum += behaviour_policy_loss.item()
 
-
                     behaviour_policy_train_iter += 1
                     self.behaviour_policy_train_epoch = epoch
 
@@ -1088,7 +1103,6 @@ class GPAlgorithm:
                     ),
                     commit=True,
                 )
-
 
                 if (
                     hasattr(config.parameter.behaviour_policy, "lr_decy")
@@ -1198,14 +1212,14 @@ class GPAlgorithm:
                     drop_last=True,
                 )
 
-                counter=0
+                counter = 0
                 if self.iql:
-                    v_loss_sum=0.0
-                    v_sum=0.0
-                q_loss_sum=0.0
-                q_sum=0.0
-                q_target_sum=0.0
-                q_grad_norms_sum=0.0
+                    v_loss_sum = 0.0
+                    v_sum = 0.0
+                q_loss_sum = 0.0
+                q_sum = 0.0
+                q_target_sum = 0.0
+                q_grad_norms_sum = 0.0
                 for data in data_loader:
 
                     if self.iql:
@@ -1259,20 +1273,20 @@ class GPAlgorithm:
 
                     counter += 1
                     if self.iql:
-                        v_loss_sum+=v_loss.item()
-                        v_sum+=next_v.mean().item()
-                    q_loss_sum+=q_loss.item()
-                    q_sum+=q.mean().item()
-                    q_target_sum+=q_target.mean().item()
+                        v_loss_sum += v_loss.item()
+                        v_sum += next_v.mean().item()
+                    q_loss_sum += q_loss.item()
+                    q_sum += q.mean().item()
+                    q_target_sum += q_target.mean().item()
                     if hasattr(config.parameter.critic, "grad_norm_clip"):
-                        q_grad_norms_sum+=q_grad_norms.item()
+                        q_grad_norms_sum += q_grad_norms.item()
 
                     critic_train_iter += 1
                     self.critic_train_epoch = epoch
 
                 if self.iql:
                     wandb.log(
-                        data=dict(v_loss=v_loss_sum/counter, v=v_sum/counter),
+                        data=dict(v_loss=v_loss_sum / counter, v=v_sum / counter),
                         commit=False,
                     )
 
@@ -1280,19 +1294,17 @@ class GPAlgorithm:
                     data=dict(
                         critic_train_iter=critic_train_iter,
                         critic_train_epoch=epoch,
-                        q_loss=q_loss_sum/counter,
-                        q=q_sum/counter,
-                        q_target=q_target_sum/counter,
+                        q_loss=q_loss_sum / counter,
+                        q=q_sum / counter,
+                        q_target=q_target_sum / counter,
                         q_grad_norms=(
-                            q_grad_norms_sum/counter
+                            q_grad_norms_sum / counter
                             if hasattr(config.parameter.critic, "grad_norm_clip")
                             else 0.0
                         ),
                     ),
                     commit=True,
                 )
-
-                    
 
                 if (
                     hasattr(config.parameter.critic, "lr_decy")
@@ -1401,9 +1413,9 @@ class GPAlgorithm:
                         )
                         wandb.log(data=evaluation_results, commit=False)
 
-                counter=0
-                guided_policy_loss_sum=0.0
-                guided_model_grad_norms_sum=0.0
+                counter = 0
+                guided_policy_loss_sum = 0.0
+                guided_model_grad_norms_sum = 0.0
                 for data in data_loader:
                     if config.parameter.algorithm_type == "GPO":
                         guided_policy_loss, weight = self.model["GPPolicy"].policy_loss(
@@ -1443,6 +1455,11 @@ class GPAlgorithm:
                             loss_type=config.parameter.guided_policy.loss_type,
                             gradtime_step=config.parameter.guided_policy.gradtime_step,
                             eta=eta,
+                            repeats=(
+                                config.parameter.guided_policy.repeats
+                                if hasattr(config.parameter.guided_policy, "repeats")
+                                else 10
+                            ),
                         )
                     else:
                         raise NotImplementedError
@@ -1483,10 +1500,13 @@ class GPAlgorithm:
                             ),
                         )
                         wandb.log(data=evaluation_results, commit=False)
-                        wandb.log(data=dict(
-                            guided_policy_train_iter=guided_policy_train_iter,
-                            guided_policy_train_epoch=epoch,
-                        ), commit=True)
+                        wandb.log(
+                            data=dict(
+                                guided_policy_train_iter=guided_policy_train_iter,
+                                guided_policy_train_epoch=epoch,
+                            ),
+                            commit=True,
+                        )
                         save_checkpoint(self.model, iteration=guided_policy_train_iter)
 
                 wandb.log(
@@ -1496,23 +1516,18 @@ class GPAlgorithm:
                         guided_policy_loss=guided_policy_loss_sum / counter,
                         guided_model_grad_norms=(
                             guided_model_grad_norms_sum / counter
-                            if hasattr(
-                                config.parameter.guided_policy, "grad_norm_clip"
-                            )
+                            if hasattr(config.parameter.guided_policy, "grad_norm_clip")
                             else 0.0
                         ),
                     ),
                     commit=True,
                 )
 
-
                 if (
                     hasattr(config.parameter.guided_policy, "lr_decy")
                     and config.parameter.guided_policy.lr_decy is True
                 ):
                     guided_lr_scheduler.step()
-                
-
 
                 if (
                     hasattr(config.parameter, "checkpoint_guided_freq")
