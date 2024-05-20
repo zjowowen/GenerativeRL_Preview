@@ -58,10 +58,10 @@ def compute_likelihood(
         "IndependentConditionalFlowModel",
         "OptimalTransportConditionalFlowModel",
     ]:
-        model_drift = model.model
+        model_drift = lambda t, x: model.model(t, x, condition)
         model_params = find_parameters(model.model)
     elif model.get_type() == "FlowModel":
-        model_drift = model.model
+        model_drift = lambda t, x: model.model(t, x, condition)
         model_params = find_parameters(model.model)
     else:
         raise ValueError("Invalid model type: {}".format(model.get_type()))
