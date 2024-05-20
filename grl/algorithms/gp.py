@@ -44,6 +44,7 @@ from grl.utils import set_seed
 from grl.utils.statistics import sort_files_by_criteria
 from grl.generative_models.metric import compute_likelihood
 
+
 def asymmetric_l2_loss(u, tau):
     return torch.mean(torch.abs(tau - (u < 0).float()) * u**2)
 
@@ -523,9 +524,11 @@ class GPPolicy(nn.Module):
     def policy_loss_pure_grad(
         self,
         state: Union[torch.Tensor, TensorDict],
+        loss_type: str = "origin_loss",
         gradtime_step: int = 1000,
         eta: float = 1.0,
-        repeats: int = 10,
+        repeats: int = 1,
+        value_function: ValueFunction = None,
     ):
         t_span = torch.linspace(0.0, 1.0, gradtime_step).to(state.device)
 
@@ -535,13 +538,16 @@ class GPPolicy(nn.Module):
         )
         q_value_repeated = self.critic(action_repeated, state_repeated)
         log_p = compute_likelihood(
-                model=self.guided_model,
-                x=action_repeated,
-                condition=state_repeated,
-                t=t_span,
-                using_Hutchinson_trace_estimator=True,
-            )
-        log_p_mean = log_p.mean()
+            model=self.guided_model,
+            x=action_repeated,
+            condition=state_repeated,
+            t=t_span,
+            using_Hutchinson_trace_estimator=True,
+        )
+        bits_ratio = torch.prod(
+            torch.tensor(state_repeated.shape[1], device=state.device)
+        ) * torch.log(torch.tensor(2.0, device=state.device))
+        log_p_mean_per_dim = log_p.mean() / bits_ratio
         log_mu = compute_likelihood(
             model=self.base_model,
             x=action_repeated,
@@ -549,9 +555,20 @@ class GPPolicy(nn.Module):
             t=t_span,
             using_Hutchinson_trace_estimator=True,
         )
-        log_mu_mean = log_mu.mean()
-        loss = - q_value_repeated.mean() + (log_p_mean - log_mu_mean) / eta
-        return loss
+        log_mu_mean_per_dim = log_mu.mean() / bits_ratio
+        if loss_type == "origin_loss":
+            return -q_value_repeated.mean() + (log_p_mean_per_dim - log_mu_mean) / eta
+        elif loss_type == "detach_loss":
+            return (
+                -(q_value_repeated / q_value_repeated.abs().detach()).mean()
+                + (log_p_mean_per_dim - log_mu_mean_per_dim) / eta
+            )
+        elif loss_type == "vf_loss":
+            v_value = value_function(state_repeated).squeeze(dim=-1)
+            return (
+                -(q_value_repeated / v_value.abs().detach()).mean()
+                + (log_p_mean_per_dim - log_mu_mean_per_dim) / eta
+            )
 
     def policy_loss(
         self,
@@ -928,7 +945,7 @@ class GPAlgorithm:
                         ),
                         f=os.path.join(
                             config.parameter.checkpoint_path,
-                            f"valuefunction_{self.behaviour_policy_train_epoch}_{self.critic_train_epoch}_{self.guided_policy_train_epoch}_{iteration}.pt",
+                            f"valuefunction_{self.critic_train_epoch}.pt",
                         ),
                     )
 
@@ -1477,6 +1494,7 @@ class GPAlgorithm:
                             "GPPolicy"
                         ].policy_loss_pure_grad(
                             data["s"],
+                            loss_type=config.parameter.guided_policy.loss_type,
                             gradtime_step=config.parameter.guided_policy.gradtime_step,
                             eta=eta,
                             repeats=(
@@ -1484,6 +1502,7 @@ class GPAlgorithm:
                                 if hasattr(config.parameter.guided_policy, "repeats")
                                 else 1
                             ),
+                            value_function=self.vf if self.iql else None,
                         )
                     elif config.parameter.algorithm_type == "GPG_2":
                         guided_policy_loss = self.model[
