@@ -557,7 +557,7 @@ class GPPolicy(nn.Module):
         )
         log_mu_mean_per_dim = log_mu.mean() / bits_ratio
         if loss_type == "origin_loss":
-            return -q_value_repeated.mean() + (log_p_mean_per_dim - log_mu_mean) / eta
+            return -q_value_repeated.mean() + (log_p_mean_per_dim - log_mu_mean_per_dim) / eta
         elif loss_type == "detach_loss":
             return (
                 -(q_value_repeated / q_value_repeated.abs().detach()).mean()
