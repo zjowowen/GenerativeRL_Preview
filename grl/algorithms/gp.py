@@ -42,7 +42,7 @@ from grl.utils.config import merge_two_dicts_into_newone
 from grl.utils.log import log
 from grl.utils import set_seed
 from grl.utils.statistics import sort_files_by_criteria
-
+from grl.generative_models.metric import compute_likelihood
 
 def asymmetric_l2_loss(u, tau):
     return torch.mean(torch.abs(tau - (u < 0).float()) * u**2)
@@ -519,6 +519,39 @@ class GPPolicy(nn.Module):
             # return eta * q_loss + model_loss
         else:
             raise ValueError(("Unknown activation function {}".format(loss_type)))
+
+    def policy_loss_pure_grad(
+        self,
+        state: Union[torch.Tensor, TensorDict],
+        gradtime_step: int = 1000,
+        eta: float = 1.0,
+        repeats: int = 10,
+    ):
+        t_span = torch.linspace(0.0, 1.0, gradtime_step).to(state.device)
+
+        state_repeated = torch.repeat_interleave(state, repeats=repeats, dim=0)
+        action_repeated = self.guided_model.sample(
+            t_span=t_span, condition=state_repeated, with_grad=True
+        )
+        q_value_repeated = self.critic(action_repeated, state_repeated)
+        log_p = compute_likelihood(
+                model=self.guided_model,
+                x=action_repeated,
+                condition=state_repeated,
+                t=t_span,
+                using_Hutchinson_trace_estimator=True,
+            )
+        log_p_mean = log_p.mean()
+        log_mu = compute_likelihood(
+            model=self.base_model,
+            x=action_repeated,
+            condition=state_repeated,
+            t=t_span,
+            using_Hutchinson_trace_estimator=True,
+        )
+        log_mu_mean = log_mu.mean()
+        loss = - q_value_repeated.mean() + (log_p_mean - log_mu_mean) / eta
+        return loss
 
     def policy_loss(
         self,
@@ -1439,7 +1472,20 @@ class GPAlgorithm:
                             ),
                             value_function=self.vf if self.iql else None,
                         )
-                    elif config.parameter.algorithm_type == "GPG":
+                    elif config.parameter.algorithm_type == "GPG_Direct":
+                        guided_policy_loss = self.model[
+                            "GPPolicy"
+                        ].policy_loss_pure_grad(
+                            data["s"],
+                            gradtime_step=config.parameter.guided_policy.gradtime_step,
+                            eta=eta,
+                            repeats=(
+                                config.parameter.guided_policy.repeats
+                                if hasattr(config.parameter.guided_policy, "repeats")
+                                else 1
+                            ),
+                        )
+                    elif config.parameter.algorithm_type == "GPG_2":
                         guided_policy_loss = self.model[
                             "GPPolicy"
                         ].policy_loss_withgrade(
@@ -1458,7 +1504,7 @@ class GPAlgorithm:
                             repeats=(
                                 config.parameter.guided_policy.repeats
                                 if hasattr(config.parameter.guided_policy, "repeats")
-                                else 10
+                                else 1
                             ),
                         )
                     else:
