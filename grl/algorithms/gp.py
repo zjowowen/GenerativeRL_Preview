@@ -1537,7 +1537,15 @@ class GPAlgorithm:
                             norm_type=2,
                         )
                     guided_policy_optimizer.step()
-
+                    if config.parameter.algorithm_type == "GPG_Direct":
+                        wandb.log(
+                        data=dict(
+                            guided_policy_train_iter=guided_policy_train_iter,
+                            guided_policy_train_epoch=epoch,
+                            guided_policy_loss=guided_policy_loss.item(),
+                        ),
+                        commit=True,
+                    )
                     counter += 1
                     guided_policy_loss_sum += guided_policy_loss.item()
                     if hasattr(config.parameter.guided_policy, "grad_norm_clip"):
@@ -1573,20 +1581,20 @@ class GPAlgorithm:
                             commit=True,
                         )
                         save_checkpoint(self.model, iteration=guided_policy_train_iter)
-
-                wandb.log(
-                    data=dict(
-                        guided_policy_train_iter=guided_policy_train_iter,
-                        guided_policy_train_epoch=epoch,
-                        guided_policy_loss=guided_policy_loss_sum / counter,
-                        guided_model_grad_norms=(
-                            guided_model_grad_norms_sum / counter
-                            if hasattr(config.parameter.guided_policy, "grad_norm_clip")
-                            else 0.0
+                if config.parameter.algorithm_type == "GPO":
+                    wandb.log(
+                        data=dict(
+                            guided_policy_train_iter=guided_policy_train_iter,
+                            guided_policy_train_epoch=epoch,
+                            guided_policy_loss=guided_policy_loss_sum / counter,
+                            guided_model_grad_norms=(
+                                guided_model_grad_norms_sum / counter
+                                if hasattr(config.parameter.guided_policy, "grad_norm_clip")
+                                else 0.0
+                            ),
                         ),
-                    ),
-                    commit=True,
-                )
+                        commit=True,
+                    )
 
                 if (
                     hasattr(config.parameter.guided_policy, "lr_decy")
