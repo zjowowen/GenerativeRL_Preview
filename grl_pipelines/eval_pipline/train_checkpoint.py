@@ -62,9 +62,6 @@ def gp_pipeline(config):
     # ---------------------------------------
     # Customized train code ↑
     # ---------------------------------------
-    render = False
-    clip = False
-    batch_action = True
     # ---------------------------------------
     # Customized deploy code ↓
     # ---------------------------------------
