@@ -1489,6 +1489,38 @@ class GPAlgorithm:
                             ),
                             value_function=self.vf if self.iql else None,
                         )
+                    elif config.parameter.algorithm_type == "GPO_with_fake":
+                        fake_actions_ = self.model["GPPolicy"].behaviour_policy_sample(
+                                                state=data["s"],
+                                                t_span=(
+                                                    torch.linspace(
+                                                        0.0, 1.0, config.parameter.fake_data_t_span
+                                                    ).to(data["s"].device)
+                                                    if config.parameter.fake_data_t_span is not None
+                                                    else None
+                                                ),
+                                            )
+                        guided_policy_loss, weight = self.model["GPPolicy"].policy_loss(
+                            fake_actions_,
+                            data["s"],
+                            data["fake_a"],
+                            maximum_likelihood=(
+                                config.parameter.guided_policy.maximum_likelihood
+                                if hasattr(
+                                    config.parameter.guided_policy, "maximum_likelihood"
+                                )
+                                else False
+                            ),
+                            eta=eta,
+                            regularize_method=(
+                                config.parameter.guided_policy.regularize_method
+                                if hasattr(
+                                    config.parameter.guided_policy, "regularize_method"
+                                )
+                                else "minus_value"
+                            ),
+                            value_function=self.vf if self.iql else None,
+                        )
                     elif config.parameter.algorithm_type == "GPG_Direct":
                         guided_policy_loss = self.model[
                             "GPPolicy"
