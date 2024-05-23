@@ -573,6 +573,50 @@ class GPPolicy(nn.Module):
                 + (log_p_mean_per_dim - log_mu_mean_per_dim) / eta
             )
 
+    def policy_loss_pure_grad_polish(
+        self,
+        state: Union[torch.Tensor, TensorDict],
+        loss_type: str = "origin_loss",
+        gradtime_step: int = 1000,
+        eta: float = 1.0,
+        repeats: int = 1,
+        value_function: ValueFunction = None,
+    ):
+        t_span = torch.linspace(0.0, 1.0, gradtime_step).to(state.device)
+
+        state_repeated = torch.repeat_interleave(state, repeats=repeats, dim=0)
+        action_repeated = self.base_model.sample(
+            t_span=t_span, condition=state_repeated, with_grad=False
+        )
+        q_value_repeated = self.critic(action_repeated, state_repeated).squeeze(dim=-1)
+        v_value_repeated = value_function(state_repeated).squeeze(dim=-1)
+
+        weight = torch.exp(eta * (q_value_repeated - v_value_repeated)).clamp(max=100.0)
+
+        log_p = compute_likelihood(
+            model=self.guided_model,
+            x=action_repeated,
+            condition=state_repeated,
+            t=t_span,
+            using_Hutchinson_trace_estimator=True,
+        )
+        bits_ratio = torch.prod(
+            torch.tensor(state_repeated.shape[1], device=state.device)
+        ) * torch.log(torch.tensor(2.0, device=state.device))
+        log_p_mean_per_dim = log_p.mean() / bits_ratio
+        log_mu = compute_likelihood(
+            model=self.base_model,
+            x=action_repeated,
+            condition=state_repeated,
+            t=t_span,
+            using_Hutchinson_trace_estimator=True,
+        )
+        log_mu_mean_per_dim = log_mu.mean() / bits_ratio
+
+        loss = (- eta * q_value_repeated.detach() + log_p_mean_per_dim.detach() - log_mu_mean_per_dim.detach()) * log_p_mean_per_dim * weight
+
+        return loss.mean()
+
     def policy_loss(
         self,
         action: Union[torch.Tensor, TensorDict],
@@ -1703,6 +1747,21 @@ class GPAlgorithm:
                                 else 1
                             ),
                             value_function=self.vf if config.parameter.critic.method=="iql" else None,
+                        )
+                    elif config.parameter.algorithm_type == "GPG_Polish":
+                        guided_policy_loss = self.model[
+                            "GPPolicy"
+                        ].policy_loss_pure_grad_polish(
+                            data["s"],
+                            loss_type=config.parameter.guided_policy.loss_type,
+                            gradtime_step=config.parameter.guided_policy.gradtime_step,
+                            eta=eta,
+                            repeats=(
+                                config.parameter.guided_policy.repeats
+                                if hasattr(config.parameter.guided_policy, "repeats")
+                                else 1
+                            ),
+                            value_function=self.vf if self.iql else None,
                         )
                     elif config.parameter.algorithm_type == "GPG_2":
                         guided_policy_loss = self.model[
