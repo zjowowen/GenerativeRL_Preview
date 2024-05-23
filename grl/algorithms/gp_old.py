@@ -591,7 +591,7 @@ class GPPolicy(nn.Module):
         q_value_repeated = self.critic(action_repeated, state_repeated).squeeze(dim=-1)
         v_value_repeated = value_function(state_repeated).squeeze(dim=-1)
 
-        weight = torch.exp(eta * (q_value_repeated - v_value_repeated)).clamp(max=100.0)
+        weight = torch.exp(eta * (q_value_repeated - v_value_repeated)).clamp(max=100.0) / 100.0
 
         log_p = compute_likelihood(
             model=self.guided_model,
@@ -603,7 +603,7 @@ class GPPolicy(nn.Module):
         bits_ratio = torch.prod(
             torch.tensor(state_repeated.shape[1], device=state.device)
         ) * torch.log(torch.tensor(2.0, device=state.device))
-        log_p_mean_per_dim = log_p.mean() / bits_ratio
+        log_p_per_dim = log_p / bits_ratio
         log_mu = compute_likelihood(
             model=self.base_model,
             x=action_repeated,
@@ -611,9 +611,9 @@ class GPPolicy(nn.Module):
             t=t_span,
             using_Hutchinson_trace_estimator=True,
         )
-        log_mu_mean_per_dim = log_mu.mean() / bits_ratio
+        log_mu_per_dim = log_mu / bits_ratio
 
-        loss = (- eta * q_value_repeated.detach() + log_p_mean_per_dim.detach() - log_mu_mean_per_dim.detach()) * log_p_mean_per_dim * weight
+        loss = (- eta * q_value_repeated.detach() + log_p_per_dim.detach() - log_mu_per_dim.detach()) * log_p_per_dim * weight
 
         return loss.mean()
 
@@ -1632,7 +1632,7 @@ class GPAlgorithm:
                             norm_type=2,
                         )
                     guided_policy_optimizer.step()
-                    if config.parameter.algorithm_type == "GPG_Direct":
+                    if config.parameter.algorithm_type in ["GPG_Direct","GPG_Polish"]:
                         wandb.log(
                             data=dict(
                                 guided_policy_train_iter=guided_policy_train_iter,
