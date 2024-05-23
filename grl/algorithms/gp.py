@@ -1746,6 +1746,11 @@ class GPAlgorithm:
                             ),
                             commit=True,
                         )
+                        save_checkpoint(
+                            self.model,
+                            iteration=guided_policy_train_iter,
+                            model_type="guided_model",
+                        )
                     counter += 1
                     guided_policy_loss_sum += guided_policy_loss.item()
                     if hasattr(config.parameter.guided_policy, "grad_norm_clip"):
@@ -1779,11 +1784,6 @@ class GPAlgorithm:
                                 guided_policy_train_epoch=epoch,
                             ),
                             commit=True,
-                        )
-                        save_checkpoint(
-                            self.model,
-                            iteration=guided_policy_train_iter,
-                            model_type="guided_model",
                         )
                 if config.parameter.algorithm_type == "GPO":
                     wandb.log(
