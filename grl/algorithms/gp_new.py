@@ -934,7 +934,9 @@ class GPAlgorithm:
                         )
                         self.model["GPPolicy"].critic.load_state_dict(checkpoint["critic_model"])
                         self.critic_train_epoch=checkpoint.get("critic_train_epoch",0)
-                        self.vf.load_state_dict(checkpoint["value_function"])
+                        if hasattr(self, "vf"):
+                            self.vf.load_state_dict(checkpoint["value_function"])
+
         # ---------------------------------------
         # Customized model initialization code ↑
         # ---------------------------------------
