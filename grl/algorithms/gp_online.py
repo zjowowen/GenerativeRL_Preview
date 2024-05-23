@@ -1108,10 +1108,7 @@ class GPOnlineAlgorithm:
             def generate_fake_action(model, states, sample_per_state):
 
                 fake_actions_sampled = []
-                for states in track(
-                    np.array_split(states, states.shape[0] // 4096 + 1),
-                    description="Generate fake actions",
-                ):
+                for states in np.array_split(states, states.shape[0] // 4096 + 1):
 
                     fake_actions_ = model.behaviour_policy_sample(
                         state=states,
@@ -1343,10 +1340,7 @@ class GPOnlineAlgorithm:
 
 
 
-                for epoch in track(
-                    range(config.parameter.behaviour_policy.epochs if online_rl_iteration==0 else config.parameter.behaviour_policy.epochs_online_rl),
-                    description="Behaviour policy training",
-                ):
+                for epoch in range(config.parameter.behaviour_policy.epochs if online_rl_iteration==0 else config.parameter.behaviour_policy.epochs_online_rl):
                     behaviour_policy_train_epoch += 1
                     if self.behaviour_policy_train_epoch >= behaviour_policy_train_epoch:
                         if (
@@ -1513,10 +1507,7 @@ class GPOnlineAlgorithm:
                     )
 
 
-                for epoch in track(
-                    range(config.parameter.critic.epochs if online_rl_iteration==0 else config.parameter.critic.epochs_online_rl),
-                    description="Critic training"
-                ):
+                for epoch in range(config.parameter.critic.epochs if online_rl_iteration==0 else config.parameter.critic.epochs_online_rl):
                     critic_train_epoch += 1
                     if self.critic_train_epoch >= critic_train_epoch:
                         if (
@@ -1677,10 +1668,7 @@ class GPOnlineAlgorithm:
                 else:
                     eta = 1.0
 
-                for epoch in track(
-                    range(config.parameter.guided_policy.epochs if online_rl_iteration==0 else config.parameter.guided_policy.epochs_online_rl),
-                    description="Guided policy training",
-                ):
+                for epoch in range(config.parameter.guided_policy.epochs if online_rl_iteration==0 else config.parameter.guided_policy.epochs_online_rl):
                     guided_policy_train_epoch += 1
                     if self.guided_policy_train_epoch >= guided_policy_train_epoch:
                         if (
