@@ -733,22 +733,135 @@ class GPAlgorithm:
                 )
             self.model["GuidedPolicy"] = GuidedPolicy(config=config.model.GuidedPolicy)
 
-            if (
-                hasattr(config.parameter.critic, "tau")
-                and config.parameter.critic.tau > 0
-            ):
-                self.iql = True
+            if config.parameter.critic.method=="iql":
                 self.vf = ValueFunction(
                     config.model.GPPolicy.model.model.args.backbone.args.condition_dim
                 ).to(config.model.GPPolicy.device)
-            else:
-                self.iql = False
 
+            if (
+                hasattr(config.parameter, "checkpoint_transform")
+                and config.parameter.checkpoint_transform == True
+            ):
+                if (
+                    hasattr(config.parameter, "checkpoint_path")
+                    and config.parameter.checkpoint_path is not None
+                ):
+
+                    if not os.path.exists(config.parameter.checkpoint_path):
+                        log.warning(
+                            f"Checkpoint path {config.parameter.checkpoint_path} does not exist"
+                        )
+                        self.behaviour_policy_train_epoch = 0
+                        self.critic_train_epoch = 0
+                        self.guided_policy_train_epoch = 0
+                    else:
+                        checkpoint_files = sort_files_by_criteria(
+                            folder_path=config.parameter.checkpoint_path,
+                            start_string="checkpoint_",
+                            end_string=".pt",
+                        )
+                        value_function_files = sort_files_by_criteria(
+                            folder_path=config.parameter.checkpoint_path,
+                            start_string="valuefunction_",
+                            end_string=".pt",
+                        )
+                        if not config.parameter.critic.method=="iql":
+                            log.info("we don't use iql for critic training")
+                            critic_train_epoch_1 = 0
+                        elif len(value_function_files) == 0:
+                            critic_train_epoch_1 = 0
+                        else:
+                            checkpoint = torch.load(
+                                os.path.join(
+                                    config.parameter.checkpoint_path,
+                                    value_function_files[0],
+                                ),
+                                map_location="cpu",
+                            )
+                            self.vf.load_state_dict(checkpoint["model"])
+                            critic_train_epoch_1 = checkpoint.get(
+                                "critic_train_epoch", 0
+                            )
+
+                        if len(checkpoint_files) == 0:
+                            self.behaviour_policy_train_epoch = 0
+                            self.critic_train_epoch = 0
+                            self.guided_policy_train_epoch = 0
+                            log.warning(
+                                f"No checkpoint file found in {config.parameter.checkpoint_path}"
+                            )
+                        else:
+                            checkpoint = torch.load(
+                                os.path.join(
+                                    config.parameter.checkpoint_path,
+                                    checkpoint_files[0],
+                                ),
+                                map_location="cpu",
+                            )
+
+                            from collections import OrderedDict
+
+                            checkpoint_sorted = OrderedDict()
+                            checkpoint_sorted_2 = OrderedDict()
+                            for key, value in checkpoint["model"].items():
+                                name = key.replace("module.", "")
+                                checkpoint_sorted_2[name] = value
+                            for key, value in checkpoint_sorted_2.items():
+                                name = key.replace("GPOPolicy.", "GPPolicy.")
+                                checkpoint_sorted[name] = value
+                            self.model.load_state_dict(checkpoint_sorted)
+                            self.behaviour_policy_train_epoch = checkpoint.get(
+                                "behaviour_policy_train_epoch", 0
+                            )
+                            self.critic_train_epoch = checkpoint.get(
+                                "critic_train_epoch", 0
+                            )
+                            self.guided_policy_train_epoch = checkpoint.get(
+                                "guided_policy_train_epoch", 0
+                            )
+                            assert critic_train_epoch_1 == self.critic_train_epoch
+                            log.info(
+                                f"Load checkpoint: behaviour_policy_train_epoch: {self.behaviour_policy_train_epoch}, critic_train_epoch: {self.critic_train_epoch}, guided_policy_train_epoch: {self.guided_policy_train_epoch}"
+                            )
+                else:
+                    self.behaviour_policy_train_epoch = 0
+                    self.critic_train_epoch = 0
+                    self.guided_policy_train_epoch = 0
+                torch.save(
+                    dict(
+                        base_model=self.model["GPPolicy"].base_model.state_dict(),
+                        behaviour_policy_train_epoch=self.behaviour_policy_train_epoch,
+                    ),
+                    f=os.path.join(
+                        config.parameter.checkpoint_path,
+                        f"basemodel_{self.behaviour_policy_train_epoch}.pt",
+                    ),
+                )
+                torch.save(
+                    dict(
+                        guided_model=self.model["GPPolicy"].guided_model.state_dict(),
+                        guided_policy_train_epoch=self.guided_policy_train_epoch,
+                    ),
+                    f=os.path.join(
+                        config.parameter.checkpoint_path,
+                        f"guidedmodel_{self.guided_policy_train_epoch}_{0}.pt",
+                    ),
+                )
+                torch.save(
+                    dict(
+                        critic_model=self.model["GPPolicy"].critic.state_dict(),
+                        critic_train_epoch=self.critic_train_epoch,
+                        value_function=self.vf.state_dict(),
+                    ),
+                    f=os.path.join(
+                        config.parameter.checkpoint_path,
+                        f"critic_{self.critic_train_epoch}.pt",
+                    ),
+                )
             if (
                 hasattr(config.parameter, "checkpoint_path")
                 and config.parameter.checkpoint_path is not None
             ):
-
                 if not os.path.exists(config.parameter.checkpoint_path):
                     log.warning(
                         f"Checkpoint path {config.parameter.checkpoint_path} does not exist"
@@ -757,75 +870,82 @@ class GPAlgorithm:
                     self.critic_train_epoch = 0
                     self.guided_policy_train_epoch = 0
                 else:
-                    checkpoint_files = sort_files_by_criteria(
+                    base_model_files = sort_files_by_criteria(
                         folder_path=config.parameter.checkpoint_path,
-                        start_string="checkpoint_",
+                        start_string="basemodel_",
                         end_string=".pt",
                     )
-                    value_function_files = sort_files_by_criteria(
-                        folder_path=config.parameter.checkpoint_path,
-                        start_string="valuefunction_",
-                        end_string=".pt",
-                    )
-                    if not self.iql:
-                        log.info("we don't use iql for critic training")
-                        critic_train_epoch_1 = 0
-                    elif len(value_function_files) == 0:
-                        critic_train_epoch_1 = 0
+                    if len(base_model_files) == 0:
+                        self.behaviour_policy_train_epoch = 0
+                        log.warning(
+                            f"No basemodel file found in {config.parameter.checkpoint_path}"
+                        )
                     else:
                         checkpoint = torch.load(
                             os.path.join(
                                 config.parameter.checkpoint_path,
-                                value_function_files[0],
+                                base_model_files[0],
                             ),
                             map_location="cpu",
                         )
-                        self.vf.load_state_dict(checkpoint["model"])
-                        critic_train_epoch_1 = checkpoint.get("critic_train_epoch", 0)
+                        self.model["GPPolicy"].base_model.load_state_dict(
+                            checkpoint["base_model"]
+                        )
+                        self.behaviour_policy_train_epoch = checkpoint.get(
+                            "behaviour_policy_train_epoch", 0
+                        )
 
-                    if len(checkpoint_files) == 0:
-                        self.behaviour_policy_train_epoch = 0
-                        self.critic_train_epoch = 0
+                    guided_model_files = sort_files_by_criteria(
+                        folder_path=config.parameter.checkpoint_path,
+                        start_string="guidedmodel_",
+                        end_string=".pt",
+                    )
+                    if len(guided_model_files) == 0:
                         self.guided_policy_train_epoch = 0
                         log.warning(
-                            f"No checkpoint file found in {config.parameter.checkpoint_path}"
+                            f"No guidedmodel file found in {config.parameter.checkpoint_path}"
                         )
                     else:
                         checkpoint = torch.load(
                             os.path.join(
-                                config.parameter.checkpoint_path, checkpoint_files[0]
+                                config.parameter.checkpoint_path,
+                                guided_model_files[0],
                             ),
                             map_location="cpu",
                         )
-
-                        from collections import OrderedDict
-
-                        checkpoint_sorted = OrderedDict()
-                        checkpoint_sorted_2 = OrderedDict()
-                        for key, value in checkpoint["model"].items():
-                            name = key.replace("module.", "")
-                            checkpoint_sorted_2[name] = value
-                        for key, value in checkpoint_sorted_2.items():
-                            name = key.replace("GPOPolicy.", "GPPolicy.")
-                            checkpoint_sorted[name] = value
-                        self.model.load_state_dict(checkpoint_sorted)
-                        self.behaviour_policy_train_epoch = checkpoint.get(
-                            "behaviour_policy_train_epoch", 0
-                        )
-                        self.critic_train_epoch = checkpoint.get(
-                            "critic_train_epoch", 0
+                        self.model["GPPolicy"].guided_model.load_state_dict(
+                            checkpoint["guided_model"]
                         )
                         self.guided_policy_train_epoch = checkpoint.get(
                             "guided_policy_train_epoch", 0
                         )
-                        assert critic_train_epoch_1 == self.critic_train_epoch
-                        log.info(
-                            f"Load checkpoint: behaviour_policy_train_epoch: {self.behaviour_policy_train_epoch}, critic_train_epoch: {self.critic_train_epoch}, guided_policy_train_epoch: {self.guided_policy_train_epoch}"
+
+                    critic_model_files = sort_files_by_criteria(
+                        folder_path=config.parameter.checkpoint_path,
+                        start_string="critic_",
+                        end_string=".pt",
+                    )
+                    if len(critic_model_files) == 0:
+                        self.critic_train_epoch = 0
+                        log.warning(
+                            f"No guidedmodel file found in {config.parameter.checkpoint_path}"
                         )
-            else:
-                self.behaviour_policy_train_epoch = 0
-                self.critic_train_epoch = 0
-                self.guided_policy_train_epoch = 0
+                    else:
+                        checkpoint = torch.load(
+                            os.path.join(
+                                config.parameter.checkpoint_path,
+                                critic_model_files[0],
+                            ),
+                            map_location="cpu",
+                        )
+                        self.model["GPPolicy"].critic.load_state_dict(
+                            checkpoint["critic_model"]
+                        )
+                        self.critic_train_epoch = checkpoint.get(
+                            "critic_train_epoch", 0
+                        )
+                        if hasattr(self, "vf"):
+                            self.vf.load_state_dict(checkpoint["value_function"])
 
         # ---------------------------------------
         # Customized model initialization code ↑
@@ -918,10 +1038,10 @@ class GPAlgorithm:
             # Customized training code ↓
             # ---------------------------------------
 
-            def save_checkpoint(model, iteration=None, value_function=False):
+            def save_checkpoint(model, iteration=None, model_type=False):
                 if iteration == None:
                     iteration = 0
-                if not value_function:
+                if model_type == "base_model":
                     if (
                         hasattr(config.parameter, "checkpoint_path")
                         and config.parameter.checkpoint_path is not None
@@ -930,27 +1050,65 @@ class GPAlgorithm:
                             os.makedirs(config.parameter.checkpoint_path)
                         torch.save(
                             dict(
-                                model=model.state_dict(),
+                                base_model=model["GPPolicy"].base_model.state_dict(),
                                 behaviour_policy_train_epoch=self.behaviour_policy_train_epoch,
-                                critic_train_epoch=self.critic_train_epoch,
-                                guided_policy_train_epoch=self.guided_policy_train_epoch,
+                                behaviour_policy_train_iter=iteration,
                             ),
                             f=os.path.join(
                                 config.parameter.checkpoint_path,
-                                f"checkpoint_{self.behaviour_policy_train_epoch}_{self.critic_train_epoch}_{self.guided_policy_train_epoch}_{iteration}.pt",
+                                f"basemodel_{self.behaviour_policy_train_epoch}__{iteration}.pt",
                             ),
                         )
-                else:
-                    torch.save(
-                        dict(
-                            model=model.state_dict(),
-                            critic_train_epoch=self.critic_train_epoch,
-                        ),
-                        f=os.path.join(
-                            config.parameter.checkpoint_path,
-                            f"valuefunction_{self.critic_train_epoch}.pt",
-                        ),
-                    )
+                elif model_type == "guided_model":
+                    if (
+                        hasattr(config.parameter, "checkpoint_path")
+                        and config.parameter.checkpoint_path is not None
+                    ):
+                        if not os.path.exists(config.parameter.checkpoint_path):
+                            os.makedirs(config.parameter.checkpoint_path)
+                        torch.save(
+                            dict(
+                                guided_model=model[
+                                    "GPPolicy"
+                                ].guided_model.state_dict(),
+                                guided_policy_train_epoch=self.guided_policy_train_epoch,
+                                guided_policy_train_iteration=iteration,
+                            ),
+                            f=os.path.join(
+                                config.parameter.checkpoint_path,
+                                f"guidedmodel_{self.guided_policy_train_epoch}_{iteration}.pt",
+                            ),
+                        )
+                elif model_type == "critic_model":
+                    if (
+                        hasattr(config.parameter, "checkpoint_path")
+                        and config.parameter.checkpoint_path is not None
+                    ):
+                        if not os.path.exists(config.parameter.checkpoint_path):
+                            os.makedirs(config.parameter.checkpoint_path)
+                        if config.parameter.critic.method=="iql":
+                            torch.save(
+                                dict(
+                                    critic_model=model["GPPolicy"].critic.state_dict(),
+                                    critic_train_epoch=self.critic_train_epoch,
+                                    critic_train_iter=iteration,
+                                    value_function=self.vf.state_dict(),
+                                ),
+                                f=os.path.join(
+                                    config.parameter.checkpoint_path,
+                                    f"critic_{self.critic_train_epoch}_{iteration}.pt",
+                                ))
+                        elif config.parameter.critic.method=="important_sampling_q":
+                            torch.save(
+                                dict(
+                                    critic_model=model["GPPolicy"].critic.state_dict(),
+                                    critic_train_epoch=self.critic_train_epoch,
+                                    critic_train_iter=iteration,
+                                ),
+                                f=os.path.join(
+                                    config.parameter.checkpoint_path,
+                                    f"critic_{self.critic_train_epoch}_{iteration}.pt",
+                                ),)
 
             def generate_fake_action(model, states, sample_per_state):
 
@@ -1166,12 +1324,16 @@ class GPAlgorithm:
                     hasattr(config.parameter, "checkpoint_freq")
                     and (epoch + 1) % config.parameter.checkpoint_freq == 0
                 ):
-                    save_checkpoint(self.model)
+                    save_checkpoint(
+                        self.model,
+                        iteration=behaviour_policy_train_iter,
+                        model_type="base_model",
+                    )
 
             # ---------------------------------------
             # behavior training code ↑
             # ---------------------------------------
-            if self.iql:
+            if config.parameter.critic.method=="iql":
                 self.need_fake_action = False
             # ---------------------------------------
             # make fake action ↓
@@ -1179,7 +1341,7 @@ class GPAlgorithm:
 
             self.model["GPPolicy"].base_model.eval()
             if self.need_fake_action:
-
+                
                 fake_actions = generate_fake_action(
                     self.model["GPPolicy"],
                     self.dataset.states[:],
@@ -1220,7 +1382,7 @@ class GPAlgorithm:
             # critic training code ↓
             # ---------------------------------------
 
-            if self.iql:
+            if config.parameter.critic.method=="iql":
                 v_optimizer = torch.optim.Adam(
                     self.vf.parameters(),
                     lr=config.parameter.critic.learning_rate,
@@ -1266,7 +1428,7 @@ class GPAlgorithm:
                 )
 
                 counter = 0
-                if self.iql:
+                if config.parameter.critic.method=="iql":
                     v_loss_sum = 0.0
                     v_sum = 0.0
                 q_loss_sum = 0.0
@@ -1275,7 +1437,7 @@ class GPAlgorithm:
                 q_grad_norms_sum = 0.0
                 for data in data_loader:
 
-                    if self.iql:
+                    if config.parameter.critic.method=="iql":
                         v_loss, next_v = self.model["GPPolicy"].critic.v_loss(
                             self.vf,
                             data,
@@ -1325,7 +1487,7 @@ class GPAlgorithm:
                         )
 
                     counter += 1
-                    if self.iql:
+                    if config.parameter.critic.method=="iql":
                         v_loss_sum += v_loss.item()
                         v_sum += next_v.mean().item()
                     q_loss_sum += q_loss.item()
@@ -1337,7 +1499,7 @@ class GPAlgorithm:
                     critic_train_iter += 1
                     self.critic_train_epoch = epoch
 
-                if self.iql:
+                if config.parameter.critic.method=="iql":
                     wandb.log(
                         data=dict(v_loss=v_loss_sum / counter, v=v_sum / counter),
                         commit=False,
@@ -1369,9 +1531,12 @@ class GPAlgorithm:
                     hasattr(config.parameter, "checkpoint_freq")
                     and (epoch + 1) % config.parameter.checkpoint_freq == 0
                 ):
-                    save_checkpoint(self.model)
-                    if self.iql:
-                        save_checkpoint(self.vf, iteration=None, value_function=True)
+                    if config.parameter.critic.method=="iql":
+                        save_checkpoint(
+                            self.model,
+                            iteration=critic_train_iter,
+                            model_type="critic_model",
+                        )
             # ---------------------------------------
             # critic training code ↑
             # ---------------------------------------
@@ -1490,7 +1655,7 @@ class GPAlgorithm:
                                 )
                                 else "minus_value"
                             ),
-                            value_function=self.vf if self.iql else None,
+                            value_function=self.vf if config.parameter.critic.method=="iql" else None,
                         )
                     elif config.parameter.algorithm_type == "GPO_with_fake":
                         fake_actions_ = self.model["GPPolicy"].behaviour_policy_sample(
@@ -1522,7 +1687,7 @@ class GPAlgorithm:
                                 )
                                 else "minus_value"
                             ),
-                            value_function=self.vf if self.iql else None,
+                            value_function=self.vf if config.parameter.critic.method=="iql" else None,
                         )
                     elif config.parameter.algorithm_type == "GPG_Direct":
                         guided_policy_loss = self.model[
@@ -1537,7 +1702,7 @@ class GPAlgorithm:
                                 if hasattr(config.parameter.guided_policy, "repeats")
                                 else 1
                             ),
-                            value_function=self.vf if self.iql else None,
+                            value_function=self.vf if config.parameter.critic.method=="iql" else None,
                         )
                     elif config.parameter.algorithm_type == "GPG_2":
                         guided_policy_loss = self.model[
@@ -1581,6 +1746,11 @@ class GPAlgorithm:
                             ),
                             commit=True,
                         )
+                        save_checkpoint(
+                            self.model,
+                            iteration=guided_policy_train_iter,
+                            model_type="guided_model",
+                        )
                     counter += 1
                     guided_policy_loss_sum += guided_policy_loss.item()
                     if hasattr(config.parameter.guided_policy, "grad_norm_clip"):
@@ -1615,7 +1785,6 @@ class GPAlgorithm:
                             ),
                             commit=True,
                         )
-                        save_checkpoint(self.model, iteration=guided_policy_train_iter)
                 if config.parameter.algorithm_type == "GPO":
                     wandb.log(
                         data=dict(
@@ -1643,12 +1812,20 @@ class GPAlgorithm:
                     hasattr(config.parameter, "checkpoint_guided_freq")
                     and (epoch + 1) % config.parameter.checkpoint_guided_freq == 0
                 ):
-                    save_checkpoint(self.model)
+                    save_checkpoint(
+                        self.model,
+                        iteration=guided_policy_train_iter,
+                        model_type="guided_model",
+                    )
                 elif (
                     hasattr(config.parameter, "checkpoint_freq")
                     and (epoch + 1) % config.parameter.checkpoint_freq == 0
                 ):
-                    save_checkpoint(self.model)
+                    save_checkpoint(
+                        self.model,
+                        iteration=guided_policy_train_iter,
+                        model_type="guided_model",
+                    )
 
             # ---------------------------------------
             # guided policy training code ↑
