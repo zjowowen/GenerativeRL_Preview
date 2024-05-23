@@ -1,7 +1,7 @@
 from .d4rl import D4RLDataset
 from .minecraft import MineRLImageDataset, MineRLVideoDataset
 from .qgpo import QGPOCustomizedDataset, QGPOD4RLDataset, QGPODataset, QGPOOnlineDataset
-from .gpo import GPOCustomizedDataset, GPOD4RLDataset, GPODataset, GPOOnlineDataset
+from .gpo import GPOCustomizedDataset, GPOD4RLDataset, GPODataset, GPOOnlineDataset, GPOD4RLOnlineDataset
 from .minari_dataset import MinariDataset
 
 DATASETS = {
@@ -17,6 +17,7 @@ DATASETS = {
     "GPOOnlineDataset".lower(): GPOOnlineDataset,
     "GPOD4RLDataset".lower(): GPOD4RLDataset,
     "GPOCustomizedDataset".lower(): GPOCustomizedDataset,
+    "GPOD4RLOnlineDataset".lower(): GPOD4RLOnlineDataset,
 }
 
 
