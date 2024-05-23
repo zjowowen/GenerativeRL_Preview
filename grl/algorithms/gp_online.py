@@ -1341,14 +1341,16 @@ class GPOnlineAlgorithm:
 
 
                 for epoch in range(config.parameter.behaviour_policy.epochs if online_rl_iteration==0 else config.parameter.behaviour_policy.epochs_online_rl):
-                    behaviour_policy_train_epoch += 1
+                    
                     if self.behaviour_policy_train_epoch >= behaviour_policy_train_epoch:
                         if (
                             hasattr(config.parameter.behaviour_policy, "lr_decy")
                             and config.parameter.behaviour_policy.lr_decy is True
                         ):
                             behaviour_lr_scheduler.step()
+                        behaviour_policy_train_epoch += 1
                         continue
+                    behaviour_policy_train_epoch += 1
 
                     sampler = torch.utils.data.RandomSampler(
                         self.dataset, replacement=False
@@ -1508,14 +1510,16 @@ class GPOnlineAlgorithm:
 
 
                 for epoch in range(config.parameter.critic.epochs if online_rl_iteration==0 else config.parameter.critic.epochs_online_rl):
-                    critic_train_epoch += 1
+                    
                     if self.critic_train_epoch >= critic_train_epoch:
                         if (
                             hasattr(config.parameter.critic, "lr_decy")
                             and config.parameter.critic.lr_decy is True
                         ):
                             critic_lr_scheduler.step()
+                        critic_train_epoch += 1
                         continue
+                    critic_train_epoch += 1
 
                     sampler = torch.utils.data.RandomSampler(
                         self.dataset, replacement=False
@@ -1669,14 +1673,16 @@ class GPOnlineAlgorithm:
                     eta = 1.0
 
                 for epoch in range(config.parameter.guided_policy.epochs if online_rl_iteration==0 else config.parameter.guided_policy.epochs_online_rl):
-                    guided_policy_train_epoch += 1
+                    
                     if self.guided_policy_train_epoch >= guided_policy_train_epoch:
                         if (
                             hasattr(config.parameter.guided_policy, "lr_decy")
                             and config.parameter.guided_policy.lr_decy is True
                         ):
                             guided_lr_scheduler.step()
+                        guided_policy_train_epoch += 1
                         continue
+                    guided_policy_train_epoch += 1
 
                     sampler = torch.utils.data.RandomSampler(
                         self.dataset, replacement=False
