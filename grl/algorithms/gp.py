@@ -557,7 +557,10 @@ class GPPolicy(nn.Module):
         )
         log_mu_mean_per_dim = log_mu.mean() / bits_ratio
         if loss_type == "origin_loss":
-            return -q_value_repeated.mean() + (log_p_mean_per_dim - log_mu_mean_per_dim) / eta
+            return (
+                -q_value_repeated.mean()
+                + (log_p_mean_per_dim - log_mu_mean_per_dim) / eta
+            )
         elif loss_type == "detach_loss":
             return (
                 -(q_value_repeated / q_value_repeated.abs().detach()).mean()
@@ -1491,15 +1494,15 @@ class GPAlgorithm:
                         )
                     elif config.parameter.algorithm_type == "GPO_with_fake":
                         fake_actions_ = self.model["GPPolicy"].behaviour_policy_sample(
-                                                state=data["s"],
-                                                t_span=(
-                                                    torch.linspace(
-                                                        0.0, 1.0, config.parameter.fake_data_t_span
-                                                    ).to(data["s"].device)
-                                                    if config.parameter.fake_data_t_span is not None
-                                                    else None
-                                                ),
-                                            )
+                            state=data["s"],
+                            t_span=(
+                                torch.linspace(
+                                    0.0, 1.0, config.parameter.fake_data_t_span
+                                ).to(data["s"].device)
+                                if config.parameter.fake_data_t_span is not None
+                                else None
+                            ),
+                        )
                         guided_policy_loss, weight = self.model["GPPolicy"].policy_loss(
                             fake_actions_,
                             data["s"],
@@ -1571,13 +1574,13 @@ class GPAlgorithm:
                     guided_policy_optimizer.step()
                     if config.parameter.algorithm_type == "GPG_Direct":
                         wandb.log(
-                        data=dict(
-                            guided_policy_train_iter=guided_policy_train_iter,
-                            guided_policy_train_epoch=epoch,
-                            guided_policy_loss=guided_policy_loss.item(),
-                        ),
-                        commit=True,
-                    )
+                            data=dict(
+                                guided_policy_train_iter=guided_policy_train_iter,
+                                guided_policy_train_epoch=epoch,
+                                guided_policy_loss=guided_policy_loss.item(),
+                            ),
+                            commit=True,
+                        )
                     counter += 1
                     guided_policy_loss_sum += guided_policy_loss.item()
                     if hasattr(config.parameter.guided_policy, "grad_norm_clip"):
@@ -1621,7 +1624,9 @@ class GPAlgorithm:
                             guided_policy_loss=guided_policy_loss_sum / counter,
                             guided_model_grad_norms=(
                                 guided_model_grad_norms_sum / counter
-                                if hasattr(config.parameter.guided_policy, "grad_norm_clip")
+                                if hasattr(
+                                    config.parameter.guided_policy, "grad_norm_clip"
+                                )
                                 else 0.0
                             ),
                         ),
