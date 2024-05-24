@@ -591,7 +591,7 @@ class GPPolicy(nn.Module):
         q_value_repeated = self.critic(action_repeated, state_repeated).squeeze(dim=-1)
         v_value_repeated = value_function(state_repeated).squeeze(dim=-1)
 
-        weight = torch.exp(eta * (q_value_repeated - v_value_repeated)).clamp(max=100.0)
+        weight = torch.exp(eta * (q_value_repeated - v_value_repeated)).clamp(max=100.0)/100.0
 
         log_p = compute_likelihood(
             model=self.guided_model,
@@ -614,8 +614,10 @@ class GPPolicy(nn.Module):
         log_mu_per_dim = log_mu / bits_ratio
 
         loss = (- eta * q_value_repeated.detach() + log_p_per_dim.detach() - log_mu_per_dim.detach()) * log_p_per_dim * weight
-
-        return loss.mean()
+        loss_q =(- eta * q_value_repeated.detach()).mean()
+        loss_p = (log_p_per_dim.detach()* log_p_per_dim * weight).mean()
+        loss_u = (- log_mu_per_dim.detach()*log_p_per_dim * weight).mean()
+        return loss.mean(),loss_q,loss_p,loss_u
 
     def policy_loss(
         self,
@@ -1749,7 +1751,7 @@ class GPAlgorithm:
                             value_function=self.vf if config.parameter.critic.method=="iql" else None,
                         )
                     elif config.parameter.algorithm_type == "GPG_Polish":
-                        guided_policy_loss = self.model[
+                        guided_policy_loss ,eta_q_loss,log_p_loss,log_u_loss= self.model[
                             "GPPolicy"
                         ].policy_loss_pure_grad_polish(
                             data["s"],
@@ -1761,7 +1763,7 @@ class GPAlgorithm:
                                 if hasattr(config.parameter.guided_policy, "repeats")
                                 else 1
                             ),
-                            value_function=self.vf if self.iql else None,
+                            value_function=self.vf if config.parameter.critic.method=="iql"  else None,
                         )
                     elif config.parameter.algorithm_type == "GPG_2":
                         guided_policy_loss = self.model[
@@ -1795,13 +1797,33 @@ class GPAlgorithm:
                             max_norm=config.parameter.guided_policy.grad_norm_clip,
                             norm_type=2,
                         )
+                    else :
+                        guided_model_grad_norms = nn.utils.clip_grad_norm_(
+                            self.model["GPPolicy"].guided_model.parameters(),
+                            max_norm=100000,
+                            norm_type=2,
+                        )
                     guided_policy_optimizer.step()
-                    if config.parameter.algorithm_type in ["GPG_Direct","GPG_Polish"]:
+                    if config.parameter.algorithm_type == "GPG_Direct":
                         wandb.log(
                             data=dict(
                                 guided_policy_train_iter=guided_policy_train_iter,
                                 guided_policy_train_epoch=epoch,
                                 guided_policy_loss=guided_policy_loss.item(),
+                                guided_model_grad_norms=guided_model_grad_norms,
+                            ),
+                            commit=True,
+                        )
+                    elif config.parameter.algorithm_type == "GPG_Polish":
+                        wandb.log(
+                            data=dict(
+                                guided_policy_train_iter=guided_policy_train_iter,
+                                guided_policy_train_epoch=epoch,
+                                guided_policy_loss=guided_policy_loss.item(),
+                                guided_model_grad_norms=guided_model_grad_norms,
+                                eta_q_loss=eta_q_loss.item(),
+                                log_p_loss=log_p_loss.item(),
+                                log_u_loss=log_u_loss.item(),
                             ),
                             commit=True,
                         )
