@@ -1364,28 +1364,6 @@ class GPOnlineAlgorithm:
                         drop_last=True,
                     )
 
-                    if (
-                        hasattr(config.parameter.evaluation, "eval")
-                        and config.parameter.evaluation.eval
-                    ):
-                        if (
-                            behaviour_policy_train_epoch
-                            % config.parameter.evaluation.evaluation_behavior_policy_interval
-                            == 0
-                            or (behaviour_policy_train_epoch + 1) == config.parameter.behaviour_policy.epochs
-                        ):
-                            evaluation_results = evaluate(
-                                self.model,
-                                train_epoch=behaviour_policy_train_epoch,
-                                guidance_scales=[0.0],
-                                repeat=(
-                                    1
-                                    if not hasattr(config.parameter.evaluation, "repeat")
-                                    else config.parameter.evaluation.repeat
-                                ),
-                            )
-                            wandb.log(data=evaluation_results, commit=False)
-
                     counter = 0
                     behaviour_policy_loss_sum = 0
                     for data in data_loader:
@@ -1695,28 +1673,6 @@ class GPOnlineAlgorithm:
                         pin_memory=False,
                         drop_last=True,
                     )
-
-                    if (
-                        hasattr(config.parameter.evaluation, "eval")
-                        and config.parameter.evaluation.eval
-                    ):
-                        if (
-                            guided_policy_train_epoch
-                            % config.parameter.evaluation.evaluation_guided_policy_interval
-                            == 0
-                            or (guided_policy_train_epoch + 1) == config.parameter.guided_policy.epochs
-                        ):
-                            evaluation_results = evaluate(
-                                self.model,
-                                train_epoch=guided_policy_train_epoch,
-                                guidance_scales=config.parameter.evaluation.guidance_scale,
-                                repeat=(
-                                    1
-                                    if not hasattr(config.parameter.evaluation, "repeat")
-                                    else config.parameter.evaluation.repeat
-                                ),
-                            )
-                            wandb.log(data=evaluation_results, commit=False)
 
                     counter = 0
                     guided_policy_loss_sum = 0.0
