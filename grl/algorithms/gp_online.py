@@ -1799,10 +1799,10 @@ class GPOnlineAlgorithm:
                         if (
                             config.parameter.evaluation.eval
                             and hasattr(
-                                config.parameter.evaluation, "evaluation_iteration_interval"
+                                config.parameter.evaluation, "evaluation_epoch_interval"
                             )
-                            and (guided_policy_train_iter + 1)
-                            % config.parameter.evaluation.evaluation_iteration_interval
+                            and self.guided_policy_train_epoch
+                            % config.parameter.evaluation.evaluation_epoch_interval
                             == 0
                         ):
                             evaluation_results = evaluate(
