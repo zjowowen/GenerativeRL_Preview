@@ -1313,7 +1313,7 @@ class GPOnlineAlgorithm:
                     # self.dataset.drop_data(config.parameter.online_rl.drop_ratio)
                     self.dataset.load_data(
                         collect(
-                            self.model["QGPOPolicy"],
+                            self.model,
                             num_steps=config.parameter.online_rl.collect_steps,
                             guidance_scale=1.0,
                             random_policy=False,
@@ -1323,7 +1323,7 @@ class GPOnlineAlgorithm:
                 # else:
                 #     self.dataset.load_data(
                 #         collect(
-                #             self.model["QGPOPolicy"],
+                #             self.model,
                 #             num_steps=config.parameter.online_rl.collect_steps_at_the_beginning,
                 #             guidance_scale=0.0,
                 #             random_policy=True,
