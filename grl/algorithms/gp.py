@@ -1037,7 +1037,7 @@ class GPAlgorithm:
                 wandb.run.name = run_name
                 wandb.run.save()
 
-            elif config.parameter.algorithm_type == "GPG":
+            elif config.parameter.algorithm_type in ["GPG" ,"GPG_Direct" ,"GPG_Polish"]:
                 run_name = f"path-{path_type}-eta-{config.parameter.guided_policy.eta}-T-{config.parameter.guided_policy.gradtime_step}-Lrdecy-{config.parameter.guided_policy.lr_epochs}-seed-{self.seed_value}"
                 wandb.run.name = run_name
                 wandb.run.save()
