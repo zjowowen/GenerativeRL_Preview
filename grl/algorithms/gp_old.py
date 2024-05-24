@@ -581,6 +581,7 @@ class GPPolicy(nn.Module):
         eta: float = 1.0,
         repeats: int = 1,
         value_function: ValueFunction = None,
+        weight_clamp: float = 100.0,
     ):
         t_span = torch.linspace(0.0, 1.0, gradtime_step).to(state.device)
 
@@ -591,7 +592,7 @@ class GPPolicy(nn.Module):
         q_value_repeated = self.critic(action_repeated, state_repeated).squeeze(dim=-1)
         v_value_repeated = value_function(state_repeated).squeeze(dim=-1)
 
-        weight = torch.exp(eta * (q_value_repeated - v_value_repeated)).clamp(max=100.0) / 100.0
+        weight = torch.exp(eta * (q_value_repeated - v_value_repeated)).clamp(max=weight_clamp) / weight_clamp
 
         log_p = compute_likelihood(
             model=self.guided_model,
@@ -627,6 +628,7 @@ class GPPolicy(nn.Module):
         eta: float = 1.0,
         regularize_method: str = "minus_value",
         value_function: ValueFunction = None,
+        weight_clamp: float = 100.0,
     ):
         """
         Overview:
@@ -697,7 +699,7 @@ class GPPolicy(nn.Module):
 
                 weight = torch.exp(eta * (q_value - v_value))
 
-        return torch.mean(model_loss * weight.clamp(max=100.0)), weight
+        return torch.mean(model_loss * weight.clamp(max=weight_clamp)), weight
 
     def q_loss(
         self,
@@ -1536,6 +1538,7 @@ class GPAlgorithm:
                                 else "minus_value"
                             ),
                             value_function=self.vf if self.iql else None,
+                            weight_clamp=config.parameter.guided_policy.weight_clamp if hasattr(config.parameter.guided_policy, "weight_clamp") else 100.0,
                         )
                     elif config.parameter.algorithm_type == "GPO_with_fake":
                         fake_actions_ = self.model["GPPolicy"].behaviour_policy_sample(
@@ -1568,6 +1571,7 @@ class GPAlgorithm:
                                 else "minus_value"
                             ),
                             value_function=self.vf if self.iql else None,
+                            weight_clamp=config.parameter.guided_policy.weight_clamp if hasattr(config.parameter.guided_policy, "weight_clamp") else 100.0,
                         )
                     elif config.parameter.algorithm_type == "GPG_Direct":
                         guided_policy_loss = self.model[
@@ -1598,6 +1602,7 @@ class GPAlgorithm:
                                 else 1
                             ),
                             value_function=self.vf if self.iql else None,
+                            weight_clamp=config.parameter.guided_policy.weight_clamp if hasattr(config.parameter.guided_policy, "weight_clamp") else 100.0,
                         )
                     elif config.parameter.algorithm_type == "GPG_2":
                         guided_policy_loss = self.model[
