@@ -700,7 +700,12 @@ class GPPolicy(nn.Module):
 
                 weight = torch.exp(eta * (q_value - v_value))
 
-        return torch.mean(model_loss * weight.clamp(max=weight_clamp)), weight
+        clamped_weight = weight.clamp(max=weight_clamp)
+
+        # calculate the number of clamped_weight<weight
+        clamped_ratio = torch.mean(torch.tensor(clamped_weight < weight, dtype=torch.float32))
+
+        return torch.mean(model_loss * clamped_weight), torch.mean(weight), torch.mean(clamped_weight), clamped_ratio
 
     def q_loss(
         self,
@@ -1682,9 +1687,13 @@ class GPAlgorithm:
                 counter = 1
                 guided_policy_loss_sum = 0.0
                 guided_model_grad_norms_sum = 0.0
+                if config.parameter.algorithm_type in ["GPO", "GPO_fake"]:
+                    weight_sum = 0.0
+                    clamped_weight_sum = 0.0
+                    clamped_ratio_sum = 0.0
                 for data in data_loader:
                     if config.parameter.algorithm_type == "GPO":
-                        guided_policy_loss, weight = self.model["GPPolicy"].policy_loss(
+                        guided_policy_loss, weight, clamped_weight, clamped_ratio = self.model["GPPolicy"].policy_loss(
                             data["a"],
                             data["s"],
                             data["fake_a"],
@@ -1706,6 +1715,9 @@ class GPAlgorithm:
                             value_function=self.vf if config.parameter.critic.method=="iql" else None,
                             weight_clamp=config.parameter.guided_policy.weight_clamp if hasattr(config.parameter.guided_policy, "weight_clamp") else 100.0,
                         )
+                        weight_sum += weight
+                        clamped_weight_sum += clamped_weight
+                        clamped_ratio_sum += clamped_ratio
                     elif config.parameter.algorithm_type == "GPO_with_fake":
                         fake_actions_ = self.model["GPPolicy"].behaviour_policy_sample(
                             state=data["s"],
@@ -1717,7 +1729,7 @@ class GPAlgorithm:
                                 else None
                             ),
                         )
-                        guided_policy_loss, weight = self.model["GPPolicy"].policy_loss(
+                        guided_policy_loss, weight, clamped_weight, clamped_ratio = self.model["GPPolicy"].policy_loss(
                             fake_actions_,
                             data["s"],
                             data["fake_a"],
@@ -1739,6 +1751,9 @@ class GPAlgorithm:
                             value_function=self.vf if config.parameter.critic.method=="iql" else None,
                             weight_clamp=config.parameter.guided_policy.weight_clamp if hasattr(config.parameter.guided_policy, "weight_clamp") else 100.0,
                         )
+                        weight_sum += weight
+                        clamped_weight_sum += clamped_weight
+                        clamped_ratio_sum += clamped_ratio
                     elif config.parameter.algorithm_type == "GPG_Direct":
                         guided_policy_loss = self.model[
                             "GPPolicy"
@@ -1871,7 +1886,7 @@ class GPAlgorithm:
                             ),
                             commit=True,
                         )
-                if config.parameter.algorithm_type == "GPO":
+                if config.parameter.algorithm_type in ["GPO", "GPO_fake"]:
                     wandb.log(
                         data=dict(
                             guided_policy_train_iter=guided_policy_train_iter,
@@ -1884,6 +1899,9 @@ class GPAlgorithm:
                                 )
                                 else 0.0
                             ),
+                            weight = weight_sum / counter,
+                            clamped_weight = clamped_weight_sum / counter,
+                            clamped_ratio = clamped_ratio_sum / counter,
                         ),
                         commit=True,
                     )
