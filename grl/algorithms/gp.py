@@ -707,6 +707,71 @@ class GPPolicy(nn.Module):
 
         return torch.mean(model_loss * clamped_weight), torch.mean(weight), torch.mean(clamped_weight), clamped_ratio
 
+    def policy_loss_softmax(
+        self,
+        # action: Union[torch.Tensor, TensorDict],
+        state: Union[torch.Tensor, TensorDict],
+        fake_action: Union[torch.Tensor, TensorDict],
+        maximum_likelihood: bool = False,
+        eta: float = 1.0
+    ):
+        """
+        Overview:
+            Calculate the behaviour policy loss.
+        Arguments:
+            action (:obj:`torch.Tensor`): The input action.
+            state (:obj:`torch.Tensor`): The input state.
+        """
+        action=fake_action
+
+        action_reshape  = action.reshape(action.shape[0] * action.shape[1], *action.shape[2:])
+        state_repeat = torch.stack([state] * action.shape[1], axis=1)
+        state_repeat_reshape = state_repeat.reshape(
+                state_repeat.shape[0] * state_repeat.shape[1],
+                *state_repeat.shape[2:]
+        )
+        energy = self.critic(action_reshape, state_repeat_reshape).detach()
+        energy = energy.reshape(action.shape[0], action.shape[1]).squeeze(dim=-1)
+
+        if self.model_type == "DiffusionModel":
+            if self.model_loss_type == "score_matching":
+                if maximum_likelihood:
+                    model_loss = self.guided_model.score_matching_loss(
+                        action_reshape, state_repeat_reshape, average=False
+                    )
+                else:
+                    model_loss = self.guided_model.score_matching_loss(
+                        action_reshape, state_repeat_reshape, weighting_scheme="vanilla", average=False
+                    )
+            elif self.model_loss_type == "flow_matching":
+                model_loss = self.guided_model.flow_matching_loss(
+                    action_reshape, state_repeat_reshape, average=False
+                )
+        elif self.model_type in [
+            "OptimalTransportConditionalFlowModel",
+            "IndependentConditionalFlowModel",
+            "SchrodingerBridgeConditionalFlowModel",
+        ]:
+            x0 = self.guided_model.gaussian_generator(batch_size=state.shape[0] * action.shape[1])
+            model_loss = self.guided_model.flow_matching_loss(
+                x0=x0, x1=action_reshape, condition=state_repeat_reshape, average=False
+            )
+        else:
+            raise NotImplementedError
+
+        model_loss = model_loss.reshape(
+                action.shape[0], action.shape[1]
+            ).squeeze(dim=-1)
+
+        relative_energy = nn.Softmax(dim=1)(energy * eta)
+
+        loss = -torch.mean(
+            torch.sum(relative_energy * model_loss, axis=-1)
+        )
+
+        return loss
+
+
     def q_loss(
         self,
         action: Union[torch.Tensor, TensorDict],
@@ -1386,8 +1451,14 @@ class GPAlgorithm:
             # ---------------------------------------
             # behavior training code ↑
             # ---------------------------------------
-            if config.parameter.critic.method=="iql":
+                
+            if hasattr(config.parameter, "need_fake_action") and config.parameter.need_fake_action is True:
+                self.need_fake_action = True
+            if config.parameter.algorithm_type in ["GPO_softmax_static"]:
+                self.need_fake_action = True
+            else:
                 self.need_fake_action = False
+            
             # ---------------------------------------
             # make fake action ↓
             # ---------------------------------------
@@ -1687,7 +1758,7 @@ class GPAlgorithm:
                 counter = 1
                 guided_policy_loss_sum = 0.0
                 guided_model_grad_norms_sum = 0.0
-                if config.parameter.algorithm_type in ["GPO", "GPO_fake"]:
+                if config.parameter.algorithm_type == "GPO":
                     weight_sum = 0.0
                     clamped_weight_sum = 0.0
                     clamped_ratio_sum = 0.0
@@ -1718,19 +1789,8 @@ class GPAlgorithm:
                         weight_sum += weight
                         clamped_weight_sum += clamped_weight
                         clamped_ratio_sum += clamped_ratio
-                    elif config.parameter.algorithm_type == "GPO_with_fake":
-                        fake_actions_ = self.model["GPPolicy"].behaviour_policy_sample(
-                            state=data["s"],
-                            t_span=(
-                                torch.linspace(
-                                    0.0, 1.0, config.parameter.fake_data_t_span
-                                ).to(data["s"].device)
-                                if config.parameter.fake_data_t_span is not None
-                                else None
-                            ),
-                        )
-                        guided_policy_loss, weight, clamped_weight, clamped_ratio = self.model["GPPolicy"].policy_loss(
-                            fake_actions_,
+                    elif config.parameter.algorithm_type == "GPO_softmax_static":
+                        guided_policy_loss = self.model["GPPolicy"].policy_loss_softmax(
                             data["s"],
                             data["fake_a"],
                             maximum_likelihood=(
@@ -1740,20 +1800,33 @@ class GPAlgorithm:
                                 )
                                 else False
                             ),
-                            eta=eta,
-                            regularize_method=(
-                                config.parameter.guided_policy.regularize_method
-                                if hasattr(
-                                    config.parameter.guided_policy, "regularize_method"
-                                )
-                                else "minus_value"
-                            ),
-                            value_function=self.vf if config.parameter.critic.method=="iql" else None,
-                            weight_clamp=config.parameter.guided_policy.weight_clamp if hasattr(config.parameter.guided_policy, "weight_clamp") else 100.0,
+                            eta=eta
                         )
-                        weight_sum += weight
-                        clamped_weight_sum += clamped_weight
-                        clamped_ratio_sum += clamped_ratio
+                    elif config.parameter.algorithm_type == "GPO_softmax_sample":
+                        fake_actions_ = self.model["GPPolicy"].behaviour_policy_sample(
+                            state=data["s"],
+                            t_span=(
+                                torch.linspace(
+                                    0.0, 1.0, config.parameter.fake_data_t_span
+                                ).to(data["s"].device)
+                                if config.parameter.fake_data_t_span is not None
+                                else None
+                            ),
+                            batch_size=config.parameter.sample_per_state,
+                        )
+                        fake_actions_ = torch.einsum("nbd->bnd", fake_actions_)
+                        guided_policy_loss = self.model["GPPolicy"].policy_loss_softmax(
+                            data["s"],
+                            fake_actions_,
+                            maximum_likelihood=(
+                                config.parameter.guided_policy.maximum_likelihood
+                                if hasattr(
+                                    config.parameter.guided_policy, "maximum_likelihood"
+                                )
+                                else False
+                            ),
+                            eta=eta
+                        )
                     elif config.parameter.algorithm_type == "GPG_Direct":
                         guided_policy_loss = self.model[
                             "GPPolicy"
@@ -1886,7 +1959,17 @@ class GPAlgorithm:
                             ),
                             commit=True,
                         )
-                if config.parameter.algorithm_type in ["GPO", "GPO_fake"]:
+                if config.parameter.algorithm_type in ["GPO", "GPO_softmax_static", "GPO_softmax_sample"]:
+                    if config.parameter.algorithm_type == "GPO":
+                        wandb.log(
+                            data=dict(
+                                weight = weight_sum / counter,
+                                clamped_weight = clamped_weight_sum / counter,
+                                clamped_ratio = clamped_ratio_sum / counter,
+                            ),
+                            commit=False,
+                        )
+
                     wandb.log(
                         data=dict(
                             guided_policy_train_iter=guided_policy_train_iter,
@@ -1899,9 +1982,6 @@ class GPAlgorithm:
                                 )
                                 else 0.0
                             ),
-                            weight = weight_sum / counter,
-                            clamped_weight = clamped_weight_sum / counter,
-                            clamped_ratio = clamped_ratio_sum / counter,
                         ),
                         commit=True,
                     )

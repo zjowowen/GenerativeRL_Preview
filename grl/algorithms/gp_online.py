@@ -1448,8 +1448,10 @@ class GPOnlineAlgorithm:
                 # ---------------------------------------
                 # behavior training code ↑
                 # ---------------------------------------
-                if self.iql:
-                    self.need_fake_action = False
+                
+                if hasattr(config.parameter, "need_fake_action") and config.parameter.need_fake_action is True:
+                    self.need_fake_action = True
+                
                 # ---------------------------------------
                 # make fake action ↓
                 # ---------------------------------------
