@@ -1340,7 +1340,8 @@ class GPOnlineAlgorithm:
                 # ---------------------------------------
 
                 if online_rl_iteration > 0:
-                    # self.dataset.drop_data(config.parameter.online_rl.drop_ratio)
+                    if hasattr(config.parameter.online_rl, "drop_ratio") and config.parameter.online_rl.drop_ratio > 0:
+                        self.dataset.drop_data(config.parameter.online_rl.drop_ratio)
                     self.dataset.load_data(
                         collect(
                             self.model,
