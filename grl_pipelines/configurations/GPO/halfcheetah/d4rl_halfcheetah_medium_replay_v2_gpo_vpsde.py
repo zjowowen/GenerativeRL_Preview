@@ -121,7 +121,7 @@ config = EasyDict(
             behaviour_policy=dict(
                 batch_size=4096,
                 learning_rate=1e-4,
-                epochs=2000,
+                epochs=10000,
                 iterations=1000000,
             ),
             sample_per_state=16,
@@ -133,6 +133,7 @@ config = EasyDict(
                 learning_rate=1e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
+                method="in_support_ql",
             ),
             guided_policy=dict(
                 batch_size=4096,

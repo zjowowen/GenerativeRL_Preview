@@ -1146,7 +1146,7 @@ class GPAlgorithm:
                                     config.parameter.checkpoint_path,
                                     f"critic_{self.critic_train_epoch}_{iteration}.pt",
                                 ))
-                        elif config.parameter.critic.method=="important_sampling_q":
+                        elif config.parameter.critic.method=="in_support_ql":
                             torch.save(
                                 dict(
                                     critic_model=model["GPPolicy"].critic.state_dict(),

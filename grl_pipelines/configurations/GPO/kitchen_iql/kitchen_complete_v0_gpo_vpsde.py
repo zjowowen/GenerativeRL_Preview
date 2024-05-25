@@ -21,7 +21,7 @@ path = dict(
     beta_1=20.0,
 )
 model_loss_type = "score_matching"
-env_id = "kitchen-partial-v0"
+env_id = "kitchen-complete-v0"
 project_name = f"d4rl-{env_id}-GPO-VPSDE"
 model = dict(
     device=device,
@@ -124,8 +124,6 @@ config = EasyDict(
                 epochs=2000,
                 iterations=1000000,
             ),
-            sample_per_state=16,
-            fake_data_t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
                 method='iql',
                 batch_size=4096,

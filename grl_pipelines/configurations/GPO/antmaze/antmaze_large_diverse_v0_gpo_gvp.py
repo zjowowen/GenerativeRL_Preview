@@ -116,21 +116,22 @@ config = EasyDict(
         parameter=dict(
             algorithm_type=algorithm_type,
             behaviour_policy=dict(
-                batch_size=2048,
+                batch_size=4096,
                 learning_rate=1e-4,
                 epochs=10000,
             ),
             sample_per_state=16,
             fake_data_t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
-                batch_size=2048,
+                batch_size=4096,
                 epochs=10000,
                 learning_rate=3e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
+                method="in_support_ql",
             ),
             guided_policy=dict(
-                batch_size=2048,
+                batch_size=4096,
                 epochs=10000,
                 learning_rate=1e-4,
             ),
