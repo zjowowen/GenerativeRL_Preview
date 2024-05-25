@@ -1126,7 +1126,7 @@ class GPOnlineAlgorithm:
                 fake_actions = torch.cat(fake_actions_sampled, dim=0)
                 return fake_actions
 
-            def evaluate(model, train_epoch, guidance_scales, repeat=1):
+            def evaluate(model, iteration, guidance_scales, repeat=1):
                 evaluation_results = dict()
                 for guidance_scale in guidance_scales:
 
@@ -1183,11 +1183,11 @@ class GPOnlineAlgorithm:
                     ] = return_min
                     if repeat > 1:
                         log.info(
-                            f"Train epoch: {train_epoch}, guidance_scale: {guidance_scale}, return_mean: {return_mean}, return_std: {return_std}, return_max: {return_max}, return_min: {return_min}"
+                            f"Train iteration: {iteration}, guidance_scale: {guidance_scale}, return_mean: {return_mean}, return_std: {return_std}, return_max: {return_max}, return_min: {return_min}"
                         )
                     else:
                         log.info(
-                            f"Train epoch: {train_epoch}, guidance_scale: {guidance_scale}, return: {return_mean}"
+                            f"Train iteration: {iteration}, guidance_scale: {guidance_scale}, return: {return_mean}"
                         )
 
                 return evaluation_results
@@ -1305,6 +1305,36 @@ class GPOnlineAlgorithm:
                 description="Online RL iteration",
             ):
 
+
+                # ---------------------------------------
+                # Evaluate code ↓
+                # ---------------------------------------
+
+                if (
+                    config.parameter.evaluation.eval
+                    and hasattr(
+                        config.parameter.evaluation, "evaluation_interval"
+                    )
+                    and online_rl_iteration
+                    % config.parameter.evaluation.evaluation_interval
+                    == 0
+                ):
+                    evaluation_results = evaluate(
+                        self.model,
+                        iteration=online_rl_iteration,
+                        guidance_scales=config.parameter.evaluation.guidance_scale,
+                        repeat=(
+                            1
+                            if not hasattr(config.parameter.evaluation, "repeat")
+                            else config.parameter.evaluation.repeat
+                        ),
+                    )
+                    wandb.log(data=evaluation_results, commit=False)
+
+                # ---------------------------------------
+                # Evaluate code ↑
+                # ---------------------------------------
+
                 # ---------------------------------------
                 # Data collection code ↓
                 # ---------------------------------------
@@ -1320,6 +1350,7 @@ class GPOnlineAlgorithm:
                             random_ratio=0.01,
                         )
                     )
+                    print(f"dataset length: {self.dataset.len}")
                 # else:
                 #     self.dataset.load_data(
                 #         collect(
@@ -1337,8 +1368,6 @@ class GPOnlineAlgorithm:
                 # ---------------------------------------
                 # behavior training code ↓
                 # ---------------------------------------
-
-
 
                 for epoch in range(config.parameter.behaviour_policy.epochs if online_rl_iteration==0 else config.parameter.behaviour_policy.epochs_online_rl):
                     
@@ -1485,7 +1514,6 @@ class GPOnlineAlgorithm:
                         self.vf.parameters(),
                         lr=config.parameter.critic.learning_rate,
                     )
-
 
                 for epoch in range(config.parameter.critic.epochs if online_rl_iteration==0 else config.parameter.critic.epochs_online_rl):
                     
@@ -1796,54 +1824,22 @@ class GPOnlineAlgorithm:
 
                         guided_policy_train_iter += 1
                         self.guided_policy_train_epoch = guided_policy_train_epoch
-                        if (
-                            config.parameter.evaluation.eval
-                            and hasattr(
-                                config.parameter.evaluation, "evaluation_epoch_interval"
-                            )
-                            and self.guided_policy_train_epoch
-                            % config.parameter.evaluation.evaluation_epoch_interval
-                            == 0
-                        ):
-                            evaluation_results = evaluate(
-                                self.model,
-                                train_epoch=guided_policy_train_epoch,
-                                guidance_scales=config.parameter.evaluation.guidance_scale,
-                                repeat=(
-                                    1
-                                    if not hasattr(config.parameter.evaluation, "repeat")
-                                    else config.parameter.evaluation.repeat
-                                ),
-                            )
-                            wandb.log(data=evaluation_results, commit=False)
-                            wandb.log(
-                                data=dict(
-                                    guided_policy_train_iter=guided_policy_train_iter,
-                                    guided_policy_train_epoch=guided_policy_train_epoch,
-                                ),
-                                commit=True,
-                            )
-                            save_checkpoint(
-                                self.model,
-                                iteration=guided_policy_train_iter,
-                                model_type="guided_model",
-                            )
-                    if config.parameter.algorithm_type == "GPO":
-                        wandb.log(
-                            data=dict(
-                                guided_policy_train_iter=guided_policy_train_iter,
-                                guided_policy_train_epoch=guided_policy_train_epoch,
-                                guided_policy_loss=guided_policy_loss_sum / counter,
-                                guided_model_grad_norms=(
-                                    guided_model_grad_norms_sum / counter
-                                    if hasattr(
-                                        config.parameter.guided_policy, "grad_norm_clip"
-                                    )
-                                    else 0.0
-                                ),
+
+                    wandb.log(
+                        data=dict(
+                            guided_policy_train_iter=guided_policy_train_iter,
+                            guided_policy_train_epoch=guided_policy_train_epoch,
+                            guided_policy_loss=guided_policy_loss_sum / counter,
+                            guided_model_grad_norms=(
+                                guided_model_grad_norms_sum / counter
+                                if hasattr(
+                                    config.parameter.guided_policy, "grad_norm_clip"
+                                )
+                                else 0.0
                             ),
-                            commit=True,
-                        )
+                        ),
+                        commit=True,)
+
 
                     if (
                         hasattr(config.parameter.guided_policy, "lr_decy")
@@ -1852,15 +1848,6 @@ class GPOnlineAlgorithm:
                         guided_lr_scheduler.step()
 
                     if (
-                        hasattr(config.parameter, "checkpoint_guided_freq")
-                        and (guided_policy_train_epoch + 1) % config.parameter.checkpoint_guided_freq == 0
-                    ):
-                        save_checkpoint(
-                            self.model,
-                            iteration=guided_policy_train_iter,
-                            model_type="guided_model",
-                        )
-                    elif (
                         hasattr(config.parameter, "checkpoint_freq")
                         and (guided_policy_train_epoch + 1) % config.parameter.checkpoint_freq == 0
                     ):
