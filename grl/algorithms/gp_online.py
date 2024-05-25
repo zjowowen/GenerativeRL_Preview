@@ -1261,7 +1261,6 @@ class GPOnlineAlgorithm:
                 )
 
             behaviour_policy_train_iter = 0
-            behaviour_policy_train_epoch = 0
 
             q_optimizer = torch.optim.Adam(
                 self.model["GPPolicy"].critic.q.parameters(),
@@ -1279,7 +1278,6 @@ class GPOnlineAlgorithm:
                 )
 
             critic_train_iter = 0
-            critic_train_epoch = 0
 
             guided_policy_optimizer = torch.optim.Adam(
                 self.model["GPPolicy"].guided_model.parameters(),
@@ -1298,7 +1296,6 @@ class GPOnlineAlgorithm:
                 )
 
             guided_policy_train_iter = 0
-            guided_policy_train_epoch = 0
 
             for online_rl_iteration in track(
                 range(config.parameter.online_rl.iterations),
@@ -1372,16 +1369,6 @@ class GPOnlineAlgorithm:
 
                 for epoch in range(config.parameter.behaviour_policy.epochs_online_rl):
                     
-                    if self.behaviour_policy_train_epoch >= behaviour_policy_train_epoch:
-                        if (
-                            hasattr(config.parameter.behaviour_policy, "lr_decy")
-                            and config.parameter.behaviour_policy.lr_decy is True
-                        ):
-                            behaviour_lr_scheduler.step()
-                        behaviour_policy_train_epoch += 1
-                        continue
-                    behaviour_policy_train_epoch += 1
-
                     sampler = torch.utils.data.RandomSampler(
                         self.dataset, replacement=False
                     )
@@ -1425,12 +1412,12 @@ class GPOnlineAlgorithm:
                         behaviour_policy_loss_sum += behaviour_policy_loss.item()
 
                         behaviour_policy_train_iter += 1
-                        self.behaviour_policy_train_epoch = behaviour_policy_train_epoch
+                        self.behaviour_policy_train_epoch += 1
 
                     wandb.log(
                         data=dict(
                             behaviour_policy_train_iter=behaviour_policy_train_iter,
-                            behaviour_policy_train_epoch=behaviour_policy_train_epoch,
+                            behaviour_policy_train_epoch=self.behaviour_policy_train_epoch,
                             behaviour_policy_loss=behaviour_policy_loss_sum / counter,
                             behaviour_model_grad_norms=(
                                 behaviour_model_grad_norms.item()
@@ -1450,7 +1437,7 @@ class GPOnlineAlgorithm:
                         behaviour_lr_scheduler.step()
                     if (
                         hasattr(config.parameter, "checkpoint_freq")
-                        and (behaviour_policy_train_epoch + 1) % config.parameter.checkpoint_freq == 0
+                        and (self.behaviour_policy_train_epoch + 1) % config.parameter.checkpoint_freq == 0
                     ):
                         save_checkpoint(
                             self.model,
@@ -1517,16 +1504,6 @@ class GPOnlineAlgorithm:
                     )
 
                 for epoch in range(config.parameter.critic.epochs_online_rl):
-                    
-                    if self.critic_train_epoch >= critic_train_epoch:
-                        if (
-                            hasattr(config.parameter.critic, "lr_decy")
-                            and config.parameter.critic.lr_decy is True
-                        ):
-                            critic_lr_scheduler.step()
-                        critic_train_epoch += 1
-                        continue
-                    critic_train_epoch += 1
 
                     sampler = torch.utils.data.RandomSampler(
                         self.dataset, replacement=False
@@ -1610,7 +1587,7 @@ class GPOnlineAlgorithm:
                             q_grad_norms_sum += q_grad_norms.item()
 
                         critic_train_iter += 1
-                        self.critic_train_epoch = critic_train_epoch
+                        self.critic_train_epoch += 1
 
                     if self.iql:
                         wandb.log(
@@ -1621,7 +1598,7 @@ class GPOnlineAlgorithm:
                     wandb.log(
                         data=dict(
                             critic_train_iter=critic_train_iter,
-                            critic_train_epoch=critic_train_epoch,
+                            critic_train_epoch=self.critic_train_epoch,
                             q_loss=q_loss_sum / counter,
                             q=q_sum / counter,
                             q_target=q_target_sum / counter,
@@ -1642,7 +1619,7 @@ class GPOnlineAlgorithm:
 
                     if (
                         hasattr(config.parameter, "checkpoint_freq")
-                        and (critic_train_epoch + 1) % config.parameter.checkpoint_freq == 0
+                        and (self.critic_train_epoch + 1) % config.parameter.checkpoint_freq == 0
                     ):
                         if self.iql:
                             save_checkpoint(
@@ -1680,16 +1657,6 @@ class GPOnlineAlgorithm:
                     eta = 1.0
 
                 for epoch in range(config.parameter.guided_policy.epochs_online_rl):
-                    
-                    if self.guided_policy_train_epoch >= guided_policy_train_epoch:
-                        if (
-                            hasattr(config.parameter.guided_policy, "lr_decy")
-                            and config.parameter.guided_policy.lr_decy is True
-                        ):
-                            guided_lr_scheduler.step()
-                        guided_policy_train_epoch += 1
-                        continue
-                    guided_policy_train_epoch += 1
 
                     sampler = torch.utils.data.RandomSampler(
                         self.dataset, replacement=False
@@ -1813,7 +1780,7 @@ class GPOnlineAlgorithm:
                             wandb.log(
                                 data=dict(
                                     guided_policy_train_iter=guided_policy_train_iter,
-                                    guided_policy_train_epoch=guided_policy_train_epoch,
+                                    guided_policy_train_epoch=self.guided_policy_train_epoch,
                                     guided_policy_loss=guided_policy_loss.item(),
                                 ),
                                 commit=True,
@@ -1824,12 +1791,12 @@ class GPOnlineAlgorithm:
                             guided_model_grad_norms_sum += guided_model_grad_norms.item()
 
                         guided_policy_train_iter += 1
-                        self.guided_policy_train_epoch = guided_policy_train_epoch
+                        self.guided_policy_train_epoch += 1
 
                     wandb.log(
                         data=dict(
                             guided_policy_train_iter=guided_policy_train_iter,
-                            guided_policy_train_epoch=guided_policy_train_epoch,
+                            guided_policy_train_epoch=self.guided_policy_train_epoch,
                             guided_policy_loss=guided_policy_loss_sum / counter,
                             guided_model_grad_norms=(
                                 guided_model_grad_norms_sum / counter
@@ -1850,7 +1817,7 @@ class GPOnlineAlgorithm:
 
                     if (
                         hasattr(config.parameter, "checkpoint_freq")
-                        and (guided_policy_train_epoch + 1) % config.parameter.checkpoint_freq == 0
+                        and (self.guided_policy_train_epoch + 1) % config.parameter.checkpoint_freq == 0
                     ):
                         save_checkpoint(
                             self.model,
