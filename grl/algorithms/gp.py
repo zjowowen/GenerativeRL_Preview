@@ -1314,7 +1314,7 @@ class GPAlgorithm:
                         )
                         wandb.log(data=evaluation_results, commit=False)
 
-                counter = 0
+                counter = 1
                 behaviour_policy_loss_sum = 0
                 for data in data_loader:
 
