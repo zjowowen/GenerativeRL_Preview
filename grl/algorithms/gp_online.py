@@ -1256,7 +1256,7 @@ class GPOnlineAlgorithm:
 
                 behaviour_lr_scheduler = CosineAnnealingLR(
                     behaviour_policy_optimizer,
-                    T_max=config.parameter.behaviour_policy.epochs,
+                    T_max=config.parameter.behaviour_policy.lr_decy_T_max,
                     eta_min=0.0,
                 )
 
@@ -1274,7 +1274,7 @@ class GPOnlineAlgorithm:
             ):
                 critic_lr_scheduler = CosineAnnealingLR(
                     q_optimizer,
-                    T_max=config.parameter.critic_policy.epochs,
+                    T_max=config.parameter.critic_policy.lr_decy_T_max,
                     eta_min=0.0,
                 )
 
@@ -1293,7 +1293,7 @@ class GPOnlineAlgorithm:
 
                 guided_lr_scheduler = CosineAnnealingLR(
                     guided_policy_optimizer,
-                    T_max=config.parameter.guided_policy.epochs,
+                    T_max=config.parameter.guided_policy.lr_decy_T_max,
                     eta_min=0.0,
                 )
 
@@ -1370,7 +1370,7 @@ class GPOnlineAlgorithm:
                 # behavior training code ↓
                 # ---------------------------------------
 
-                for epoch in range(config.parameter.behaviour_policy.epochs if online_rl_iteration==0 else config.parameter.behaviour_policy.epochs_online_rl):
+                for epoch in range(config.parameter.behaviour_policy.epochs_online_rl):
                     
                     if self.behaviour_policy_train_epoch >= behaviour_policy_train_epoch:
                         if (
@@ -1516,7 +1516,7 @@ class GPOnlineAlgorithm:
                         lr=config.parameter.critic.learning_rate,
                     )
 
-                for epoch in range(config.parameter.critic.epochs if online_rl_iteration==0 else config.parameter.critic.epochs_online_rl):
+                for epoch in range(config.parameter.critic.epochs_online_rl):
                     
                     if self.critic_train_epoch >= critic_train_epoch:
                         if (
@@ -1679,7 +1679,7 @@ class GPOnlineAlgorithm:
                 else:
                     eta = 1.0
 
-                for epoch in range(config.parameter.guided_policy.epochs if online_rl_iteration==0 else config.parameter.guided_policy.epochs_online_rl):
+                for epoch in range(config.parameter.guided_policy.epochs_online_rl):
                     
                     if self.guided_policy_train_epoch >= guided_policy_train_epoch:
                         if (
