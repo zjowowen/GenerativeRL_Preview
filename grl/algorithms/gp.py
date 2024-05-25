@@ -1475,7 +1475,7 @@ class GPAlgorithm:
                     drop_last=True,
                 )
 
-                counter = 0
+                counter = 1
                 if config.parameter.critic.method=="iql":
                     v_loss_sum = 0.0
                     v_sum = 0.0
@@ -1679,7 +1679,7 @@ class GPAlgorithm:
                         )
                         wandb.log(data=evaluation_results, commit=False)
 
-                counter = 0
+                counter = 1
                 guided_policy_loss_sum = 0.0
                 guided_model_grad_norms_sum = 0.0
                 for data in data_loader:
