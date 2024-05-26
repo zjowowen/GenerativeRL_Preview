@@ -31,18 +31,15 @@ English | [简体中文(Simplified Chinese)](https://github.com/zjowowen/Generat
 
 ## Integrated Generative Models
 
-| Models                 | Score Machting | Flow Matching |
-|------------------------| -------------- | ------------- |
-| Diffusion Model        |                |               |
-|------------------------| -------------- | ------------- |
-| Linear VP SDE          | ✔              | ✔            |
-| Generalized VP SDE     | ✔              | ✔            |
-| Linear SDE             | ✔              | ✔            |
-|------------------------| -------------- | ------------- |
-| Conditional Flow Model |                |               |
-|------------------------| -------------- | ------------- |
-| Independent CFM        |                | ✔            |
-| Optimal Transport CFM  |                | ✔            |
+|                           | Score Machting | Flow Matching |
+|---------------------------| -------------- | ------------- |
+| **Diffusion Model**       |                |               |
+| Linear VP SDE             | ✔              | ✔            |
+| Generalized VP SDE        | ✔              | ✔            |
+| Linear SDE                | ✔              | ✔            |
+| **Conditional Flow Model**|                |               |
+| Independent CFM           |                | ✔            |
+| Optimal Transport CFM     |                | ✔            |
 
 
 
