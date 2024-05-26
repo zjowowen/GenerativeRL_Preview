@@ -765,11 +765,11 @@ class GPPolicy(nn.Module):
 
         relative_energy = nn.Softmax(dim=1)(energy * eta)
 
-        loss = -torch.mean(
+        loss = torch.mean(
             torch.sum(relative_energy * model_loss, axis=-1)
         )
 
-        return loss
+        return loss, torch.mean(energy), torch.mean(relative_energy), torch.mean(model_loss)
 
 
     def q_loss(
@@ -1762,6 +1762,10 @@ class GPAlgorithm:
                     weight_sum = 0.0
                     clamped_weight_sum = 0.0
                     clamped_ratio_sum = 0.0
+                elif config.parameter.algorithm_type in ["GPO_softmax_static", "GPO_softmax_sample"]:
+                    energy_sum = 0.0
+                    relative_energy_sum = 0.0
+                    matching_loss_sum = 0.0
                 for data in data_loader:
                     if config.parameter.algorithm_type == "GPO":
                         guided_policy_loss, weight, clamped_weight, clamped_ratio = self.model["GPPolicy"].policy_loss(
@@ -1790,7 +1794,7 @@ class GPAlgorithm:
                         clamped_weight_sum += clamped_weight
                         clamped_ratio_sum += clamped_ratio
                     elif config.parameter.algorithm_type == "GPO_softmax_static":
-                        guided_policy_loss = self.model["GPPolicy"].policy_loss_softmax(
+                        guided_policy_loss, energy, relative_energy, matching_loss = self.model["GPPolicy"].policy_loss_softmax(
                             data["s"],
                             data["fake_a"],
                             maximum_likelihood=(
@@ -1802,6 +1806,9 @@ class GPAlgorithm:
                             ),
                             eta=eta
                         )
+                        energy_sum += energy
+                        relative_energy_sum += relative_energy
+                        matching_loss_sum += matching_loss
                     elif config.parameter.algorithm_type == "GPO_softmax_sample":
                         fake_actions_ = self.model["GPPolicy"].behaviour_policy_sample(
                             state=data["s"],
@@ -1815,7 +1822,7 @@ class GPAlgorithm:
                             batch_size=config.parameter.sample_per_state,
                         )
                         fake_actions_ = torch.einsum("nbd->bnd", fake_actions_)
-                        guided_policy_loss = self.model["GPPolicy"].policy_loss_softmax(
+                        guided_policy_loss, energy, relative_energy, matching_loss  = self.model["GPPolicy"].policy_loss_softmax(
                             data["s"],
                             fake_actions_,
                             maximum_likelihood=(
@@ -1827,6 +1834,9 @@ class GPAlgorithm:
                             ),
                             eta=eta
                         )
+                        energy_sum += energy
+                        relative_energy_sum += relative_energy
+                        matching_loss_sum += matching_loss
                     elif config.parameter.algorithm_type == "GPG_Direct":
                         guided_policy_loss = self.model[
                             "GPPolicy"
@@ -1966,6 +1976,15 @@ class GPAlgorithm:
                                 weight = weight_sum / counter,
                                 clamped_weight = clamped_weight_sum / counter,
                                 clamped_ratio = clamped_ratio_sum / counter,
+                            ),
+                            commit=False,
+                        )
+                    elif config.parameter.algorithm_type in ["GPO_softmax_static", "GPO_softmax_sample"]:
+                        wandb.log(
+                            data=dict(
+                                energy = energy_sum / counter,
+                                relative_energy = relative_energy_sum / counter,
+                                matching_loss = matching_loss_sum / counter,
                             ),
                             commit=False,
                         )

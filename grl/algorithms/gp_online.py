@@ -1412,7 +1412,8 @@ class GPOnlineAlgorithm:
                         behaviour_policy_loss_sum += behaviour_policy_loss.item()
 
                         behaviour_policy_train_iter += 1
-                        self.behaviour_policy_train_epoch += 1
+                    
+                    self.behaviour_policy_train_epoch += 1
 
                     wandb.log(
                         data=dict(
@@ -1448,7 +1449,7 @@ class GPOnlineAlgorithm:
                 # ---------------------------------------
                 # behavior training code ↑
                 # ---------------------------------------
-                
+
                 if hasattr(config.parameter, "need_fake_action") and config.parameter.need_fake_action is True:
                     self.need_fake_action = True
                 
@@ -1589,7 +1590,8 @@ class GPOnlineAlgorithm:
                             q_grad_norms_sum += q_grad_norms.item()
 
                         critic_train_iter += 1
-                        self.critic_train_epoch += 1
+                    
+                    self.critic_train_epoch += 1
 
                     if self.iql:
                         wandb.log(
@@ -1793,7 +1795,8 @@ class GPOnlineAlgorithm:
                             guided_model_grad_norms_sum += guided_model_grad_norms.item()
 
                         guided_policy_train_iter += 1
-                        self.guided_policy_train_epoch += 1
+
+                    self.guided_policy_train_epoch += 1
 
                     wandb.log(
                         data=dict(
