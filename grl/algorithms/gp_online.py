@@ -65,7 +65,7 @@ class ValueFunction(nn.Module):
 class GPCritic(nn.Module):
     """
     Overview:
-        Critic network for GPO algorithm.
+        Critic network for GPO/GPG algorithm.
     Interfaces:
         ``__init__``, ``forward``
     """
@@ -73,7 +73,7 @@ class GPCritic(nn.Module):
     def __init__(self, config: EasyDict):
         """
         Overview:
-            Initialization of GPO critic network.
+            Initialization of GPO/GPG critic network.
         Arguments:
             config (:obj:`EasyDict`): The configuration dict.
         """
@@ -91,7 +91,7 @@ class GPCritic(nn.Module):
     ) -> torch.Tensor:
         """
         Overview:
-            Return the output of GPO critic.
+            Return the output of GPO/GPG critic.
         Arguments:
             action (:obj:`torch.Tensor`): The input action.
             state (:obj:`torch.Tensor`): The input state.
@@ -326,7 +326,7 @@ class GPPolicy(nn.Module):
     ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
-            Return the output of GPO policy, which is the action conditioned on the state.
+            Return the output of GPO/GPG policy, which is the action conditioned on the state.
         Arguments:
             state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
         Returns:
@@ -344,7 +344,7 @@ class GPPolicy(nn.Module):
     ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
-            Return the output of GPO policy, which is the action conditioned on the state.
+            Return the output of GPO/GPG policy, which is the action conditioned on the state.
         Arguments:
             state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
             batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
@@ -1367,6 +1367,7 @@ class GPOnlineAlgorithm:
                 # behavior training code ↓
                 # ---------------------------------------
 
+                behaviour_policy_iteration_counter = 0
                 for epoch in range(config.parameter.behaviour_policy.epochs_online_rl):
                     
                     sampler = torch.utils.data.RandomSampler(
@@ -1412,6 +1413,10 @@ class GPOnlineAlgorithm:
                         behaviour_policy_loss_sum += behaviour_policy_loss.item()
 
                         behaviour_policy_train_iter += 1
+                        behaviour_policy_iteration_counter += 1
+                        if hasattr(config.parameter.behaviour_policy, "iterations_online_rl") and config.parameter.behaviour_policy.iterations_online_rl <= behaviour_policy_iteration_counter:
+                            break
+
                     
                     self.behaviour_policy_train_epoch += 1
 
@@ -1445,6 +1450,8 @@ class GPOnlineAlgorithm:
                             iteration=behaviour_policy_train_iter,
                             model_type="base_model",
                         )
+                    if hasattr(config.parameter.behaviour_policy, "iterations_online_rl") and config.parameter.behaviour_policy.iterations_online_rl <= behaviour_policy_iteration_counter:
+                        break
 
                 # ---------------------------------------
                 # behavior training code ↑
@@ -1506,6 +1513,7 @@ class GPOnlineAlgorithm:
                         lr=config.parameter.critic.learning_rate,
                     )
 
+                critic_iteration_counter = 0
                 for epoch in range(config.parameter.critic.epochs_online_rl):
 
                     sampler = torch.utils.data.RandomSampler(
@@ -1590,6 +1598,9 @@ class GPOnlineAlgorithm:
                             q_grad_norms_sum += q_grad_norms.item()
 
                         critic_train_iter += 1
+                        critic_iteration_counter += 1
+                        if hasattr(config.parameter.critic, "iterations_online_rl") and config.parameter.critic.iterations_online_rl <= critic_iteration_counter:
+                            break
                     
                     self.critic_train_epoch += 1
 
@@ -1631,6 +1642,10 @@ class GPOnlineAlgorithm:
                                 iteration=critic_train_iter,
                                 model_type="critic_model",
                             )
+
+                    if hasattr(config.parameter.critic, "iterations_online_rl") and config.parameter.critic.iterations_online_rl <= critic_iteration_counter:
+                            break
+
                 # ---------------------------------------
                 # critic training code ↑
                 # ---------------------------------------
@@ -1660,6 +1675,7 @@ class GPOnlineAlgorithm:
                 else:
                     eta = 1.0
 
+                guided_policy_iteration_counter = 0
                 for epoch in range(config.parameter.guided_policy.epochs_online_rl):
 
                     sampler = torch.utils.data.RandomSampler(
@@ -1795,6 +1811,9 @@ class GPOnlineAlgorithm:
                             guided_model_grad_norms_sum += guided_model_grad_norms.item()
 
                         guided_policy_train_iter += 1
+                        guided_policy_iteration_counter += 1
+                        if hasattr(config.parameter.guided_policy, "iterations_online_rl") and config.parameter.guided_policy.iterations_online_rl <= guided_policy_iteration_counter:
+                            break
 
                     self.guided_policy_train_epoch += 1
 
@@ -1829,6 +1848,8 @@ class GPOnlineAlgorithm:
                             iteration=guided_policy_train_iter,
                             model_type="guided_model",
                         )
+                    if hasattr(config.parameter.guided_policy, "iterations_online_rl") and config.parameter.guided_policy.iterations_online_rl <= guided_policy_iteration_counter:
+                        break
 
                 # ---------------------------------------
                 # guided policy training code ↑
