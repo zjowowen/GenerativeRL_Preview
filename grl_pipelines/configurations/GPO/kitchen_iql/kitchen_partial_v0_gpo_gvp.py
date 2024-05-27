@@ -122,6 +122,7 @@ config = EasyDict(
             ),
             critic=dict(
                 method='iql',
+                tau=0.7,
                 batch_size=4096,
                 epochs=2000,
                 iterations=1000000,
@@ -130,6 +131,7 @@ config = EasyDict(
                 update_momentum=0.005,
             ),
             guided_policy=dict(
+                eta=1.,
                 batch_size=4096,
                 epochs=10000,
                 iterations=2000000,
