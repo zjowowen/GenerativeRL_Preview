@@ -1457,9 +1457,16 @@ class GPOnlineAlgorithm:
                 # behavior training code ↑
                 # ---------------------------------------
 
+                # if hasattr(config.parameter, "need_fake_action") and config.parameter.need_fake_action is True:
+                #     self.need_fake_action = True
+                
                 if hasattr(config.parameter, "need_fake_action") and config.parameter.need_fake_action is True:
                     self.need_fake_action = True
-                
+                if config.parameter.algorithm_type in ["GPO_softmax_static"]:
+                    self.need_fake_action = True
+                else:
+                    self.need_fake_action = False
+
                 # ---------------------------------------
                 # make fake action ↓
                 # ---------------------------------------
