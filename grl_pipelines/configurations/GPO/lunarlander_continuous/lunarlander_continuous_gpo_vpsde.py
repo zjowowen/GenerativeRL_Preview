@@ -133,6 +133,7 @@ config = EasyDict(
                 learning_rate=1e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
+                method="in_support_ql",
             ),
             guided_policy=dict(
                 batch_size=2048,

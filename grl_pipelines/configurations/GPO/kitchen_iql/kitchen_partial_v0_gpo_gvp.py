@@ -14,21 +14,42 @@ t_encoder = dict(
 )
 algorithm_type = "GPO"
 solver_type = "ODESolver"
-model_type = "IndependentConditionalFlowModel"
-env_id = "kitchen-complete-v0"
-project_name = f"d4rl-{env_id}-GPO-IndependentConditionalFlowModel"
+model_type = "DiffusionModel"
+path = dict(type="gvp")
+model_loss_type = "flow_matching"
+env_id = "kitchen-partial-v0"
+project_name = f"d4rl-{env_id}-GPO-GVP"
 model = dict(
     device=device,
     x_size=action_size,
-    solver=dict(
-        type="ODESolver",
-        args=dict(
-            library="torchdiffeq",
-        ),
+    solver=(
+        dict(
+            type="DPMSolver",
+            args=dict(
+                order=2,
+                device=device,
+                steps=17,
+            ),
+        )
+        if solver_type == "DPMSolver"
+        else (
+            dict(
+                type="ODESolver",
+                args=dict(
+                    library="torchdiffeq",
+                ),
+            )
+            if solver_type == "ODESolver"
+            else dict(
+                type="SDESolver",
+                args=dict(
+                    library="torchsde",
+                ),
+            )
+        )
     ),
-    path=dict(
-        sigma=0.1,
-    ),
+    path=path,
+    reverse_path=path,
     model=dict(
         type="velocity_function",
         args=dict(
@@ -69,6 +90,7 @@ config = EasyDict(
             GPPolicy=dict(
                 device=device,
                 model_type=model_type,
+                model_loss_type=model_loss_type,
                 model=model,
                 critic=dict(
                     device=device,
@@ -98,10 +120,9 @@ config = EasyDict(
                 epochs=2000,
                 iterations=1000000,
             ),
-            sample_per_state=16,
-            fake_data_t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
                 method='iql',
+                tau=0.7,
                 batch_size=4096,
                 epochs=2000,
                 iterations=1000000,

@@ -99,8 +99,6 @@ config = EasyDict(
                 epochs=2000,
                 iterations=1000000,
             ),
-            sample_per_state=16,
-            fake_data_t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
                 batch_size=256,
                 epochs=500,
@@ -108,8 +106,7 @@ config = EasyDict(
                 discount_factor=0.99,
                 update_momentum=0.005,
                 tau=0.7,
-                # new add below
-                lr_decy=False,
+                method='iql',
             ),
             guided_policy=dict(
                 batch_size=4096,

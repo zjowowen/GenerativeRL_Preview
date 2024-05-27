@@ -15,10 +15,14 @@ t_encoder = dict(
 algorithm_type = "GPO"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
-path = dict(type="gvp")
-model_loss_type = "flow_matching"
+path = dict(
+    type="linear_vp_sde",
+    beta_0=0.1,
+    beta_1=20.0,
+)
+model_loss_type = "score_matching"
 env_id = "kitchen-partial-v0"
-project_name = f"d4rl-{env_id}-GPO-GVP"
+project_name = f"d4rl-{env_id}-GPO-VPSDE"
 model = dict(
     device=device,
     x_size=action_size,
@@ -51,7 +55,7 @@ model = dict(
     path=path,
     reverse_path=path,
     model=dict(
-        type="velocity_function",
+        type="noise_function",
         args=dict(
             t_encoder=t_encoder,
             backbone=dict(
@@ -120,11 +124,8 @@ config = EasyDict(
                 epochs=2000,
                 iterations=1000000,
             ),
-            sample_per_state=16,
-            fake_data_t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
                 method='iql',
-                tau=0.7,
                 batch_size=4096,
                 epochs=2000,
                 iterations=1000000,

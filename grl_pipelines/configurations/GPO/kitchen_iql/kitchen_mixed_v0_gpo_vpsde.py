@@ -1,8 +1,8 @@
 import torch
 from easydict import EasyDict
 
-action_size = 6
-state_size = 17
+action_size = 9
+state_size = 60
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 t_embedding_dim = 32
 t_encoder = dict(
@@ -15,10 +15,14 @@ t_encoder = dict(
 algorithm_type = "GPO"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
-path = dict(type="gvp")
-model_loss_type = "flow_matching"
-env_id = "halfcheetah-medium-v2"
-project_name = f"d4rl-{env_id}-GPO-GVP-Online"
+path = dict(
+    type="linear_vp_sde",
+    beta_0=0.1,
+    beta_1=20.0,
+)
+model_loss_type = "score_matching"
+env_id = "kitchen-mixed-v0"
+project_name = f"d4rl-{env_id}-GPO-VPSDE"
 model = dict(
     device=device,
     x_size=action_size,
@@ -51,7 +55,7 @@ model = dict(
     path=path,
     reverse_path=path,
     model=dict(
-        type="velocity_function",
+        type="noise_function",
         args=dict(
             t_encoder=t_encoder,
             backbone=dict(
@@ -73,7 +77,6 @@ config = EasyDict(
     train=dict(
         project=project_name,
         device=device,
-        wandb=dict(project=f"IQL-{env_id}-{algorithm_type}-{model_type}"),
         simulator=dict(
             type="GymEnvSimulator",
             args=dict(
@@ -81,7 +84,7 @@ config = EasyDict(
             ),
         ),
         dataset=dict(
-            type="GPOD4RLOnlineDataset",
+            type="GPOD4RLDataset",
             args=dict(
                 env_id=env_id,
                 device=device,
@@ -115,38 +118,26 @@ config = EasyDict(
         ),
         parameter=dict(
             algorithm_type=algorithm_type,
-            online_rl=dict(
-                iterations=10000,
-                drop_ratio=0.0,
-                collect_steps=10,
-
-            ),
             behaviour_policy=dict(
                 batch_size=4096,
                 learning_rate=1e-4,
                 epochs=2000,
-                epochs_online_rl=2,
                 iterations=1000000,
             ),
-            sample_per_state=16,
-            fake_data_t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
-                batch_size=256,
-                epochs=500,
-                learning_rate=3e-4,
+                method='iql',
+                batch_size=4096,
+                epochs=2000,
+                iterations=1000000,
+                learning_rate=1e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
-                epochs_online_rl=2,
-                tau=0.7,
-                # new add below
-                lr_decy=False,
             ),
             guided_policy=dict(
                 batch_size=4096,
                 epochs=10000,
                 iterations=2000000,
                 learning_rate=1e-4,
-                epochs_online_rl=2,
             ),
             evaluation=dict(
                 eval=True,
