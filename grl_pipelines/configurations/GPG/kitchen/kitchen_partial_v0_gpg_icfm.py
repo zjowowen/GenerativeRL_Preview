@@ -97,7 +97,7 @@ config = EasyDict(
             behaviour_policy=dict(
                 batch_size=4096,
                 learning_rate=1e-4,
-                epochs=1000,
+                epochs=2000,
                 # new add below
                 lr_decy=False,
             ),
@@ -106,7 +106,7 @@ config = EasyDict(
             critic=dict(
                 method='iql',
                 batch_size=4096,
-                epochs=1000,
+                epochs=2000,
                 learning_rate=3e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
@@ -115,7 +115,7 @@ config = EasyDict(
             ),
             guided_policy=dict(
                 batch_size=4096,
-                epochs=200,
+                epochs=2000,
                 learning_rate=1e-4,
                 # new add below
                 copy_from_basemodel=True,
