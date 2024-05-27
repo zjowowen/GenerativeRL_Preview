@@ -18,7 +18,7 @@ English | [简体中文(Simplified Chinese)](https://github.com/zjowowen/Generat
 ## Features
 
 - Support for training, evaluation and deploying diverse generative models, including diffusion models and flow models
-- Integration of generative models for state representation, action representation or policy learning in RL
+- Integration of generative models for state representation, action representation, policy learning and dynamic model learning in RL
 - Implementation of popular RL algorithms tailored for generative models, such as Q-guided policy optimization (QGPO)
 - Support for various RL environments and benchmarks
 - Easy-to-use API for training and evaluation
@@ -26,7 +26,7 @@ English | [简体中文(Simplified Chinese)](https://github.com/zjowowen/Generat
 ## Framework Structure
 
 <p align="center">
-  <img src="assets/framework.png" alt="Image Description 1" width="50%" height="auto" style="margin: 0 1%;">
+  <img src="assets/framework.png" alt="Image Description 1" width="80%" height="auto" style="margin: 0 1%;">
 </p>
 
 ## Integrated Generative Models
