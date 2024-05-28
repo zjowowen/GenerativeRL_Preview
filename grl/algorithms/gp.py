@@ -1283,7 +1283,7 @@ class GPAlgorithm:
                             torch.linspace(
                                 0.0, 1.0, config.parameter.fake_data_t_span
                             ).to(states.device)
-                            if config.parameter.fake_data_t_span is not None
+                            if hasattr(config.parameter, "fake_data_t_span") and config.parameter.fake_data_t_span is not None
                             else None
                         ),
                     )
@@ -1313,7 +1313,7 @@ class GPAlgorithm:
                                     torch.linspace(
                                         0.0, 1.0, config.parameter.fake_data_t_span
                                     ).to(config.model.GPPolicy.device)
-                                    if config.parameter.fake_data_t_span is not None
+                                    if hasattr(config.parameter, "fake_data_t_span") and config.parameter.fake_data_t_span is not None
                                     else None
                                 ),
                             )
@@ -1882,7 +1882,7 @@ class GPAlgorithm:
                                 torch.linspace(
                                     0.0, 1.0, config.parameter.fake_data_t_span
                                 ).to(data["s"].device)
-                                if config.parameter.fake_data_t_span is not None
+                                if hasattr(config.parameter, "fake_data_t_span") and config.parameter.fake_data_t_span is not None
                                 else None
                             ),
                             batch_size=config.parameter.sample_per_state,
