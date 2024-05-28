@@ -119,14 +119,14 @@ config = EasyDict(
         parameter=dict(
             algorithm_type=algorithm_type,
             behaviour_policy=dict(
-                batch_size=4096,
+                batch_size=1024,
                 learning_rate=1e-4,
                 epochs=2000,
                 iterations=1000000,
             ),
             critic=dict(
                 method='iql',
-                batch_size=4096,
+                batch_size=1024,
                 epochs=2000,
                 iterations=1000000,
                 learning_rate=1e-4,
@@ -135,7 +135,7 @@ config = EasyDict(
             ),
             guided_policy=dict(
                 eta=1.,
-                batch_size=4096,
+                batch_size=1024,
                 epochs=10000,
                 iterations=2000000,
                 learning_rate=1e-4,

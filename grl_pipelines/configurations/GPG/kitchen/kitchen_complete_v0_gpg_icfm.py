@@ -12,7 +12,7 @@ t_encoder = dict(
         scale=30.0,
     ),
 )
-algorithm_type = "GPG"
+algorithm_type = "GPG_Polish"
 solver_type = "ODESolver"
 model_type = "IndependentConditionalFlowModel"
 env_id = "kitchen-complete-v0"
@@ -95,7 +95,7 @@ config = EasyDict(
         parameter=dict(
             algorithm_type=algorithm_type,
             behaviour_policy=dict(
-                batch_size=4096,
+                batch_size=1024,
                 learning_rate=1e-4,
                 epochs=2000,
                 # new add below
@@ -105,7 +105,8 @@ config = EasyDict(
             fake_data_t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
                 method='iql',
-                batch_size=4096,
+                tau=0.7,
+                batch_size=1024,
                 epochs=2000,
                 learning_rate=3e-4,
                 discount_factor=0.99,
@@ -114,7 +115,7 @@ config = EasyDict(
                 lr_decy=False,
             ),
             guided_policy=dict(
-                batch_size=4096,
+                batch_size=1024,
                 epochs=2000,
                 learning_rate=1e-4,
                 # new add below
@@ -134,7 +135,7 @@ config = EasyDict(
                 evaluation_guided_policy_interval=10,
                 guidance_scale=[0.0, 1.0, 2.0],
             ),
-            checkpoint_path="./checkpoint",
+            checkpoint_path=f"./{project_name}/checkpoint",
             checkpoint_freq=100,
         ),
     ),
