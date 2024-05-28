@@ -1084,7 +1084,7 @@ class GPAlgorithm:
                     if len(critic_model_files) == 0:
                         self.critic_train_epoch = 0
                         log.warning(
-                            f"No guidedmodel file found in {config.parameter.checkpoint_path}"
+                            f"No criticmodel file found in {config.parameter.checkpoint_path}"
                         )
                     else:
                         checkpoint = torch.load(
