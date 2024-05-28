@@ -14,50 +14,23 @@ t_encoder = dict(
 )
 algorithm_type = "GPO"
 solver_type = "ODESolver"
-model_type = "DiffusionModel"
-env_id = "antmaze-medium-diverse-v0"
-project_name = f"{env_id}-GPO-VPSDE"
+model_type = "IndependentConditionalFlowModel"
+env_id = "antmaze-umaze-v0"
+project_name = f"d4rl-{env_id}-GPO-IndependentConditionalFlowModel"
 model = dict(
     device=device,
     x_size=action_size,
-    solver=(
-        dict(
-            type="DPMSolver",
-            args=dict(
-                order=2,
-                device=device,
-                steps=17,
-            ),
-        )
-        if solver_type == "DPMSolver"
-        else (
-            dict(
-                type="ODESolver",
-                args=dict(
-                    library="torchdiffeq",
-                ),
-            )
-            if solver_type == "ODESolver"
-            else dict(
-                type="SDESolver",
-                args=dict(
-                    library="torchsde",
-                ),
-            )
-        )
+    solver=dict(
+        type="ODESolver",
+        args=dict(
+            library="torchdiffeq",
+        ),
     ),
     path=dict(
-        type="linear_vp_sde",
-        beta_0=0.1,
-        beta_1=20.0,
-    ),
-    reverse_path=dict(
-        type="linear_vp_sde",
-        beta_0=0.1,
-        beta_1=20.0,
+        sigma=0.1,
     ),
     model=dict(
-        type="noise_function",
+        type="velocity_function",
         args=dict(
             t_encoder=t_encoder,
             backbone=dict(
@@ -79,9 +52,6 @@ config = EasyDict(
     train=dict(
         project=project_name,
         device=device,
-        wandb=dict(
-            dir=f"{project_name}",
-        ),
         simulator=dict(
             type="GymEnvSimulator",
             args=dict(
@@ -96,10 +66,9 @@ config = EasyDict(
             ),
         ),
         model=dict(
-            GPPolicy=dict(
+            GPOPolicy=dict(
                 device=device,
                 model_type=model_type,
-                model_loss_type="score_matching",
                 model=model,
                 critic=dict(
                     device=device,
@@ -136,7 +105,8 @@ config = EasyDict(
                 learning_rate=3e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
-                method="in_support_ql",
+                method="iql",
+                tau=0.9,
             ),
             guided_policy=dict(
                 batch_size=4096,
@@ -145,10 +115,8 @@ config = EasyDict(
                 eta=1.0,
             ),
             evaluation=dict(
-                eval=True,
                 repeat=5,
-                evaluation_behavior_policy_interval=500,
-                evaluation_guided_policy_interval=5,
+                evaluation_interval=500,
                 guidance_scale=[0.0, 1.0, 2.0],
             ),
             checkpoint_path=f"./{project_name}/checkpoint",

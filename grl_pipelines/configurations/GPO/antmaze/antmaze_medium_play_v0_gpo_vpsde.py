@@ -15,8 +15,8 @@ t_encoder = dict(
 algorithm_type = "GPO"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
-env_id="antmaze-large-diverse-v0"
-project_name = f"d4rl-{env_id}-GPO-GVP"
+env_id="antmaze-medium-play-v0"
+project_name = f"d4rl-{env_id}-GPO-VPSDE"
 model = dict(
     device=device,
     x_size=action_size,
@@ -47,13 +47,17 @@ model = dict(
         )
     ),
     path=dict(
-        type="gvp",
+        type="linear_vp_sde",
+        beta_0=0.1,
+        beta_1=20.0,
     ),
     reverse_path=dict(
-        type="gvp",
+        type="linear_vp_sde",
+        beta_0=0.1,
+        beta_1=20.0,
     ),
     model=dict(
-        type="velocity_function",
+        type="noise_function",
         args=dict(
             t_encoder=t_encoder,
             backbone=dict(
@@ -92,7 +96,7 @@ config = EasyDict(
             GPOPolicy=dict(
                 device=device,
                 model_type=model_type,
-                model_loss_type="flow_matching",
+                model_loss_type="score_matching",
                 model=model,
                 critic=dict(
                     device=device,

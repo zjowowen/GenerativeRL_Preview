@@ -15,7 +15,7 @@ t_encoder = dict(
 algorithm_type = "GPO"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
-env_id="antmaze-large-diverse-v0"
+env_id="antmaze-medium-diverse-v0"
 project_name = f"d4rl-{env_id}-GPO-GVP"
 model = dict(
     device=device,
@@ -129,12 +129,14 @@ config = EasyDict(
                 learning_rate=3e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
-                method="in_support_ql",
+                method="iql",
+                tau=0.9,
             ),
             guided_policy=dict(
                 batch_size=4096,
                 epochs=10000,
                 learning_rate=1e-4,
+                eta=1.0,
             ),
             evaluation=dict(
                 repeat=5,

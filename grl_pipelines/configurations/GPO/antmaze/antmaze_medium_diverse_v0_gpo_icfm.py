@@ -14,43 +14,20 @@ t_encoder = dict(
 )
 algorithm_type = "GPO"
 solver_type = "ODESolver"
-model_type = "DiffusionModel"
-env_id="antmaze-large-diverse-v0"
-project_name = f"d4rl-{env_id}-GPO-GVP"
+model_type = "IndependentConditionalFlowModel"
+env_id = "antmaze-medium-diverse-v0"
+project_name = f"d4rl-{env_id}-GPO-IndependentConditionalFlowModel"
 model = dict(
     device=device,
     x_size=action_size,
-    solver=(
-        dict(
-            type="DPMSolver",
-            args=dict(
-                order=2,
-                device=device,
-                steps=17,
-            ),
-        )
-        if solver_type == "DPMSolver"
-        else (
-            dict(
-                type="ODESolver",
-                args=dict(
-                    library="torchdiffeq",
-                ),
-            )
-            if solver_type == "ODESolver"
-            else dict(
-                type="SDESolver",
-                args=dict(
-                    library="torchsde",
-                ),
-            )
-        )
+    solver=dict(
+        type="ODESolver",
+        args=dict(
+            library="torchdiffeq",
+        ),
     ),
     path=dict(
-        type="gvp",
-    ),
-    reverse_path=dict(
-        type="gvp",
+        sigma=0.1,
     ),
     model=dict(
         type="velocity_function",
@@ -92,7 +69,6 @@ config = EasyDict(
             GPOPolicy=dict(
                 device=device,
                 model_type=model_type,
-                model_loss_type="flow_matching",
                 model=model,
                 critic=dict(
                     device=device,
