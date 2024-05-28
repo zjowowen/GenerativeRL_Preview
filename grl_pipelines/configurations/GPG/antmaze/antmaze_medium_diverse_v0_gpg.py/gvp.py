@@ -12,7 +12,8 @@ t_encoder = dict(
         scale=30.0,
     ),
 )
-algorithm_type = "GPG"
+algorithm_type = "GPG_Polish"
+
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
 env_id = "antmaze-medium-diverse-v0"
@@ -76,7 +77,7 @@ config = EasyDict(
     train=dict(
         project=project_name,
         device=device,
-        wandb=dict(project=f"{env_id}-{algorithm_type}-{model_type}"),
+        wandb=dict(project=f"new-GPG-{env_id}-{model_type}"),
         simulator=dict(
             type="GymEnvSimulator",
             args=dict(
@@ -121,7 +122,7 @@ config = EasyDict(
             behaviour_policy=dict(
                 batch_size=4096,
                 learning_rate=1e-4,
-                epochs=1000,
+                epochs=8000,
                 # new add below
                 lr_decy=False,
             ),
@@ -129,25 +130,27 @@ config = EasyDict(
             t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
                 batch_size=4096,
-                epochs=1000,
-                learning_rate=3e-4,
+                epochs=4000,
+                learning_rate=3e-5,
                 discount_factor=0.99,
                 update_momentum=0.005,
+                tau=0.9,
                 # new add below
                 lr_decy=False,
+                method="iql"
             ),
             guided_policy=dict(
                 batch_size=4096,
-                epochs=200,
-                learning_rate=1e-4,
+                epochs=1000,
+                learning_rate=1e-5,
                 # new add below
                 copy_from_basemodel=True,
-                lr_decy=True,
-                loss_type="double_minibatch_loss",
-                grad_norm_clip=10,
-                gradtime_step=32,
+                # lr_decy=False,
+                loss_type="origin_loss",
+                # grad_norm_clip=10,
+                gradtime_step=1000,
                 lr_epochs=200,
-                eta=1,
+                eta=4,
             ),
             evaluation=dict(
                 eval=True,
@@ -155,9 +158,12 @@ config = EasyDict(
                 evaluation_behavior_policy_interval=500,
                 evaluation_guided_policy_interval=10,
                 guidance_scale=[0.0, 1.0, 2.0],
+                evaluation_iteration_interval=5,
             ),
             checkpoint_path="./checkpoint",
             checkpoint_freq=100,
+            checkpoint_guided_freq=1,
+            checkpoint_transform=False,
         ),
     ),
     deploy=dict(
