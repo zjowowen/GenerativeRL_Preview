@@ -1,9 +1,8 @@
 import torch
 from easydict import EasyDict
 
-action_size = 2
-state_size = 8
-sample_per_state = 16
+action_size = 6
+state_size = 17
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 t_embedding_dim = 32
 t_encoder = dict(
@@ -13,21 +12,22 @@ t_encoder = dict(
         scale=30.0,
     ),
 )
-solver_type = "ODESolver"
+solver_type = "DPMSolver"
+project_name="d4rl-halfcheetah-v2-QGPO-GVP"
 
 config = EasyDict(
     train=dict(
-        project="LunarLanderContinuous-v2-QGPO-Online",
+        project=project_name,
         simulator=dict(
             type="GymEnvSimulator",
             args=dict(
-                env_id="LunarLanderContinuous-v2",
+                env_id="HalfCheetah-v2",
             ),
         ),
         dataset=dict(
-            type="QGPOOnlineDataset",
+            type="QGPOD4RLDataset",
             args=dict(
-                fake_action_shape=sample_per_state,
+                env_id="halfcheetah-medium-expert-v2",
                 device=device,
             ),
         ),
@@ -78,18 +78,10 @@ config = EasyDict(
                             )
                         )
                     ),
-                    path=dict(
-                        type="linear_vp_sde",
-                        beta_0=0.1,
-                        beta_1=20.0,
-                    ),
-                    reverse_path=dict(
-                        type="linear_vp_sde",
-                        beta_0=0.1,
-                        beta_1=20.0,
-                    ),
+                    path=dict(type="gvp"),
+                    reverse_path=dict(type="gvp"),
                     model=dict(
-                        type="noise_function",
+                        type="velocity_function",
                         args=dict(
                             t_encoder=t_encoder,
                             backbone=dict(
@@ -124,36 +116,41 @@ config = EasyDict(
             )
         ),
         parameter=dict(
-            online_rl=dict(
-                iterations=100000,
-                collect_steps=1,
-                collect_steps_at_the_beginning=10000,
-                drop_ratio=0.00001,
-                batch_size=2000,
-            ),
             behaviour_policy=dict(
+                batch_size=4096,
                 learning_rate=1e-4,
+                epochs=2000,
+                #iterations=600000,
             ),
             sample_per_state=16,
-            t_span=None if solver_type == "DPMSolver" else 32,
+            fake_data_t_span=None if solver_type == "DPMSolver" else 32,
+            energy_guided_policy=dict(
+                batch_size=256,
+            ),
             critic=dict(
-                learning_rate=1e-4,
+                epochs=2000,
+                stop_training_iterations=500000,
+                learning_rate=3e-4,
                 discount_factor=0.99,
                 update_momentum=0.995,
             ),
             energy_guidance=dict(
-                learning_rate=1e-4,
+                epochs=4000,
+                iterations=600000,
+                learning_rate=3e-4,
             ),
             evaluation=dict(
-                evaluation_interval=1000,
-                guidance_scale=[0.0, 1.0, 4.0, 16.0],
+                evaluation_interval=10000,
+                guidance_scale=[0.0, 1.0],
             ),
+            checkpoint_path=f"./{project_name}/checkpoint",
+            checkpoint_freq=100,
         ),
     ),
     deploy=dict(
         device=device,
         env=dict(
-            env_id="LunarLanderContinuous-v2",
+            env_id="HalfCheetah-v2",
             seed=0,
         ),
         num_deploy_steps=1000,

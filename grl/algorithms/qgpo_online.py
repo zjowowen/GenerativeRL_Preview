@@ -406,9 +406,9 @@ class QGPOOnlineAlgorithm:
                             guidance_scale=0.0,
                             t_span=(
                                 torch.linspace(
-                                    0.0, 1.0, config.parameter.fake_data_t_span
+                                    0.0, 1.0, config.parameter.t_span
                                 ).to(config.model.QGPOPolicy.device)
-                                if config.parameter.fake_data_t_span is not None
+                                if config.parameter.t_span is not None
                                 else None
                             ),
                         )
@@ -436,9 +436,9 @@ class QGPOOnlineAlgorithm:
                                     guidance_scale=guidance_scale,
                                     t_span=(
                                         torch.linspace(
-                                            0.0, 1.0, config.parameter.fake_data_t_span
+                                            0.0, 1.0, config.parameter.t_span
                                         ).to(config.model.QGPOPolicy.device)
-                                        if config.parameter.fake_data_t_span is not None
+                                        if config.parameter.t_span is not None
                                         else None
                                     ),
                                 )
@@ -495,9 +495,9 @@ class QGPOOnlineAlgorithm:
                                     guidance_scale=guidance_scale,
                                     t_span=(
                                         torch.linspace(
-                                            0.0, 1.0, config.parameter.fake_data_t_span
+                                            0.0, 1.0, config.parameter.t_span
                                         ).to(config.model.QGPOPolicy.device)
-                                        if config.parameter.fake_data_t_span is not None
+                                        if config.parameter.t_span is not None
                                         else None
                                     ),
                                 )
