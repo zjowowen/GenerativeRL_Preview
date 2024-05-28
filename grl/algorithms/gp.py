@@ -1281,9 +1281,9 @@ class GPAlgorithm:
                         batch_size=sample_per_state,
                         t_span=(
                             torch.linspace(
-                                0.0, 1.0, config.parameter.fake_data_t_span
+                                0.0, 1.0, config.parameter.t_span
                             ).to(states.device)
-                            if hasattr(config.parameter, "fake_data_t_span") and config.parameter.fake_data_t_span is not None
+                            if hasattr(config.parameter, "t_span") and config.parameter.t_span is not None
                             else None
                         ),
                     )
@@ -1311,9 +1311,9 @@ class GPAlgorithm:
                                 guidance_scale=guidance_scale,
                                 t_span=(
                                     torch.linspace(
-                                        0.0, 1.0, config.parameter.fake_data_t_span
+                                        0.0, 1.0, config.parameter.t_span
                                     ).to(config.model.GPPolicy.device)
-                                    if hasattr(config.parameter, "fake_data_t_span") and config.parameter.fake_data_t_span is not None
+                                    if hasattr(config.parameter, "t_span") and config.parameter.t_span is not None
                                     else None
                                 ),
                             )
@@ -1880,9 +1880,9 @@ class GPAlgorithm:
                             state=data["s"],
                             t_span=(
                                 torch.linspace(
-                                    0.0, 1.0, config.parameter.fake_data_t_span
+                                    0.0, 1.0, config.parameter.t_span
                                 ).to(data["s"].device)
-                                if hasattr(config.parameter, "fake_data_t_span") and config.parameter.fake_data_t_span is not None
+                                if hasattr(config.parameter, "t_span") and config.parameter.t_span is not None
                                 else None
                             ),
                             batch_size=config.parameter.sample_per_state,

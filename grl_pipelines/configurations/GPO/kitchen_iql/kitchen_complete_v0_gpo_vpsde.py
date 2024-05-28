@@ -124,6 +124,8 @@ config = EasyDict(
                 epochs=2000,
                 iterations=1000000,
             ),
+            sample_per_state=16,
+            t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
                 method='iql',
                 batch_size=1024,
