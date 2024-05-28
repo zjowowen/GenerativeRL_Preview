@@ -592,7 +592,12 @@ class GPPolicy(nn.Module):
         q_value_repeated = self.critic(action_repeated, state_repeated).squeeze(dim=-1)
         v_value_repeated = value_function(state_repeated).squeeze(dim=-1)
 
-        weight = torch.exp(eta * (q_value_repeated - v_value_repeated)).clamp(max=weight_clamp) / weight_clamp
+        weight = (
+            torch.exp(eta * (q_value_repeated - v_value_repeated)).clamp(
+                max=weight_clamp
+            )
+            / weight_clamp
+        )
 
         log_p = compute_likelihood(
             model=self.guided_model,
@@ -614,11 +619,19 @@ class GPPolicy(nn.Module):
         )
         log_mu_per_dim = log_mu / bits_ratio
 
-        loss = (- eta * q_value_repeated.detach() + log_p_per_dim.detach() - log_mu_per_dim.detach()) * log_p_per_dim * weight
-        loss_q =(- eta * q_value_repeated.detach()).mean()
-        loss_p = (log_p_per_dim.detach()* log_p_per_dim * weight).mean()
-        loss_u = (- log_mu_per_dim.detach()*log_p_per_dim * weight).mean()
-        return loss.mean(),loss_q,loss_p,loss_u
+        loss = (
+            (
+                -eta * q_value_repeated.detach()
+                + log_p_per_dim.detach()
+                - log_mu_per_dim.detach()
+            )
+            * log_p_per_dim
+            * weight
+        )
+        loss_q = (-eta * q_value_repeated.detach()).mean()
+        loss_p = (log_p_per_dim.detach() * log_p_per_dim * weight).mean()
+        loss_u = (-log_mu_per_dim.detach() * log_p_per_dim * weight).mean()
+        return loss.mean(), loss_q, loss_p, loss_u
 
     def policy_loss(
         self,
@@ -703,9 +716,16 @@ class GPPolicy(nn.Module):
         clamped_weight = weight.clamp(max=weight_clamp)
 
         # calculate the number of clamped_weight<weight
-        clamped_ratio = torch.mean(torch.tensor(clamped_weight < weight, dtype=torch.float32))
+        clamped_ratio = torch.mean(
+            torch.tensor(clamped_weight < weight, dtype=torch.float32)
+        )
 
-        return torch.mean(model_loss * clamped_weight), torch.mean(weight), torch.mean(clamped_weight), clamped_ratio
+        return (
+            torch.mean(model_loss * clamped_weight),
+            torch.mean(weight),
+            torch.mean(clamped_weight),
+            clamped_ratio,
+        )
 
     def policy_loss_softmax(
         self,
@@ -713,7 +733,7 @@ class GPPolicy(nn.Module):
         state: Union[torch.Tensor, TensorDict],
         fake_action: Union[torch.Tensor, TensorDict],
         maximum_likelihood: bool = False,
-        eta: float = 1.0
+        eta: float = 1.0,
     ):
         """
         Overview:
@@ -722,13 +742,14 @@ class GPPolicy(nn.Module):
             action (:obj:`torch.Tensor`): The input action.
             state (:obj:`torch.Tensor`): The input state.
         """
-        action=fake_action
+        action = fake_action
 
-        action_reshape  = action.reshape(action.shape[0] * action.shape[1], *action.shape[2:])
+        action_reshape = action.reshape(
+            action.shape[0] * action.shape[1], *action.shape[2:]
+        )
         state_repeat = torch.stack([state] * action.shape[1], axis=1)
         state_repeat_reshape = state_repeat.reshape(
-                state_repeat.shape[0] * state_repeat.shape[1],
-                *state_repeat.shape[2:]
+            state_repeat.shape[0] * state_repeat.shape[1], *state_repeat.shape[2:]
         )
         energy = self.critic(action_reshape, state_repeat_reshape).detach()
         energy = energy.reshape(action.shape[0], action.shape[1]).squeeze(dim=-1)
@@ -741,7 +762,10 @@ class GPPolicy(nn.Module):
                     )
                 else:
                     model_loss = self.guided_model.score_matching_loss(
-                        action_reshape, state_repeat_reshape, weighting_scheme="vanilla", average=False
+                        action_reshape,
+                        state_repeat_reshape,
+                        weighting_scheme="vanilla",
+                        average=False,
                     )
             elif self.model_loss_type == "flow_matching":
                 model_loss = self.guided_model.flow_matching_loss(
@@ -752,25 +776,29 @@ class GPPolicy(nn.Module):
             "IndependentConditionalFlowModel",
             "SchrodingerBridgeConditionalFlowModel",
         ]:
-            x0 = self.guided_model.gaussian_generator(batch_size=state.shape[0] * action.shape[1])
+            x0 = self.guided_model.gaussian_generator(
+                batch_size=state.shape[0] * action.shape[1]
+            )
             model_loss = self.guided_model.flow_matching_loss(
                 x0=x0, x1=action_reshape, condition=state_repeat_reshape, average=False
             )
         else:
             raise NotImplementedError
 
-        model_loss = model_loss.reshape(
-                action.shape[0], action.shape[1]
-            ).squeeze(dim=-1)
+        model_loss = model_loss.reshape(action.shape[0], action.shape[1]).squeeze(
+            dim=-1
+        )
 
         relative_energy = nn.Softmax(dim=1)(energy * eta)
 
-        loss = torch.mean(
-            torch.sum(relative_energy * model_loss, axis=-1)
+        loss = torch.mean(torch.sum(relative_energy * model_loss, axis=-1))
+
+        return (
+            loss,
+            torch.mean(energy),
+            torch.mean(relative_energy),
+            torch.mean(model_loss),
         )
-
-        return loss, torch.mean(energy), torch.mean(relative_energy), torch.mean(model_loss)
-
 
     def q_loss(
         self,
@@ -851,7 +879,7 @@ class GPAlgorithm:
                 )
             self.model["GuidedPolicy"] = GuidedPolicy(config=config.model.GuidedPolicy)
 
-            if config.parameter.critic.method=="iql":
+            if config.parameter.critic.method == "iql":
                 self.vf = ValueFunction(
                     config.model.GPPolicy.model.model.args.backbone.args.condition_dim
                 ).to(config.model.GPPolicy.device)
@@ -883,7 +911,7 @@ class GPAlgorithm:
                             start_string="valuefunction_",
                             end_string=".pt",
                         )
-                        if not config.parameter.critic.method=="iql":
+                        if not config.parameter.critic.method == "iql":
                             log.info("we don't use iql for critic training")
                             critic_train_epoch_1 = 0
                         elif len(value_function_files) == 0:
@@ -988,6 +1016,16 @@ class GPAlgorithm:
                     self.critic_train_epoch = 0
                     self.guided_policy_train_epoch = 0
                 else:
+                    for filename in os.listdir(config.parameter.checkpoint_path):
+                        if "__" in filename:
+                            new_filename = filename.replace("__", "_")
+                            old_file = os.path.join(
+                                config.parameter.checkpoint_path, filename
+                            )
+                            new_file = os.path.join(
+                                config.parameter.checkpoint_path, new_filename
+                            )
+                            os.rename(old_file, new_file)
                     base_model_files = sort_files_by_criteria(
                         folder_path=config.parameter.checkpoint_path,
                         start_string="basemodel_",
@@ -1046,7 +1084,7 @@ class GPAlgorithm:
                     if len(critic_model_files) == 0:
                         self.critic_train_epoch = 0
                         log.warning(
-                            f"No guidedmodel file found in {config.parameter.checkpoint_path}"
+                            f"No criticmodel file found in {config.parameter.checkpoint_path}"
                         )
                     else:
                         checkpoint = torch.load(
@@ -1109,7 +1147,7 @@ class GPAlgorithm:
                 wandb.run.name = run_name
                 wandb.run.save()
 
-            elif config.parameter.algorithm_type in ["GPG" ,"GPG_Direct" ,"GPG_Polish"]:
+            elif config.parameter.algorithm_type in ["GPG", "GPG_Direct", "GPG_Polish"]:
                 run_name = f"path-{path_type}-eta-{config.parameter.guided_policy.eta}-T-{config.parameter.guided_policy.gradtime_step}-Lrdecy-{config.parameter.guided_policy.lr_epochs}-seed-{self.seed_value}"
                 wandb.run.name = run_name
                 wandb.run.save()
@@ -1174,7 +1212,7 @@ class GPAlgorithm:
                             ),
                             f=os.path.join(
                                 config.parameter.checkpoint_path,
-                                f"basemodel_{self.behaviour_policy_train_epoch}__{iteration}.pt",
+                                f"basemodel_{self.behaviour_policy_train_epoch}_{iteration}.pt",
                             ),
                         )
                 elif model_type == "guided_model":
@@ -1204,7 +1242,7 @@ class GPAlgorithm:
                     ):
                         if not os.path.exists(config.parameter.checkpoint_path):
                             os.makedirs(config.parameter.checkpoint_path)
-                        if config.parameter.critic.method=="iql":
+                        if config.parameter.critic.method == "iql":
                             torch.save(
                                 dict(
                                     critic_model=model["GPPolicy"].critic.state_dict(),
@@ -1215,8 +1253,9 @@ class GPAlgorithm:
                                 f=os.path.join(
                                     config.parameter.checkpoint_path,
                                     f"critic_{self.critic_train_epoch}_{iteration}.pt",
-                                ))
-                        elif config.parameter.critic.method=="in_support_ql":
+                                ),
+                            )
+                        elif config.parameter.critic.method == "in_support_ql":
                             torch.save(
                                 dict(
                                     critic_model=model["GPPolicy"].critic.state_dict(),
@@ -1226,7 +1265,8 @@ class GPAlgorithm:
                                 f=os.path.join(
                                     config.parameter.checkpoint_path,
                                     f"critic_{self.critic_train_epoch}_{iteration}.pt",
-                                ),)
+                                ),
+                            )
 
             def generate_fake_action(model, states, sample_per_state):
 
@@ -1451,21 +1491,24 @@ class GPAlgorithm:
             # ---------------------------------------
             # behavior training code ↑
             # ---------------------------------------
-                
-            if hasattr(config.parameter, "need_fake_action") and config.parameter.need_fake_action is True:
+
+            if (
+                hasattr(config.parameter, "need_fake_action")
+                and config.parameter.need_fake_action is True
+            ):
                 self.need_fake_action = True
             if config.parameter.algorithm_type in ["GPO_softmax_static"]:
                 self.need_fake_action = True
             else:
                 self.need_fake_action = False
-            
+
             # ---------------------------------------
             # make fake action ↓
             # ---------------------------------------
 
             self.model["GPPolicy"].base_model.eval()
             if self.need_fake_action:
-                
+
                 fake_actions = generate_fake_action(
                     self.model["GPPolicy"],
                     self.dataset.states[:],
@@ -1506,7 +1549,7 @@ class GPAlgorithm:
             # critic training code ↓
             # ---------------------------------------
 
-            if config.parameter.critic.method=="iql":
+            if config.parameter.critic.method == "iql":
                 v_optimizer = torch.optim.Adam(
                     self.vf.parameters(),
                     lr=config.parameter.critic.learning_rate,
@@ -1552,7 +1595,7 @@ class GPAlgorithm:
                 )
 
                 counter = 1
-                if config.parameter.critic.method=="iql":
+                if config.parameter.critic.method == "iql":
                     v_loss_sum = 0.0
                     v_sum = 0.0
                 q_loss_sum = 0.0
@@ -1561,7 +1604,7 @@ class GPAlgorithm:
                 q_grad_norms_sum = 0.0
                 for data in data_loader:
 
-                    if config.parameter.critic.method=="iql":
+                    if config.parameter.critic.method == "iql":
                         v_loss, next_v = self.model["GPPolicy"].critic.v_loss(
                             self.vf,
                             data,
@@ -1611,7 +1654,7 @@ class GPAlgorithm:
                         )
 
                     counter += 1
-                    if config.parameter.critic.method=="iql":
+                    if config.parameter.critic.method == "iql":
                         v_loss_sum += v_loss.item()
                         v_sum += next_v.mean().item()
                     q_loss_sum += q_loss.item()
@@ -1623,7 +1666,7 @@ class GPAlgorithm:
                     critic_train_iter += 1
                     self.critic_train_epoch = epoch
 
-                if config.parameter.critic.method=="iql":
+                if config.parameter.critic.method == "iql":
                     wandb.log(
                         data=dict(v_loss=v_loss_sum / counter, v=v_sum / counter),
                         commit=False,
@@ -1655,7 +1698,7 @@ class GPAlgorithm:
                     hasattr(config.parameter, "checkpoint_freq")
                     and (epoch + 1) % config.parameter.checkpoint_freq == 0
                 ):
-                    if config.parameter.critic.method=="iql":
+                    if config.parameter.critic.method == "iql":
                         save_checkpoint(
                             self.model,
                             iteration=critic_train_iter,
@@ -1762,13 +1805,21 @@ class GPAlgorithm:
                     weight_sum = 0.0
                     clamped_weight_sum = 0.0
                     clamped_ratio_sum = 0.0
-                elif config.parameter.algorithm_type in ["GPO_softmax_static", "GPO_softmax_sample"]:
+                elif config.parameter.algorithm_type in [
+                    "GPO_softmax_static",
+                    "GPO_softmax_sample",
+                ]:
                     energy_sum = 0.0
                     relative_energy_sum = 0.0
                     matching_loss_sum = 0.0
                 for data in data_loader:
                     if config.parameter.algorithm_type == "GPO":
-                        guided_policy_loss, weight, clamped_weight, clamped_ratio = self.model["GPPolicy"].policy_loss(
+                        (
+                            guided_policy_loss,
+                            weight,
+                            clamped_weight,
+                            clamped_ratio,
+                        ) = self.model["GPPolicy"].policy_loss(
                             data["a"],
                             data["s"],
                             data["fake_a"],
@@ -1787,14 +1838,29 @@ class GPAlgorithm:
                                 )
                                 else "minus_value"
                             ),
-                            value_function=self.vf if config.parameter.critic.method=="iql" else None,
-                            weight_clamp=config.parameter.guided_policy.weight_clamp if hasattr(config.parameter.guided_policy, "weight_clamp") else 100.0,
+                            value_function=(
+                                self.vf
+                                if config.parameter.critic.method == "iql"
+                                else None
+                            ),
+                            weight_clamp=(
+                                config.parameter.guided_policy.weight_clamp
+                                if hasattr(
+                                    config.parameter.guided_policy, "weight_clamp"
+                                )
+                                else 100.0
+                            ),
                         )
                         weight_sum += weight
                         clamped_weight_sum += clamped_weight
                         clamped_ratio_sum += clamped_ratio
                     elif config.parameter.algorithm_type == "GPO_softmax_static":
-                        guided_policy_loss, energy, relative_energy, matching_loss = self.model["GPPolicy"].policy_loss_softmax(
+                        (
+                            guided_policy_loss,
+                            energy,
+                            relative_energy,
+                            matching_loss,
+                        ) = self.model["GPPolicy"].policy_loss_softmax(
                             data["s"],
                             data["fake_a"],
                             maximum_likelihood=(
@@ -1804,7 +1870,7 @@ class GPAlgorithm:
                                 )
                                 else False
                             ),
-                            eta=eta
+                            eta=eta,
                         )
                         energy_sum += energy
                         relative_energy_sum += relative_energy
@@ -1822,7 +1888,12 @@ class GPAlgorithm:
                             batch_size=config.parameter.sample_per_state,
                         )
                         fake_actions_ = torch.einsum("nbd->bnd", fake_actions_)
-                        guided_policy_loss, energy, relative_energy, matching_loss  = self.model["GPPolicy"].policy_loss_softmax(
+                        (
+                            guided_policy_loss,
+                            energy,
+                            relative_energy,
+                            matching_loss,
+                        ) = self.model["GPPolicy"].policy_loss_softmax(
                             data["s"],
                             fake_actions_,
                             maximum_likelihood=(
@@ -1832,7 +1903,7 @@ class GPAlgorithm:
                                 )
                                 else False
                             ),
-                            eta=eta
+                            eta=eta,
                         )
                         energy_sum += energy
                         relative_energy_sum += relative_energy
@@ -1850,12 +1921,19 @@ class GPAlgorithm:
                                 if hasattr(config.parameter.guided_policy, "repeats")
                                 else 1
                             ),
-                            value_function=self.vf if config.parameter.critic.method=="iql" else None,
+                            value_function=(
+                                self.vf
+                                if config.parameter.critic.method == "iql"
+                                else None
+                            ),
                         )
                     elif config.parameter.algorithm_type == "GPG_Polish":
-                        guided_policy_loss ,eta_q_loss,log_p_loss,log_u_loss= self.model[
-                            "GPPolicy"
-                        ].policy_loss_pure_grad_polish(
+                        (
+                            guided_policy_loss,
+                            eta_q_loss,
+                            log_p_loss,
+                            log_u_loss,
+                        ) = self.model["GPPolicy"].policy_loss_pure_grad_polish(
                             data["s"],
                             loss_type=config.parameter.guided_policy.loss_type,
                             gradtime_step=config.parameter.guided_policy.gradtime_step,
@@ -1865,8 +1943,18 @@ class GPAlgorithm:
                                 if hasattr(config.parameter.guided_policy, "repeats")
                                 else 1
                             ),
-                            value_function=self.vf if config.parameter.critic.method=="iql"  else None,
-                            weight_clamp=config.parameter.guided_policy.weight_clamp if hasattr(config.parameter.guided_policy, "weight_clamp") else 100.0,
+                            value_function=(
+                                self.vf
+                                if config.parameter.critic.method == "iql"
+                                else None
+                            ),
+                            weight_clamp=(
+                                config.parameter.guided_policy.weight_clamp
+                                if hasattr(
+                                    config.parameter.guided_policy, "weight_clamp"
+                                )
+                                else 100.0
+                            ),
                         )
                     elif config.parameter.algorithm_type == "GPG_2":
                         guided_policy_loss = self.model[
@@ -1900,7 +1988,7 @@ class GPAlgorithm:
                             max_norm=config.parameter.guided_policy.grad_norm_clip,
                             norm_type=2,
                         )
-                    else :
+                    else:
                         guided_model_grad_norms = nn.utils.clip_grad_norm_(
                             self.model["GPPolicy"].guided_model.parameters(),
                             max_norm=100000,
@@ -1969,22 +2057,29 @@ class GPAlgorithm:
                             ),
                             commit=True,
                         )
-                if config.parameter.algorithm_type in ["GPO", "GPO_softmax_static", "GPO_softmax_sample"]:
+                if config.parameter.algorithm_type in [
+                    "GPO",
+                    "GPO_softmax_static",
+                    "GPO_softmax_sample",
+                ]:
                     if config.parameter.algorithm_type == "GPO":
                         wandb.log(
                             data=dict(
-                                weight = weight_sum / counter,
-                                clamped_weight = clamped_weight_sum / counter,
-                                clamped_ratio = clamped_ratio_sum / counter,
+                                weight=weight_sum / counter,
+                                clamped_weight=clamped_weight_sum / counter,
+                                clamped_ratio=clamped_ratio_sum / counter,
                             ),
                             commit=False,
                         )
-                    elif config.parameter.algorithm_type in ["GPO_softmax_static", "GPO_softmax_sample"]:
+                    elif config.parameter.algorithm_type in [
+                        "GPO_softmax_static",
+                        "GPO_softmax_sample",
+                    ]:
                         wandb.log(
                             data=dict(
-                                energy = energy_sum / counter,
-                                relative_energy = relative_energy_sum / counter,
-                                matching_loss = matching_loss_sum / counter,
+                                energy=energy_sum / counter,
+                                relative_energy=relative_energy_sum / counter,
+                                matching_loss=matching_loss_sum / counter,
                             ),
                             commit=False,
                         )
