@@ -1712,21 +1712,22 @@ class GPAlgorithm:
             # guided policy training code ↓
             # ---------------------------------------
 
-            if (
-                hasattr(config.parameter.guided_policy, "copy_from_basemodel")
-                and config.parameter.guided_policy.copy_from_basemodel
-            ):
-                self.model["GPPolicy"].guided_model.model.load_state_dict(
-                    self.model["GPPolicy"].base_model.model.state_dict()
-                )
-
-                for param, target_param in zip(
-                    self.model["GPPolicy"].guided_model.model.parameters(),
-                    self.model["GPPolicy"].base_model.model.parameters(),
+            if not self.guided_policy_train_epoch>0:
+                if (
+                    hasattr(config.parameter.guided_policy, "copy_from_basemodel")
+                    and config.parameter.guided_policy.copy_from_basemodel
                 ):
-                    assert torch.equal(
-                        param, target_param
-                    ), f"The model is not copied correctly."
+                    self.model["GPPolicy"].guided_model.model.load_state_dict(
+                        self.model["GPPolicy"].base_model.model.state_dict()
+                    )
+
+                    for param, target_param in zip(
+                        self.model["GPPolicy"].guided_model.model.parameters(),
+                        self.model["GPPolicy"].base_model.model.parameters(),
+                    ):
+                        assert torch.equal(
+                            param, target_param
+                        ), f"The model is not copied correctly."
 
             guided_policy_optimizer = torch.optim.Adam(
                 self.model["GPPolicy"].guided_model.parameters(),
