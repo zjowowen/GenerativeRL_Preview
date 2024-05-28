@@ -89,7 +89,7 @@ config = EasyDict(
             ),
         ),
         model=dict(
-            GPOPolicy=dict(
+            GPPolicy=dict(
                 device=device,
                 model_type=model_type,
                 model_loss_type="flow_matching",
@@ -125,7 +125,7 @@ config = EasyDict(
             t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
                 batch_size=4096,
-                epochs=10000,
+                epochs=2000,
                 learning_rate=3e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,

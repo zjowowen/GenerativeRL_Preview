@@ -89,7 +89,7 @@ config = EasyDict(
             ),
         ),
         model=dict(
-            GPOPolicy=dict(
+            GPPolicy=dict(
                 device=device,
                 model_type=model_type,
                 model_loss_type="flow_matching",
