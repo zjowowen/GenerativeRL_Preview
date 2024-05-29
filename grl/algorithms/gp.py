@@ -653,6 +653,60 @@ class GPPolicy(nn.Module):
         loss_u = (-log_mu_per_dim.detach() * log_p_per_dim * weight).mean()
         return loss.mean(), loss_q, loss_p, loss_u
 
+    def policy_loss_pure_grad_softmax(
+        self,
+        state: Union[torch.Tensor, TensorDict],
+        gradtime_step: int = 1000,
+        eta: float = 1.0,
+        repeats: int = 1,
+    ):
+        t_span = torch.linspace(0.0, 1.0, gradtime_step).to(state.device)
+
+        state_repeated = torch.repeat_interleave(state, repeats=repeats, dim=0)
+        action_repeated = self.base_model.sample(
+            t_span=t_span, condition=state_repeated, with_grad=False
+        )
+        q_value_repeated = self.critic(action_repeated, state_repeated).squeeze(dim=-1)
+        q_value_reshaped = q_value_repeated.reshape(-1, repeats)
+
+        weight = nn.Softmax(dim=1)(q_value_reshaped * eta)
+        weight = weight.reshape(-1)
+
+        log_p = compute_likelihood(
+            model=self.guided_model,
+            x=action_repeated,
+            condition=state_repeated,
+            t=t_span,
+            using_Hutchinson_trace_estimator=True,
+        )
+        bits_ratio = torch.prod(
+            torch.tensor(state_repeated.shape[1], device=state.device)
+        ) * torch.log(torch.tensor(2.0, device=state.device))
+        log_p_per_dim = log_p / bits_ratio
+        log_mu = compute_likelihood(
+            model=self.base_model,
+            x=action_repeated,
+            condition=state_repeated,
+            t=t_span,
+            using_Hutchinson_trace_estimator=True,
+        )
+        log_mu_per_dim = log_mu / bits_ratio
+
+        loss = (
+            (
+                -eta * q_value_repeated.detach()
+                + log_p_per_dim.detach()
+                - log_mu_per_dim.detach()
+            )
+            * log_p_per_dim
+            * weight
+        )
+        loss_q = (-eta * q_value_repeated.detach()).mean()
+        loss_p = (log_p_per_dim.detach() * log_p_per_dim * weight).mean()
+        loss_u = (-log_mu_per_dim.detach() * log_p_per_dim * weight).mean()
+        return loss.mean(), loss_q, loss_p, loss_u
+
+
     def policy_loss(
         self,
         action: Union[torch.Tensor, TensorDict],
@@ -1987,6 +2041,22 @@ class GPAlgorithm:
                                     config.parameter.guided_policy, "weight_clamp"
                                 )
                                 else 100.0
+                            ),
+                        )
+                    elif config.parameter.algorithm_type == "GPG_Softmax":
+                        (
+                            guided_policy_loss,
+                            eta_q_loss,
+                            log_p_loss,
+                            log_u_loss,
+                        ) = self.model["GPPolicy"].policy_loss_pure_grad_softmax(
+                            data["s"],
+                            gradtime_step=config.parameter.guided_policy.gradtime_step,
+                            eta=eta,
+                            repeats=(
+                                config.parameter.guided_policy.repeats
+                                if hasattr(config.parameter.guided_policy, "repeats")
+                                else 32
                             ),
                         )
                     elif config.parameter.algorithm_type == "GPG_2":
