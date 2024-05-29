@@ -532,10 +532,25 @@ class GPPolicy(nn.Module):
     ):
         t_span = torch.linspace(0.0, 1.0, gradtime_step).to(state.device)
 
-        state_repeated = torch.repeat_interleave(state, repeats=repeats, dim=0)
+        def log_grad(name, grad):
+            wandb.log(
+                {
+                    f"{name}_mean": grad.mean().item(),
+                    f"{name}_max": grad.max().item(),
+                    f"{name}_min": grad.min().item(),
+                },
+                commit=False,
+            )
+
+        state_repeated = torch.repeat_interleave(
+            state, repeats=repeats, dim=0
+        ).requires_grad_()
+        state_repeated.register_hook(lambda grad: log_grad("state_repeated", grad))
         action_repeated = self.guided_model.sample(
             t_span=t_span, condition=state_repeated, with_grad=True
         )
+        action_repeated.register_hook(lambda grad: log_grad("action_repeated", grad))
+
         q_value_repeated = self.critic(action_repeated, state_repeated)
         log_p = compute_likelihood(
             model=self.guided_model,
@@ -1280,10 +1295,11 @@ class GPAlgorithm:
                         state=states,
                         batch_size=sample_per_state,
                         t_span=(
-                            torch.linspace(
-                                0.0, 1.0, config.parameter.t_span
-                            ).to(states.device)
-                            if hasattr(config.parameter, "t_span") and config.parameter.t_span is not None
+                            torch.linspace(0.0, 1.0, config.parameter.t_span).to(
+                                states.device
+                            )
+                            if hasattr(config.parameter, "t_span")
+                            and config.parameter.t_span is not None
                             else None
                         ),
                     )
@@ -1313,7 +1329,8 @@ class GPAlgorithm:
                                     torch.linspace(
                                         0.0, 1.0, config.parameter.t_span
                                     ).to(config.model.GPPolicy.device)
-                                    if hasattr(config.parameter, "t_span") and config.parameter.t_span is not None
+                                    if hasattr(config.parameter, "t_span")
+                                    and config.parameter.t_span is not None
                                     else None
                                 ),
                             )
@@ -1712,7 +1729,7 @@ class GPAlgorithm:
             # guided policy training code ↓
             # ---------------------------------------
 
-            if not self.guided_policy_train_epoch>0:
+            if not self.guided_policy_train_epoch > 0:
                 if (
                     hasattr(config.parameter.guided_policy, "copy_from_basemodel")
                     and config.parameter.guided_policy.copy_from_basemodel
@@ -1880,10 +1897,11 @@ class GPAlgorithm:
                         fake_actions_ = self.model["GPPolicy"].behaviour_policy_sample(
                             state=data["s"],
                             t_span=(
-                                torch.linspace(
-                                    0.0, 1.0, config.parameter.t_span
-                                ).to(data["s"].device)
-                                if hasattr(config.parameter, "t_span") and config.parameter.t_span is not None
+                                torch.linspace(0.0, 1.0, config.parameter.t_span).to(
+                                    data["s"].device
+                                )
+                                if hasattr(config.parameter, "t_span")
+                                and config.parameter.t_span is not None
                                 else None
                             ),
                             batch_size=config.parameter.sample_per_state,
@@ -2005,6 +2023,11 @@ class GPAlgorithm:
                                 guided_model_grad_norms=guided_model_grad_norms,
                             ),
                             commit=True,
+                        )
+                        save_checkpoint(
+                            self.model,
+                            iteration=guided_policy_train_iter,
+                            model_type="guided_model",
                         )
                     elif config.parameter.algorithm_type == "GPG_Polish":
                         wandb.log(
