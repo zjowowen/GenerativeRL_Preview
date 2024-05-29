@@ -658,8 +658,9 @@ class GPPolicy(nn.Module):
         state: Union[torch.Tensor, TensorDict],
         gradtime_step: int = 1000,
         eta: float = 1.0,
-        repeats: int = 1,
+        repeats: int = 10,
     ):
+        assert repeats > 1
         t_span = torch.linspace(0.0, 1.0, gradtime_step).to(state.device)
 
         state_repeated = torch.repeat_interleave(state, repeats=repeats, dim=0)
@@ -1221,7 +1222,7 @@ class GPAlgorithm:
                 wandb.run.name = run_name
                 wandb.run.save()
 
-            elif config.parameter.algorithm_type in ["GPG", "GPG_Direct", "GPG_Polish"]:
+            elif config.parameter.algorithm_type in ["GPG", "GPG_Direct", "GPG_Polish", "GPG_Softmax"]:
                 run_name = f"Q-{config.parameter.critic.method}-path-{path_type}-eta-{config.parameter.guided_policy.eta}-T-{config.parameter.guided_policy.gradtime_step}-batch-{config.parameter.guided_policy.batch_size}-lr-{config.parameter.guided_policy.learning_rate}-seed-{self.seed_value}"
                 wandb.run.name = run_name
                 wandb.run.save()
@@ -2113,7 +2114,7 @@ class GPAlgorithm:
                             iteration=guided_policy_train_iter,
                             model_type="guided_model",
                         )
-                    elif config.parameter.algorithm_type == "GPG_Polish":
+                    elif config.parameter.algorithm_type in ["GPG_Polish", "GPG_Softmax"]:
                         wandb.log(
                             data=dict(
                                 guided_policy_train_iter=guided_policy_train_iter,
