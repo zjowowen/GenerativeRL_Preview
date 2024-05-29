@@ -16,7 +16,7 @@ algorithm_type = "GPG_Polish"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
 env_id = "kitchen-complete-v0"
-project_name = f"d4rl-{env_id}-GPG-GVP"
+project_name = f"d4rl-{env_id}-GPG-GVP-ph2tau7-ph3lr6"
 
 model = dict(
     device=device,
@@ -131,7 +131,7 @@ config = EasyDict(
                 method='iql',
                 tau=0.7,
                 batch_size=1024,
-                epochs=2000,
+                epochs=20000,
                 learning_rate=3e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
@@ -140,23 +140,24 @@ config = EasyDict(
             ),
             guided_policy=dict(
                 batch_size=1024,
-                epochs=2000,
-                learning_rate=1e-4,
+                epochs=10,
+                learning_rate=1e-5,
                 # new add below
                 copy_from_basemodel=True,
-                lr_decy=True,
-                loss_type="double_minibatch_loss",
-                grad_norm_clip=10,
-                gradtime_step=32,
-                lr_epochs=200,
+                # lr_decy=True,
+                loss_type="orgin_loss",
+                # grad_norm_clip=10,
+                gradtime_step=1000,
+                lr_epochs=200, #no meaning
                 eta=1,
             ),
             evaluation=dict(
                 eval=True,
                 repeat=3,
                 evaluation_behavior_policy_interval=500,
+                evaluation_iteration_interval=1,
                 evaluation_guided_policy_interval=10,
-                guidance_scale=[0.0, 1.0, 2.0],
+                guidance_scale=[0.0, 1.0],
             ),
             checkpoint_path=f"./{project_name}/checkpoint",
             checkpoint_freq=100,
