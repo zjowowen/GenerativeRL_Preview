@@ -552,6 +552,7 @@ class GPPolicy(nn.Module):
         action_repeated.register_hook(lambda grad: log_grad("action_repeated", grad))
 
         q_value_repeated = self.critic(action_repeated, state_repeated)
+        q_value_repeated.register_hook(lambda grad: log_grad("q_value_repeated", grad))
         log_p = compute_likelihood(
             model=self.guided_model,
             x=action_repeated,
@@ -559,6 +560,8 @@ class GPPolicy(nn.Module):
             t=t_span,
             using_Hutchinson_trace_estimator=True,
         )
+        log_p.register_hook(lambda grad: log_grad("log_p", grad))
+        
         bits_ratio = torch.prod(
             torch.tensor(state_repeated.shape[1], device=state.device)
         ) * torch.log(torch.tensor(2.0, device=state.device))
@@ -570,6 +573,7 @@ class GPPolicy(nn.Module):
             t=t_span,
             using_Hutchinson_trace_estimator=True,
         )
+        log_mu.register_hook(lambda grad: log_grad("log_mu", grad))
         log_mu_mean_per_dim = log_mu.mean() / bits_ratio
         if loss_type == "origin_loss":
             return (
