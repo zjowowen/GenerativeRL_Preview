@@ -11,11 +11,12 @@ from tensordict import TensorDict
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
+import d4rl
 import wandb
 from grl.agents.gp import GPAgent
 
 from grl.datasets import create_dataset
-from grl.datasets.gpo import GPODataset
+from grl.datasets.gpo import GPODataset, GPOD4RLDataset
 from grl.generative_models.diffusion_model import DiffusionModel
 from grl.generative_models.conditional_flow_model.optimal_transport_conditional_flow_model import (
     OptimalTransportConditionalFlowModel,
@@ -1369,6 +1370,14 @@ class GPAlgorithm:
                     evaluation_results[
                         f"evaluation/guidance_scale:[{guidance_scale}]/return_min"
                     ] = return_min
+
+                    if isinstance(self.dataset,GPOD4RLDataset):
+                        env_id=config.dataset.args.env_id
+                        evaluation_results[f"evaluation/guidance_scale:[{guidance_scale}]/return_mean_normalized"]=d4rl.get_normalized_score(env_id, return_mean)
+                        evaluation_results[f"evaluation/guidance_scale:[{guidance_scale}]/return_std_normalized"]=d4rl.get_normalized_score(env_id, return_std)
+                        evaluation_results[f"evaluation/guidance_scale:[{guidance_scale}]/return_max_normalized"]=d4rl.get_normalized_score(env_id, return_max)
+                        evaluation_results[f"evaluation/guidance_scale:[{guidance_scale}]/return_min_normalized"]=d4rl.get_normalized_score(env_id, return_min)
+
                     if repeat > 1:
                         log.info(
                             f"Train epoch: {train_epoch}, guidance_scale: {guidance_scale}, return_mean: {return_mean}, return_std: {return_std}, return_max: {return_max}, return_min: {return_min}"
