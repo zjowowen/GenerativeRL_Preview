@@ -22,7 +22,7 @@ path = dict(
 )
 model_loss_type = "score_matching"
 env_id = "kitchen-complete-v0"
-project_name = f"d4rl-{env_id}-GPO-VPSDE"
+project_name = f"d4rl-{env_id}-GPO-VPSDE-ph2tau7-ph3eta1"
 model = dict(
     device=device,
     x_size=action_size,
@@ -129,7 +129,7 @@ config = EasyDict(
             critic=dict(
                 method='iql',
                 batch_size=1024,
-                epochs=2000,
+                epochs=20000,
                 iterations=1000000,
                 learning_rate=1e-4,
                 discount_factor=0.99,

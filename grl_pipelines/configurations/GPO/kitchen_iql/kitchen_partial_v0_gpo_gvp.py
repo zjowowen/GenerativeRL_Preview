@@ -18,7 +18,7 @@ model_type = "DiffusionModel"
 path = dict(type="gvp")
 model_loss_type = "flow_matching"
 env_id = "kitchen-partial-v0"
-project_name = f"d4rl-{env_id}-GPO-GVP"
+project_name = f"d4rl-{env_id}-GPO-GVP-ph2tau7-ph3eta1"
 model = dict(
     device=device,
     x_size=action_size,

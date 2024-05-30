@@ -22,7 +22,7 @@ path = dict(
 )
 model_loss_type = "score_matching"
 env_id = "kitchen-mixed-v0"
-project_name = f"d4rl-{env_id}-GPO-VPSDE"
+project_name = f"d4rl-{env_id}-GPO-VPSDE-ph2tau7-ph3eta1"
 model = dict(
     device=device,
     x_size=action_size,

@@ -18,7 +18,7 @@ model_type = "DiffusionModel"
 path = dict(type="gvp")
 model_loss_type = "flow_matching"
 env_id = "kitchen-complete-v0"
-project_name = f"d4rl-{env_id}-GPO-GVP"
+project_name = f"d4rl-{env_id}-GPO-GVP-ph2tau7-ph3eta1"
 model = dict(
     device=device,
     x_size=action_size,
@@ -126,7 +126,7 @@ config = EasyDict(
                 method='iql',
                 tau=0.7,
                 batch_size=1024,
-                epochs=2000,
+                epochs=20000,
                 iterations=1000000,
                 learning_rate=1e-4,
                 discount_factor=0.99,
