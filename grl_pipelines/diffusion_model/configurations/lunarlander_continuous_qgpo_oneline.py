@@ -135,7 +135,7 @@ config = EasyDict(
                 learning_rate=1e-4,
             ),
             sample_per_state=16,
-            fake_data_t_span=None if solver_type == "DPMSolver" else 32,
+            t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
                 learning_rate=1e-4,
                 discount_factor=0.99,

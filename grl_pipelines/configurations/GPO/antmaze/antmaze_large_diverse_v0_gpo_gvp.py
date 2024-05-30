@@ -15,7 +15,8 @@ t_encoder = dict(
 algorithm_type = "GPO"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
-project_name = "antmaze-large-diverse-v0-GPO-GVP"
+env_id="antmaze-large-diverse-v0"
+project_name = f"d4rl-{env_id}-GPO-GVP"
 model = dict(
     device=device,
     x_size=action_size,
@@ -77,18 +78,18 @@ config = EasyDict(
         simulator=dict(
             type="GymEnvSimulator",
             args=dict(
-                env_id="antmaze-large-diverse-v0",
+                env_id=env_id,
             ),
         ),
         dataset=dict(
             type="GPOD4RLDataset",
             args=dict(
-                env_id="antmaze-large-diverse-v0",
+                env_id=env_id,
                 device=device,
             ),
         ),
         model=dict(
-            GPOPolicy=dict(
+            GPPolicy=dict(
                 device=device,
                 model_type=model_type,
                 model_loss_type="flow_matching",
@@ -121,7 +122,7 @@ config = EasyDict(
                 epochs=10000,
             ),
             sample_per_state=16,
-            fake_data_t_span=None if solver_type == "DPMSolver" else 32,
+            t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
                 batch_size=4096,
                 epochs=10000,
@@ -147,7 +148,7 @@ config = EasyDict(
     deploy=dict(
         device=device,
         env=dict(
-            env_id="antmaze-large-diverse-v0",
+            env_id=env_id,
             seed=0,
         ),
         num_deploy_steps=1000,

@@ -210,7 +210,7 @@ config = EasyDict(
                 iterations=1,
             ),
             sample_per_state=16,
-            fake_data_t_span=None if solver_type == "DPMSolver" else 32,
+            t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
                 batch_size=2048,
                 iterations=1,

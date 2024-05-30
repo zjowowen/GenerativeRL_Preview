@@ -11,11 +11,12 @@ from tensordict import TensorDict
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
+import d4rl
 import wandb
 from grl.agents.gp import GPAgent
 
 from grl.datasets import create_dataset
-from grl.datasets.gpo import GPODataset
+from grl.datasets.gpo import GPODataset, GPOD4RLDataset
 from grl.generative_models.diffusion_model import DiffusionModel
 from grl.generative_models.conditional_flow_model.optimal_transport_conditional_flow_model import (
     OptimalTransportConditionalFlowModel,
@@ -532,11 +533,27 @@ class GPPolicy(nn.Module):
     ):
         t_span = torch.linspace(0.0, 1.0, gradtime_step).to(state.device)
 
-        state_repeated = torch.repeat_interleave(state, repeats=repeats, dim=0)
+        def log_grad(name, grad):
+            wandb.log(
+                {
+                    f"{name}_mean": grad.mean().item(),
+                    f"{name}_max": grad.max().item(),
+                    f"{name}_min": grad.min().item(),
+                },
+                commit=False,
+            )
+
+        state_repeated = torch.repeat_interleave(
+            state, repeats=repeats, dim=0
+        ).requires_grad_()
+        state_repeated.register_hook(lambda grad: log_grad("state_repeated", grad))
         action_repeated = self.guided_model.sample(
             t_span=t_span, condition=state_repeated, with_grad=True
         )
+        action_repeated.register_hook(lambda grad: log_grad("action_repeated", grad))
+
         q_value_repeated = self.critic(action_repeated, state_repeated)
+        q_value_repeated.register_hook(lambda grad: log_grad("q_value_repeated", grad))
         log_p = compute_likelihood(
             model=self.guided_model,
             x=action_repeated,
@@ -544,6 +561,8 @@ class GPPolicy(nn.Module):
             t=t_span,
             using_Hutchinson_trace_estimator=True,
         )
+        log_p.register_hook(lambda grad: log_grad("log_p", grad))
+        
         bits_ratio = torch.prod(
             torch.tensor(state_repeated.shape[1], device=state.device)
         ) * torch.log(torch.tensor(2.0, device=state.device))
@@ -555,6 +574,7 @@ class GPPolicy(nn.Module):
             t=t_span,
             using_Hutchinson_trace_estimator=True,
         )
+        log_mu.register_hook(lambda grad: log_grad("log_mu", grad))
         log_mu_mean_per_dim = log_mu.mean() / bits_ratio
         if loss_type == "origin_loss":
             return (
@@ -632,6 +652,61 @@ class GPPolicy(nn.Module):
         loss_p = (log_p_per_dim.detach() * log_p_per_dim * weight).mean()
         loss_u = (-log_mu_per_dim.detach() * log_p_per_dim * weight).mean()
         return loss.mean(), loss_q, loss_p, loss_u
+
+    def policy_loss_pure_grad_softmax(
+        self,
+        state: Union[torch.Tensor, TensorDict],
+        gradtime_step: int = 1000,
+        eta: float = 1.0,
+        repeats: int = 10,
+    ):
+        assert repeats > 1
+        t_span = torch.linspace(0.0, 1.0, gradtime_step).to(state.device)
+
+        state_repeated = torch.repeat_interleave(state, repeats=repeats, dim=0)
+        action_repeated = self.base_model.sample(
+            t_span=t_span, condition=state_repeated, with_grad=False
+        )
+        q_value_repeated = self.critic(action_repeated, state_repeated).squeeze(dim=-1)
+        q_value_reshaped = q_value_repeated.reshape(-1, repeats)
+
+        weight = nn.Softmax(dim=1)(q_value_reshaped * eta)
+        weight = weight.reshape(-1)
+
+        log_p = compute_likelihood(
+            model=self.guided_model,
+            x=action_repeated,
+            condition=state_repeated,
+            t=t_span,
+            using_Hutchinson_trace_estimator=True,
+        )
+        bits_ratio = torch.prod(
+            torch.tensor(state_repeated.shape[1], device=state.device)
+        ) * torch.log(torch.tensor(2.0, device=state.device))
+        log_p_per_dim = log_p / bits_ratio
+        log_mu = compute_likelihood(
+            model=self.base_model,
+            x=action_repeated,
+            condition=state_repeated,
+            t=t_span,
+            using_Hutchinson_trace_estimator=True,
+        )
+        log_mu_per_dim = log_mu / bits_ratio
+
+        loss = (
+            (
+                -eta * q_value_repeated.detach()
+                + log_p_per_dim.detach()
+                - log_mu_per_dim.detach()
+            )
+            * log_p_per_dim
+            * weight
+        )
+        loss_q = (-eta * q_value_repeated.detach()).mean()
+        loss_p = (log_p_per_dim.detach() * log_p_per_dim * weight).mean()
+        loss_u = (-log_mu_per_dim.detach() * log_p_per_dim * weight).mean()
+        return loss.mean(), loss_q, loss_p, loss_u
+
 
     def policy_loss(
         self,
@@ -1143,14 +1218,15 @@ class GPAlgorithm:
             if not hasattr(config.model.GPPolicy, "model_loss_type"):
                 config.model.GPPolicy["model_loss_type"] = "flow_matching"
             if config.parameter.algorithm_type == "GPO":
-                run_name = f"path-{path_type}-eta-{config.parameter.guided_policy.eta}-{config.model.GPPolicy.model.model.type}-{self.seed_value}"
+                run_name = f"Q-{config.parameter.critic.method}-path-{path_type}-eta-{config.parameter.guided_policy.eta}-batch-{config.parameter.guided_policy.batch_size}-lr-{config.parameter.guided_policy.learning_rate}-{config.model.GPPolicy.model.model.type}-{self.seed_value}"
                 wandb.run.name = run_name
                 wandb.run.save()
 
-            elif config.parameter.algorithm_type in ["GPG", "GPG_Direct", "GPG_Polish"]:
-                run_name = f"path-{path_type}-eta-{config.parameter.guided_policy.eta}-T-{config.parameter.guided_policy.gradtime_step}-Lrdecy-{config.parameter.guided_policy.lr_epochs}-seed-{self.seed_value}"
+            elif config.parameter.algorithm_type in ["GPG", "GPG_Direct", "GPG_Polish", "GPG_Softmax"]:
+                run_name = f"Q-{config.parameter.critic.method}-path-{path_type}-eta-{config.parameter.guided_policy.eta}-T-{config.parameter.guided_policy.gradtime_step}-batch-{config.parameter.guided_policy.batch_size}-lr-{config.parameter.guided_policy.learning_rate}-seed-{self.seed_value}"
                 wandb.run.name = run_name
                 wandb.run.save()
+
             config = merge_two_dicts_into_newone(EasyDict(wandb_run.config), config)
             wandb_run.config.update(config)
             self.config.train = config
@@ -1280,10 +1356,11 @@ class GPAlgorithm:
                         state=states,
                         batch_size=sample_per_state,
                         t_span=(
-                            torch.linspace(
-                                0.0, 1.0, config.parameter.fake_data_t_span
-                            ).to(states.device)
-                            if hasattr(config.parameter, "fake_data_t_span") and config.parameter.fake_data_t_span is not None
+                            torch.linspace(0.0, 1.0, config.parameter.t_span).to(
+                                states.device
+                            )
+                            if hasattr(config.parameter, "t_span")
+                            and config.parameter.t_span is not None
                             else None
                         ),
                     )
@@ -1311,9 +1388,10 @@ class GPAlgorithm:
                                 guidance_scale=guidance_scale,
                                 t_span=(
                                     torch.linspace(
-                                        0.0, 1.0, config.parameter.fake_data_t_span
+                                        0.0, 1.0, config.parameter.t_span
                                     ).to(config.model.GPPolicy.device)
-                                    if hasattr(config.parameter, "fake_data_t_span") and config.parameter.fake_data_t_span is not None
+                                    if hasattr(config.parameter, "t_span")
+                                    and config.parameter.t_span is not None
                                     else None
                                 ),
                             )
@@ -1347,6 +1425,14 @@ class GPAlgorithm:
                     evaluation_results[
                         f"evaluation/guidance_scale:[{guidance_scale}]/return_min"
                     ] = return_min
+
+                    if isinstance(self.dataset,GPOD4RLDataset):
+                        env_id=config.dataset.args.env_id
+                        evaluation_results[f"evaluation/guidance_scale:[{guidance_scale}]/return_mean_normalized"]=d4rl.get_normalized_score(env_id, return_mean)
+                        evaluation_results[f"evaluation/guidance_scale:[{guidance_scale}]/return_std_normalized"]=d4rl.get_normalized_score(env_id, return_std)
+                        evaluation_results[f"evaluation/guidance_scale:[{guidance_scale}]/return_max_normalized"]=d4rl.get_normalized_score(env_id, return_max)
+                        evaluation_results[f"evaluation/guidance_scale:[{guidance_scale}]/return_min_normalized"]=d4rl.get_normalized_score(env_id, return_min)
+
                     if repeat > 1:
                         log.info(
                             f"Train epoch: {train_epoch}, guidance_scale: {guidance_scale}, return_mean: {return_mean}, return_std: {return_std}, return_max: {return_max}, return_min: {return_min}"
@@ -1712,21 +1798,22 @@ class GPAlgorithm:
             # guided policy training code ↓
             # ---------------------------------------
 
-            if (
-                hasattr(config.parameter.guided_policy, "copy_from_basemodel")
-                and config.parameter.guided_policy.copy_from_basemodel
-            ):
-                self.model["GPPolicy"].guided_model.model.load_state_dict(
-                    self.model["GPPolicy"].base_model.model.state_dict()
-                )
-
-                for param, target_param in zip(
-                    self.model["GPPolicy"].guided_model.model.parameters(),
-                    self.model["GPPolicy"].base_model.model.parameters(),
+            if not self.guided_policy_train_epoch > 0:
+                if (
+                    hasattr(config.parameter.guided_policy, "copy_from_basemodel")
+                    and config.parameter.guided_policy.copy_from_basemodel
                 ):
-                    assert torch.equal(
-                        param, target_param
-                    ), f"The model is not copied correctly."
+                    self.model["GPPolicy"].guided_model.model.load_state_dict(
+                        self.model["GPPolicy"].base_model.model.state_dict()
+                    )
+
+                    for param, target_param in zip(
+                        self.model["GPPolicy"].guided_model.model.parameters(),
+                        self.model["GPPolicy"].base_model.model.parameters(),
+                    ):
+                        assert torch.equal(
+                            param, target_param
+                        ), f"The model is not copied correctly."
 
             guided_policy_optimizer = torch.optim.Adam(
                 self.model["GPPolicy"].guided_model.parameters(),
@@ -1879,10 +1966,11 @@ class GPAlgorithm:
                         fake_actions_ = self.model["GPPolicy"].behaviour_policy_sample(
                             state=data["s"],
                             t_span=(
-                                torch.linspace(
-                                    0.0, 1.0, config.parameter.fake_data_t_span
-                                ).to(data["s"].device)
-                                if hasattr(config.parameter, "fake_data_t_span") and config.parameter.fake_data_t_span is not None
+                                torch.linspace(0.0, 1.0, config.parameter.t_span).to(
+                                    data["s"].device
+                                )
+                                if hasattr(config.parameter, "t_span")
+                                and config.parameter.t_span is not None
                                 else None
                             ),
                             batch_size=config.parameter.sample_per_state,
@@ -1956,6 +2044,22 @@ class GPAlgorithm:
                                 else 100.0
                             ),
                         )
+                    elif config.parameter.algorithm_type == "GPG_Softmax":
+                        (
+                            guided_policy_loss,
+                            eta_q_loss,
+                            log_p_loss,
+                            log_u_loss,
+                        ) = self.model["GPPolicy"].policy_loss_pure_grad_softmax(
+                            data["s"],
+                            gradtime_step=config.parameter.guided_policy.gradtime_step,
+                            eta=eta,
+                            repeats=(
+                                config.parameter.guided_policy.repeats
+                                if hasattr(config.parameter.guided_policy, "repeats")
+                                else 32
+                            ),
+                        )
                     elif config.parameter.algorithm_type == "GPG_2":
                         guided_policy_loss = self.model[
                             "GPPolicy"
@@ -2005,7 +2109,12 @@ class GPAlgorithm:
                             ),
                             commit=True,
                         )
-                    elif config.parameter.algorithm_type == "GPG_Polish":
+                        save_checkpoint(
+                            self.model,
+                            iteration=guided_policy_train_iter,
+                            model_type="guided_model",
+                        )
+                    elif config.parameter.algorithm_type in ["GPG_Polish", "GPG_Softmax"]:
                         wandb.log(
                             data=dict(
                                 guided_policy_train_iter=guided_policy_train_iter,
