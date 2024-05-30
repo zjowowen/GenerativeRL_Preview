@@ -16,7 +16,7 @@ algorithm_type = "GPG_Polish"
 solver_type = "ODESolver"
 model_type = "IndependentConditionalFlowModel"
 env_id = "kitchen-mixed-v0"
-project_name = f"d4rl-{env_id}-GPG-ICFM-ph2tau7-ph3lr6"
+project_name = f"d4rl-{env_id}-GPG-ICFM-ph2tau7-ph3eta1"
 
 model = dict(
     device=device,
@@ -41,8 +41,8 @@ model = dict(
                     output_dim=action_size,
                     t_dim=t_embedding_dim,
                     condition_dim=state_size,
-                    condition_hidden_dim=32,
-                    t_condition_hidden_dim=128,
+                    condition_hidden_dim=256,
+                    t_condition_hidden_dim=256 + t_embedding_dim,
                 ),
             ),
         ),
