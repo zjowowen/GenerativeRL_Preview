@@ -580,10 +580,9 @@ class GPAlgorithm:
         with wandb.init(**config.wandb) as wandb_run:
             if not hasattr(config.parameter.guided_policy, "beta"):
                 config.parameter.guided_policy.beta = 1.0
-            path_type = config.model.GPPolicy.model.path.type
 
             assert config.parameter.algorithm_type in ["GMPO", "GMPO_softmax_static", "GMPO_softmax_sample"]
-            run_name = f"{config.parameter.critic.method}-{path_type}-beta-{config.parameter.guided_policy.beta}-batch-{config.parameter.guided_policy.batch_size}-lr-{config.parameter.guided_policy.learning_rate}-{config.model.GPPolicy.model.model.type}-{self.seed_value}"
+            run_name = f"{config.parameter.critic.method}-beta-{config.parameter.guided_policy.beta}-batch-{config.parameter.guided_policy.batch_size}-lr-{config.parameter.guided_policy.learning_rate}-{config.model.GPPolicy.model.model.type}-{self.seed_value}"
             wandb.run.name = run_name
             wandb.run.save()
 
