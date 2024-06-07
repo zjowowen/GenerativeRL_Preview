@@ -11,7 +11,7 @@ from tensordict import TensorDict
 
 import d4rl
 import wandb
-from grl.agents.gp import GPAgent
+from grl.agents.gm import GPAgent
 
 from grl.datasets import create_dataset
 from grl.datasets.gpo import GPODataset, GPOD4RLDataset
@@ -24,15 +24,6 @@ from grl.generative_models.conditional_flow_model.independent_conditional_flow_m
 )
 from grl.generative_models.bridge_flow_model.schrodinger_bridge_conditional_flow_model import (
     SchrodingerBridgeConditionalFlowModel,
-)
-from grl.generative_models.bridge_flow_model.guided_bridge_conditional_flow_model import (
-    GuidedBridgeConditionalFlowModel,
-)
-from grl.generative_models.diffusion_model.guided_diffusion_model import (
-    GuidedDiffusionModel,
-)
-from grl.generative_models.conditional_flow_model.guided_conditional_flow_model import (
-    GuidedConditionalFlowModel,
 )
 
 from grl.rl_modules.simulators import create_simulator
@@ -335,7 +326,7 @@ class GPPolicy(nn.Module):
         )
         action_repeated.register_hook(lambda grad: log_grad("action_repeated", grad))
 
-        q_value_repeated = self.critic(action_repeated, state_repeated)
+        q_value_repeated = self.critic(action_repeated, state_repeated).squeeze(dim=-1)
         q_value_repeated.register_hook(lambda grad: log_grad("q_value_repeated", grad))
         log_p = compute_likelihood(
             model=self.guided_model,
@@ -370,7 +361,7 @@ class GPPolicy(nn.Module):
                 + log_p_per_dim(dim=1) - log_mu_per_dim(dim=1)
             ), -beta * q_value_repeated.detach().mean(), log_p_per_dim.detach().mean(), -log_mu_per_dim.detach().mean()
         else:
-            return (-beta * q_value_repeated + log_p_per_dim - log_mu_per_dim), -beta * q_value_repeated.detach().mean(), log_p_per_dim.detach().mean(), -log_mu_per_dim.detach().mean()
+            return (-beta * q_value_repeated + log_p_per_dim - log_mu_per_dim).mean(), -beta * q_value_repeated.detach().mean(), log_p_per_dim.detach().mean(), -log_mu_per_dim.detach().mean()
 
     def policy_gradient_loss_by_REINFORCE(
         self,
@@ -544,9 +535,9 @@ class GPAlgorithm:
                     log.warning(
                         f"Checkpoint path {config.parameter.checkpoint_path} does not exist"
                     )
-                    self.behaviour_policy_train_epoch = 0
-                    self.critic_train_epoch = 0
-                    self.guided_policy_train_epoch = 0
+                    self.behaviour_policy_train_epoch = -1
+                    self.critic_train_epoch = -1
+                    self.guided_policy_train_epoch = -1
                 else:
                     base_model_files = sort_files_by_criteria(
                         folder_path=config.parameter.checkpoint_path,
@@ -554,9 +545,9 @@ class GPAlgorithm:
                         end_string=".pt",
                     )
                     if len(base_model_files) == 0:
-                        self.behaviour_policy_train_epoch = 0
+                        self.behaviour_policy_train_epoch = -1
                         log.warning(
-                            f"No base model file found in {config.parameter.checkpoint_path}"
+                            f"No basemodel file found in {config.parameter.checkpoint_path}"
                         )
                     else:
                         checkpoint = torch.load(
@@ -570,7 +561,7 @@ class GPAlgorithm:
                             checkpoint["base_model"]
                         )
                         self.behaviour_policy_train_epoch = checkpoint.get(
-                            "behaviour_policy_train_epoch", 0
+                            "behaviour_policy_train_epoch", -1
                         )
 
                     guided_model_files = sort_files_by_criteria(
@@ -579,9 +570,9 @@ class GPAlgorithm:
                         end_string=".pt",
                     )
                     if len(guided_model_files) == 0:
-                        self.guided_policy_train_epoch = 0
+                        self.guided_policy_train_epoch = -1
                         log.warning(
-                            f"No guided model file found in {config.parameter.checkpoint_path}"
+                            f"No guidedmodel file found in {config.parameter.checkpoint_path}"
                         )
                     else:
                         checkpoint = torch.load(
@@ -595,7 +586,7 @@ class GPAlgorithm:
                             checkpoint["guided_model"]
                         )
                         self.guided_policy_train_epoch = checkpoint.get(
-                            "guided_policy_train_epoch", 0
+                            "guided_policy_train_epoch", -1
                         )
 
                     critic_model_files = sort_files_by_criteria(
@@ -604,9 +595,9 @@ class GPAlgorithm:
                         end_string=".pt",
                     )
                     if len(critic_model_files) == 0:
-                        self.critic_train_epoch = 0
+                        self.critic_train_epoch = -1
                         log.warning(
-                            f"No critic model file found in {config.parameter.checkpoint_path}"
+                            f"No criticmodel file found in {config.parameter.checkpoint_path}"
                         )
                     else:
                         checkpoint = torch.load(
@@ -620,7 +611,7 @@ class GPAlgorithm:
                             checkpoint["critic_model"]
                         )
                         self.critic_train_epoch = checkpoint.get(
-                            "critic_train_epoch", 0
+                            "critic_train_epoch", -1
                         )
 
         # ---------------------------------------
@@ -658,7 +649,7 @@ class GPAlgorithm:
                 config.parameter.guided_policy.beta = 1.0
             path_type = config.model.GPPolicy.model.path.type
 
-            assert config.parameter.algorithm_type in ["GPG", "GPG_REINFORCE", "GPG_REINFORCE_softmax", "GPG_add_matching"]
+            assert config.parameter.algorithm_type in ["GMPG", "GMPG_REINFORCE", "GMPG_REINFORCE_softmax", "GMPG_add_matching"]
             run_name = f"{config.parameter.critic.method}-{path_type}-beta-{config.parameter.guided_policy.beta}-T-{config.parameter.guided_policy.gradtime_step}-batch-{config.parameter.guided_policy.batch_size}-lr-{config.parameter.guided_policy.learning_rate}-seed-{self.seed_value}"
             wandb.run.name = run_name
             wandb.run.save()
@@ -868,28 +859,6 @@ class GPAlgorithm:
                     drop_last=True,
                 )
 
-                if (
-                    hasattr(config.parameter.evaluation, "eval")
-                    and config.parameter.evaluation.eval
-                ):
-                    if (
-                        epoch
-                        % config.parameter.evaluation.evaluation_behavior_policy_interval
-                        == 0
-                        or (epoch + 1) == config.parameter.behaviour_policy.epochs
-                    ):
-                        evaluation_results = evaluate(
-                            self.model,
-                            train_epoch=epoch,
-                            guidance_scales=[0.0],
-                            repeat=(
-                                1
-                                if not hasattr(config.parameter.evaluation, "repeat")
-                                else config.parameter.evaluation.repeat
-                            ),
-                        )
-                        wandb.log(data=evaluation_results, commit=False)
-
                 counter = 1
                 behaviour_policy_loss_sum = 0
                 for data in data_loader:
@@ -897,8 +866,8 @@ class GPAlgorithm:
                     behaviour_policy_loss = self.model[
                         "GPPolicy"
                     ].behaviour_policy_loss(
-                        data["a"],
-                        data["s"],
+                        action=data["a"],
+                        state=data["s"],
                         maximum_likelihood=(
                             config.parameter.behaviour_policy.maximum_likelihood
                             if hasattr(
@@ -957,7 +926,7 @@ class GPAlgorithm:
             for epoch in track(
                 range(config.parameter.critic.epochs), description="Critic training"
             ):
-                if self.critic_train_epoch > epoch:
+                if self.critic_train_epoch >= epoch:
                     continue
 
                 sampler = torch.utils.data.RandomSampler(
@@ -979,7 +948,6 @@ class GPAlgorithm:
                 q_loss_sum = 0.0
                 q_sum = 0.0
                 q_target_sum = 0.0
-                q_grad_norms_sum = 0.0
                 for data in data_loader:
 
                     v_loss, next_v = self.model["GPPolicy"].critic.v_loss(
@@ -992,9 +960,12 @@ class GPAlgorithm:
                     v_loss.backward()
                     v_optimizer.step()
                     q_loss, q, q_target = self.model["GPPolicy"].critic.iql_q_loss(
-                        data,
-                        next_v,
-                        config.parameter.critic.discount_factor,
+                        state=data["s"],
+                        action=data["a"],
+                        reward=data["r"],
+                        done=data["d"],
+                        next_v=next_v,
+                        discount=config.parameter.critic.discount_factor,
                     )
                     q_optimizer.zero_grad(set_to_none=True)
                     q_loss.backward()
@@ -1035,11 +1006,6 @@ class GPAlgorithm:
                         q_loss=q_loss_sum / counter,
                         q=q_sum / counter,
                         q_target=q_target_sum / counter,
-                        q_grad_norms=(
-                            q_grad_norms_sum / counter
-                            if hasattr(config.parameter.critic, "grad_norm_clip")
-                            else 0.0
-                        ),
                     ),
                     commit=True,
                 )
@@ -1072,12 +1038,7 @@ class GPAlgorithm:
             )
 
             guided_policy_train_iter = 0
-
-            if hasattr(config.parameter.guided_policy, "beta"):
-                beta = config.parameter.guided_policy.beta
-            else:
-                beta = 1.0
-
+            beta = config.parameter.guided_policy.beta
             for epoch in track(
                 range(config.parameter.guided_policy.epochs),
                 description="Guided policy training",
@@ -1098,38 +1059,19 @@ class GPAlgorithm:
                     drop_last=True,
                 )
 
-                if (
-                    hasattr(config.parameter.evaluation, "eval")
-                    and config.parameter.evaluation.eval
-                ):
-                    if (
-                        epoch
-                        % config.parameter.evaluation.evaluation_guided_policy_interval
-                        == 0
-                        or (epoch + 1) == config.parameter.guided_policy.epochs
-                    ):
-                        evaluation_results = evaluate(
-                            self.model,
-                            train_epoch=epoch,
-                            guidance_scales=config.parameter.evaluation.guidance_scale,
-                            repeat=(
-                                1
-                                if not hasattr(config.parameter.evaluation, "repeat")
-                                else config.parameter.evaluation.repeat
-                            ),
-                        )
-                        wandb.log(data=evaluation_results, commit=False)
-
                 counter = 1
                 guided_policy_loss_sum = 0.0
-                guided_model_grad_norms_sum = 0.0
                 for data in data_loader:
-                    if config.parameter.algorithm_type == "GPG":
-                        guided_policy_loss = self.model[
+                    if config.parameter.algorithm_type == "GMPG":
+                        (
+                            guided_policy_loss,
+                            q_loss,
+                            log_p_loss,
+                            log_u_loss,
+                        ) = self.model[
                             "GPPolicy"
                         ].policy_gradient_loss(
                             data["s"],
-                            loss_type=config.parameter.guided_policy.loss_type,
                             gradtime_step=config.parameter.guided_policy.gradtime_step,
                             beta=beta,
                             repeats=(
@@ -1137,21 +1079,15 @@ class GPAlgorithm:
                                 if hasattr(config.parameter.guided_policy, "repeats")
                                 else 1
                             ),
-                            value_function=(
-                                self.vf
-                                if config.parameter.critic.method == "iql"
-                                else None
-                            ),
                         )
-                    elif config.parameter.algorithm_type == "GPG_REINFORCE":
+                    elif config.parameter.algorithm_type == "GMPG_REINFORCE":
                         (
                             guided_policy_loss,
-                            eta_q_loss,
+                            q_loss,
                             log_p_loss,
                             log_u_loss,
                         ) = self.model["GPPolicy"].policy_gradient_loss_by_REINFORCE(
                             data["s"],
-                            loss_type=config.parameter.guided_policy.loss_type,
                             gradtime_step=config.parameter.guided_policy.gradtime_step,
                             beta=beta,
                             repeats=(
@@ -1167,10 +1103,10 @@ class GPAlgorithm:
                                 else 100.0
                             ),
                         )
-                    elif config.parameter.algorithm_type == "GPG_REINFORCE_softmax":
+                    elif config.parameter.algorithm_type == "GMPG_REINFORCE_softmax":
                         (
                             guided_policy_loss,
-                            eta_q_loss,
+                            q_loss,
                             log_p_loss,
                             log_u_loss,
                         ) = self.model["GPPolicy"].policy_gradient_loss_by_REINFORCE_softmax(
@@ -1183,7 +1119,7 @@ class GPAlgorithm:
                                 else 32
                             ),
                         )
-                    elif config.parameter.algorithm_type == "GPG_add_matching":
+                    elif config.parameter.algorithm_type == "GMPG_add_matching":
                         guided_policy_loss = self.model[
                             "GPPolicy"
                         ].policy_gradient_loss_add_matching_loss(
@@ -1196,7 +1132,6 @@ class GPAlgorithm:
                                 )
                                 else False
                             ),
-                            loss_type=config.parameter.guided_policy.loss_type,
                             gradtime_step=config.parameter.guided_policy.gradtime_step,
                             beta=beta,
                             repeats=(
@@ -1208,73 +1143,67 @@ class GPAlgorithm:
                     else:
                         raise NotImplementedError
                     guided_policy_optimizer.zero_grad()
+                    guided_policy_loss=guided_policy_loss*(data.shape[0]/config.parameter.guided_policy.batch_size)
                     guided_policy_loss.backward()
-                    if hasattr(config.parameter.guided_policy, "grad_norm_clip"):
-                        guided_model_grad_norms = nn.utils.clip_grad_norm_(
-                            self.model["GPPolicy"].guided_model.parameters(),
-                            max_norm=config.parameter.guided_policy.grad_norm_clip,
-                            norm_type=2,
-                        )
-                    else:
-                        guided_model_grad_norms = nn.utils.clip_grad_norm_(
-                            self.model["GPPolicy"].guided_model.parameters(),
-                            max_norm=100000,
-                            norm_type=2,
-                        )
                     guided_policy_optimizer.step()
                     counter += 1
 
-                    if config.parameter.algorithm_type == "GPG_add_matching":
+                    if config.parameter.algorithm_type == "GMPG_add_matching":
                         wandb.log(
                             data=dict(
                                 guided_policy_train_iter=guided_policy_train_iter,
                                 guided_policy_train_epoch=epoch,
                                 guided_policy_loss=guided_policy_loss.item(),
-                                guided_model_grad_norms=guided_model_grad_norms,
                             ),
-                            commit=True,
+                            commit=False,
                         )
-                        save_checkpoint(
-                            self.model,
-                            iteration=guided_policy_train_iter,
-                            model_type="guided_model",
-                        )
-                    elif config.parameter.algorithm_type in ["GPG","GPG_REINFORCE", "GPG_REINFORCE_softmax"]:
+                        if (
+                            hasattr(config.parameter, "checkpoint_freq")
+                            and (guided_policy_train_iter + 1) % config.parameter.checkpoint_freq == 0
+                        ):
+                            save_checkpoint(
+                                self.model,
+                                iteration=guided_policy_train_iter,
+                                model_type="guided_model",
+                            )
+
+                    elif config.parameter.algorithm_type in ["GMPG","GMPG_REINFORCE", "GMPG_REINFORCE_softmax"]:
                         wandb.log(
                             data=dict(
                                 guided_policy_train_iter=guided_policy_train_iter,
                                 guided_policy_train_epoch=epoch,
                                 guided_policy_loss=guided_policy_loss.item(),
-                                guided_model_grad_norms=guided_model_grad_norms,
                                 q_loss=q_loss.item(),
                                 log_p_loss=log_p_loss.item(),
                                 log_u_loss=log_u_loss.item(),
                             ),
-                            commit=True,
+                            commit=False,
                         )
-                        save_checkpoint(
-                            self.model,
-                            iteration=guided_policy_train_iter,
-                            model_type="guided_model",
-                        )
+                        if (
+                            hasattr(config.parameter, "checkpoint_freq")
+                            and (guided_policy_train_iter + 1) % config.parameter.checkpoint_freq == 0
+                        ):
+                            save_checkpoint(
+                                self.model,
+                                iteration=guided_policy_train_iter,
+                                model_type="guided_model",
+                            )
 
                     guided_policy_loss_sum += guided_policy_loss.item()
-                    if hasattr(config.parameter.guided_policy, "grad_norm_clip"):
-                        guided_model_grad_norms_sum += guided_model_grad_norms.item()
 
                     guided_policy_train_iter += 1
                     self.guided_policy_train_epoch = epoch
                     if (
                         config.parameter.evaluation.eval
                         and hasattr(
-                            config.parameter.evaluation, "evaluation_iteration_interval"
+                            config.parameter.evaluation, "interval"
                         )
-                        and (guided_policy_train_iter + 1)
-                        % config.parameter.evaluation.evaluation_iteration_interval
+                        and guided_policy_train_iter
+                        % config.parameter.evaluation.interval
                         == 0
                     ):
                         evaluation_results = evaluate(
-                            self.model,
+                            self.model["GPPolicy"].guided_model,
                             train_epoch=epoch,
                             guidance_scales=config.parameter.evaluation.guidance_scale,
                             repeat=(
@@ -1284,31 +1213,13 @@ class GPAlgorithm:
                             ),
                         )
                         wandb.log(data=evaluation_results, commit=False)
-                        wandb.log(
-                            data=dict(
-                                guided_policy_train_iter=guided_policy_train_iter,
-                                guided_policy_train_epoch=epoch,
-                            ),
-                            commit=True,
-                        )
 
-                if (
-                    hasattr(config.parameter, "checkpoint_guided_freq")
-                    and (epoch + 1) % config.parameter.checkpoint_guided_freq == 0
-                ):
-                    save_checkpoint(
-                        self.model,
-                        iteration=guided_policy_train_iter,
-                        model_type="guided_model",
-                    )
-                elif (
-                    hasattr(config.parameter, "checkpoint_freq")
-                    and (epoch + 1) % config.parameter.checkpoint_freq == 0
-                ):
-                    save_checkpoint(
-                        self.model,
-                        iteration=guided_policy_train_iter,
-                        model_type="guided_model",
+                    wandb.log(
+                        data=dict(
+                            guided_policy_train_iter=guided_policy_train_iter,
+                            guided_policy_train_epoch=epoch,
+                        ),
+                        commit=True,
                     )
 
             # ---------------------------------------
@@ -1329,8 +1240,7 @@ class GPAlgorithm:
             config = self.config.deploy
 
         assert "GPPolicy" in self.model, "The model must be trained first."
-        assert "GuidedPolicy" in self.model, "The model must be trained first."
         return GPAgent(
             config=config,
-            model=copy.deepcopy(self.model),
+            model=copy.deepcopy(self.model["GPPolicy"].guided_model),
         )

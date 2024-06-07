@@ -1,10 +1,10 @@
 import torch
 from easydict import EasyDict
 
-env_id = "halfcheetah-medium-v2"
-action_size = 6
-state_size = 17
-algorithm_type = "GMPO"
+env_id = "hopper-medium-expert-v2"
+action_size = 3
+state_size = 11
+algorithm_type = "GMPG"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
 generative_model_type = "GVP"
@@ -26,7 +26,7 @@ model = dict(
     solver=dict(
         type="ODESolver",
         args=dict(
-            library="torchdiffeq",
+            library="torchdiffeq_adjoint",
         ),
     ),
     path=path,
@@ -109,7 +109,7 @@ config = EasyDict(
             behaviour_policy=dict(
                 batch_size=4096,
                 learning_rate=1e-4,
-                epochs=0,
+                epochs=2000,
             ),
             t_span=32,
             critic=dict(
@@ -122,19 +122,20 @@ config = EasyDict(
                 method='iql',
             ),
             guided_policy=dict(
-                batch_size=4096,
-                epochs=10000,
+                batch_size=40960,
+                epochs=50,
                 learning_rate=1e-4,
-                beta=1.0,
-                weight_clamp=100,
+                copy_from_basemodel=True,
+                gradtime_step=1000,
+                beta=4.0,
             ),
             evaluation=dict(
                 eval=True,
                 repeat=5,
-                interval=100,
+                interval=5,
             ),
             checkpoint_path=f"./{project_name}/checkpoint",
-            checkpoint_freq=10,
+            checkpoint_freq=5,
         ),
     ),
     deploy=dict(
@@ -154,7 +155,7 @@ if __name__ == "__main__":
     import d4rl
     import numpy as np
 
-    from grl.algorithms.gmpo import GPAlgorithm
+    from grl.algorithms.gmpg import GPAlgorithm
     from grl.utils.log import log
 
     def gp_pipeline(config):

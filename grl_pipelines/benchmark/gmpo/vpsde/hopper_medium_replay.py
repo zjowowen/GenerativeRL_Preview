@@ -14,7 +14,7 @@ path = dict(
     beta_1=20.0,
 )
 model_loss_type = "score_matching"
-project_name = f"d4rl-{env_id}-GPO-VPSDE"
+project_name = f"d4rl-{env_id}-{algorithm_type}-{generative_model_type}"
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 t_embedding_dim = 32
 t_encoder = dict(
@@ -118,7 +118,7 @@ config = EasyDict(
             t_span=32,
             critic=dict(
                 batch_size=4096,
-                epochs=1000,
+                epochs=2000,
                 learning_rate=3e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
