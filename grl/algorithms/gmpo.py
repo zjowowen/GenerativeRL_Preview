@@ -1043,27 +1043,6 @@ class GPAlgorithm:
                     drop_last=True,
                 )
 
-                if (
-                    hasattr(config.parameter.evaluation, "eval")
-                    and config.parameter.evaluation.eval
-                ):
-                    if (
-                        epoch
-                        % config.parameter.evaluation.evaluation_behavior_policy_interval
-                        == 0
-                        or (epoch + 1) == config.parameter.behaviour_policy.epochs
-                    ):
-                        evaluation_results = evaluate(
-                            self.model["GPPolicy"].base_model,
-                            train_epoch=epoch,
-                            repeat=(
-                                1
-                                if not hasattr(config.parameter.evaluation, "repeat")
-                                else config.parameter.evaluation.repeat
-                            ),
-                        )
-                        wandb.log(data=evaluation_results, commit=False)
-
                 counter = 1
                 behaviour_policy_loss_sum = 0
                 for data in data_loader:
