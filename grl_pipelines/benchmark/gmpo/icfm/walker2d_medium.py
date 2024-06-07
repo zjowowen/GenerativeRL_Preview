@@ -109,7 +109,7 @@ config = EasyDict(
             behaviour_policy=dict(
                 batch_size=4096,
                 learning_rate=1e-4,
-                epochs=2000,
+                epochs=0,
             ),
             sample_per_state=16,
             t_span=32,
@@ -131,9 +131,8 @@ config = EasyDict(
             ),
             evaluation=dict(
                 eval=True,
-                repeat=10,
-                evaluation_behavior_policy_interval=500,
-                evaluation_guided_policy_interval=100,
+                repeat=5,
+                interval=100,
             ),
             checkpoint_path=f"./{project_name}/checkpoint",
             checkpoint_freq=10,

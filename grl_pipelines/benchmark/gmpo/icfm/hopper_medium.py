@@ -130,7 +130,7 @@ config = EasyDict(
             ),
             evaluation=dict(
                 eval=True,
-                repeat=10,
+                repeat=5,
                 interval=100,
             ),
             checkpoint_path=f"./{project_name}/checkpoint",
