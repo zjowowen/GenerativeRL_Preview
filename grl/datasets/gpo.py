@@ -1,4 +1,10 @@
-from .qgpo import QGPODataset, QGPOD4RLDataset, QGPOOnlineDataset, QGPOCustomizedDataset, QGPOD4RLOnlineDataset
+from .qgpo import (
+    QGPODataset,
+    QGPOD4RLDataset,
+    QGPOOnlineDataset,
+    QGPOCustomizedDataset,
+    QGPOD4RLOnlineDataset,
+)
 
 GPODataset = QGPODataset
 GPOD4RLDataset = QGPOD4RLDataset

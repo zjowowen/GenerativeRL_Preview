@@ -13,10 +13,12 @@ from config import config
 from grl.algorithms.gp import GPAlgorithm
 from grl.utils.log import log
 from typing import Any, Dict, List, Tuple, Union
+
 render = False
 clip = False
 batch_action = False
 guidance_scale = 0
+
 
 def QLearningAction(agent, obs):
     if isinstance(obs, np.ndarray):
@@ -42,7 +44,7 @@ def QLearningAction(agent, obs):
                 if agent.config.t_span is not None
                 else None
             ),
-            guidance_scale=guidance_scale ,
+            guidance_scale=guidance_scale,
         )
         q_value = (
             agent.model["GPPolicy"].critic.q_target(obs_batch, action_batch).flatten()
@@ -145,7 +147,7 @@ def gp_pipeline(config):
             return total_reward
 
         agent = gp.deploy()
-        agent.guidance_scale=guidance_scale
+        agent.guidance_scale = guidance_scale
         num_experiments = 20
         for experiment in range(num_experiments):
             env = gym.make(config.deploy.env.env_id)

@@ -1197,7 +1197,7 @@ class GPOnlineAlgorithm:
                 num_steps,
                 guidance_scale=1.0,
                 random_policy=False,
-                random_ratio=0.0
+                random_ratio=0.0,
             ):
                 if random_policy:
                     return self.simulator.collect_steps(
@@ -1243,7 +1243,6 @@ class GPOnlineAlgorithm:
                     return self.simulator.collect_steps(
                         policy=policy, num_steps=num_steps
                     )
-
 
             behaviour_policy_optimizer = torch.optim.Adam(
                 self.model["GPPolicy"].base_model.model.parameters(),
@@ -1302,16 +1301,13 @@ class GPOnlineAlgorithm:
                 description="Online RL iteration",
             ):
 
-
                 # ---------------------------------------
                 # Evaluate code ↓
                 # ---------------------------------------
 
                 if (
                     config.parameter.evaluation.eval
-                    and hasattr(
-                        config.parameter.evaluation, "evaluation_interval"
-                    )
+                    and hasattr(config.parameter.evaluation, "evaluation_interval")
                     and online_rl_iteration
                     % config.parameter.evaluation.evaluation_interval
                     == 0
@@ -1337,7 +1333,10 @@ class GPOnlineAlgorithm:
                 # ---------------------------------------
 
                 if online_rl_iteration > 0:
-                    if hasattr(config.parameter.online_rl, "drop_ratio") and config.parameter.online_rl.drop_ratio > 0:
+                    if (
+                        hasattr(config.parameter.online_rl, "drop_ratio")
+                        and config.parameter.online_rl.drop_ratio > 0
+                    ):
                         self.dataset.drop_data(config.parameter.online_rl.drop_ratio)
                     self.dataset.load_data(
                         collect(
@@ -1369,7 +1368,7 @@ class GPOnlineAlgorithm:
 
                 behaviour_policy_iteration_counter = 0
                 for epoch in range(config.parameter.behaviour_policy.epochs_online_rl):
-                    
+
                     sampler = torch.utils.data.RandomSampler(
                         self.dataset, replacement=False
                     )
@@ -1394,7 +1393,8 @@ class GPOnlineAlgorithm:
                             maximum_likelihood=(
                                 config.parameter.behaviour_policy.maximum_likelihood
                                 if hasattr(
-                                    config.parameter.behaviour_policy, "maximum_likelihood"
+                                    config.parameter.behaviour_policy,
+                                    "maximum_likelihood",
                                 )
                                 else False
                             ),
@@ -1414,10 +1414,16 @@ class GPOnlineAlgorithm:
 
                         behaviour_policy_train_iter += 1
                         behaviour_policy_iteration_counter += 1
-                        if hasattr(config.parameter.behaviour_policy, "iterations_online_rl") and config.parameter.behaviour_policy.iterations_online_rl <= behaviour_policy_iteration_counter:
+                        if (
+                            hasattr(
+                                config.parameter.behaviour_policy,
+                                "iterations_online_rl",
+                            )
+                            and config.parameter.behaviour_policy.iterations_online_rl
+                            <= behaviour_policy_iteration_counter
+                        ):
                             break
 
-                    
                     self.behaviour_policy_train_epoch += 1
 
                     wandb.log(
@@ -1443,14 +1449,22 @@ class GPOnlineAlgorithm:
                         behaviour_lr_scheduler.step()
                     if (
                         hasattr(config.parameter, "checkpoint_freq")
-                        and (self.behaviour_policy_train_epoch + 1) % config.parameter.checkpoint_freq == 0
+                        and (self.behaviour_policy_train_epoch + 1)
+                        % config.parameter.checkpoint_freq
+                        == 0
                     ):
                         save_checkpoint(
                             self.model,
                             iteration=behaviour_policy_train_iter,
                             model_type="base_model",
                         )
-                    if hasattr(config.parameter.behaviour_policy, "iterations_online_rl") and config.parameter.behaviour_policy.iterations_online_rl <= behaviour_policy_iteration_counter:
+                    if (
+                        hasattr(
+                            config.parameter.behaviour_policy, "iterations_online_rl"
+                        )
+                        and config.parameter.behaviour_policy.iterations_online_rl
+                        <= behaviour_policy_iteration_counter
+                    ):
                         break
 
                 # ---------------------------------------
@@ -1459,8 +1473,11 @@ class GPOnlineAlgorithm:
 
                 # if hasattr(config.parameter, "need_fake_action") and config.parameter.need_fake_action is True:
                 #     self.need_fake_action = True
-                
-                if hasattr(config.parameter, "need_fake_action") and config.parameter.need_fake_action is True:
+
+                if (
+                    hasattr(config.parameter, "need_fake_action")
+                    and config.parameter.need_fake_action is True
+                ):
                     self.need_fake_action = True
                 if config.parameter.algorithm_type in ["GPO_softmax_static"]:
                     self.need_fake_action = True
@@ -1554,7 +1571,9 @@ class GPOnlineAlgorithm:
                             v_optimizer.zero_grad(set_to_none=True)
                             v_loss.backward()
                             v_optimizer.step()
-                            q_loss, q, q_target = self.model["GPPolicy"].critic.iql_q_loss(
+                            q_loss, q, q_target = self.model[
+                                "GPPolicy"
+                            ].critic.iql_q_loss(
                                 data,
                                 next_v,
                                 config.parameter.critic.discount_factor,
@@ -1606,9 +1625,13 @@ class GPOnlineAlgorithm:
 
                         critic_train_iter += 1
                         critic_iteration_counter += 1
-                        if hasattr(config.parameter.critic, "iterations_online_rl") and config.parameter.critic.iterations_online_rl <= critic_iteration_counter:
+                        if (
+                            hasattr(config.parameter.critic, "iterations_online_rl")
+                            and config.parameter.critic.iterations_online_rl
+                            <= critic_iteration_counter
+                        ):
                             break
-                    
+
                     self.critic_train_epoch += 1
 
                     if self.iql:
@@ -1641,7 +1664,9 @@ class GPOnlineAlgorithm:
 
                     if (
                         hasattr(config.parameter, "checkpoint_freq")
-                        and (self.critic_train_epoch + 1) % config.parameter.checkpoint_freq == 0
+                        and (self.critic_train_epoch + 1)
+                        % config.parameter.checkpoint_freq
+                        == 0
                     ):
                         if self.iql:
                             save_checkpoint(
@@ -1650,8 +1675,12 @@ class GPOnlineAlgorithm:
                                 model_type="critic_model",
                             )
 
-                    if hasattr(config.parameter.critic, "iterations_online_rl") and config.parameter.critic.iterations_online_rl <= critic_iteration_counter:
-                            break
+                    if (
+                        hasattr(config.parameter.critic, "iterations_online_rl")
+                        and config.parameter.critic.iterations_online_rl
+                        <= critic_iteration_counter
+                    ):
+                        break
 
                 # ---------------------------------------
                 # critic training code ↑
@@ -1702,14 +1731,17 @@ class GPOnlineAlgorithm:
                     guided_model_grad_norms_sum = 0.0
                     for data in data_loader:
                         if config.parameter.algorithm_type == "GPO":
-                            guided_policy_loss, weight = self.model["GPPolicy"].policy_loss(
+                            guided_policy_loss, weight = self.model[
+                                "GPPolicy"
+                            ].policy_loss(
                                 data["a"],
                                 data["s"],
                                 data["fake_a"],
                                 maximum_likelihood=(
                                     config.parameter.guided_policy.maximum_likelihood
                                     if hasattr(
-                                        config.parameter.guided_policy, "maximum_likelihood"
+                                        config.parameter.guided_policy,
+                                        "maximum_likelihood",
                                     )
                                     else False
                                 ),
@@ -1717,14 +1749,17 @@ class GPOnlineAlgorithm:
                                 regularize_method=(
                                     config.parameter.guided_policy.regularize_method
                                     if hasattr(
-                                        config.parameter.guided_policy, "regularize_method"
+                                        config.parameter.guided_policy,
+                                        "regularize_method",
                                     )
                                     else "minus_value"
                                 ),
                                 value_function=self.vf if self.iql else None,
                             )
                         elif config.parameter.algorithm_type == "GPO_with_fake":
-                            fake_actions_ = self.model["GPPolicy"].behaviour_policy_sample(
+                            fake_actions_ = self.model[
+                                "GPPolicy"
+                            ].behaviour_policy_sample(
                                 state=data["s"],
                                 t_span=(
                                     torch.linspace(
@@ -1734,14 +1769,17 @@ class GPOnlineAlgorithm:
                                     else None
                                 ),
                             )
-                            guided_policy_loss, weight = self.model["GPPolicy"].policy_loss(
+                            guided_policy_loss, weight = self.model[
+                                "GPPolicy"
+                            ].policy_loss(
                                 fake_actions_,
                                 data["s"],
                                 data["fake_a"],
                                 maximum_likelihood=(
                                     config.parameter.guided_policy.maximum_likelihood
                                     if hasattr(
-                                        config.parameter.guided_policy, "maximum_likelihood"
+                                        config.parameter.guided_policy,
+                                        "maximum_likelihood",
                                     )
                                     else False
                                 ),
@@ -1749,7 +1787,8 @@ class GPOnlineAlgorithm:
                                 regularize_method=(
                                     config.parameter.guided_policy.regularize_method
                                     if hasattr(
-                                        config.parameter.guided_policy, "regularize_method"
+                                        config.parameter.guided_policy,
+                                        "regularize_method",
                                     )
                                     else "minus_value"
                                 ),
@@ -1765,7 +1804,9 @@ class GPOnlineAlgorithm:
                                 eta=eta,
                                 repeats=(
                                     config.parameter.guided_policy.repeats
-                                    if hasattr(config.parameter.guided_policy, "repeats")
+                                    if hasattr(
+                                        config.parameter.guided_policy, "repeats"
+                                    )
                                     else 1
                                 ),
                                 value_function=self.vf if self.iql else None,
@@ -1779,7 +1820,8 @@ class GPOnlineAlgorithm:
                                 maximum_likelihood=(
                                     config.parameter.guided_policy.maximum_likelihood
                                     if hasattr(
-                                        config.parameter.guided_policy, "maximum_likelihood"
+                                        config.parameter.guided_policy,
+                                        "maximum_likelihood",
                                     )
                                     else False
                                 ),
@@ -1788,7 +1830,9 @@ class GPOnlineAlgorithm:
                                 eta=eta,
                                 repeats=(
                                     config.parameter.guided_policy.repeats
-                                    if hasattr(config.parameter.guided_policy, "repeats")
+                                    if hasattr(
+                                        config.parameter.guided_policy, "repeats"
+                                    )
                                     else 1
                                 ),
                             )
@@ -1815,11 +1859,19 @@ class GPOnlineAlgorithm:
                         counter += 1
                         guided_policy_loss_sum += guided_policy_loss.item()
                         if hasattr(config.parameter.guided_policy, "grad_norm_clip"):
-                            guided_model_grad_norms_sum += guided_model_grad_norms.item()
+                            guided_model_grad_norms_sum += (
+                                guided_model_grad_norms.item()
+                            )
 
                         guided_policy_train_iter += 1
                         guided_policy_iteration_counter += 1
-                        if hasattr(config.parameter.guided_policy, "iterations_online_rl") and config.parameter.guided_policy.iterations_online_rl <= guided_policy_iteration_counter:
+                        if (
+                            hasattr(
+                                config.parameter.guided_policy, "iterations_online_rl"
+                            )
+                            and config.parameter.guided_policy.iterations_online_rl
+                            <= guided_policy_iteration_counter
+                        ):
                             break
 
                     self.guided_policy_train_epoch += 1
@@ -1837,8 +1889,8 @@ class GPOnlineAlgorithm:
                                 else 0.0
                             ),
                         ),
-                        commit=True,)
-
+                        commit=True,
+                    )
 
                     if (
                         hasattr(config.parameter.guided_policy, "lr_decy")
@@ -1848,14 +1900,20 @@ class GPOnlineAlgorithm:
 
                     if (
                         hasattr(config.parameter, "checkpoint_freq")
-                        and (self.guided_policy_train_epoch + 1) % config.parameter.checkpoint_freq == 0
+                        and (self.guided_policy_train_epoch + 1)
+                        % config.parameter.checkpoint_freq
+                        == 0
                     ):
                         save_checkpoint(
                             self.model,
                             iteration=guided_policy_train_iter,
                             model_type="guided_model",
                         )
-                    if hasattr(config.parameter.guided_policy, "iterations_online_rl") and config.parameter.guided_policy.iterations_online_rl <= guided_policy_iteration_counter:
+                    if (
+                        hasattr(config.parameter.guided_policy, "iterations_online_rl")
+                        and config.parameter.guided_policy.iterations_online_rl
+                        <= guided_policy_iteration_counter
+                    ):
                         break
 
                 # ---------------------------------------

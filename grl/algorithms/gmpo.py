@@ -35,8 +35,10 @@ from grl.utils import set_seed
 from grl.utils.statistics import sort_files_by_criteria
 from grl.generative_models.metric import compute_likelihood
 
+
 def asymmetric_l2_loss(u, tau):
     return torch.mean(torch.abs(tau - (u < 0).float()) * u**2)
+
 
 class GPCritic(nn.Module):
     """
@@ -108,6 +110,7 @@ class GPCritic(nn.Module):
         qs = self.q.compute_double_q(action, state)
         q_loss = sum(torch.nn.functional.mse_loss(q, q_target) for q in qs) / len(qs)
         return q_loss, torch.mean(qs[0]), torch.mean(q_target)
+
 
 class GPPolicy(nn.Module):
 
@@ -300,8 +303,6 @@ class GPPolicy(nn.Module):
             q_value = self.critic(action, state).squeeze(dim=-1)
             weight = torch.exp(beta * q_value)
 
-
-
             q_value = self.critic(action, state).squeeze(dim=-1)
 
             # if hasattr(self, "v")
@@ -408,6 +409,7 @@ class GPPolicy(nn.Module):
             torch.mean(relative_energy),
             torch.mean(model_loss),
         )
+
 
 class GPAlgorithm:
 
@@ -581,7 +583,11 @@ class GPAlgorithm:
             if not hasattr(config.parameter.guided_policy, "beta"):
                 config.parameter.guided_policy.beta = 1.0
 
-            assert config.parameter.algorithm_type in ["GMPO", "GMPO_softmax_static", "GMPO_softmax_sample"]
+            assert config.parameter.algorithm_type in [
+                "GMPO",
+                "GMPO_softmax_static",
+                "GMPO_softmax_sample",
+            ]
             run_name = f"{config.parameter.critic.method}-beta-{config.parameter.guided_policy.beta}-batch-{config.parameter.guided_policy.batch_size}-lr-{config.parameter.guided_policy.learning_rate}-{config.model.GPPolicy.model.model.type}-{self.seed_value}"
             wandb.run.name = run_name
             wandb.run.save()
@@ -705,9 +711,9 @@ class GPAlgorithm:
                         model.sample(
                             condition=obs,
                             t_span=(
-                                torch.linspace(
-                                    0.0, 1.0, config.parameter.t_span
-                                ).to(config.model.GPPolicy.device)
+                                torch.linspace(0.0, 1.0, config.parameter.t_span).to(
+                                    config.model.GPPolicy.device
+                                )
                                 if hasattr(config.parameter, "t_span")
                                 and config.parameter.t_span is not None
                                 else None
@@ -731,34 +737,32 @@ class GPAlgorithm:
                 return_std = np.std(return_results)
                 return_max = np.max(return_results)
                 return_min = np.min(return_results)
-                evaluation_results[
-                    f"evaluation/return_mean"
-                ] = return_mean
-                evaluation_results[
-                    f"evaluation/return_std"
-                ] = return_std
-                evaluation_results[
-                    f"evaluation/return_max"
-                ] = return_max
-                evaluation_results[
-                    f"evaluation/return_min"
-                ] = return_min
+                evaluation_results[f"evaluation/return_mean"] = return_mean
+                evaluation_results[f"evaluation/return_std"] = return_std
+                evaluation_results[f"evaluation/return_max"] = return_max
+                evaluation_results[f"evaluation/return_min"] = return_min
 
-                if isinstance(self.dataset,GPOD4RLDataset):
-                    env_id=config.dataset.args.env_id
-                    evaluation_results[f"evaluation/return_mean_normalized"]=d4rl.get_normalized_score(env_id, return_mean)
-                    evaluation_results[f"evaluation/return_std_normalized"]=d4rl.get_normalized_score(env_id, return_std)
-                    evaluation_results[f"evaluation/return_max_normalized"]=d4rl.get_normalized_score(env_id, return_max)
-                    evaluation_results[f"evaluation/return_min_normalized"]=d4rl.get_normalized_score(env_id, return_min)
+                if isinstance(self.dataset, GPOD4RLDataset):
+                    env_id = config.dataset.args.env_id
+                    evaluation_results[f"evaluation/return_mean_normalized"] = (
+                        d4rl.get_normalized_score(env_id, return_mean)
+                    )
+                    evaluation_results[f"evaluation/return_std_normalized"] = (
+                        d4rl.get_normalized_score(env_id, return_std)
+                    )
+                    evaluation_results[f"evaluation/return_max_normalized"] = (
+                        d4rl.get_normalized_score(env_id, return_max)
+                    )
+                    evaluation_results[f"evaluation/return_min_normalized"] = (
+                        d4rl.get_normalized_score(env_id, return_min)
+                    )
 
                 if repeat > 1:
                     log.info(
                         f"Train epoch: {train_epoch}, return_mean: {return_mean}, return_std: {return_std}, return_max: {return_max}, return_min: {return_min}"
                     )
                 else:
-                    log.info(
-                        f"Train epoch: {train_epoch}, return: {return_mean}"
-                    )
+                    log.info(f"Train epoch: {train_epoch}, return: {return_mean}")
 
                 return evaluation_results
 
@@ -916,7 +920,7 @@ class GPAlgorithm:
                         state=data["s"],
                         action=data["a"],
                         next_state=data["s_"],
-                        tau=config.parameter.critic.tau
+                        tau=config.parameter.critic.tau,
                     )
                     v_optimizer.zero_grad(set_to_none=True)
                     v_loss.backward()
@@ -1044,7 +1048,9 @@ class GPAlgorithm:
                             weight,
                             clamped_weight,
                             clamped_ratio,
-                        ) = self.model["GPPolicy"].policy_optimization_loss_by_advantage_weighted_regression(
+                        ) = self.model[
+                            "GPPolicy"
+                        ].policy_optimization_loss_by_advantage_weighted_regression(
                             data["a"],
                             data["s"],
                             maximum_likelihood=(
@@ -1072,7 +1078,9 @@ class GPAlgorithm:
                             energy,
                             relative_energy,
                             matching_loss,
-                        ) = self.model["GPPolicy"].policy_optimization_loss_by_advantage_weighted_regression_softmax(
+                        ) = self.model[
+                            "GPPolicy"
+                        ].policy_optimization_loss_by_advantage_weighted_regression_softmax(
                             data["s"],
                             data["fake_a"],
                             maximum_likelihood=(
@@ -1106,7 +1114,9 @@ class GPAlgorithm:
                             energy,
                             relative_energy,
                             matching_loss,
-                        ) = self.model["GPPolicy"].policy_optimization_loss_by_advantage_weighted_regression_softmax(
+                        ) = self.model[
+                            "GPPolicy"
+                        ].policy_optimization_loss_by_advantage_weighted_regression_softmax(
                             data["s"],
                             fake_actions_,
                             maximum_likelihood=(
@@ -1135,9 +1145,7 @@ class GPAlgorithm:
 
                 if (
                     config.parameter.evaluation.eval
-                    and hasattr(
-                        config.parameter.evaluation, "interval"
-                    )
+                    and hasattr(config.parameter.evaluation, "interval")
                     and (self.guided_policy_train_epoch + 1)
                     % config.parameter.evaluation.interval
                     == 0

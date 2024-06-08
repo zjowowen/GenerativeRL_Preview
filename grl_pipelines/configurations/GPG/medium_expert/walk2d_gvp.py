@@ -119,7 +119,7 @@ config = EasyDict(
         parameter=dict(
             algorithm_type=algorithm_type,
             behaviour_policy=dict(
-                batch_size=4096*8,
+                batch_size=4096 * 8,
                 learning_rate=1e-4,
                 epochs=7000,
                 # new add below

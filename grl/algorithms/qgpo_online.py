@@ -405,9 +405,9 @@ class QGPOOnlineAlgorithm:
                             batch_size=sample_per_state,
                             guidance_scale=0.0,
                             t_span=(
-                                torch.linspace(
-                                    0.0, 1.0, config.parameter.t_span
-                                ).to(config.model.QGPOPolicy.device)
+                                torch.linspace(0.0, 1.0, config.parameter.t_span).to(
+                                    config.model.QGPOPolicy.device
+                                )
                                 if config.parameter.t_span is not None
                                 else None
                             ),

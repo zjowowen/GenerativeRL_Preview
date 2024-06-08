@@ -123,7 +123,6 @@ config = EasyDict(
                 batch_size=4096,
                 learning_rate=1e-4,
                 epochs=10000,
-                
             ),
             sample_per_state=16,
             t_span=None if solver_type == "DPMSolver" else 32,
@@ -134,7 +133,7 @@ config = EasyDict(
                 discount_factor=0.99,
                 update_momentum=0.005,
                 tau=0.7,
-                method='iql', 
+                method="iql",
             ),
             guided_policy=dict(
                 batch_size=4096,

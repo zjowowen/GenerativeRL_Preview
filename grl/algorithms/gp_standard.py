@@ -46,8 +46,10 @@ from grl.utils import set_seed
 from grl.utils.statistics import sort_files_by_criteria
 from grl.generative_models.metric import compute_likelihood
 
+
 def asymmetric_l2_loss(u, tau):
     return torch.mean(torch.abs(tau - (u < 0).float()) * u**2)
+
 
 class GPCritic(nn.Module):
     """
@@ -164,6 +166,7 @@ class GPCritic(nn.Module):
         q_loss = sum(torch.nn.functional.mse_loss(q, q_target) for q in qs) / len(qs)
         return q_loss, torch.mean(qs[0]), torch.mean(q_target)
 
+
 class GuidedPolicy(nn.Module):
 
     def __init__(self, config):
@@ -270,6 +273,7 @@ class GuidedPolicy(nn.Module):
                     with_grad=False,
                     solver_config=solver_config,
                 )
+
 
 class GPPolicy(nn.Module):
 
@@ -479,7 +483,7 @@ class GPPolicy(nn.Module):
         q_values_sum = q_values_stack.sum(dim=0)
         q_value = q_values_sum / repeats
 
-        return - beta * q_value + model_loss
+        return -beta * q_value + model_loss
 
     def policy_gradient_loss(
         self,
@@ -519,7 +523,7 @@ class GPPolicy(nn.Module):
             using_Hutchinson_trace_estimator=True,
         )
         log_p.register_hook(lambda grad: log_grad("log_p", grad))
-        
+
         bits_ratio = torch.prod(
             torch.tensor(state_repeated.shape[1], device=state.device)
         ) * torch.log(torch.tensor(2.0, device=state.device))
@@ -540,11 +544,22 @@ class GPPolicy(nn.Module):
             log_mu_per_dim = log_mu_per_dim.reshape(-1, repeats)
 
             return (
-                -beta * q_value_repeated.mean(dim=1)
-                + log_p_per_dim(dim=1) - log_mu_per_dim(dim=1)
-            ), -beta * q_value_repeated.detach().mean(), log_p_per_dim.detach().mean(), -log_mu_per_dim.detach().mean()
+                (
+                    -beta * q_value_repeated.mean(dim=1)
+                    + log_p_per_dim(dim=1)
+                    - log_mu_per_dim(dim=1)
+                ),
+                -beta * q_value_repeated.detach().mean(),
+                log_p_per_dim.detach().mean(),
+                -log_mu_per_dim.detach().mean(),
+            )
         else:
-            return (-beta * q_value_repeated + log_p_per_dim - log_mu_per_dim), -beta * q_value_repeated.detach().mean(), log_p_per_dim.detach().mean(), -log_mu_per_dim.detach().mean()
+            return (
+                (-beta * q_value_repeated + log_p_per_dim - log_mu_per_dim),
+                -beta * q_value_repeated.detach().mean(),
+                log_p_per_dim.detach().mean(),
+                -log_mu_per_dim.detach().mean(),
+            )
 
     def policy_gradient_loss_by_REINFORCE(
         self,
@@ -705,8 +720,6 @@ class GPPolicy(nn.Module):
             q_value = self.critic(action, state).squeeze(dim=-1)
             weight = torch.exp(beta * q_value)
 
-
-
             q_value = self.critic(action, state).squeeze(dim=-1)
 
             # if hasattr(self, "v")
@@ -813,6 +826,7 @@ class GPPolicy(nn.Module):
             torch.mean(relative_energy),
             torch.mean(model_loss),
         )
+
 
 class GPAlgorithm:
 
@@ -988,11 +1002,20 @@ class GPAlgorithm:
                 config.parameter.guided_policy.beta = 1.0
             path_type = config.model.GPPolicy.model.path.type
 
-            if config.parameter.algorithm_type in ["GPO", "GPO_softmax_static", "GPO_softmax_sample"]:
+            if config.parameter.algorithm_type in [
+                "GPO",
+                "GPO_softmax_static",
+                "GPO_softmax_sample",
+            ]:
                 run_name = f"Q-{config.parameter.critic.method}-path-{path_type}-beta-{config.parameter.guided_policy.beta}-batch-{config.parameter.guided_policy.batch_size}-lr-{config.parameter.guided_policy.learning_rate}-{config.model.GPPolicy.model.model.type}-{self.seed_value}"
                 wandb.run.name = run_name
                 wandb.run.save()
-            elif config.parameter.algorithm_type in ["GPG", "GPG_REINFORCE", "GPG_REINFORCE_softmax", "GPG_add_matching"]:
+            elif config.parameter.algorithm_type in [
+                "GPG",
+                "GPG_REINFORCE",
+                "GPG_REINFORCE_softmax",
+                "GPG_add_matching",
+            ]:
                 run_name = f"Q-{config.parameter.critic.method}-path-{path_type}-beta-{config.parameter.guided_policy.beta}-T-{config.parameter.guided_policy.gradtime_step}-batch-{config.parameter.guided_policy.batch_size}-lr-{config.parameter.guided_policy.learning_rate}-seed-{self.seed_value}"
                 wandb.run.name = run_name
                 wandb.run.save()
@@ -1160,12 +1183,20 @@ class GPAlgorithm:
                         f"evaluation/guidance_scale:[{guidance_scale}]/return_min"
                     ] = return_min
 
-                    if isinstance(self.dataset,GPOD4RLDataset):
-                        env_id=config.dataset.args.env_id
-                        evaluation_results[f"evaluation/guidance_scale:[{guidance_scale}]/return_mean_normalized"]=d4rl.get_normalized_score(env_id, return_mean)
-                        evaluation_results[f"evaluation/guidance_scale:[{guidance_scale}]/return_std_normalized"]=d4rl.get_normalized_score(env_id, return_std)
-                        evaluation_results[f"evaluation/guidance_scale:[{guidance_scale}]/return_max_normalized"]=d4rl.get_normalized_score(env_id, return_max)
-                        evaluation_results[f"evaluation/guidance_scale:[{guidance_scale}]/return_min_normalized"]=d4rl.get_normalized_score(env_id, return_min)
+                    if isinstance(self.dataset, GPOD4RLDataset):
+                        env_id = config.dataset.args.env_id
+                        evaluation_results[
+                            f"evaluation/guidance_scale:[{guidance_scale}]/return_mean_normalized"
+                        ] = d4rl.get_normalized_score(env_id, return_mean)
+                        evaluation_results[
+                            f"evaluation/guidance_scale:[{guidance_scale}]/return_std_normalized"
+                        ] = d4rl.get_normalized_score(env_id, return_std)
+                        evaluation_results[
+                            f"evaluation/guidance_scale:[{guidance_scale}]/return_max_normalized"
+                        ] = d4rl.get_normalized_score(env_id, return_max)
+                        evaluation_results[
+                            f"evaluation/guidance_scale:[{guidance_scale}]/return_min_normalized"
+                        ] = d4rl.get_normalized_score(env_id, return_min)
 
                     if repeat > 1:
                         log.info(
@@ -1292,11 +1323,9 @@ class GPAlgorithm:
             # behavior training code ↑
             # ---------------------------------------
 
-
             # ---------------------------------------
             # make fake action ↓
             # ---------------------------------------
-
 
             if config.parameter.algorithm_type in ["GPO_softmax_static"]:
                 data_augmentation = True
@@ -1386,7 +1415,9 @@ class GPAlgorithm:
                         q_loss.backward()
                         q_optimizer.step()
                     elif config.parameter.critic.method == "in_support_ql":
-                        q_loss, q, q_target = self.model["GPPolicy"].critic.in_support_ql_loss(
+                        q_loss, q, q_target = self.model[
+                            "GPPolicy"
+                        ].critic.in_support_ql_loss(
                             data["a"],
                             data["s"],
                             data["r"],
@@ -1557,7 +1588,9 @@ class GPAlgorithm:
                             weight,
                             clamped_weight,
                             clamped_ratio,
-                        ) = self.model["GPPolicy"].policy_optimization_loss_by_advantage_weighted_regression(
+                        ) = self.model[
+                            "GPPolicy"
+                        ].policy_optimization_loss_by_advantage_weighted_regression(
                             data["a"],
                             data["s"],
                             data["fake_a"],
@@ -1598,7 +1631,9 @@ class GPAlgorithm:
                             energy,
                             relative_energy,
                             matching_loss,
-                        ) = self.model["GPPolicy"].policy_optimization_loss_by_advantage_weighted_regression_softmax(
+                        ) = self.model[
+                            "GPPolicy"
+                        ].policy_optimization_loss_by_advantage_weighted_regression_softmax(
                             data["s"],
                             data["fake_a"],
                             maximum_likelihood=(
@@ -1632,7 +1667,9 @@ class GPAlgorithm:
                             energy,
                             relative_energy,
                             matching_loss,
-                        ) = self.model["GPPolicy"].policy_optimization_loss_by_advantage_weighted_regression_softmax(
+                        ) = self.model[
+                            "GPPolicy"
+                        ].policy_optimization_loss_by_advantage_weighted_regression_softmax(
                             data["s"],
                             fake_actions_,
                             maximum_likelihood=(
@@ -1696,7 +1733,9 @@ class GPAlgorithm:
                             eta_q_loss,
                             log_p_loss,
                             log_u_loss,
-                        ) = self.model["GPPolicy"].policy_gradient_loss_by_REINFORCE_softmax(
+                        ) = self.model[
+                            "GPPolicy"
+                        ].policy_gradient_loss_by_REINFORCE_softmax(
                             data["s"],
                             gradtime_step=config.parameter.guided_policy.gradtime_step,
                             beta=beta,
@@ -1762,7 +1801,11 @@ class GPAlgorithm:
                             iteration=guided_policy_train_iter,
                             model_type="guided_model",
                         )
-                    elif config.parameter.algorithm_type in ["GPG","GPG_REINFORCE", "GPG_REINFORCE_softmax"]:
+                    elif config.parameter.algorithm_type in [
+                        "GPG",
+                        "GPG_REINFORCE",
+                        "GPG_REINFORCE_softmax",
+                    ]:
                         wandb.log(
                             data=dict(
                                 guided_policy_train_iter=guided_policy_train_iter,

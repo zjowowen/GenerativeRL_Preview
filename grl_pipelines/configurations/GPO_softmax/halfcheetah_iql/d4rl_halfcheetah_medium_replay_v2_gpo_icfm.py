@@ -97,7 +97,6 @@ config = EasyDict(
                 batch_size=4096,
                 learning_rate=1e-4,
                 epochs=10000,
-                
             ),
             sample_per_state=16,
             t_span=None if solver_type == "DPMSolver" else 32,

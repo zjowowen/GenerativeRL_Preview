@@ -141,7 +141,7 @@ config = EasyDict(
             checkpoint_path="./checkpoint",
             checkpoint_freq=100,
             checkpoint_guided_freq=1,
-            checkpoint_transform= False,
+            checkpoint_transform=False,
         ),
     ),
     deploy=dict(

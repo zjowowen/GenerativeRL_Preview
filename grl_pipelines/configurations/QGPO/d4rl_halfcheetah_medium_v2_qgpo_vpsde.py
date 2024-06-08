@@ -13,7 +13,7 @@ t_encoder = dict(
     ),
 )
 solver_type = "ODESolver"
-project_name="d4rl-halfcheetah-v2-QGPO-VPSDE"
+project_name = "d4rl-halfcheetah-v2-QGPO-VPSDE"
 
 config = EasyDict(
     train=dict(
@@ -128,7 +128,7 @@ config = EasyDict(
                 batch_size=4096,
                 learning_rate=1e-4,
                 epochs=2000,
-                #iterations=600000,
+                # iterations=600000,
             ),
             sample_per_state=16,
             t_span=None if solver_type == "DPMSolver" else 32,
@@ -144,7 +144,7 @@ config = EasyDict(
             ),
             energy_guidance=dict(
                 epochs=4000,
-                #iterations=600000,
+                # iterations=600000,
                 learning_rate=3e-4,
             ),
             evaluation=dict(

@@ -592,7 +592,12 @@ class GPPolicy(nn.Module):
         q_value_repeated = self.critic(action_repeated, state_repeated).squeeze(dim=-1)
         v_value_repeated = value_function(state_repeated).squeeze(dim=-1)
 
-        weight = torch.exp(eta * (q_value_repeated - v_value_repeated)).clamp(max=weight_clamp) / weight_clamp
+        weight = (
+            torch.exp(eta * (q_value_repeated - v_value_repeated)).clamp(
+                max=weight_clamp
+            )
+            / weight_clamp
+        )
 
         log_p = compute_likelihood(
             model=self.guided_model,
@@ -614,10 +619,17 @@ class GPPolicy(nn.Module):
         )
         log_mu_per_dim = log_mu / bits_ratio
 
-        loss = (- eta * q_value_repeated.detach() + log_p_per_dim.detach() - log_mu_per_dim.detach()) * log_p_per_dim * weight
+        loss = (
+            (
+                -eta * q_value_repeated.detach()
+                + log_p_per_dim.detach()
+                - log_mu_per_dim.detach()
+            )
+            * log_p_per_dim
+            * weight
+        )
 
         return loss.mean()
-
 
     def policy_loss(
         self,
@@ -1538,7 +1550,13 @@ class GPAlgorithm:
                                 else "minus_value"
                             ),
                             value_function=self.vf if self.iql else None,
-                            weight_clamp=config.parameter.guided_policy.weight_clamp if hasattr(config.parameter.guided_policy, "weight_clamp") else 100.0,
+                            weight_clamp=(
+                                config.parameter.guided_policy.weight_clamp
+                                if hasattr(
+                                    config.parameter.guided_policy, "weight_clamp"
+                                )
+                                else 100.0
+                            ),
                         )
                     elif config.parameter.algorithm_type == "GPO_with_fake":
                         fake_actions_ = self.model["GPPolicy"].behaviour_policy_sample(
@@ -1571,7 +1589,13 @@ class GPAlgorithm:
                                 else "minus_value"
                             ),
                             value_function=self.vf if self.iql else None,
-                            weight_clamp=config.parameter.guided_policy.weight_clamp if hasattr(config.parameter.guided_policy, "weight_clamp") else 100.0,
+                            weight_clamp=(
+                                config.parameter.guided_policy.weight_clamp
+                                if hasattr(
+                                    config.parameter.guided_policy, "weight_clamp"
+                                )
+                                else 100.0
+                            ),
                         )
                     elif config.parameter.algorithm_type == "GPG_Direct":
                         guided_policy_loss = self.model[
@@ -1602,7 +1626,13 @@ class GPAlgorithm:
                                 else 1
                             ),
                             value_function=self.vf if self.iql else None,
-                            weight_clamp=config.parameter.guided_policy.weight_clamp if hasattr(config.parameter.guided_policy, "weight_clamp") else 100.0,
+                            weight_clamp=(
+                                config.parameter.guided_policy.weight_clamp
+                                if hasattr(
+                                    config.parameter.guided_policy, "weight_clamp"
+                                )
+                                else 100.0
+                            ),
                         )
                     elif config.parameter.algorithm_type == "GPG_2":
                         guided_policy_loss = self.model[
@@ -1637,7 +1667,7 @@ class GPAlgorithm:
                             norm_type=2,
                         )
                     guided_policy_optimizer.step()
-                    if config.parameter.algorithm_type in ["GPG_Direct","GPG_Polish"]:
+                    if config.parameter.algorithm_type in ["GPG_Direct", "GPG_Polish"]:
                         wandb.log(
                             data=dict(
                                 guided_policy_train_iter=guided_policy_train_iter,

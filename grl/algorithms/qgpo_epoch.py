@@ -388,7 +388,9 @@ class QGPOAlgorithm:
                             ),
                             map_location="cpu",
                         )
-                        self.model["QGPOPolicy"].diffusion_model.energy_guidance.model.load_state_dict(
+                        self.model[
+                            "QGPOPolicy"
+                        ].diffusion_model.energy_guidance.model.load_state_dict(
                             checkpoint["guided_model"]
                         )
                         self.guided_policy_train_epoch = checkpoint.get(
@@ -487,7 +489,9 @@ class QGPOAlgorithm:
                             os.makedirs(config.parameter.checkpoint_path)
                         torch.save(
                             dict(
-                                base_model=model["QGPOPolicy"].diffusion_model.model.state_dict(),
+                                base_model=model[
+                                    "QGPOPolicy"
+                                ].diffusion_model.model.state_dict(),
                                 behaviour_policy_train_epoch=self.behaviour_policy_train_epoch,
                                 behaviour_policy_train_iter=iteration,
                             ),
@@ -505,7 +509,9 @@ class QGPOAlgorithm:
                             os.makedirs(config.parameter.checkpoint_path)
                         torch.save(
                             dict(
-                                guided_model=model["QGPOPolicy"].diffusion_model.energy_guidance.model.state_dict(),
+                                guided_model=model[
+                                    "QGPOPolicy"
+                                ].diffusion_model.energy_guidance.model.state_dict(),
                                 guided_policy_train_epoch=self.guided_policy_train_epoch,
                                 guided_policy_train_iteration=iteration,
                             ),
@@ -524,7 +530,9 @@ class QGPOAlgorithm:
                         if config.parameter.critic.method == "iql":
                             torch.save(
                                 dict(
-                                    critic_model=model["QGPOPolicy"].critic.state_dict(),
+                                    critic_model=model[
+                                        "QGPOPolicy"
+                                    ].critic.state_dict(),
                                     critic_train_epoch=self.critic_train_epoch,
                                     critic_train_iter=iteration,
                                     value_function=self.vf.state_dict(),
@@ -537,7 +545,9 @@ class QGPOAlgorithm:
                         elif config.parameter.critic.method == "in_support_ql":
                             torch.save(
                                 dict(
-                                    critic_model=model["QGPOPolicy"].critic.state_dict(),
+                                    critic_model=model[
+                                        "QGPOPolicy"
+                                    ].critic.state_dict(),
                                     critic_train_epoch=self.critic_train_epoch,
                                     critic_train_iter=iteration,
                                 ),
@@ -546,7 +556,6 @@ class QGPOAlgorithm:
                                     f"critic_{self.critic_train_epoch}_{iteration}.pt",
                                 ),
                             )
-
 
             # ---------------------------------------
             # Customized training code ↓
@@ -829,12 +838,18 @@ class QGPOAlgorithm:
                 lr=config.parameter.energy_guidance.learning_rate,
             )
 
-            self.critic_train_epoch=0
-            self.energy_guidance_train_epoch=0
+            self.critic_train_epoch = 0
+            self.energy_guidance_train_epoch = 0
             critic_train_iter = 0
             energy_guidance_train_iter = 0
             for epoch in track(
-                range(max(config.parameter.critic.epochs, config.parameter.energy_guidance.epochs)), description="Critic and energy guidance training"
+                range(
+                    max(
+                        config.parameter.critic.epochs,
+                        config.parameter.energy_guidance.epochs,
+                    )
+                ),
+                description="Critic and energy guidance training",
             ):
                 if self.critic_train_epoch >= epoch:
                     continue
@@ -859,7 +874,10 @@ class QGPOAlgorithm:
                 energy_guidance_loss_sum = 0.0
 
                 for data in data_loader:
-                    if critic_train_iter < config.parameter.critic.stop_training_iterations:
+                    if (
+                        critic_train_iter
+                        < config.parameter.critic.stop_training_iterations
+                    ):
                         q_loss = self.model["QGPOPolicy"].q_loss(
                             data["a"],
                             data["s"],
@@ -890,25 +908,29 @@ class QGPOAlgorithm:
                     if self.energy_guidance_train_epoch >= epoch:
                         continue
 
-                    energy_guidance_loss = self.model["QGPOPolicy"].energy_guidance_loss(data["s"], data["fake_a"])
+                    energy_guidance_loss = self.model[
+                        "QGPOPolicy"
+                    ].energy_guidance_loss(data["s"], data["fake_a"])
                     energy_guidance_optimizer.zero_grad()
                     energy_guidance_loss.backward()
                     energy_guidance_optimizer.step()
                     energy_guidance_train_iter += 1
                     energy_guidance_loss_sum += energy_guidance_loss.item()
-                    counter+=1
+                    counter += 1
 
-                self.critic_train_epoch+=1
-                self.energy_guidance_train_epoch+=1
+                self.critic_train_epoch += 1
+                self.energy_guidance_train_epoch += 1
 
-                if (
-                    epoch
-                    % config.parameter.evaluation.evaluation_interval
-                    == 0
-                    or (epoch + 1) == max(config.parameter.critic.epochs, config.parameter.energy_guidance.epochs)
+                if epoch % config.parameter.evaluation.evaluation_interval == 0 or (
+                    epoch + 1
+                ) == max(
+                    config.parameter.critic.epochs,
+                    config.parameter.energy_guidance.epochs,
                 ):
                     evaluation_results = evaluate(
-                        self.model["QGPOPolicy"], train_epoch=epoch, guidance_scales=config.parameter.evaluation.guidance_scale,
+                        self.model["QGPOPolicy"],
+                        train_epoch=epoch,
+                        guidance_scales=config.parameter.evaluation.guidance_scale,
                     )
                     wandb_run.log(data=evaluation_results, commit=False)
 
@@ -939,11 +961,9 @@ class QGPOAlgorithm:
                         model_type="critic_model",
                     )
 
-
             # ---------------------------------------
             # critic and energy guidance training code ↑
             # ---------------------------------------
-
 
             # ---------------------------------------
             # Customized training code ↑

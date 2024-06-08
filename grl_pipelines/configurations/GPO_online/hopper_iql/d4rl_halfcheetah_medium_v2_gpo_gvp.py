@@ -119,7 +119,6 @@ config = EasyDict(
                 iterations=10000,
                 drop_ratio=0.0,
                 collect_steps=10,
-
             ),
             behaviour_policy=dict(
                 batch_size=4096,

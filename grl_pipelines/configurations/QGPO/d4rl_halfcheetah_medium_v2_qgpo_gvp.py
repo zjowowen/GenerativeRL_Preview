@@ -13,7 +13,7 @@ t_encoder = dict(
     ),
 )
 solver_type = "DPMSolver"
-project_name="d4rl-halfcheetah-v2-QGPO-GVP"
+project_name = "d4rl-halfcheetah-v2-QGPO-GVP"
 
 config = EasyDict(
     train=dict(
@@ -120,7 +120,7 @@ config = EasyDict(
                 batch_size=4096,
                 learning_rate=1e-4,
                 epochs=2000,
-                #iterations=600000,
+                # iterations=600000,
             ),
             sample_per_state=16,
             fake_data_t_span=None if solver_type == "DPMSolver" else 32,

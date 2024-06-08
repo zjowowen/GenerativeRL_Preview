@@ -12,7 +12,7 @@ t_encoder = dict(
         scale=30.0,
     ),
 )
-algorithm_type = "GPG_Polish" #"GPG_Direct"
+algorithm_type = "GPG_Polish"  # "GPG_Direct"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
 env_id = "kitchen-partial-v0"
@@ -132,7 +132,7 @@ config = EasyDict(
             sample_per_state=16,
             t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
-                method='iql',
+                method="iql",
                 tau=0.7,
                 batch_size=4096,
                 epochs=2000,
@@ -152,7 +152,7 @@ config = EasyDict(
                 loss_type="orgin_loss",
                 # grad_norm_clip=10,
                 gradtime_step=1000,
-                lr_epochs=200, #no meaning
+                lr_epochs=200,  # no meaning
                 eta=1,
             ),
             evaluation=dict(

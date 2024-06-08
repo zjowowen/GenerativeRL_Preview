@@ -132,7 +132,7 @@ config = EasyDict(
             sample_per_state=16,
             t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
-                method='iql',
+                method="iql",
                 tau=0.7,
                 batch_size=4096,
                 epochs=2000,
@@ -152,7 +152,7 @@ config = EasyDict(
                 loss_type="orgin_loss",
                 # grad_norm_clip=10,
                 gradtime_step=1000,
-                lr_epochs=200, #no meaning
+                lr_epochs=200,  # no meaning
                 eta=1,
             ),
             evaluation=dict(
@@ -161,7 +161,10 @@ config = EasyDict(
                 evaluation_iteration_interval=1,
                 evaluation_behavior_policy_interval=500,
                 evaluation_guided_policy_interval=10,
-                guidance_scale=[0.0, 1.0,],
+                guidance_scale=[
+                    0.0,
+                    1.0,
+                ],
             ),
             checkpoint_path=f"./{project_name}/checkpoint",
             checkpoint_freq=100,

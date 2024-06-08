@@ -136,7 +136,7 @@ config = EasyDict(
                 tau=0.7,
                 # new add below
                 lr_decy=False,
-                method="iql",   
+                method="iql",
             ),
             guided_policy=dict(
                 batch_size=4096,

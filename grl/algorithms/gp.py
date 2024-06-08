@@ -562,7 +562,7 @@ class GPPolicy(nn.Module):
             using_Hutchinson_trace_estimator=True,
         )
         log_p.register_hook(lambda grad: log_grad("log_p", grad))
-        
+
         bits_ratio = torch.prod(
             torch.tensor(state_repeated.shape[1], device=state.device)
         ) * torch.log(torch.tensor(2.0, device=state.device))
@@ -706,7 +706,6 @@ class GPPolicy(nn.Module):
         loss_p = (log_p_per_dim.detach() * log_p_per_dim * weight).mean()
         loss_u = (-log_mu_per_dim.detach() * log_p_per_dim * weight).mean()
         return loss.mean(), loss_q, loss_p, loss_u
-
 
     def policy_loss(
         self,
@@ -1222,7 +1221,12 @@ class GPAlgorithm:
                 wandb.run.name = run_name
                 wandb.run.save()
 
-            elif config.parameter.algorithm_type in ["GPG", "GPG_Direct", "GPG_Polish", "GPG_Softmax"]:
+            elif config.parameter.algorithm_type in [
+                "GPG",
+                "GPG_Direct",
+                "GPG_Polish",
+                "GPG_Softmax",
+            ]:
                 run_name = f"Q-{config.parameter.critic.method}-path-{path_type}-eta-{config.parameter.guided_policy.eta}-T-{config.parameter.guided_policy.gradtime_step}-batch-{config.parameter.guided_policy.batch_size}-lr-{config.parameter.guided_policy.learning_rate}-seed-{self.seed_value}"
                 wandb.run.name = run_name
                 wandb.run.save()
@@ -1426,12 +1430,20 @@ class GPAlgorithm:
                         f"evaluation/guidance_scale:[{guidance_scale}]/return_min"
                     ] = return_min
 
-                    if isinstance(self.dataset,GPOD4RLDataset):
-                        env_id=config.dataset.args.env_id
-                        evaluation_results[f"evaluation/guidance_scale:[{guidance_scale}]/return_mean_normalized"]=d4rl.get_normalized_score(env_id, return_mean)
-                        evaluation_results[f"evaluation/guidance_scale:[{guidance_scale}]/return_std_normalized"]=d4rl.get_normalized_score(env_id, return_std)
-                        evaluation_results[f"evaluation/guidance_scale:[{guidance_scale}]/return_max_normalized"]=d4rl.get_normalized_score(env_id, return_max)
-                        evaluation_results[f"evaluation/guidance_scale:[{guidance_scale}]/return_min_normalized"]=d4rl.get_normalized_score(env_id, return_min)
+                    if isinstance(self.dataset, GPOD4RLDataset):
+                        env_id = config.dataset.args.env_id
+                        evaluation_results[
+                            f"evaluation/guidance_scale:[{guidance_scale}]/return_mean_normalized"
+                        ] = d4rl.get_normalized_score(env_id, return_mean)
+                        evaluation_results[
+                            f"evaluation/guidance_scale:[{guidance_scale}]/return_std_normalized"
+                        ] = d4rl.get_normalized_score(env_id, return_std)
+                        evaluation_results[
+                            f"evaluation/guidance_scale:[{guidance_scale}]/return_max_normalized"
+                        ] = d4rl.get_normalized_score(env_id, return_max)
+                        evaluation_results[
+                            f"evaluation/guidance_scale:[{guidance_scale}]/return_min_normalized"
+                        ] = d4rl.get_normalized_score(env_id, return_min)
 
                     if repeat > 1:
                         log.info(
@@ -2114,7 +2126,10 @@ class GPAlgorithm:
                             iteration=guided_policy_train_iter,
                             model_type="guided_model",
                         )
-                    elif config.parameter.algorithm_type in ["GPG_Polish", "GPG_Softmax"]:
+                    elif config.parameter.algorithm_type in [
+                        "GPG_Polish",
+                        "GPG_Softmax",
+                    ]:
                         wandb.log(
                             data=dict(
                                 guided_policy_train_iter=guided_policy_train_iter,

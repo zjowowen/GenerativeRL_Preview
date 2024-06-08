@@ -129,13 +129,13 @@ config = EasyDict(
                 discount_factor=0.99,
                 update_momentum=0.005,
                 tau=0.7,
-                method='iql',
+                method="iql",
             ),
             guided_policy=dict(
                 batch_size=4096,
                 epochs=10000,
                 learning_rate=1e-4,
-                method='iql',
+                method="iql",
             ),
             evaluation=dict(
                 eval=True,

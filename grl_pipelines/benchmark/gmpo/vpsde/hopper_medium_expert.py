@@ -100,7 +100,7 @@ config = EasyDict(
                                 activation="relu",
                             ),
                         ),
-                    )
+                    ),
                 ),
             ),
             GuidedPolicy=dict(
@@ -123,7 +123,7 @@ config = EasyDict(
                 discount_factor=0.99,
                 update_momentum=0.005,
                 tau=0.7,
-                method='iql',
+                method="iql",
             ),
             guided_policy=dict(
                 batch_size=4096,
@@ -193,8 +193,9 @@ if __name__ == "__main__":
                     total_reward_list.append(total_reward)
                     break
 
-        print(f"Average total reward: {np.mean(total_reward_list)}, std: {np.std(total_reward_list)}")
-
+        print(
+            f"Average total reward: {np.mean(total_reward_list)}, std: {np.std(total_reward_list)}"
+        )
 
         # ---------------------------------------
         # Customized deploy code ↑

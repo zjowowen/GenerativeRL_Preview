@@ -128,7 +128,7 @@ config = EasyDict(
             sample_per_state=16,
             t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
-                method='iql',
+                method="iql",
                 tau=0.7,
                 batch_size=1024,
                 epochs=20000,
@@ -148,7 +148,7 @@ config = EasyDict(
                 loss_type="orgin_loss",
                 # grad_norm_clip=10,
                 gradtime_step=1000,
-                lr_epochs=200, #no meaning
+                lr_epochs=200,  # no meaning
                 eta=1,
             ),
             evaluation=dict(
