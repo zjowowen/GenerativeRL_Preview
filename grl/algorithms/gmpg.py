@@ -1204,7 +1204,6 @@ class GPAlgorithm:
                         evaluation_results = evaluate(
                             self.model["GPPolicy"].guided_model,
                             train_epoch=epoch,
-                            guidance_scales=config.parameter.evaluation.guidance_scale,
                             repeat=(
                                 1
                                 if not hasattr(config.parameter.evaluation, "repeat")
