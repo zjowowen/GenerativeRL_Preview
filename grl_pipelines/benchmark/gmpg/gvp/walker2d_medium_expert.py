@@ -1,7 +1,7 @@
 import torch
 from easydict import EasyDict
 
-env_id = "halfcheetah-medium-expert-v2"
+env_id = "walker2d-medium-expert-v2"
 action_size = 6
 state_size = 17
 algorithm_type = "GMPG"
