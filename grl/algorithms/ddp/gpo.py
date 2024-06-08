@@ -11,7 +11,7 @@ from tensordict import TensorDict
 from torch.utils.data import DataLoader
 
 import wandb
-from grl.agents.gpo import GPOAgent
+from grl.agents.gp import GPAgent
 from grl.datasets import create_dataset
 from grl.datasets.gpo import GPODataset
 from grl.generative_models.diffusion_model import DiffusionModel
@@ -1057,7 +1057,7 @@ class GPOAlgorithm:
 
             wandb.finish()
 
-    def deploy(self, config: EasyDict = None) -> GPOAgent:
+    def deploy(self, config: EasyDict = None) -> GPAgent:
 
         if config is not None:
             config = merge_two_dicts_into_newone(self.config.deploy, config)
@@ -1066,7 +1066,7 @@ class GPOAlgorithm:
 
         assert "GPOPolicy" in self.model, "The model must be trained first."
         assert "GuidedPolicy" in self.model, "The model must be trained first."
-        return GPOAgent(
+        return GPAgent(
             config=config,
             model=copy.deepcopy(self.model),
         )

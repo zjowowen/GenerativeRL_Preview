@@ -1,6 +1,6 @@
 import gym
 
-from grl.algorithms.gpo import GPOAlgorithm
+from grl.algorithms.gpo import GPAlgorithm
 from grl.datasets import GPOCustomizedDataset
 from grl.utils.log import log
 from grl_pipelines.configurations.lunarlander_continuous_gpo_icfm import (
@@ -10,7 +10,7 @@ from grl_pipelines.configurations.lunarlander_continuous_gpo_icfm import (
 
 def gpo_pipeline(config):
 
-    gpo = GPOAlgorithm(
+    gpo = GPAlgorithm(
         config,
         dataset=GPOCustomizedDataset(
             numpy_data_path="./data.npz", device=config.train.device

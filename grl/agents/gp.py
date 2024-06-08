@@ -8,7 +8,7 @@ from easydict import EasyDict
 class GPAgent:
     """
     Overview:
-        The GPO agent trained by importance sampling.
+        The agent trained for generative policies.
     Interface:
         ``__init__``, ``action``
     """

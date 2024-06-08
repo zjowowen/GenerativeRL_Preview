@@ -8,7 +8,7 @@ from easydict import EasyDict
 class QGPOAgent:
     """
     Overview:
-        The QGPO agent.
+        The agent for the QGPO algorithm.
     Interface:
         ``__init__``, ``action``
     """

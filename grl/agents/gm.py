@@ -8,7 +8,7 @@ from easydict import EasyDict
 class GPAgent:
     """
     Overview:
-        The agent trained.
+        The agent trained for generative policies.
     Interface:
         ``__init__``, ``action``
     """
@@ -20,7 +20,7 @@ class GPAgent:
     ):
         """
         Overview:
-            Initialize the agent.
+            Initialize the agent with the configuration and the model.
         Arguments:
             config (:obj:`EasyDict`): The configuration.
             model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The model.
@@ -37,7 +37,7 @@ class GPAgent:
     ) -> Union[np.ndarray, torch.Tensor, Dict]:
         """
         Overview:
-            Given an observation, return an action.
+            Given an observation, return an action as a numpy array or a torch tensor.
         Arguments:
             obs (:obj:`Union[np.ndarray, torch.Tensor, Dict]`): The observation.
             return_as_torch_tensor (:obj:`bool`): Whether to return the action as a torch tensor.

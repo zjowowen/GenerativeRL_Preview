@@ -1,7 +1,7 @@
 import gym
 import d4rl
 
-from grl.algorithms.gpo import GPOAlgorithm
+from grl.algorithms.gpo import GPAlgorithm
 from grl.utils.log import log
 from grl_pipelines.configurations.antmaze_large_diverse_v0_gpo_vpsde import (
     config,
@@ -10,7 +10,7 @@ from grl_pipelines.configurations.antmaze_large_diverse_v0_gpo_vpsde import (
 
 def gpo_pipeline(config):
 
-    gpo = GPOAlgorithm(config)
+    gpo = GPAlgorithm(config)
 
     # ---------------------------------------
     # Customized train code ↓
