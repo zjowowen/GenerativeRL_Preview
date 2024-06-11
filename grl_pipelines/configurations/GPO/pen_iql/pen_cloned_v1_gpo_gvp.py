@@ -18,7 +18,7 @@ model_type = "DiffusionModel"
 path = dict(type="gvp")
 model_loss_type = "flow_matching"
 env_id = "pen-cloned-v1"
-project_name = f"{env_id}-GPO-GVP"
+project_name = f"{env_id}-GPO-GVP-ph3eta1"
 model = dict(
     device=device,
     x_size=action_size,
@@ -125,7 +125,7 @@ config = EasyDict(
             t_span=None if solver_type == "DPMSolver" else 32,
             critic=dict(
                 batch_size=256,
-                epochs=500,
+                epochs=2000,
                 learning_rate=3e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
@@ -143,7 +143,7 @@ config = EasyDict(
                 repeat=10,
                 evaluation_behavior_policy_interval=500,
                 evaluation_guided_policy_interval=500,
-                guidance_scale=[0.0, 1.0, 2.0],
+                guidance_scale=[0.0, 1.0],
             ),
             checkpoint_path=f"./{project_name}/checkpoint",
             checkpoint_freq=100,

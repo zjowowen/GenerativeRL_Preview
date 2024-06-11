@@ -12,13 +12,17 @@ t_encoder = dict(
         scale=30.0,
     ),
 )
-algorithm_type = "GPO"
+algorithm_type = "GPG_Direct"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
-path = dict(type="gvp")
+path = dict(
+    type="linear_vp_sde",
+    beta_0=0.1,
+    beta_1=20.0,
+)
 model_loss_type = "flow_matching"
 env_id = "pen-human-v1"
-project_name = f"{env_id}-GPO-GVP-ph3eta1"
+project_name = f"{env_id}-GPG-VPSDE"
 model = dict(
     device=device,
     x_size=action_size,
@@ -116,10 +120,9 @@ config = EasyDict(
         parameter=dict(
             algorithm_type=algorithm_type,
             behaviour_policy=dict(
-                batch_size=4096,
+                batch_size=4975,
                 learning_rate=1e-4,
                 epochs=2000,
-                iterations=1000000,
             ),
             sample_per_state=16,
             t_span=None if solver_type == "DPMSolver" else 32,
@@ -133,20 +136,26 @@ config = EasyDict(
                 method="iql",
             ),
             guided_policy=dict(
-                batch_size=4096,
+                batch_size=4975,
                 epochs=10000,
-                iterations=2000000,
+                copy_from_basemodel=True,
+                loss_type="origin_loss",
+                gradtime_step=1000,
+                eta=4,
                 learning_rate=1e-4,
+                repeats=1,
             ),
             evaluation=dict(
                 eval=True,
                 repeat=10,
                 evaluation_behavior_policy_interval=500,
-                evaluation_guided_policy_interval=100,
+                evaluation_guided_policy_interval=10,
+                evaluation_iteration_interval=5,
                 guidance_scale=[0.0, 1.0],
             ),
             checkpoint_path=f"./{project_name}/checkpoint",
             checkpoint_freq=100,
+            checkpoint_guided_freq=5,
         ),
     ),
     deploy=dict(
