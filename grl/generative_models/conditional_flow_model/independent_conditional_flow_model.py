@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import List, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -6,13 +6,7 @@ import treetensor
 from easydict import EasyDict
 from tensordict import TensorDict
 
-from grl.generative_models.diffusion_process import DiffusionProcess
 from grl.generative_models.intrinsic_model import IntrinsicModel
-from grl.generative_models.model_functions.data_prediction_function import (
-    DataPredictionFunction,
-)
-from grl.generative_models.model_functions.noise_function import NoiseFunction
-from grl.generative_models.model_functions.score_function import ScoreFunction
 from grl.generative_models.model_functions.velocity_function import VelocityFunction
 from grl.generative_models.random_generator import gaussian_random_variable
 from grl.generative_models.stochastic_process import StochasticProcess
@@ -25,17 +19,28 @@ from grl.numerical_methods.numerical_solvers.ode_solver import (
 from grl.numerical_methods.numerical_solvers.sde_solver import SDESolver
 from grl.numerical_methods.probability_path import (
     ConditionalProbabilityPath,
-    GaussianConditionalProbabilityPath,
 )
 from grl.utils import find_parameters
 
 
 class IndependentConditionalFlowModel(nn.Module):
+    """
+    Overview:
+        The independent conditional flow model, which is a flow model with independent conditional probability paths.
+    Interfaces:
+        ``__init__``, ``get_type``, ``sample``, ``sample_forward_process``, ``flow_matching_loss``
+    """
 
     def __init__(
         self,
         config: EasyDict,
     ):
+        """
+        Overview:
+            Initialize the model.
+        Arguments:
+            config (:obj:`EasyDict`): The configuration of the model.
+        """
         super().__init__()
         self.config = config
 
@@ -389,8 +394,10 @@ class IndependentConditionalFlowModel(nn.Module):
         Overview:
             Return the flow matching loss function of the model given the initial state and the condition.
         Arguments:
-            x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
-            condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
+            x0 (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The initial state.
+            x1 (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The final state.
+            condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The condition for the flow matching loss.
+            average (:obj:`bool`): Whether to average the loss across the batch.
         """
 
         return self.velocity_function_.flow_matching_loss_icfm(

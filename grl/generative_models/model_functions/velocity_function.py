@@ -12,7 +12,7 @@ from grl.generative_models.diffusion_process import DiffusionProcess
 class VelocityFunction:
     """
     Overview:
-        Velocity function Class.
+        Velocity function in diffusion model.
     Interfaces:
         ``__init__``, ``forward``, ``flow_matching_loss``
     """

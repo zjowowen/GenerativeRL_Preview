@@ -33,11 +33,23 @@ from grl.utils import find_parameters
 
 
 class OptimalTransportConditionalFlowModel(nn.Module):
+    """
+    Overview:
+        The optimal transport conditional flow model, which is based on an optimal transport plan between two distributions.
+    Interfaces:
+        ``__init__``, ``get_type``, ``sample``, ``sample_forward_process``, ``flow_matching_loss``
+    """
 
     def __init__(
         self,
         config: EasyDict,
     ):
+        """
+        Overview:
+            Initialize the model.
+        Arguments:
+            - config (:obj:`EasyDict`): The configuration of the model.
+        """
         super().__init__()
         self.config = config
 
@@ -123,7 +135,7 @@ class OptimalTransportConditionalFlowModel(nn.Module):
     ):
         """
         Overview:
-            Sample from the diffusion model, return all intermediate states.
+            Sample from the model, return all intermediate states.
 
         Arguments:
             t_span (:obj:`torch.Tensor`): The time span.
@@ -380,7 +392,7 @@ class OptimalTransportConditionalFlowModel(nn.Module):
 
         return data
 
-    def flow_matching_loss_2(
+    def flow_matching_loss_small_batch_OT_plan(
         self,
         x0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
         x1: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
@@ -389,7 +401,7 @@ class OptimalTransportConditionalFlowModel(nn.Module):
     ) -> torch.Tensor:
         """
         Overview:
-            Return the flow matching loss function of the model given the initial state and the condition.
+            Return the flow matching loss function of the model given the initial state and the condition, using the optimal transport plan for small batch size to accelerate the computation.
         Arguments:
             x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
             condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
@@ -515,7 +527,7 @@ class OptimalTransportConditionalFlowModel(nn.Module):
     ) -> torch.Tensor:
         """
         Overview:
-            Return the flow matching loss function of the model given the initial state and the condition.
+            Return the flow matching loss function of the model given the initial state and the condition, using the optimal transport plan to match samples from two distributions.
         Arguments:
             x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
             condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
@@ -555,50 +567,4 @@ class OptimalTransportConditionalFlowModel(nn.Module):
 
         return self.velocity_function_.flow_matching_loss_icfm(
             self.model, x0_ot, x1_ot, condition_ot, average
-        )
-
-    def flow_matching_loss_backup(
-        self,
-        x0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-        x1: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-        average: bool = True,
-    ) -> torch.Tensor:
-        """
-        Overview:
-            Return the flow matching loss function of the model given the initial state and the condition.
-        Arguments:
-            x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
-            condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
-        """
-
-        a = ot.unif(x0.shape[0])
-        b = ot.unif(x1.shape[0])
-        # TODO: make it compatible with TensorDict and treetensor.torch.Tensor
-        if x0.dim() > 2:
-            x0_ = x0.reshape(x0.shape[0], -1)
-        else:
-            x0_ = x0
-        if x1.dim() > 2:
-            x1_ = x1.reshape(x1.shape[0], -1)
-        else:
-            x1_ = x1
-
-        M = torch.cdist(x0_, x1_) ** 2
-        p = ot.emd(a, b, M.detach().cpu().numpy())
-        assert np.all(np.isfinite(p)), "p is not finite"
-
-        p_flatten = p.flatten()
-        p_flatten = p_flatten / p_flatten.sum()
-
-        choices = np.random.choice(
-            p.shape[0] * p.shape[1], p=p_flatten, size=x0.shape[0], replace=True
-        )
-
-        i, j = np.divmod(choices, p.shape[1])
-        x0_ot = x0[i]
-        x1_ot = x1[j]
-
-        return self.velocity_function_.flow_matching_loss_icfm(
-            self.model, x0_ot, x1_ot, condition, average
         )

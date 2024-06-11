@@ -12,7 +12,7 @@ from grl.neural_network.encoders import get_encoder
 class IntrinsicModel(nn.Module):
     """
     Overview:
-        Intrinsic model of generative model.
+        Intrinsic model of generative model, which is the backbone of many continuous-time generative models.
     Interfaces:
         ``__init__``, ``forward``
     """

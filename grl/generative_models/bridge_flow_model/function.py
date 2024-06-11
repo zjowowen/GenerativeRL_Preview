@@ -12,7 +12,7 @@ from grl.generative_models.diffusion_process import DiffusionProcess
 class SchrodingerBridgeFunction:
     """
     Overview:
-        Velocity function Class.
+        Intrinsic function of the Schrodinger Bridge.
     Interfaces:
         ``__init__``, ``forward``, ``flow_matching_loss``
     """
@@ -42,6 +42,7 @@ class SchrodingerBridgeFunction:
         """
         Overview:
             Return velocity of the model at time t given the initial state.
+
             .. math::
                 v_{\theta}(t, x)
         Arguments:

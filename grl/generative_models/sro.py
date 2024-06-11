@@ -13,11 +13,9 @@ from grl.generative_models.diffusion_model.diffusion_model import DiffusionModel
 class SRPOConditionalDiffusionModel(nn.Module):
     """
     Overview:
-        Energy Conditional Diffusion Model.
+        Score regularized policy optimization from a conditional diffusion model to some stochastic or deterministic model of some distribution type.
     Interfaces:
-        ``__init__``, ``sample``, ``sample_without_energy_guidance``, ``sample_forward_process``, ``score_function``,
-        ``score_function_with_energy_guidance``, ``score_matching_loss``, ``velocity_function``, ``flow_matching_loss``,
-        ``energy_guidance_loss``
+        ``__init__``, ``score_matching_loss``, ``srpo_loss``
     """
 
     def __init__(
@@ -28,7 +26,7 @@ class SRPOConditionalDiffusionModel(nn.Module):
     ) -> None:
         """
         Overview:
-            Initialization of Energy Conditional Diffusion Model.
+            Initialization of the SRPOConditionalDiffusionModel.
         Arguments:
             config (:obj:`EasyDict`): The configuration.
             energy_model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The energy model.
@@ -60,6 +58,12 @@ class SRPOConditionalDiffusionModel(nn.Module):
         self,
         condition: Union[torch.Tensor, TensorDict],  # state
     ):
+        """
+        Overview:
+            The loss function for training conditional diffusion model.
+        Arguments:
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+        """
         x = self.distribution_model(condition)
         t_random = torch.rand(x.shape[0], device=x.device) * 0.96 + 0.02  # [256]
         x_t = self.diffusion_model.diffusion_process.direct_sample(

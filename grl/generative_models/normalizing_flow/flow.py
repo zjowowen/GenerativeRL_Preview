@@ -27,6 +27,13 @@ from grl.utils import find_parameters
 
 
 class FlowModel(nn.Module):
+    """
+    Overview:
+        Model of the flow model.
+        This is an in-development class, not fully implemented yet.
+    Interfaces:
+        ``__init__``, ``get_type``, ``sample``, ``sample_forward_process``
+    """
 
     def __init__(self, config: EasyDict):
         super().__init__()

@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import List, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -6,9 +6,7 @@ import treetensor
 from easydict import EasyDict
 from tensordict import TensorDict
 
-from grl.generative_models.diffusion_model import DiffusionModel
 from grl.generative_models.diffusion_process import DiffusionProcess
-from grl.generative_models.intrinsic_model import IntrinsicModel
 from grl.generative_models.model_functions.data_prediction_function import (
     DataPredictionFunction,
 )
@@ -523,6 +521,8 @@ class GuidedDiffusionModel:
             Sample from the diffusion model with fixed x, return the final state.
 
         Arguments:
+            base_model (:obj:`nn.Module`): The base model.
+            guided_model (:obj:`nn.Module`): The guided model.
             fixed_x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The fixed x.
             fixed_mask (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The fixed mask.
             t_span (:obj:`torch.Tensor`): The time span.
@@ -578,6 +578,8 @@ class GuidedDiffusionModel:
             Sample from the diffusion model with fixed x, return all intermediate states.
 
         Arguments:
+            base_model (:obj:`nn.Module`): The base model.
+            guided_model (:obj:`nn.Module`): The guided model.
             fixed_x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The fixed x.
             fixed_mask (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The fixed mask.
             t_span (:obj:`torch.Tensor`): The time span.
@@ -617,6 +619,8 @@ class GuidedDiffusionModel:
             Sample from the diffusion model given the sampled x.
 
         Arguments:
+            base_model (:obj:`nn.Module`): The base model.
+            guided_model (:obj:`nn.Module`): The guided model.
             x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
             t_span (:obj:`torch.Tensor`): The time span.
             condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
@@ -643,6 +647,8 @@ class GuidedDiffusionModel:
                 \nabla_{x_t} \log p_{\theta}(x_t)
 
         Arguments:
+            base_model (:obj:`nn.Module`): The base model.
+            guided_model (:obj:`nn.Module`): The guided model.
             t (:obj:`torch.Tensor`): The input time.
             x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
             condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
@@ -668,6 +674,8 @@ class GuidedDiffusionModel:
                 v_{\theta}(t, x)
 
         Arguments:
+            base_model (:obj:`nn.Module`): The base model.
+            guided_model (:obj:`nn.Module`): The guided model.
             t (:obj:`torch.Tensor`): The input time.
             x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state at time t.
             condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
@@ -695,6 +703,8 @@ class GuidedDiffusionModel:
                 - \sigma(t) \nabla_{x_t} \log p_{\theta}(x_t)
 
         Arguments:
+            base_model (:obj:`nn.Module`): The base model.
+            guided_model (:obj:`nn.Module`): The guided model.
             t (:obj:`torch.Tensor`): The input time.
             x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
             condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
@@ -721,6 +731,8 @@ class GuidedDiffusionModel:
                 \frac{- \sigma(t) x_t + \sigma^2(t) \nabla_{x_t} \log p_{\theta}(x_t)}{s(t)}
 
         Arguments:
+            base_model (:obj:`nn.Module`): The base model.
+            guided_model (:obj:`nn.Module`): The guided model.
             t (:obj:`torch.Tensor`): The input time.
             x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
             condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.

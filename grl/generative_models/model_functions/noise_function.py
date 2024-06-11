@@ -10,7 +10,7 @@ from tensordict import TensorDict
 class NoiseFunction:
     """
     Overview:
-        Model of noise function in Score-based generative model.
+        Model of noise function in diffusion model.
     Interfaces:
         ``__init__``, ``forward``
     """

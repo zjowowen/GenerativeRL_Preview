@@ -16,6 +16,12 @@ from grl.numerical_methods.sde import SDE
 
 
 class StochasticProcess:
+    """
+    Overview:
+        Class for describing a stochastic process for generative models.
+    Interfaces:
+        ``__init__``, ``mean``, ``std``, ``velocity``, ``direct_sample``, ``direct_sample_with_noise``, ``velocity_SchrodingerBridge``, ``score_SchrodingerBridge``
+    """
 
     def __init__(self, path: ConditionalProbabilityPath, t_max: float = 1.0) -> None:
 
@@ -136,6 +142,16 @@ class StochasticProcess:
         condition: Union[torch.Tensor, TensorDict] = None,
         noise: Union[torch.Tensor, TensorDict] = None,
     ):
+        """
+        Overview:
+            Return the sample of the state at time t given the initial state x0 and the final state x1 with noise.
+        Arguments:
+            t (:obj:`torch.Tensor`): The input time.
+            x0 (:obj:`Union[torch.Tensor, TensorDict]`): The input state at time 0.
+            x1 (:obj:`Union[torch.Tensor, TensorDict]`): The input state at time 1.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            noise (:obj:`Union[torch.Tensor, TensorDict]`): The input noise.
+        """
         return self.mean(t, x0, x1, condition) + self.std(
             t, x0, x1, condition
         ) * noise.to(x0.device)
@@ -148,6 +164,16 @@ class StochasticProcess:
         condition: Union[torch.Tensor, TensorDict] = None,
         noise: Union[torch.Tensor, TensorDict] = None,
     ):
+        """
+        Overview:
+            Return the velocity of the state at time t given the state x with noise.
+        Arguments:
+            t (:obj:`torch.Tensor`): The input time.
+            x0 (:obj:`Union[torch.Tensor, TensorDict]`): The input state at time 0.
+            x1 (:obj:`Union[torch.Tensor, TensorDict]`): The input state at time 1.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
+            noise (:obj:`Union[torch.Tensor, TensorDict]`): The input noise.
+        """
         return (
             self.path.std_prime(t).unsqueeze(1) * self.std(t, x0, x1, condition) * noise
             + x1

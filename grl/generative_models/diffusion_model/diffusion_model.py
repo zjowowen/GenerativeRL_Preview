@@ -29,7 +29,9 @@ from grl.utils import find_parameters
 class DiffusionModel(nn.Module):
     """
     Overview:
-        Diffusion Model.
+        General diffusion model class that supports various types of continuous-time diffusion paths, which supports sampling, computing score function and velocity function.
+        It can be modeled via score function, noise function, velocity function, or data prediction function.
+        Both score matching loss and flow matching loss are supported.
     Interfaces:
         ``__init__``, ``sample``, ``score_function``, ``score_matching_loss``, ``velocity_function``, ``flow_matching_loss``.
     """
@@ -844,7 +846,8 @@ class DiffusionModel(nn.Module):
     ):
         """
         Overview:
-            Sample from the diffusion model given the sampled x.
+            Use forward path of the diffusion model given the sampled x. Note that this is not the reverse process, and thus is not designed for sampling form the diffusion model.
+            Rather, it is used for encode a sampled x to the latent space.
 
         Arguments:
             x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
@@ -1019,6 +1022,7 @@ class DiffusionModel(nn.Module):
         Arguments:
             x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
             condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
+            average (:obj:`bool`): Whether to average the loss across the batch.
         """
 
         return self.velocity_function_.flow_matching_loss(
@@ -1073,6 +1077,11 @@ class DiffusionModel(nn.Module):
         data,
         beta,
     ) -> torch.Tensor:
+        """
+        Overview:
+            The loss function for training the diffusion process by Direct Policy Optimization (DPO).
+            This is an in-development feature and is not recommended for general use.
+        """
         # TODO: split data_w, data_l
         x_w, x_l = data[:, :2], data[:, 2:]
         noise = torch.randn_like(x_w).to(x_w.device)

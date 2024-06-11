@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import List, Tuple, Union
 
 import numpy as np
 import ot
@@ -25,6 +25,12 @@ from grl.utils import find_parameters
 
 
 class SchrodingerBridgeConditionalFlowModel(nn.Module):
+    """
+    Overview:
+        Schrodinger Bridge Conditional Flow Model.
+    Interfaces:
+        ``__init__``, ``get_type``, ``sample``, ``sample_forward_process``, ``flow_matching_loss``
+    """
 
     def __init__(
         self,

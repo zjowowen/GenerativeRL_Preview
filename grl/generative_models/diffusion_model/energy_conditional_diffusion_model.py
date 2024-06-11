@@ -93,9 +93,13 @@ class EnergyGuidance(nn.Module):
 
 
 class EnergyConditionalDiffusionModel(nn.Module):
-    """
+    r"""
     Overview:
-        Energy Conditional Diffusion Model.
+        Energy Conditional Diffusion Model, which is a diffusion model conditioned on energy.
+
+        .. math::
+            p_{\text{E}}(x|c)\sim \frac{\exp{\mathcal{E}(x,c)}}{Z(c)}p(x|c)
+
     Interfaces:
         ``__init__``, ``sample``, ``sample_without_energy_guidance``, ``sample_forward_process``, ``score_function``, \
         ``score_function_with_energy_guidance``, ``score_matching_loss``, ``velocity_function``, ``flow_matching_loss``, \
@@ -171,15 +175,19 @@ class EnergyConditionalDiffusionModel(nn.Module):
         with_grad: bool = False,
         solver_config: EasyDict = None,
     ):
-        """
+        r"""
         Overview:
-            Sample from the energy conditioned diffusion model.
+            Sample from the energy conditioned diffusion model by using score function.
+
+            .. math::
+                \nabla p_{\text{E}}(x|c) = \nabla p(x|c) + \nabla \mathcal{E}(x,c,t)
 
         Arguments:
             t_span (:obj:`torch.Tensor`): The time span.
             batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
             x_0 (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The initial state, if not provided, it will be sampled from the Gaussian distribution.
             condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
+            guidance_scale (:obj:`float`): The scale of guidance.
             with_grad (:obj:`bool`): Whether to return the gradient.
             solver_config (:obj:`EasyDict`): The configuration of the solver.
 
@@ -1119,6 +1127,7 @@ class EnergyConditionalDiffusionModel(nn.Module):
             x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input.
             condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
             weighting_scheme (:obj:`str`): The weighting scheme for score matching loss, which can be "maximum_likelihood" or "vanilla".
+            average (:obj:`bool`): Whether to average the loss across the batch.
 
             ..note::
                 - "maximum_likelihood": The weighting scheme is based on the maximum likelihood estimation. Refer to the paper "Maximum Likelihood Training of Score-Based Diffusion Models" for more details. The weight :math:`\lambda(t)` is denoted as:
@@ -1175,6 +1184,7 @@ class EnergyConditionalDiffusionModel(nn.Module):
         Arguments:
             x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
             condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
+            average (:obj:`bool`): Whether to average the loss across the batch.
         """
 
         return self.velocity_function_.flow_matching_loss(

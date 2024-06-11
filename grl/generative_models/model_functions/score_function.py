@@ -12,7 +12,7 @@ from grl.numerical_methods.monte_carlo import MonteCarloSampler
 class ScoreFunction:
     """
     Overview:
-        Model of Score function in Score-based generative model.
+        Model of Score function in diffusion model.
     Interfaces:
         ``__init__``, ``forward``, ``score_matching_loss``
     """

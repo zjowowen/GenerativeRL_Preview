@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import List, Tuple, Union
 
 import torch
 import treetensor
@@ -20,11 +20,23 @@ from grl.utils import find_parameters
 
 
 class GuidedBridgeConditionalFlowModel:
+    """
+    Overview:
+        The guided bridge conditional flow model, which is used for emplifying the guided bridge model by a larger guidance scale.
+    Interfaces:
+        ``__init__``, ``get_type``, ``sample``, ``sample_forward_process``
+    """
 
     def __init__(
         self,
         config: EasyDict,
     ):
+        """
+        Overview:
+            Initialize the model.
+        Arguments:
+            config (:obj:`EasyDict`): The configuration.
+        """
         super().__init__()
         self.config = config
 
@@ -75,6 +87,8 @@ class GuidedBridgeConditionalFlowModel:
             Sample from the model, return the final state.
 
         Arguments:
+            base_model (:obj:`Union[Callable, nn.Module]`): The base model.
+            guided_model (:obj:`Union[Callable, nn.Module]`): The guided model.
             t_span (:obj:`torch.Tensor`): The time span.
             batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
             x_0 (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The initial state, if not provided, it will be sampled from the Gaussian distribution.
@@ -119,9 +133,11 @@ class GuidedBridgeConditionalFlowModel:
     ):
         """
         Overview:
-            Sample from the diffusion model, return all intermediate states.
+            Sample from model, return all intermediate states.
 
         Arguments:
+            base_model (:obj:`Union[Callable, nn.Module]`): The base model.
+            guided_model (:obj:`Union[Callable, nn.Module]`): The guided model.
             t_span (:obj:`torch.Tensor`): The time span.
             batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): An extra batch size used for repeated sampling with the same initial state.
             x_0 (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The initial state, if not provided, it will be sampled from the Gaussian distribution.

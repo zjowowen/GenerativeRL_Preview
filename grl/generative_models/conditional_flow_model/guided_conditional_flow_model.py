@@ -1,20 +1,10 @@
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import List, Tuple, Union
 
-import numpy as np
-import ot
 import torch
-import torch.nn as nn
 import treetensor
 from easydict import EasyDict
 from tensordict import TensorDict
 
-from grl.generative_models.diffusion_process import DiffusionProcess
-from grl.generative_models.intrinsic_model import IntrinsicModel
-from grl.generative_models.model_functions.data_prediction_function import (
-    DataPredictionFunction,
-)
-from grl.generative_models.model_functions.noise_function import NoiseFunction
-from grl.generative_models.model_functions.score_function import ScoreFunction
 from grl.generative_models.model_functions.velocity_function import VelocityFunction
 from grl.generative_models.random_generator import gaussian_random_variable
 from grl.generative_models.stochastic_process import StochasticProcess
@@ -27,17 +17,28 @@ from grl.numerical_methods.numerical_solvers.ode_solver import (
 from grl.numerical_methods.numerical_solvers.sde_solver import SDESolver
 from grl.numerical_methods.probability_path import (
     ConditionalProbabilityPath,
-    GaussianConditionalProbabilityPath,
 )
 from grl.utils import find_parameters
 
 
 class GuidedConditionalFlowModel:
+    """
+    Overview:
+        The guided conditional flow model, which is used for sampling from a larger guidance scale than the guided model by assigning a guidance scale larger than 1.
+    Interfaces:
+        ``__init__``, ``get_type``, ``sample``, ``sample_forward_process``
+    """
 
     def __init__(
         self,
         config: EasyDict,
     ):
+        """
+        Overview:
+            Initialize the model.
+        Arguments:
+            config (:obj:`EasyDict`): The configuration.
+        """
         super().__init__()
         self.config = config
 
@@ -88,6 +89,8 @@ class GuidedConditionalFlowModel:
             Sample from the model, return the final state.
 
         Arguments:
+            base_model (:obj:`nn.Module`): The base model.
+            guided_model (:obj:`nn.Module`): The guided model.
             t_span (:obj:`torch.Tensor`): The time span.
             batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
             x_0 (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The initial state, if not provided, it will be sampled from the Gaussian distribution.
@@ -132,9 +135,11 @@ class GuidedConditionalFlowModel:
     ):
         """
         Overview:
-            Sample from the diffusion model, return all intermediate states.
+            Sample from the model, return all intermediate states.
 
         Arguments:
+            base_model (:obj:`nn.Module`): The base model.
+            guided_model (:obj:`nn.Module`): The guided model.
             t_span (:obj:`torch.Tensor`): The time span.
             batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): An extra batch size used for repeated sampling with the same initial state.
             x_0 (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The initial state, if not provided, it will be sampled from the Gaussian distribution.

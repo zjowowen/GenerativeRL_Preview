@@ -20,6 +20,12 @@ class IntrinsicModel(nn.Module):
     """
 
     def __init__(self, config: EasyDict):
+        """
+        Overview:
+            Initialize the intrinsic model.
+        Arguments:
+            config (:obj:`EasyDict`): The configuration.
+        """
         super().__init__()
 
         self.config = config
@@ -53,6 +59,9 @@ class IntrinsicModel(nn.Module):
         """
         Overview:
             Return the output of the model at time t given the initial state.
+        Arguments:
+            x (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         """
 
         if condition is not None:
@@ -67,6 +76,14 @@ class IntrinsicModel(nn.Module):
 
 
 class VariationalAutoencoder(nn.Module):
+    """
+    Overview:
+        Variational Autoencoder model.
+        This is an in-development model, which is not used in the current version of the codebase.
+    Interfaces:
+        ``__init__``, ``encode``, ``reparameterize``, ``decode``, ``forward``
+    """
+
     def __init__(self, config: EasyDict):
         super().__init__()
 
