@@ -67,6 +67,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#grl.generative_models.DiffusionModel"><code class="docutils literal notranslate"><span class="pre">DiffusionModel</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.__init__"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.__init__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.data_prediction_function"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.data_prediction_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.dpo_loss"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.dpo_loss()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.flow_matching_loss"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.flow_matching_loss()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.forward_sample"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.forward_sample()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.DiffusionModel.noise_function"><code class="docutils literal notranslate"><span class="pre">DiffusionModel.noise_function()</span></code></a></li>
@@ -144,7 +145,9 @@
 <dt class="sig sig-object py" id="grl.generative_models.DiffusionModel">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.generative_models.</span></span><span class="sig-name descname"><span class="pre">DiffusionModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/diffusion_model/diffusion_model.html#DiffusionModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.DiffusionModel" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
-<dt>Overview:</dt><dd><p>Diffusion Model.</p>
+<dt>Overview:</dt><dd><p>General diffusion model class that supports various types of continuous-time diffusion paths, which supports sampling, computing score function and velocity function.
+It can be modeled via score function, noise function, velocity function, or data prediction function.
+Both score matching loss and flow matching loss are supported.</p>
 </dd>
 <dt>Interfaces:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code>, <code class="docutils literal notranslate"><span class="pre">sample</span></code>, <code class="docutils literal notranslate"><span class="pre">score_function</span></code>, <code class="docutils literal notranslate"><span class="pre">score_matching_loss</span></code>, <code class="docutils literal notranslate"><span class="pre">velocity_function</span></code>, <code class="docutils literal notranslate"><span class="pre">flow_matching_loss</span></code>.</p>
 </dd>
@@ -187,6 +190,21 @@
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="grl.generative_models.DiffusionModel.dpo_loss">
+<span class="sig-name descname"><span class="pre">dpo_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ref_dm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/diffusion_model/diffusion_model.html#DiffusionModel.dpo_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.DiffusionModel.dpo_loss" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Overview:</dt><dd><p>The loss function for training the diffusion process by Direct Policy Optimization (DPO).
+This is an in-development feature and is not recommended for general use.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="grl.generative_models.DiffusionModel.flow_matching_loss">
 <span class="sig-name descname"><span class="pre">flow_matching_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">average</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/diffusion_model/diffusion_model.html#DiffusionModel.flow_matching_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.DiffusionModel.flow_matching_loss" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
@@ -198,6 +216,7 @@
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input state.</p></li>
 <li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
+<li><p><strong>average</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to average the loss across the batch.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -210,7 +229,8 @@
 <dt class="sig sig-object py" id="grl.generative_models.DiffusionModel.forward_sample">
 <span class="sig-name descname"><span class="pre">forward_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_span</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/diffusion_model/diffusion_model.html#DiffusionModel.forward_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.DiffusionModel.forward_sample" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
-<dt>Overview:</dt><dd><p>Sample from the diffusion model given the sampled x.</p>
+<dt>Overview:</dt><dd><p>Use forward path of the diffusion model given the sampled x. Note that this is not the reverse process, and thus is not designed for sampling form the diffusion model.
+Rather, it is used for encode a sampled x to the latent space.</p>
 </dd>
 </dl>
 <dl class="field-list simple">
@@ -490,10 +510,12 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dl class="py class">
 <dt class="sig sig-object py" id="grl.generative_models.EnergyConditionalDiffusionModel">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.generative_models.</span></span><span class="sig-name descname"><span class="pre">EnergyConditionalDiffusionModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/diffusion_model/energy_conditional_diffusion_model.html#EnergyConditionalDiffusionModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.EnergyConditionalDiffusionModel" title="Link to this definition"></a></dt>
-<dd><dl class="simple">
-<dt>Overview:</dt><dd><p>Energy Conditional Diffusion Model.</p>
+<dd><dl>
+<dt>Overview:</dt><dd><p>Energy Conditional Diffusion Model, which is a diffusion model conditioned on energy.</p>
+<div class="math notranslate nohighlight">
+\[p_{\text{E}}(x|c)\sim \frac{\exp{\mathcal{E}(x,c)}}{Z(c)}p(x|c)\]</div>
 </dd>
-<dt>Interfaces:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code>, <code class="docutils literal notranslate"><span class="pre">sample</span></code>, <code class="docutils literal notranslate"><span class="pre">sample_without_energy_guidance</span></code>, <code class="docutils literal notranslate"><span class="pre">sample_forward_process</span></code>, <code class="docutils literal notranslate"><span class="pre">score_function</span></code>,         <code class="docutils literal notranslate"><span class="pre">score_function_with_energy_guidance</span></code>, <code class="docutils literal notranslate"><span class="pre">score_matching_loss</span></code>, <code class="docutils literal notranslate"><span class="pre">velocity_function</span></code>, <code class="docutils literal notranslate"><span class="pre">flow_matching_loss</span></code>,         <code class="docutils literal notranslate"><span class="pre">energy_guidance_loss</span></code></p>
+<dt>Interfaces:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code>, <code class="docutils literal notranslate"><span class="pre">sample</span></code>, <code class="docutils literal notranslate"><span class="pre">sample_without_energy_guidance</span></code>, <code class="docutils literal notranslate"><span class="pre">sample_forward_process</span></code>, <code class="docutils literal notranslate"><span class="pre">score_function</span></code>, <code class="docutils literal notranslate"><span class="pre">score_function_with_energy_guidance</span></code>, <code class="docutils literal notranslate"><span class="pre">score_matching_loss</span></code>, <code class="docutils literal notranslate"><span class="pre">velocity_function</span></code>, <code class="docutils literal notranslate"><span class="pre">flow_matching_loss</span></code>, <code class="docutils literal notranslate"><span class="pre">energy_guidance_loss</span></code></p>
 </dd>
 </dl>
 <dl class="py method">
@@ -590,6 +612,7 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input state.</p></li>
 <li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
+<li><p><strong>average</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to average the loss across the batch.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -649,8 +672,10 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <dl class="py method">
 <dt class="sig sig-object py" id="grl.generative_models.EnergyConditionalDiffusionModel.sample">
 <span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_span</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guidance_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/diffusion_model/energy_conditional_diffusion_model.html#EnergyConditionalDiffusionModel.sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.EnergyConditionalDiffusionModel.sample" title="Link to this definition"></a></dt>
-<dd><dl class="simple">
-<dt>Overview:</dt><dd><p>Sample from the energy conditioned diffusion model.</p>
+<dd><dl>
+<dt>Overview:</dt><dd><p>Sample from the energy conditioned diffusion model by using score function.</p>
+<div class="math notranslate nohighlight">
+\[\nabla p_{\text{E}}(x|c) = \nabla p(x|c) + \nabla \mathcal{E}(x,c,t)\]</div>
 </dd>
 </dl>
 <dl class="field-list simple">
@@ -660,6 +685,7 @@ x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch 
 <li><p><strong>batch_size</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Size,</span> <span class="pre">int,</span> <span class="pre">Tuple[int],</span> <span class="pre">List[int]]</span></code>) – The batch size.</p></li>
 <li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
 <li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
+<li><p><strong>guidance_scale</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">float</span></code>) – The scale of guidance.</p></li>
 <li><p><strong>with_grad</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to return the gradient.</p></li>
 <li><p><strong>solver_config</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">EasyDict</span></code>) – The configuration of the solver.</p></li>
 </ul>
@@ -924,6 +950,7 @@ x: <span class="math notranslate nohighlight">\((T, N, D)\)</span>, if extra bat
 <li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input.</p></li>
 <li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
 <li><p><strong>weighting_scheme</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">str</span></code>) – The weighting scheme for score matching loss, which can be “maximum_likelihood” or “vanilla”.</p></li>
+<li><p><strong>average</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to average the loss across the batch.</p></li>
 <li><p><strong>..note::</strong> – <ul>
 <li><p>“maximum_likelihood”: The weighting scheme is based on the maximum likelihood estimation. Refer to the paper “Maximum Likelihood Training of Score-Based Diffusion Models” for more details. The weight <span class="math notranslate nohighlight">\(\lambda(t)\)</span> is denoted as:</p>
 <blockquote>

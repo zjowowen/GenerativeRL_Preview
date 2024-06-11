@@ -186,9 +186,13 @@
 <div class="viewcode-block" id="EnergyConditionalDiffusionModel">
 <a class="viewcode-back" href="../../../../api_doc/generative_models/index.html#grl.generative_models.EnergyConditionalDiffusionModel">[docs]</a>
 <span class="k">class</span> <span class="nc">EnergyConditionalDiffusionModel</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Overview:</span>
-<span class="sd">        Energy Conditional Diffusion Model.</span>
+<span class="sd">        Energy Conditional Diffusion Model, which is a diffusion model conditioned on energy.</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            p_{\text{E}}(x|c)\sim \frac{\exp{\mathcal{E}(x,c)}}{Z(c)}p(x|c)</span>
+
 <span class="sd">    Interfaces:</span>
 <span class="sd">        ``__init__``, ``sample``, ``sample_without_energy_guidance``, ``sample_forward_process``, ``score_function``, \</span>
 <span class="sd">        ``score_function_with_energy_guidance``, ``score_matching_loss``, ``velocity_function``, ``flow_matching_loss``, \</span>
@@ -269,15 +273,19 @@
         <span class="n">with_grad</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">solver_config</span><span class="p">:</span> <span class="n">EasyDict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
-<span class="sd">            Sample from the energy conditioned diffusion model.</span>
+<span class="sd">            Sample from the energy conditioned diffusion model by using score function.</span>
+
+<span class="sd">            .. math::</span>
+<span class="sd">                \nabla p_{\text{E}}(x|c) = \nabla p(x|c) + \nabla \mathcal{E}(x,c,t)</span>
 
 <span class="sd">        Arguments:</span>
 <span class="sd">            t_span (:obj:`torch.Tensor`): The time span.</span>
 <span class="sd">            batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.</span>
 <span class="sd">            x_0 (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The initial state, if not provided, it will be sampled from the Gaussian distribution.</span>
 <span class="sd">            condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.</span>
+<span class="sd">            guidance_scale (:obj:`float`): The scale of guidance.</span>
 <span class="sd">            with_grad (:obj:`bool`): Whether to return the gradient.</span>
 <span class="sd">            solver_config (:obj:`EasyDict`): The configuration of the solver.</span>
 
@@ -1241,6 +1249,7 @@
 <span class="sd">            x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input.</span>
 <span class="sd">            condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.</span>
 <span class="sd">            weighting_scheme (:obj:`str`): The weighting scheme for score matching loss, which can be &quot;maximum_likelihood&quot; or &quot;vanilla&quot;.</span>
+<span class="sd">            average (:obj:`bool`): Whether to average the loss across the batch.</span>
 
 <span class="sd">            ..note::</span>
 <span class="sd">                - &quot;maximum_likelihood&quot;: The weighting scheme is based on the maximum likelihood estimation. Refer to the paper &quot;Maximum Likelihood Training of Score-Based Diffusion Models&quot; for more details. The weight :math:`\lambda(t)` is denoted as:</span>
@@ -1303,6 +1312,7 @@
 <span class="sd">        Arguments:</span>
 <span class="sd">            x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.</span>
 <span class="sd">            condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.</span>
+<span class="sd">            average (:obj:`bool`): Whether to average the loss across the batch.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity_function_</span><span class="o">.</span><span class="n">flow_matching_loss</span><span class="p">(</span>

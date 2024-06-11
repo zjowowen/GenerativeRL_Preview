@@ -122,7 +122,9 @@
 <span class="k">class</span> <span class="nc">DiffusionModel</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Overview:</span>
-<span class="sd">        Diffusion Model.</span>
+<span class="sd">        General diffusion model class that supports various types of continuous-time diffusion paths, which supports sampling, computing score function and velocity function.</span>
+<span class="sd">        It can be modeled via score function, noise function, velocity function, or data prediction function.</span>
+<span class="sd">        Both score matching loss and flow matching loss are supported.</span>
 <span class="sd">    Interfaces:</span>
 <span class="sd">        ``__init__``, ``sample``, ``score_function``, ``score_matching_loss``, ``velocity_function``, ``flow_matching_loss``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -954,7 +956,8 @@
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
-<span class="sd">            Sample from the diffusion model given the sampled x.</span>
+<span class="sd">            Use forward path of the diffusion model given the sampled x. Note that this is not the reverse process, and thus is not designed for sampling form the diffusion model.</span>
+<span class="sd">            Rather, it is used for encode a sampled x to the latent space.</span>
 
 <span class="sd">        Arguments:</span>
 <span class="sd">            x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.</span>
@@ -1141,6 +1144,7 @@
 <span class="sd">        Arguments:</span>
 <span class="sd">            x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.</span>
 <span class="sd">            condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.</span>
+<span class="sd">            average (:obj:`bool`): Whether to average the loss across the batch.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity_function_</span><span class="o">.</span><span class="n">flow_matching_loss</span><span class="p">(</span>
@@ -1196,12 +1200,19 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_prediction_function_</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">condition</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="DiffusionModel.dpo_loss">
+<a class="viewcode-back" href="../../../../api_doc/generative_models/index.html#grl.generative_models.DiffusionModel.dpo_loss">[docs]</a>
     <span class="k">def</span> <span class="nf">dpo_loss</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">ref_dm</span><span class="p">,</span>
         <span class="n">data</span><span class="p">,</span>
         <span class="n">beta</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overview:</span>
+<span class="sd">            The loss function for training the diffusion process by Direct Policy Optimization (DPO).</span>
+<span class="sd">            This is an in-development feature and is not recommended for general use.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># TODO: split data_w, data_l</span>
         <span class="n">x_w</span><span class="p">,</span> <span class="n">x_l</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">],</span> <span class="n">data</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:]</span>
         <span class="n">noise</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn_like</span><span class="p">(</span><span class="n">x_w</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">x_w</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
@@ -1234,6 +1245,7 @@
         <span class="n">inside_term</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">beta</span> <span class="o">*</span> <span class="p">(</span><span class="n">w_diff</span> <span class="o">-</span> <span class="n">l_diff</span><span class="p">)</span>
         <span class="n">loss</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">inside_term</span><span class="p">)</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">loss</span></div>
+</div>
 
 </pre></div>
 
