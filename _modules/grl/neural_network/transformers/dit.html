@@ -120,6 +120,8 @@
 <span class="sd">    Overview:</span>
 <span class="sd">        MLP as used in Vision Transformer, MLP-Mixer and related networks.</span>
 <span class="sd">        This module is based on the implementation in &quot;timm.models.vision_transformer.Mlp&quot;.</span>
+<span class="sd">    Interfaces:</span>
+<span class="sd">        ``__init__``, ``forward``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
@@ -133,6 +135,19 @@
         <span class="n">drop</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
         <span class="n">use_conv</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overview:</span>
+<span class="sd">            Initialize the MLP.</span>
+<span class="sd">        Arguments:</span>
+<span class="sd">            in_features (:obj:`int`): The number of input features.</span>
+<span class="sd">            hidden_features (:obj:`int`, optional): The number of hidden features.</span>
+<span class="sd">            out_features (:obj:`int`, optional): The number of output features.</span>
+<span class="sd">            act_layer (:obj:`nn.Module`, optional): The activation layer.</span>
+<span class="sd">            norm_layer (:obj:`nn.Module`, optional): The normalization layer.</span>
+<span class="sd">            bias (:obj:`bool`, optional): Whether to use bias.</span>
+<span class="sd">            drop (:obj:`float`, optional): The dropout probability.</span>
+<span class="sd">            use_conv (:obj:`bool`, optional): Whether to use convolution.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="n">out_features</span> <span class="o">=</span> <span class="n">out_features</span> <span class="ow">or</span> <span class="n">in_features</span>
         <span class="n">hidden_features</span> <span class="o">=</span> <span class="n">hidden_features</span> <span class="ow">or</span> <span class="n">in_features</span>
@@ -150,6 +165,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">drop2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">drop_probs</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overview:</span>
+<span class="sd">            Forward pass of the MLP.</span>
+<span class="sd">        Arguments:</span>
+<span class="sd">            x (:obj:`torch.Tensor`): The input tensor.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">act</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">drop1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -164,6 +185,8 @@
 <span class="sd">    Overview:</span>
 <span class="sd">        2D Image to Patch Embedding.</span>
 <span class="sd">        This module is based on the implementation in &quot;timm.models.vision_transformer.PatchEmbed&quot;.</span>
+<span class="sd">    Interfaces:</span>
+<span class="sd">        ``__init__``, ``forward``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
@@ -178,6 +201,20 @@
         <span class="n">strict_img_size</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">dynamic_img_pad</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overview:</span>
+<span class="sd">            Initialize the Patch Embedding.</span>
+<span class="sd">        Arguments:</span>
+<span class="sd">            img_size (:obj:`Optional[int]`, defaults to 224): The input image size.</span>
+<span class="sd">            patch_size (:obj:`int`, defaults to 16): The patch size.</span>
+<span class="sd">            in_chans (:obj:`int`, defaults to 3): The number of input channels.</span>
+<span class="sd">            embed_dim (:obj:`int`, defaults to 768): The embedding dimension.</span>
+<span class="sd">            norm_layer (:obj:`Optional[Callable]`, defaults to None): The normalization layer.</span>
+<span class="sd">            flatten (:obj:`bool`, defaults to True): Whether to flatten the spatial dimensions.</span>
+<span class="sd">            bias (:obj:`bool`, defaults to True): Whether to use bias.</span>
+<span class="sd">            strict_img_size (:obj:`bool`, defaults to True): Whether to strictly enforce the image size.</span>
+<span class="sd">            dynamic_img_pad (:obj:`bool`, defaults to False): Whether to dynamically pad the image.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span> <span class="o">=</span> <span class="n">_ntuple</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="n">patch_size</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">img_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -203,6 +240,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">=</span> <span class="n">norm_layer</span><span class="p">(</span><span class="n">embed_dim</span><span class="p">)</span> <span class="k">if</span> <span class="n">norm_layer</span> <span class="k">else</span> <span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overview:</span>
+<span class="sd">            Forward pass of the Patch Embedding.</span>
+<span class="sd">        Arguments:</span>
+<span class="sd">            x (:obj:`torch.Tensor`): The input tensor.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">B</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">W</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">strict_img_size</span><span class="p">:</span>
@@ -235,6 +278,8 @@
 <span class="sd">    Overview:</span>
 <span class="sd">        Multi-head self attention.</span>
 <span class="sd">        This module is based on the implementation in &quot;timm.models.vision_transformer.Attention&quot;.</span>
+<span class="sd">    Interfaces:</span>
+<span class="sd">        ``__init__``, ``forward``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
@@ -247,6 +292,18 @@
         <span class="n">proj_drop</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
         <span class="n">norm_layer</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overview:</span>
+<span class="sd">            Initialize the Attention module.</span>
+<span class="sd">        Arguments:</span>
+<span class="sd">            dim (:obj:`int`): The input dimension.</span>
+<span class="sd">            num_heads (:obj:`int`, defaults to 8): The number of attention heads.</span>
+<span class="sd">            qkv_bias (:obj:`bool`, defaults to False): Whether to use bias in the qkv projection.</span>
+<span class="sd">            qk_norm (:obj:`bool`, defaults to False): Whether to use normalization for qk.</span>
+<span class="sd">            attn_drop (:obj:`float`, defaults to 0.0): The dropout probability for attention.</span>
+<span class="sd">            proj_drop (:obj:`float`, defaults to 0.0): The dropout probability for projection.</span>
+<span class="sd">            norm_layer (:obj:`nn.Module`, defaults to nn.LayerNorm): The normalization layer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">assert</span> <span class="n">dim</span> <span class="o">%</span> <span class="n">num_heads</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;dim should be divisible by num_heads&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_heads</span> <span class="o">=</span> <span class="n">num_heads</span>
@@ -261,6 +318,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">proj_drop</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">proj_drop</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overview:</span>
+<span class="sd">            Forward pass of the Attention module.</span>
+<span class="sd">        Arguments:</span>
+<span class="sd">            x (:obj:`torch.Tensor`): The input tensor.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">B</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">C</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
         <span class="n">qkv</span> <span class="o">=</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">qkv</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -299,6 +362,8 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Overview:</span>
 <span class="sd">        Embeds class labels into vector representations. Also handles label dropout for classifier-free guidance.</span>
+<span class="sd">    Interfaces:</span>
+<span class="sd">        ``__init__``, ``token_drop``, ``forward``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
