@@ -28,6 +28,8 @@ class Mlp(nn.Module):
     Overview:
         MLP as used in Vision Transformer, MLP-Mixer and related networks.
         This module is based on the implementation in "timm.models.vision_transformer.Mlp".
+    Interfaces:
+        ``__init__``, ``forward``
     """
 
     def __init__(
@@ -41,6 +43,19 @@ class Mlp(nn.Module):
         drop=0.0,
         use_conv=False,
     ):
+        """
+        Overview:
+            Initialize the MLP.
+        Arguments:
+            in_features (:obj:`int`): The number of input features.
+            hidden_features (:obj:`int`, optional): The number of hidden features.
+            out_features (:obj:`int`, optional): The number of output features.
+            act_layer (:obj:`nn.Module`, optional): The activation layer.
+            norm_layer (:obj:`nn.Module`, optional): The normalization layer.
+            bias (:obj:`bool`, optional): Whether to use bias.
+            drop (:obj:`float`, optional): The dropout probability.
+            use_conv (:obj:`bool`, optional): Whether to use convolution.
+        """
         super().__init__()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
@@ -58,6 +73,12 @@ class Mlp(nn.Module):
         self.drop2 = nn.Dropout(drop_probs[1])
 
     def forward(self, x):
+        """
+        Overview:
+            Forward pass of the MLP.
+        Arguments:
+            x (:obj:`torch.Tensor`): The input tensor.
+        """
         x = self.fc1(x)
         x = self.act(x)
         x = self.drop1(x)
@@ -72,6 +93,8 @@ class PatchEmbed(nn.Module):
     Overview:
         2D Image to Patch Embedding.
         This module is based on the implementation in "timm.models.vision_transformer.PatchEmbed".
+    Interfaces:
+        ``__init__``, ``forward``
     """
 
     def __init__(
@@ -86,6 +109,20 @@ class PatchEmbed(nn.Module):
         strict_img_size: bool = True,
         dynamic_img_pad: bool = False,
     ):
+        """
+        Overview:
+            Initialize the Patch Embedding.
+        Arguments:
+            img_size (:obj:`Optional[int]`, defaults to 224): The input image size.
+            patch_size (:obj:`int`, defaults to 16): The patch size.
+            in_chans (:obj:`int`, defaults to 3): The number of input channels.
+            embed_dim (:obj:`int`, defaults to 768): The embedding dimension.
+            norm_layer (:obj:`Optional[Callable]`, defaults to None): The normalization layer.
+            flatten (:obj:`bool`, defaults to True): Whether to flatten the spatial dimensions.
+            bias (:obj:`bool`, defaults to True): Whether to use bias.
+            strict_img_size (:obj:`bool`, defaults to True): Whether to strictly enforce the image size.
+            dynamic_img_pad (:obj:`bool`, defaults to False): Whether to dynamically pad the image.
+        """
         super().__init__()
         self.patch_size = _ntuple(2)(patch_size)
         if img_size is not None:
@@ -111,6 +148,12 @@ class PatchEmbed(nn.Module):
         self.norm = norm_layer(embed_dim) if norm_layer else nn.Identity()
 
     def forward(self, x):
+        """
+        Overview:
+            Forward pass of the Patch Embedding.
+        Arguments:
+            x (:obj:`torch.Tensor`): The input tensor.
+        """
         B, C, H, W = x.shape
         if self.img_size is not None:
             if self.strict_img_size:
@@ -143,6 +186,8 @@ class Attention(nn.Module):
     Overview:
         Multi-head self attention.
         This module is based on the implementation in "timm.models.vision_transformer.Attention".
+    Interfaces:
+        ``__init__``, ``forward``
     """
 
     def __init__(
@@ -155,6 +200,18 @@ class Attention(nn.Module):
         proj_drop: float = 0.0,
         norm_layer: nn.Module = nn.LayerNorm,
     ) -> None:
+        """
+        Overview:
+            Initialize the Attention module.
+        Arguments:
+            dim (:obj:`int`): The input dimension.
+            num_heads (:obj:`int`, defaults to 8): The number of attention heads.
+            qkv_bias (:obj:`bool`, defaults to False): Whether to use bias in the qkv projection.
+            qk_norm (:obj:`bool`, defaults to False): Whether to use normalization for qk.
+            attn_drop (:obj:`float`, defaults to 0.0): The dropout probability for attention.
+            proj_drop (:obj:`float`, defaults to 0.0): The dropout probability for projection.
+            norm_layer (:obj:`nn.Module`, defaults to nn.LayerNorm): The normalization layer.
+        """
         super().__init__()
         assert dim % num_heads == 0, "dim should be divisible by num_heads"
         self.num_heads = num_heads
@@ -169,6 +226,12 @@ class Attention(nn.Module):
         self.proj_drop = nn.Dropout(proj_drop)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Overview:
+            Forward pass of the Attention module.
+        Arguments:
+            x (:obj:`torch.Tensor`): The input tensor.
+        """
         B, N, C = x.shape
         qkv = (
             self.qkv(x)
@@ -207,6 +270,8 @@ class LabelEmbedder(nn.Module):
     """
     Overview:
         Embeds class labels into vector representations. Also handles label dropout for classifier-free guidance.
+    Interfaces:
+        ``__init__``, ``token_drop``, ``forward``
     """
 
     def __init__(

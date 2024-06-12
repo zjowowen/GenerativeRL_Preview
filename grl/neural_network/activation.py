@@ -3,6 +3,12 @@ from torch import nn
 
 
 class Swish(nn.Module):
+    """
+    Overview:
+        Swish activation function.
+    Interfaces:
+        ``__init__``, ``forward``
+    """
 
     def __init__(self):
         super(Swish, self).__init__()
@@ -13,6 +19,12 @@ class Swish(nn.Module):
 
 
 class Lambda(nn.Module):
+    """
+    Overview:
+        Lambda activation function.
+    Interfaces:
+        ``__init__``, ``forward``
+    """
 
     def __init__(self, f):
         super(Lambda, self).__init__()
