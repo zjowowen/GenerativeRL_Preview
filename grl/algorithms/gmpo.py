@@ -301,7 +301,7 @@ class GPPolicy(nn.Module):
 
         with torch.no_grad():
             q_value = self.critic(action, state).squeeze(dim=-1)
-            v_value = self.v(state).squeeze(dim=-1)
+            v_value = self.critic.v(state).squeeze(dim=-1)
             weight = torch.exp(beta * (q_value - v_value))
 
         clamped_weight = weight.clamp(max=weight_clamp)
