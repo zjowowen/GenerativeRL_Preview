@@ -48,8 +48,8 @@
 | QGPO           | ✔                |                       |
 | SRPO           | ✔                |                       |
 | DiffusionQL    | ✔                | ✔                     |
-| GPO            | ✔                | ✔                     |
-| GPG            | ✔                | ✔                     |
+| GMPO            | ✔                | ✔                     |
+| GMPG            | ✔                | ✔                     |
 
 ## 安装
 
