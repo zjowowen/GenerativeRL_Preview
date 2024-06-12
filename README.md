@@ -50,8 +50,8 @@ English | [简体中文(Simplified Chinese)](https://github.com/zjowowen/Generat
 | QGPO           | ✔                |                       |
 | SRPO           | ✔                |                       |
 | DiffusionQL    | ✔                | ✔                     |
-| GMPO            | ✔                | ✔                     |
-| GMPG            | ✔                | ✔                     |
+| GMPO           | ✔                | ✔                     |
+| GMPG           | ✔                | ✔                     |
 
 
 ## Installation
