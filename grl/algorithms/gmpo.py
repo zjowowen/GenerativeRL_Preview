@@ -301,28 +301,8 @@ class GPPolicy(nn.Module):
 
         with torch.no_grad():
             q_value = self.critic(action, state).squeeze(dim=-1)
-            weight = torch.exp(beta * q_value)
-
-            q_value = self.critic(action, state).squeeze(dim=-1)
-
-            # if hasattr(self, "v")
-            #     v_value = self.v(state).squeeze(dim=-1)
-            # else:
-            #     fake_q_value = (
-            #         self.critic(
-            #             fake_action,
-            #             torch.stack([state] * fake_action.shape[1], axis=1),
-            #         )
-            #         .squeeze(dim=-1)
-            #         .detach()
-            #         .squeeze(dim=-1)
-            #     )
-            #     v_value = torch.sum(
-            #         self.softmax(self.critic.q_alpha * fake_q_value) * fake_q_value,
-            #         dim=-1,
-            #         keepdim=True,
-            #     ).squeeze(dim=-1)
-            # weight = torch.exp(beta * (q_value - v_value))
+            v_value = self.v(state).squeeze(dim=-1)
+            weight = torch.exp(beta * (q_value - v_value))
 
         clamped_weight = weight.clamp(max=weight_clamp)
 
