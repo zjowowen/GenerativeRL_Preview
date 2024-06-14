@@ -31,25 +31,25 @@
 
 ## 已集成的生成式模型
 
-|                           | Score Machting | Flow Matching |
-|---------------------------| -------------- | ------------- |
-| **扩散模型**               |                |               |
-| Linear VP SDE             | ✔              | ✔            |
-| Generalized VP SDE        | ✔              | ✔            |
-| Linear SDE                | ✔              | ✔            |
-| **条件流模型**             |                |               |
-| Independent CFM           |                | ✔            |
-| Optimal Transport CFM     |                | ✔            |
+|                                                                                     | [Score Matching](https://ieeexplore.ieee.org/document/6795935) | [Flow Matching](https://arxiv.org/abs/2210.02747) |
+|-------------------------------------------------------------------------------------| -------------------------------------------------------------- | ------------------------------------------------- |
+| **扩散模型**                                                                         |                                                                |                                                   |
+| [Linear VP SDE](https://arxiv.org/abs/2011.13456)                                   | ✔                                                              | ✔                                                |
+| [Generalized VP SDE](https://arxiv.org/abs/2209.15571)                              | ✔                                                              | ✔                                                |
+| [Linear SDE](https://arxiv.org/abs/2206.00364)                                      | ✔                                                              | ✔                                                |
+| **流模型**                                                                           |                                                                |                                                   |
+| [Independent Conditional Flow Matching](https://arxiv.org/abs/2302.00482)           | 🚫                                                             | ✔                                                 |
+| [Optimal Transport Conditional Flow Matching](https://arxiv.org/abs/2302.00482)     | 🚫                                                             | ✔                                                 |
 
 ## 已集成的生成式强化学习算法
 
-| 算法/模型       | 扩散模型            | 条件流模型            |
-|--------------- | ---------------- | ---------------------- |
-| QGPO           | ✔                |                       |
-| SRPO           | ✔                |                       |
-| DiffusionQL    | ✔                | ✔                     |
-| GMPO           | ✔                | ✔                     |
-| GMPG           | ✔                | ✔                     |
+| 算法/模型                                           | 扩散模型            | 流模型            |
+|---------------------------------------------------- | ---------------- | ---------------------- |
+| [QGPO](https://arxiv.org/abs/2304.12824)            | ✔                |  🚫                   |
+| [SRPO](https://arxiv.org/abs/2310.07297)            | ✔                |  🚫                   |
+| [Diffusion QL](https://arxiv.org/abs/2208.06193)    | ✔                | ✔                     |
+| GMPO                                                | ✔                | ✔                     |
+| GMPG                                                | ✔                | ✔                     |
 
 ## 安装
 
@@ -77,7 +77,7 @@ docker run -it --rm --gpus all zjowowen/grl:torch2.3.0-cuda12.1-cudnn8-runtime /
 
 安装所需依赖：
 ```bash
-pip install gym[box2d]==0.23.1
+pip install 'gym[box2d]==0.23.1'
 ```
 
 数据集可以从 [这里](https://drive.google.com/file/d/1YnT-Oeu9LPKuS_ZqNc5kol_pMlJ1DwyG/view?usp=drive_link) 下载，请将其置于工作路径下，并命名为 `data.npz`。

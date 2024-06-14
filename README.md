@@ -31,27 +31,27 @@ English | [简体中文(Simplified Chinese)](https://github.com/zjowowen/Generat
 
 ## Integrated Generative Models
 
-|                           | Score Machting | Flow Matching |
-|---------------------------| -------------- | ------------- |
-| **Diffusion Model**       |                |               |
-| Linear VP SDE             | ✔              | ✔            |
-| Generalized VP SDE        | ✔              | ✔            |
-| Linear SDE                | ✔              | ✔            |
-| **Conditional Flow Model**|                |               |
-| Independent CFM           |                | ✔            |
-| Optimal Transport CFM     |                | ✔            |
+|                                                                                     | [Score Matching](https://ieeexplore.ieee.org/document/6795935) | [Flow Matching](https://arxiv.org/abs/2210.02747) |
+|-------------------------------------------------------------------------------------| -------------------------------------------------------------- | ------------------------------------------------- |
+| **Diffusion Model**                                                                 |                                                                |                                                   |
+| [Linear VP SDE](https://arxiv.org/abs/2011.13456)                                   | ✔                                                              | ✔                                                |
+| [Generalized VP SDE](https://arxiv.org/abs/2209.15571)                              | ✔                                                              | ✔                                                |
+| [Linear SDE](https://arxiv.org/abs/2206.00364)                                      | ✔                                                              | ✔                                                |
+| **Flow Model**                                                                      |                                                                 |                                                  |
+| [Independent Conditional Flow Matching](https://arxiv.org/abs/2302.00482)           |  🚫                                                            | ✔                                                |
+| [Optimal Transport Conditional Flow Matching](https://arxiv.org/abs/2302.00482)     |  🚫                                                            | ✔                                                |
 
 
 
 ## Integrated Algorithms
 
-| Algo./Models   | Diffusion Model  | Conditional Flow Model |
-|--------------- | ---------------- | ---------------------- |
-| QGPO           | ✔                |                       |
-| SRPO           | ✔                |                       |
-| DiffusionQL    | ✔                | ✔                     |
-| GMPO           | ✔                | ✔                     |
-| GMPG           | ✔                | ✔                     |
+| Algo./Models                                        | Diffusion Model   |  Flow Model            |
+|---------------------------------------------------- | ----------------- | ---------------------- |
+| [QGPO](https://arxiv.org/abs/2304.12824)            | ✔                |  🚫                   |
+| [SRPO](https://arxiv.org/abs/2310.07297)            | ✔                |  🚫                   |
+| [Diffusion QL](https://arxiv.org/abs/2208.06193)    | ✔                | ✔                     |
+| GMPO                                                | ✔                | ✔                     |
+| GMPG                                                | ✔                | ✔                     |
 
 
 ## Installation
@@ -80,7 +80,7 @@ Here is an example of how to train a diffusion model for Q-guided policy optimiz
 
 Install the required dependencies:
 ```bash
-pip install gym[box2d]==0.23.1
+pip install 'gym[box2d]==0.23.1'
 ```
 
 Download dataset from [here](https://drive.google.com/file/d/1YnT-Oeu9LPKuS_ZqNc5kol_pMlJ1DwyG/view?usp=drive_link) and save it as `data.npz` in the current directory.
