@@ -10,10 +10,10 @@ We provide a simple example of how to train a diffusion model on the swiss roll 
 
 More usage examples can be found in the folder `grl_pipelines/tutorials/`.
 
-GenerativeRL provides a simple and flexible interface for training and deploying reinforcement learning agents powered by generative models. Here's an example of how to use the library to train a Q-guided policy optimization (QGPO) agent on the HalfCheetah environment and deploy it for evaluation.
-
-Code Example
+Reinforcement Learning 
 ------------
+
+GenerativeRL provides a simple and flexible interface for training and deploying reinforcement learning agents powered by generative models. Here's an example of how to use the library to train a Q-guided policy optimization (QGPO) agent on the HalfCheetah environment and deploy it for evaluation.
 
 .. code-block:: python
 
