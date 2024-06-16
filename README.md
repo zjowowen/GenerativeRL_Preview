@@ -6,6 +6,9 @@ English | [简体中文(Simplified Chinese)](https://github.com/zjowowen/Generat
 
 **GenerativeRL**, short for Generative Reinforcement Learning, is a Python library for solving reinforcement learning (RL) problems using generative models, such as diffusion models and flow models. This library aims to provide a framework for combining the power of generative models with the decision-making capabilities of reinforcement learning algorithms.
 
+**GenerativeRL_Preview** is a preview version of **GenerativeRL**, which is still under rapid development with many experimental features.
+For stable version of **GenerativeRL**, please visit [GenerativeRL](https://github.com/opendilab/GenerativeRL).
+
 ## Outline
 
 - [Features](#features)
@@ -49,18 +52,13 @@ English | [简体中文(Simplified Chinese)](https://github.com/zjowowen/Generat
 |---------------------------------------------------- | ----------------- | ---------------------- |
 | [QGPO](https://arxiv.org/abs/2304.12824)            | ✔                |  🚫                   |
 | [SRPO](https://arxiv.org/abs/2310.07297)            | ✔                |  🚫                   |
-| [Diffusion QL](https://arxiv.org/abs/2208.06193)    | ✔                | ✔                     |
 | GMPO                                                | ✔                | ✔                     |
 | GMPG                                                | ✔                | ✔                     |
 
 
 ## Installation
 
-```bash
-pip install grl
-```
-
-Or, if you want to install from source:
+Please install from source:
 
 ```bash
 git clone https://github.com/zjowowen/GenerativeRL_Preview.git
