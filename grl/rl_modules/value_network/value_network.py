@@ -16,6 +16,7 @@ class VNetwork(nn.Module):
     Interfaces:
         ``__init__``, ``forward``
     """
+
     def __init__(self, config: EasyDict):
         """
         Overview:

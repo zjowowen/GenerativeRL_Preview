@@ -1,17 +1,17 @@
 ################################################################################################
 # This script demonstrates how to use customized neural network modules in GRL.
 #
-# In this example, we define a customized neural network module named `MyModule` 
-# and use it in the DiffusionModel. For convenience, we redefine `MyModule` by 
+# In this example, we define a customized neural network module named `MyModule`
+# and use it in the DiffusionModel. For convenience, we redefine `MyModule` by
 # reusing `TemporalSpatialResidualNet` in this script.
 #
 # We can call `register_module` to register the customized module, such as:
 #   ```
 #   register_module(TemporalSpatialResidualNet, "MyModule")
 #   ```
-# The `register_module` function is used to register the customized module to the 
-# module registry. The module registry is a global dictionary that stores the mapping 
-# from the module name to the module class. The module registry is used to create 
+# The `register_module` function is used to register the customized module to the
+# module registry. The module registry is a global dictionary that stores the mapping
+# from the module name to the module class. The module registry is used to create
 # the module instance by the module name.
 #
 # The module name is used to specify the module type in the configuration file, such as:

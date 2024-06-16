@@ -496,7 +496,7 @@ class GMPGAlgorithm:
     Overview:
         The Generative Model Policy Gradient(GMPG) algorithm.
     Interfaces:
-        ``__init__``, ``train``, ``deploy``    
+        ``__init__``, ``train``, ``deploy``
     """
 
     def __init__(

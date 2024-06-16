@@ -2,7 +2,7 @@
 # This script demonstrates how to use a dictionary tensor in the ODE solver for the diffusion model.
 #
 # We create a customized neural network module named `MyModule` and use it in the DiffusionModel,
-# which gets a dictionary tensor as input. This module is registered in the module registry by 
+# which gets a dictionary tensor as input. This module is registered in the module registry by
 # calling `register_module`.
 #
 # We also use the `DictTensorODESolver` in the diffusion model to solve the ODE with a dictionary tensor,

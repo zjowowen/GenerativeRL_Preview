@@ -5,10 +5,11 @@ from grl.agents import obs_transform, action_transform
 
 # Assume obs_transform and action_transform are defined in the same module or imported properly here.
 
+
 class TestTransforms(unittest.TestCase):
 
     def setUp(self):
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def test_obs_transform_numpy(self):
         obs = np.array([1, 2, 3], dtype=np.float32)
@@ -20,8 +21,8 @@ class TestTransforms(unittest.TestCase):
 
     def test_obs_transform_dict(self):
         obs = {
-            'a': np.array([1, 2, 3], dtype=np.float32),
-            'b': np.array([4, 5, 6], dtype=np.float32)
+            "a": np.array([1, 2, 3], dtype=np.float32),
+            "b": np.array([4, 5, 6], dtype=np.float32),
         }
         transformed = obs_transform(obs, self.device)
         self.assertIsInstance(transformed, dict)
@@ -46,8 +47,8 @@ class TestTransforms(unittest.TestCase):
 
     def test_action_transform_dict(self):
         action = {
-            'a': torch.tensor([1, 2, 3], dtype=torch.float32),
-            'b': torch.tensor([4, 5, 6], dtype=torch.float32)
+            "a": torch.tensor([1, 2, 3], dtype=torch.float32),
+            "b": torch.tensor([4, 5, 6], dtype=torch.float32),
         }
         transformed = action_transform(action, return_as_torch_tensor=True)
         self.assertIsInstance(transformed, dict)
@@ -84,5 +85,6 @@ class TestTransforms(unittest.TestCase):
         with self.assertRaises(ValueError):
             action_transform(action)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

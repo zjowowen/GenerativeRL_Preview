@@ -33,7 +33,8 @@ class Dirac_Policy(nn.Module):
     Interfaces:
         ``__init__``, ``forward``, ``select_actions``
     """
-    def __init__(self, action_dim: int, state_dim: int, layer:int = 2):
+
+    def __init__(self, action_dim: int, state_dim: int, layer: int = 2):
         super().__init__()
         self.net = MultiLayerPerceptron(
             hidden_sizes=[state_dim] + [256 for _ in range(layer)],
@@ -67,6 +68,7 @@ class ValueFunction(nn.Module):
     Interfaces:
         ``__init__``, ``forward``
     """
+
     def __init__(self, state_dim: int):
         """
         Overview:
@@ -160,6 +162,7 @@ class SRPOPolicy(nn.Module):
     Interfaces:
         ``__init__``, ``forward``, ``behaviour_policy_loss``, ``v_loss``, ``q_loss``, ``srpo_actor_loss``
     """
+
     def __init__(self, config: EasyDict):
         """
         Overview:

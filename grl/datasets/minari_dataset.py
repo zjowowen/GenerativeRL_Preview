@@ -137,7 +137,6 @@ class MinariDataset(torch.utils.data.Dataset):
     def return_range(self, dataset, max_episode_steps):
         raise NotImplementedError
 
-
     def return_range(dataset, max_episode_steps):
         returns, lengths = [], []
         ep_ret, ep_len = 0.0, 0

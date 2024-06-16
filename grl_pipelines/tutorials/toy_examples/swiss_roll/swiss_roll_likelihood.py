@@ -1,9 +1,9 @@
 ################################################################################################
-# This script demonstrates how to train a diffusion model on the Swiss Roll dataset and evaluate 
-# the log-likelihood. We can use the API `compute_likelihood` to compute the log-likelihood of the 
+# This script demonstrates how to train a diffusion model on the Swiss Roll dataset and evaluate
+# the log-likelihood. We can use the API `compute_likelihood` to compute the log-likelihood of the
 # diffusion model on the Swiss Roll dataset.
 #
-# To compute the log-likelihood using the Hutchinson trace estimator, set the argument 
+# To compute the log-likelihood using the Hutchinson trace estimator, set the argument
 # `using_Hutchinson_trace_estimator` to True:
 #
 # logp = compute_likelihood(
@@ -12,7 +12,7 @@
 #     using_Hutchinson_trace_estimator=True,
 # )
 #
-# To compute the log-likelihood using the exact trace estimator, set the argument 
+# To compute the log-likelihood using the exact trace estimator, set the argument
 # `using_Hutchinson_trace_estimator` to False:
 #
 # logp = compute_likelihood(
@@ -21,7 +21,7 @@
 #     using_Hutchinson_trace_estimator=False,
 # )
 #
-# We support computing the log-likelihood with automatic differentiation by setting the argument 
+# We support computing the log-likelihood with automatic differentiation by setting the argument
 # `with_grad` to True:
 #
 # logp = compute_likelihood(
@@ -31,8 +31,8 @@
 #     with_grad=True,
 # )
 #
-# However, for numerical stability, only the model type `velocity_function` is supported for 
-# computing the log-likelihood with automatic differentiation. Otherwise, the parameters of the 
+# However, for numerical stability, only the model type `velocity_function` is supported for
+# computing the log-likelihood with automatic differentiation. Otherwise, the parameters of the
 # model will soon become NaN.
 ################################################################################################
 

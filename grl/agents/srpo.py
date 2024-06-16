@@ -6,6 +6,7 @@ from easydict import EasyDict
 
 from grl.agents import obs_transform, action_transform
 
+
 class SRPOAgent:
     """
     Overview:

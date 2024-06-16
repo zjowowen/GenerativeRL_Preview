@@ -8,6 +8,7 @@ from grl.numerical_methods.probability_path import (
     ConditionalProbabilityPath,
 )
 
+
 class StochasticProcess:
     """
     Overview:

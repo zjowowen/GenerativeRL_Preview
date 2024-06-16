@@ -1,11 +1,11 @@
 ################################################################################################
-# This script demonstrates how to use an energy-conditioned diffusion model to train the Swiss Roll 
-# dataset with artificial values. We can model the energy function with a value function model and 
-# use the energy function to guide the diffusion process. We use a OneShotValueFunction as the value 
+# This script demonstrates how to use an energy-conditioned diffusion model to train the Swiss Roll
+# dataset with artificial values. We can model the energy function with a value function model and
+# use the energy function to guide the diffusion process. We use a OneShotValueFunction as the value
 # function model in this script.
 #
 # Configuration for OneShotValueFunction:
-# 
+#
 # value_function_model=dict(
 #     device=device,
 #     v_alpha=1.0,
@@ -29,10 +29,10 @@
 #     ),
 # ),
 #
-# Then we can use the value function model to guide the diffusion process in the energy-conditioned 
-# diffusion model. An energy-conditioned diffusion model is a diffusion model that is conditioned on 
+# Then we can use the value function model to guide the diffusion process in the energy-conditioned
+# diffusion model. An energy-conditioned diffusion model is a diffusion model that is conditioned on
 # the energy function, which has an extra intermediate energy guidance module.
-# 
+#
 # Configuration for energy guidance:
 #
 # energy_guidance=dict(
@@ -47,7 +47,7 @@
 #     ),
 # ),
 #
-# We can train the energy-conditioned diffusion model with the energy guidance loss and the score 
+# We can train the energy-conditioned diffusion model with the energy guidance loss and the score
 # matching loss, such as:
 #
 # energy_guidance_loss = energy_conditioned_diffusion_model.energy_guidance_loss(
