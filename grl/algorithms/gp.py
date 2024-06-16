@@ -16,7 +16,7 @@ import wandb
 from grl.agents.gp import GPAgent
 
 from grl.datasets import create_dataset
-from grl.datasets.gpo import GPODataset, GPOD4RLDataset
+from grl.datasets.gpo import GPDataset, GPD4RLDataset
 from grl.generative_models.diffusion_model import DiffusionModel
 from grl.generative_models.conditional_flow_model.optimal_transport_conditional_flow_model import (
     OptimalTransportConditionalFlowModel,
@@ -66,7 +66,7 @@ class ValueFunction(nn.Module):
 class GPCritic(nn.Module):
     """
     Overview:
-        Critic network for GPO algorithm.
+        Critic network for GP algorithm.
     Interfaces:
         ``__init__``, ``forward``
     """
@@ -74,7 +74,7 @@ class GPCritic(nn.Module):
     def __init__(self, config: EasyDict):
         """
         Overview:
-            Initialization of GPO critic network.
+            Initialization of GP critic network.
         Arguments:
             config (:obj:`EasyDict`): The configuration dict.
         """
@@ -92,7 +92,7 @@ class GPCritic(nn.Module):
     ) -> torch.Tensor:
         """
         Overview:
-            Return the output of GPO critic.
+            Return the output of GP critic.
         Arguments:
             action (:obj:`torch.Tensor`): The input action.
             state (:obj:`torch.Tensor`): The input state.
@@ -216,7 +216,7 @@ class GuidedPolicy(nn.Module):
     ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
-            Return the output of GPO policy, which is the action conditioned on the state.
+            Return the output of GP policy, which is the action conditioned on the state.
         Arguments:
             state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
             guidance_scale (:obj:`Union[torch.Tensor, float]`): The guidance scale.
@@ -327,7 +327,7 @@ class GPPolicy(nn.Module):
     ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
-            Return the output of GPO policy, which is the action conditioned on the state.
+            Return the output of GP policy, which is the action conditioned on the state.
         Arguments:
             state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
         Returns:
@@ -345,7 +345,7 @@ class GPPolicy(nn.Module):
     ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
-            Return the output of GPO policy, which is the action conditioned on the state.
+            Return the output of GP policy, which is the action conditioned on the state.
         Arguments:
             state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
             batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
@@ -902,24 +902,32 @@ class GPPolicy(nn.Module):
 
 
 class GPAlgorithm:
+    """
+    Overview:
+        The algorithm pipeline of the Generative Policy algorithm.
+        ``GPAlgorithm`` is an experimental algorithm pipeline that is not included in the official release, which is divided into two parts: ``GMPGAlgorithm`` and ``GMPOAlgorithm`` for clarity.
+        And this agent is going to be deprecated in the future.
+    Interfaces:
+        ``__init__``, ``train``, ``deploy``
+    """
 
     def __init__(
         self,
         config: EasyDict = None,
         simulator=None,
-        dataset: GPODataset = None,
+        dataset: GPDataset = None,
         model: Union[torch.nn.Module, torch.nn.ModuleDict] = None,
         seed=None,
     ):
         """
         Overview:
-            Initialize the GPO && GPG algorithm.
+            Initialize the GP algorithm.
         Arguments:
             config (:obj:`EasyDict`): The configuration , which must contain the following keys:
                 train (:obj:`EasyDict`): The training configuration.
                 deploy (:obj:`EasyDict`): The deployment configuration.
             simulator (:obj:`object`): The environment simulator.
-            dataset (:obj:`GPODataset`): The dataset.
+            dataset (:obj:`GPDataset`): The dataset.
             model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The model.
         Interface:
             ``__init__``, ``train``, ``deploy``
@@ -1430,7 +1438,7 @@ class GPAlgorithm:
                         f"evaluation/guidance_scale:[{guidance_scale}]/return_min"
                     ] = return_min
 
-                    if isinstance(self.dataset, GPOD4RLDataset):
+                    if isinstance(self.dataset, GPD4RLDataset):
                         env_id = config.dataset.args.env_id
                         evaluation_results[
                             f"evaluation/guidance_scale:[{guidance_scale}]/return_mean_normalized"

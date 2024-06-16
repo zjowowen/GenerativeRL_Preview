@@ -158,12 +158,12 @@ if __name__ == "__main__":
     import d4rl
     import numpy as np
 
-    from grl.algorithms.gmpo import GPAlgorithm
+    from grl.algorithms.gmpo import GMPOAlgorithm
     from grl.utils.log import log
 
     def gp_pipeline(config):
 
-        gp = GPAlgorithm(config)
+        gp = GMPOAlgorithm(config)
 
         # ---------------------------------------
         # Customized train code ↓

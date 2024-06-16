@@ -73,7 +73,7 @@ docker run -it --rm --gpus all zjowowen/grl:torch2.3.0-cuda12.1-cudnn8-runtime /
 
 ## 启动
 
-这是一个在 LunarLanderContinuous-v2 环境中训练 Q-guided policy optimization (QGPO) 的扩散模型的示例。
+这是一个在 [LunarLanderContinuous-v2](https://www.gymlibrary.dev/environments/box2d/lunar_lander/) 环境中训练 Q-guided policy optimization (QGPO) 的扩散模型的示例。
 
 安装所需依赖：
 ```bash

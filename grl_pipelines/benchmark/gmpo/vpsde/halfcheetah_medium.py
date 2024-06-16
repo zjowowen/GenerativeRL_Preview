@@ -118,7 +118,7 @@ config = EasyDict(
             t_span=32,
             critic=dict(
                 batch_size=4096,
-                epochs=2000,
+                epochs=5000,
                 learning_rate=3e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
@@ -129,7 +129,7 @@ config = EasyDict(
                 batch_size=4096,
                 epochs=10000,
                 learning_rate=1e-4,
-                beta=1.0,
+                beta=8.0,
                 weight_clamp=100,
             ),
             evaluation=dict(
@@ -158,12 +158,12 @@ if __name__ == "__main__":
     import d4rl
     import numpy as np
 
-    from grl.algorithms.gmpo import GPAlgorithm
+    from grl.algorithms.gmpo import GMPOAlgorithm
     from grl.utils.log import log
 
     def gp_pipeline(config):
 
-        gp = GPAlgorithm(config)
+        gp = GMPOAlgorithm(config)
 
         # ---------------------------------------
         # Customized train code ↓

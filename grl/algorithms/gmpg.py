@@ -14,7 +14,7 @@ import wandb
 from grl.agents.gm import GPAgent
 
 from grl.datasets import create_dataset
-from grl.datasets.gpo import GPODataset, GPOD4RLDataset
+from grl.datasets.gp import GPDataset, GPD4RLDataset
 from grl.generative_models.diffusion_model import DiffusionModel
 from grl.generative_models.conditional_flow_model.optimal_transport_conditional_flow_model import (
     OptimalTransportConditionalFlowModel,
@@ -40,7 +40,7 @@ def asymmetric_l2_loss(u, tau):
     return torch.mean(torch.abs(tau - (u < 0).float()) * u**2)
 
 
-class GPCritic(nn.Module):
+class GMPGCritic(nn.Module):
     """
     Overview:
         Critic network.
@@ -156,14 +156,14 @@ class GPCritic(nn.Module):
         return q_loss, torch.mean(qs[0]), torch.mean(q_target)
 
 
-class GPPolicy(nn.Module):
+class GMPGPolicy(nn.Module):
 
     def __init__(self, config: EasyDict):
         super().__init__()
         self.config = config
         self.device = config.device
 
-        self.critic = GPCritic(config.critic)
+        self.critic = GMPGCritic(config.critic)
         self.model_type = config.model_type
         if self.model_type == "DiffusionModel":
             self.base_model = DiffusionModel(config.model)
@@ -491,13 +491,19 @@ class GPPolicy(nn.Module):
         return loss, loss_q, loss_p, loss_u
 
 
-class GPAlgorithm:
+class GMPGAlgorithm:
+    """
+    Overview:
+        The Generative Model Policy Gradient(GMPG) algorithm.
+    Interfaces:
+        ``__init__``, ``train``, ``deploy``    
+    """
 
     def __init__(
         self,
         config: EasyDict = None,
         simulator=None,
-        dataset: GPODataset = None,
+        dataset: GPDataset = None,
         model: Union[torch.nn.Module, torch.nn.ModuleDict] = None,
         seed=None,
     ):
@@ -509,7 +515,7 @@ class GPAlgorithm:
                 train (:obj:`EasyDict`): The training configuration.
                 deploy (:obj:`EasyDict`): The deployment configuration.
             simulator (:obj:`object`): The environment simulator.
-            dataset (:obj:`GPODataset`): The dataset.
+            dataset (:obj:`GPDataset`): The dataset.
             model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The model.
         Interface:
             ``__init__``, ``train``, ``deploy``
@@ -535,10 +541,10 @@ class GPAlgorithm:
 
             if torch.__version__ >= "2.0.0":
                 self.model["GPPolicy"] = torch.compile(
-                    GPPolicy(config.model.GPPolicy).to(config.model.GPPolicy.device)
+                    GMPGPolicy(config.model.GPPolicy).to(config.model.GPPolicy.device)
                 )
             else:
-                self.model["GPPolicy"] = GPPolicy(config.model.GPPolicy).to(
+                self.model["GPPolicy"] = GMPGPolicy(config.model.GPPolicy).to(
                     config.model.GPPolicy.device
                 )
 
@@ -823,7 +829,7 @@ class GPAlgorithm:
                 evaluation_results[f"evaluation/return_max"] = return_max
                 evaluation_results[f"evaluation/return_min"] = return_min
 
-                if isinstance(self.dataset, GPOD4RLDataset):
+                if isinstance(self.dataset, GPD4RLDataset):
                     env_id = config.dataset.args.env_id
                     evaluation_results[f"evaluation/return_mean_normalized"] = (
                         d4rl.get_normalized_score(env_id, return_mean)

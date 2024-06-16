@@ -76,7 +76,7 @@ docker run -it --rm --gpus all zjowowen/grl:torch2.3.0-cuda12.1-cudnn8-runtime /
 
 ## Quick Start
 
-Here is an example of how to train a diffusion model for Q-guided policy optimization (QGPO) in the LunarLanderContinuous-v2 environment using GenerativeRL.
+Here is an example of how to train a diffusion model for Q-guided policy optimization (QGPO) in the [LunarLanderContinuous-v2](https://www.gymlibrary.dev/environments/box2d/lunar_lander/) environment using GenerativeRL.
 
 Install the required dependencies:
 ```bash
