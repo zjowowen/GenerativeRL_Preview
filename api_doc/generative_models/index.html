@@ -105,6 +105,27 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#independentconditionalflowmodel">IndependentConditionalFlowModel</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#grl.generative_models.IndependentConditionalFlowModel"><code class="docutils literal notranslate"><span class="pre">IndependentConditionalFlowModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.IndependentConditionalFlowModel.__init__"><code class="docutils literal notranslate"><span class="pre">IndependentConditionalFlowModel.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.IndependentConditionalFlowModel.flow_matching_loss"><code class="docutils literal notranslate"><span class="pre">IndependentConditionalFlowModel.flow_matching_loss()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.IndependentConditionalFlowModel.sample"><code class="docutils literal notranslate"><span class="pre">IndependentConditionalFlowModel.sample()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.IndependentConditionalFlowModel.sample_forward_process"><code class="docutils literal notranslate"><span class="pre">IndependentConditionalFlowModel.sample_forward_process()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#optimaltransportconditionalflowmodel">OptimalTransportConditionalFlowModel</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#grl.generative_models.OptimalTransportConditionalFlowModel"><code class="docutils literal notranslate"><span class="pre">OptimalTransportConditionalFlowModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.OptimalTransportConditionalFlowModel.__init__"><code class="docutils literal notranslate"><span class="pre">OptimalTransportConditionalFlowModel.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.OptimalTransportConditionalFlowModel.flow_matching_loss"><code class="docutils literal notranslate"><span class="pre">OptimalTransportConditionalFlowModel.flow_matching_loss()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.OptimalTransportConditionalFlowModel.flow_matching_loss_small_batch_OT_plan"><code class="docutils literal notranslate"><span class="pre">OptimalTransportConditionalFlowModel.flow_matching_loss_small_batch_OT_plan()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.OptimalTransportConditionalFlowModel.sample"><code class="docutils literal notranslate"><span class="pre">OptimalTransportConditionalFlowModel.sample()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grl.generative_models.OptimalTransportConditionalFlowModel.sample_forward_process"><code class="docutils literal notranslate"><span class="pre">OptimalTransportConditionalFlowModel.sample_forward_process()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../neural_network/index.html">grl.neural_network</a></li>
@@ -996,6 +1017,264 @@ x: <span class="math notranslate nohighlight">\((T, N, D)\)</span>, if extra bat
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorDict</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="independentconditionalflowmodel">
+<h2>IndependentConditionalFlowModel<a class="headerlink" href="#independentconditionalflowmodel" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="grl.generative_models.IndependentConditionalFlowModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.generative_models.</span></span><span class="sig-name descname"><span class="pre">IndependentConditionalFlowModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/conditional_flow_model/independent_conditional_flow_model.html#IndependentConditionalFlowModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.IndependentConditionalFlowModel" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Overview:</dt><dd><p>The independent conditional flow model, which is a flow model with independent conditional probability paths.</p>
+</dd>
+<dt>Interfaces:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code>, <code class="docutils literal notranslate"><span class="pre">get_type</span></code>, <code class="docutils literal notranslate"><span class="pre">sample</span></code>, <code class="docutils literal notranslate"><span class="pre">sample_forward_process</span></code>, <code class="docutils literal notranslate"><span class="pre">flow_matching_loss</span></code></p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="grl.generative_models.IndependentConditionalFlowModel.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/conditional_flow_model/independent_conditional_flow_model.html#IndependentConditionalFlowModel.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.IndependentConditionalFlowModel.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Overview:</dt><dd><p>Initialize the model.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">EasyDict</span></code>) – The configuration of the model.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="grl.generative_models.IndependentConditionalFlowModel.flow_matching_loss">
+<span class="sig-name descname"><span class="pre">flow_matching_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">average</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/conditional_flow_model/independent_conditional_flow_model.html#IndependentConditionalFlowModel.flow_matching_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.IndependentConditionalFlowModel.flow_matching_loss" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Overview:</dt><dd><p>Return the flow matching loss function of the model given the initial state and the condition.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The initial state.</p></li>
+<li><p><strong>x1</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The final state.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The condition for the flow matching loss.</p></li>
+<li><p><strong>average</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to average the loss across the batch.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="grl.generative_models.IndependentConditionalFlowModel.sample">
+<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_span</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/conditional_flow_model/independent_conditional_flow_model.html#IndependentConditionalFlowModel.sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.IndependentConditionalFlowModel.sample" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Overview:</dt><dd><p>Sample from the model, return the final state.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_span</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The time span.</p></li>
+<li><p><strong>batch_size</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Size,</span> <span class="pre">int,</span> <span class="pre">Tuple[int],</span> <span class="pre">List[int]]</span></code>) – The batch size.</p></li>
+<li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
+<li><p><strong>with_grad</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to return the gradient.</p></li>
+<li><p><strong>solver_config</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">EasyDict</span></code>) – The configuration of the solver.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The sampled result.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>x (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>)</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Shapes:</dt><dd><p>t_span: <span class="math notranslate nohighlight">\((T)\)</span>, where <span class="math notranslate nohighlight">\(T\)</span> is the number of time steps.
+batch_size: <span class="math notranslate nohighlight">\((B)\)</span>, where <span class="math notranslate nohighlight">\(B\)</span> is the batch size of data, which could be a scalar or a tensor such as <span class="math notranslate nohighlight">\((B1, B2)\)</span>.
+x_0: <span class="math notranslate nohighlight">\((N, D)\)</span>, where <span class="math notranslate nohighlight">\(N\)</span> is the batch size of data and <span class="math notranslate nohighlight">\(D\)</span> is the dimension of the state, which could be a scalar or a tensor such as <span class="math notranslate nohighlight">\((D1, D2)\)</span>.
+condition: <span class="math notranslate nohighlight">\((N, D)\)</span>, where <span class="math notranslate nohighlight">\(N\)</span> is the batch size of data and <span class="math notranslate nohighlight">\(D\)</span> is the dimension of the condition, which could be a scalar or a tensor such as <span class="math notranslate nohighlight">\((D1, D2)\)</span>.
+x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch size <span class="math notranslate nohighlight">\(B\)</span> is provided, the shape will be <span class="math notranslate nohighlight">\((B, N, D)\)</span>. If x_0 is not provided, the shape will be <span class="math notranslate nohighlight">\((B, D)\)</span>. If x_0 and condition are not provided, the shape will be <span class="math notranslate nohighlight">\((D)\)</span>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="grl.generative_models.IndependentConditionalFlowModel.sample_forward_process">
+<span class="sig-name descname"><span class="pre">sample_forward_process</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_span</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/conditional_flow_model/independent_conditional_flow_model.html#IndependentConditionalFlowModel.sample_forward_process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.IndependentConditionalFlowModel.sample_forward_process" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Overview:</dt><dd><p>Sample from the diffusion model, return all intermediate states.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_span</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The time span.</p></li>
+<li><p><strong>batch_size</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Size,</span> <span class="pre">int,</span> <span class="pre">Tuple[int],</span> <span class="pre">List[int]]</span></code>) – An extra batch size used for repeated sampling with the same initial state.</p></li>
+<li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
+<li><p><strong>with_grad</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to return the gradient.</p></li>
+<li><p><strong>solver_config</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">EasyDict</span></code>) – The configuration of the solver.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The sampled result.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>x (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>)</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Shapes:</dt><dd><p>t_span: <span class="math notranslate nohighlight">\((T)\)</span>, where <span class="math notranslate nohighlight">\(T\)</span> is the number of time steps.
+batch_size: <span class="math notranslate nohighlight">\((B)\)</span>, where <span class="math notranslate nohighlight">\(B\)</span> is the batch size of data, which could be a scalar or a tensor such as <span class="math notranslate nohighlight">\((B1, B2)\)</span>.
+x_0: <span class="math notranslate nohighlight">\((N, D)\)</span>, where <span class="math notranslate nohighlight">\(N\)</span> is the batch size of data and <span class="math notranslate nohighlight">\(D\)</span> is the dimension of the state, which could be a scalar or a tensor such as <span class="math notranslate nohighlight">\((D1, D2)\)</span>.
+condition: <span class="math notranslate nohighlight">\((N, D)\)</span>, where <span class="math notranslate nohighlight">\(N\)</span> is the batch size of data and <span class="math notranslate nohighlight">\(D\)</span> is the dimension of the condition, which could be a scalar or a tensor such as <span class="math notranslate nohighlight">\((D1, D2)\)</span>.
+x: <span class="math notranslate nohighlight">\((T, N, D)\)</span>, if extra batch size <span class="math notranslate nohighlight">\(B\)</span> is provided, the shape will be <span class="math notranslate nohighlight">\((T, B, N, D)\)</span>. If x_0 is not provided, the shape will be <span class="math notranslate nohighlight">\((T, B, D)\)</span>. If x_0 and condition are not provided, the shape will be <span class="math notranslate nohighlight">\((T, D)\)</span>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="optimaltransportconditionalflowmodel">
+<h2>OptimalTransportConditionalFlowModel<a class="headerlink" href="#optimaltransportconditionalflowmodel" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="grl.generative_models.OptimalTransportConditionalFlowModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grl.generative_models.</span></span><span class="sig-name descname"><span class="pre">OptimalTransportConditionalFlowModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/conditional_flow_model/optimal_transport_conditional_flow_model.html#OptimalTransportConditionalFlowModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.OptimalTransportConditionalFlowModel" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Overview:</dt><dd><p>The optimal transport conditional flow model, which is based on an optimal transport plan between two distributions.</p>
+</dd>
+<dt>Interfaces:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code>, <code class="docutils literal notranslate"><span class="pre">get_type</span></code>, <code class="docutils literal notranslate"><span class="pre">sample</span></code>, <code class="docutils literal notranslate"><span class="pre">sample_forward_process</span></code>, <code class="docutils literal notranslate"><span class="pre">flow_matching_loss</span></code></p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="grl.generative_models.OptimalTransportConditionalFlowModel.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/conditional_flow_model/optimal_transport_conditional_flow_model.html#OptimalTransportConditionalFlowModel.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.OptimalTransportConditionalFlowModel.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Overview:</dt><dd><p>Initialize the model.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config</strong> (<em>-</em>) – The configuration of the model.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="grl.generative_models.OptimalTransportConditionalFlowModel.flow_matching_loss">
+<span class="sig-name descname"><span class="pre">flow_matching_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">average</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/conditional_flow_model/optimal_transport_conditional_flow_model.html#OptimalTransportConditionalFlowModel.flow_matching_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.OptimalTransportConditionalFlowModel.flow_matching_loss" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Overview:</dt><dd><p>Return the flow matching loss function of the model given the initial state and the condition, using the optimal transport plan to match samples from two distributions.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input state.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="grl.generative_models.OptimalTransportConditionalFlowModel.flow_matching_loss_small_batch_OT_plan">
+<span class="sig-name descname"><span class="pre">flow_matching_loss_small_batch_OT_plan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">average</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/conditional_flow_model/optimal_transport_conditional_flow_model.html#OptimalTransportConditionalFlowModel.flow_matching_loss_small_batch_OT_plan"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.OptimalTransportConditionalFlowModel.flow_matching_loss_small_batch_OT_plan" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Overview:</dt><dd><p>Return the flow matching loss function of the model given the initial state and the condition, using the optimal transport plan for small batch size to accelerate the computation.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input state.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="grl.generative_models.OptimalTransportConditionalFlowModel.sample">
+<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_span</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/conditional_flow_model/optimal_transport_conditional_flow_model.html#OptimalTransportConditionalFlowModel.sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.OptimalTransportConditionalFlowModel.sample" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Overview:</dt><dd><p>Sample from the model, return the final state.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_span</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The time span.</p></li>
+<li><p><strong>batch_size</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Size,</span> <span class="pre">int,</span> <span class="pre">Tuple[int],</span> <span class="pre">List[int]]</span></code>) – The batch size.</p></li>
+<li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
+<li><p><strong>with_grad</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to return the gradient.</p></li>
+<li><p><strong>solver_config</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">EasyDict</span></code>) – The configuration of the solver.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The sampled result.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>x (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>)</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Shapes:</dt><dd><p>t_span: <span class="math notranslate nohighlight">\((T)\)</span>, where <span class="math notranslate nohighlight">\(T\)</span> is the number of time steps.
+batch_size: <span class="math notranslate nohighlight">\((B)\)</span>, where <span class="math notranslate nohighlight">\(B\)</span> is the batch size of data, which could be a scalar or a tensor such as <span class="math notranslate nohighlight">\((B1, B2)\)</span>.
+x_0: <span class="math notranslate nohighlight">\((N, D)\)</span>, where <span class="math notranslate nohighlight">\(N\)</span> is the batch size of data and <span class="math notranslate nohighlight">\(D\)</span> is the dimension of the state, which could be a scalar or a tensor such as <span class="math notranslate nohighlight">\((D1, D2)\)</span>.
+condition: <span class="math notranslate nohighlight">\((N, D)\)</span>, where <span class="math notranslate nohighlight">\(N\)</span> is the batch size of data and <span class="math notranslate nohighlight">\(D\)</span> is the dimension of the condition, which could be a scalar or a tensor such as <span class="math notranslate nohighlight">\((D1, D2)\)</span>.
+x: <span class="math notranslate nohighlight">\((N, D)\)</span>, if extra batch size <span class="math notranslate nohighlight">\(B\)</span> is provided, the shape will be <span class="math notranslate nohighlight">\((B, N, D)\)</span>. If x_0 is not provided, the shape will be <span class="math notranslate nohighlight">\((B, D)\)</span>. If x_0 and condition are not provided, the shape will be <span class="math notranslate nohighlight">\((D)\)</span>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="grl.generative_models.OptimalTransportConditionalFlowModel.sample_forward_process">
+<span class="sig-name descname"><span class="pre">sample_forward_process</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_span</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/conditional_flow_model/optimal_transport_conditional_flow_model.html#OptimalTransportConditionalFlowModel.sample_forward_process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.OptimalTransportConditionalFlowModel.sample_forward_process" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Overview:</dt><dd><p>Sample from the model, return all intermediate states.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_span</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The time span.</p></li>
+<li><p><strong>batch_size</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Size,</span> <span class="pre">int,</span> <span class="pre">Tuple[int],</span> <span class="pre">List[int]]</span></code>) – An extra batch size used for repeated sampling with the same initial state.</p></li>
+<li><p><strong>x_0</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The initial state, if not provided, it will be sampled from the Gaussian distribution.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
+<li><p><strong>with_grad</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to return the gradient.</p></li>
+<li><p><strong>solver_config</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">EasyDict</span></code>) – The configuration of the solver.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The sampled result.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>x (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>)</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Shapes:</dt><dd><p>t_span: <span class="math notranslate nohighlight">\((T)\)</span>, where <span class="math notranslate nohighlight">\(T\)</span> is the number of time steps.
+batch_size: <span class="math notranslate nohighlight">\((B)\)</span>, where <span class="math notranslate nohighlight">\(B\)</span> is the batch size of data, which could be a scalar or a tensor such as <span class="math notranslate nohighlight">\((B1, B2)\)</span>.
+x_0: <span class="math notranslate nohighlight">\((N, D)\)</span>, where <span class="math notranslate nohighlight">\(N\)</span> is the batch size of data and <span class="math notranslate nohighlight">\(D\)</span> is the dimension of the state, which could be a scalar or a tensor such as <span class="math notranslate nohighlight">\((D1, D2)\)</span>.
+condition: <span class="math notranslate nohighlight">\((N, D)\)</span>, where <span class="math notranslate nohighlight">\(N\)</span> is the batch size of data and <span class="math notranslate nohighlight">\(D\)</span> is the dimension of the condition, which could be a scalar or a tensor such as <span class="math notranslate nohighlight">\((D1, D2)\)</span>.
+x: <span class="math notranslate nohighlight">\((T, N, D)\)</span>, if extra batch size <span class="math notranslate nohighlight">\(B\)</span> is provided, the shape will be <span class="math notranslate nohighlight">\((T, B, N, D)\)</span>. If x_0 is not provided, the shape will be <span class="math notranslate nohighlight">\((T, B, D)\)</span>. If x_0 and condition are not provided, the shape will be <span class="math notranslate nohighlight">\((T, D)\)</span>.</p>
 </dd>
 </dl>
 </dd></dl>

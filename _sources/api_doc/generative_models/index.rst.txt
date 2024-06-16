@@ -16,3 +16,15 @@ EnergyConditionalDiffusionModel
 .. autoclass:: EnergyConditionalDiffusionModel
     :special-members: __init__
     :members:
+
+IndependentConditionalFlowModel
+-------------------------------
+.. autoclass:: IndependentConditionalFlowModel
+    :special-members: __init__
+    :members:
+
+OptimalTransportConditionalFlowModel
+-------------------------------
+.. autoclass:: OptimalTransportConditionalFlowModel
+    :special-members: __init__
+    :members:
