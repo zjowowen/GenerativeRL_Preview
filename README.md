@@ -114,6 +114,14 @@ if __name__ == '__main__':
 
 For more detailed examples and documentation, please refer to the GenerativeRL documentation.
 
+## Tutorials
+
+We provide several case tutorials to help you better understand GenerativeRL. See more at [tutorials](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials).
+
+## Benchmark experiments
+
+We offer some baseline experiments to evaluate the performance of generative reinforcement learning algorithms. See more at [benchmark](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/benchmark).
+
 ## Contributing
 
 We welcome contributions to GenerativeRL! If you are interested in contributing, please refer to the [Contributing Guide](CONTRIBUTING.md).
