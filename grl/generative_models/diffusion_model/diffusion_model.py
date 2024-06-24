@@ -857,12 +857,39 @@ class DiffusionModel(nn.Module):
             solver_config (:obj:`EasyDict`): The configuration of the solver.
         """
 
+        return self.forward_sample_process(
+            x=x,
+            t_span=t_span,
+            condition=condition,
+            with_grad=with_grad,
+            solver_config=solver_config,
+        )[-1]
+
+    def forward_sample_process(
+        self,
+        x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        t_span: torch.Tensor,
+        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        with_grad: bool = False,
+        solver_config: EasyDict = None,
+    ):
+        """
+        Overview:
+            Use forward path of the diffusion model given the sampled x. Note that this is not the reverse process, and thus is not designed for sampling form the diffusion model.
+            Rather, it is used for encode a sampled x to the latent space. Return all intermediate states.
+
+        Arguments:
+            x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
+            t_span (:obj:`torch.Tensor`): The time span.
+            condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
+            with_grad (:obj:`bool`): Whether to return the gradient.
+            solver_config (:obj:`EasyDict`): The configuration of the solver.
+        """
+
         # TODO: very important function
         # TODO: validate these functions
 
         t_span = t_span.to(self.device)
-
-        batch_size = x.shape[0]
 
         if solver_config is not None:
             solver = get_solver(solver_config.type)(**solver_config.args)
@@ -884,7 +911,7 @@ class DiffusionModel(nn.Module):
                     ).drift,
                     x0=x,
                     t_span=t_span,
-                )[-1]
+                )
             else:
                 with torch.no_grad():
                     data = solver.integrate(
@@ -895,7 +922,7 @@ class DiffusionModel(nn.Module):
                         ).drift,
                         x0=x,
                         t_span=t_span,
-                    )[-1]
+                    )
         elif isinstance(solver, SDESolver):
             # TODO: make it compatible with TensorDict
             # TODO: validate the implementation
@@ -916,7 +943,7 @@ class DiffusionModel(nn.Module):
                     diffusion=sde.diffusion,
                     x0=x,
                     t_span=t_span,
-                )[-1]
+                )
             else:
                 with torch.no_grad():
                     data = solver.integrate(
@@ -924,7 +951,7 @@ class DiffusionModel(nn.Module):
                         diffusion=sde.diffusion,
                         x0=x,
                         t_span=t_span,
-                    )[-1]
+                    )
         else:
             raise NotImplementedError(
                 "Solver type {} is not implemented".format(self.config.solver.type)
