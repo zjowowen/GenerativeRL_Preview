@@ -315,6 +315,7 @@
 <span class="kn">from</span> <span class="nn">grl.generative_models.model_functions.score_function</span> <span class="kn">import</span> <span class="n">ScoreFunction</span>
 <span class="kn">from</span> <span class="nn">grl.generative_models.model_functions.velocity_function</span> <span class="kn">import</span> <span class="n">VelocityFunction</span>
 <span class="kn">from</span> <span class="nn">grl.generative_models.random_generator</span> <span class="kn">import</span> <span class="n">gaussian_random_variable</span>
+<span class="kn">from</span> <span class="nn">grl.generative_models.metric</span> <span class="kn">import</span> <span class="n">compute_likelihood</span>
 <span class="kn">from</span> <span class="nn">grl.numerical_methods.numerical_solvers</span> <span class="kn">import</span> <span class="n">get_solver</span>
 <span class="kn">from</span> <span class="nn">grl.numerical_methods.numerical_solvers.dpm_solver</span> <span class="kn">import</span> <span class="n">DPMSolver</span>
 <span class="kn">from</span> <span class="nn">grl.numerical_methods.numerical_solvers.ode_solver</span> <span class="kn">import</span> <span class="p">(</span>
@@ -1222,6 +1223,7 @@
                     <span class="p">)</span><span class="o">.</span><span class="n">drift</span><span class="p">,</span>
                     <span class="n">x0</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
                     <span class="n">t_span</span><span class="o">=</span><span class="n">t_span</span><span class="p">,</span>
+                    <span class="n">adjoint_params</span><span class="o">=</span><span class="n">find_parameters</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">),</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
@@ -1233,6 +1235,7 @@
                         <span class="p">)</span><span class="o">.</span><span class="n">drift</span><span class="p">,</span>
                         <span class="n">x0</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
                         <span class="n">t_span</span><span class="o">=</span><span class="n">t_span</span><span class="p">,</span>
+                        <span class="n">adjoint_params</span><span class="o">=</span><span class="n">find_parameters</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">),</span>
                     <span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">solver</span><span class="p">,</span> <span class="n">SDESolver</span><span class="p">):</span>
             <span class="c1"># TODO: make it compatible with TensorDict</span>
@@ -1408,6 +1411,66 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_prediction_function_</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">condition</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DiffusionModel.log_prob"><a class="viewcode-back" href="../../../../api_doc/generative_models/index.html#grl.generative_models.DiffusionModel.log_prob">[docs]</a>    <span class="k">def</span> <span class="nf">log_prob</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">,</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">condition</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">,</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">using_Hutchinson_trace_estimator</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">with_grad</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overview:</span>
+<span class="sd">            Return the log probability of the model given the initial state and the condition.</span>
+
+<span class="sd">            .. math::</span>
+<span class="sd">                \log p_{\theta}(x)</span>
+
+<span class="sd">        Arguments:</span>
+<span class="sd">            x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.</span>
+<span class="sd">            condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.</span>
+<span class="sd">            with_grad (:obj:`bool`): Whether to return the gradient.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">with_grad</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">compute_likelihood</span><span class="p">(</span>
+                <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="n">condition</span><span class="p">,</span> <span class="n">using_Hutchinson_trace_estimator</span><span class="o">=</span><span class="n">using_Hutchinson_trace_estimator</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">compute_likelihood</span><span class="p">(</span>
+                    <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="n">condition</span><span class="p">,</span> <span class="n">using_Hutchinson_trace_estimator</span><span class="o">=</span><span class="n">using_Hutchinson_trace_estimator</span>
+                <span class="p">)</span></div>
+
+<div class="viewcode-block" id="DiffusionModel.sample_with_log_prob"><a class="viewcode-back" href="../../../../api_doc/generative_models/index.html#grl.generative_models.DiffusionModel.sample_with_log_prob">[docs]</a>    <span class="k">def</span> <span class="nf">sample_with_log_prob</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">t_span</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">condition</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">,</span> <span class="n">treetensor</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">with_grad</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">solver_config</span><span class="p">:</span> <span class="n">EasyDict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overview:</span>
+<span class="sd">            Sample from the model and return the log probability of the sampled result.</span>
+
+<span class="sd">        Arguments:</span>
+<span class="sd">            t_span (:obj:`torch.Tensor`): The time span.</span>
+<span class="sd">            batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.</span>
+<span class="sd">            condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.</span>
+<span class="sd">            with_grad (:obj:`bool`): Whether to return the gradient.</span>
+<span class="sd">            solver_config (:obj:`EasyDict`): The configuration of the solver.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_forward_process</span><span class="p">(</span>
+            <span class="n">t_span</span><span class="o">=</span><span class="n">t_span</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+            <span class="n">condition</span><span class="o">=</span><span class="n">condition</span><span class="p">,</span>
+            <span class="n">with_grad</span><span class="o">=</span><span class="n">with_grad</span><span class="p">,</span>
+            <span class="n">solver_config</span><span class="o">=</span><span class="n">solver_config</span><span class="p">,</span>
+        <span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="n">condition</span><span class="p">,</span> <span class="n">with_grad</span><span class="o">=</span><span class="n">with_grad</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="DiffusionModel.dpo_loss"><a class="viewcode-back" href="../../../../api_doc/generative_models/index.html#grl.generative_models.DiffusionModel.dpo_loss">[docs]</a>    <span class="k">def</span> <span class="nf">dpo_loss</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
