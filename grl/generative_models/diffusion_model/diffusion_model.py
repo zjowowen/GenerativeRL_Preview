@@ -15,6 +15,7 @@ from grl.generative_models.model_functions.noise_function import NoiseFunction
 from grl.generative_models.model_functions.score_function import ScoreFunction
 from grl.generative_models.model_functions.velocity_function import VelocityFunction
 from grl.generative_models.random_generator import gaussian_random_variable
+from grl.generative_models.metric import compute_likelihood
 from grl.numerical_methods.numerical_solvers import get_solver
 from grl.numerical_methods.numerical_solvers.dpm_solver import DPMSolver
 from grl.numerical_methods.numerical_solvers.ode_solver import (
@@ -922,6 +923,7 @@ class DiffusionModel(nn.Module):
                     ).drift,
                     x0=x,
                     t_span=t_span,
+                    adjoint_params=find_parameters(self.model),
                 )
             else:
                 with torch.no_grad():
@@ -933,6 +935,7 @@ class DiffusionModel(nn.Module):
                         ).drift,
                         x0=x,
                         t_span=t_span,
+                        adjoint_params=find_parameters(self.model),
                     )
         elif isinstance(solver, SDESolver):
             # TODO: make it compatible with TensorDict
@@ -1108,6 +1111,66 @@ class DiffusionModel(nn.Module):
         """
 
         return self.data_prediction_function_.forward(self.model, t, x, condition)
+
+    def log_prob(
+        self,
+        x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        using_Hutchinson_trace_estimator: bool = True,
+        with_grad: bool = False
+    ):
+        r"""
+        Overview:
+            Return the log probability of the model given the initial state and the condition.
+
+            .. math::
+                \log p_{\theta}(x)
+
+        Arguments:
+            x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
+            with_grad (:obj:`bool`): Whether to return the gradient.
+        """
+
+        if with_grad:
+            return compute_likelihood(
+                model=self, x=x, condition=condition, using_Hutchinson_trace_estimator=using_Hutchinson_trace_estimator
+            )
+        else:
+            with torch.no_grad():
+                return compute_likelihood(
+                    model=self, x=x, condition=condition, using_Hutchinson_trace_estimator=using_Hutchinson_trace_estimator
+                )
+
+    def sample_with_log_prob(
+        self,
+        t_span: torch.Tensor,
+        batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
+        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        with_grad: bool = False,
+        solver_config: EasyDict = None,
+    ):
+        r"""
+        Overview:
+            Sample from the model and return the log probability of the sampled result.
+
+        Arguments:
+            t_span (:obj:`torch.Tensor`): The time span.
+            batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
+            condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
+            with_grad (:obj:`bool`): Whether to return the gradient.
+            solver_config (:obj:`EasyDict`): The configuration of the solver.
+        """
+
+        x = self.sample_forward_process(
+            t_span=t_span,
+            batch_size=batch_size,
+            condition=condition,
+            with_grad=with_grad,
+            solver_config=solver_config,
+        )[-1]
+
+        return x, self.log_prob(x=x, condition=condition, with_grad=with_grad)
 
     def dpo_loss(
         self,
