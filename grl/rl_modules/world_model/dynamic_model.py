@@ -73,3 +73,23 @@ class DynamicModel(nn.Module):
 
         return self.model.log_prob(x=next_state, condition=condition)
 
+    def dynamic_loss(
+        self,
+        next_state: torch.Tensor,
+        condition: torch.Tensor,
+    ) -> torch.Tensor:
+        """
+        Overview:
+            Return the dynamic loss of the next state given current condition.
+            Condition usually is a combination of action and state at the current time step or in the past.
+        Arguments:
+            - next_state (:obj:`torch.Tensor`): The next state.
+            - condition (:obj:`torch.Tensor`): The condition.
+        """
+
+        if self.config.loss_type == "score_matching":
+            return self.model.score_matching_loss(x=next_state, condition=condition)
+        elif self.config.loss_type == "flow_matching":
+            return self.model.flow_matching_loss(x=next_state, condition=condition)
+        else:
+            raise ValueError("Invalid loss type: {}".format(self.config.loss_type))

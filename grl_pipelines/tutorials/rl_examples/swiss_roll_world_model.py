@@ -22,7 +22,7 @@ from grl.generative_models.conditional_flow_model.independent_conditional_flow_m
     IndependentConditionalFlowModel,
 )
 from grl.generative_models.metric import compute_likelihood
-from grl.rl_modules.world_model.action_conditioned_world_model import ActionConditionedWorldModel
+from grl.rl_modules.world_model.state_prior_dynamic_model import ActionConditionedWorldModel
 from grl.utils import set_seed
 from grl.utils.log import log
 
@@ -36,9 +36,14 @@ t_encoder = dict(
         scale=30.0,
     ),
 )
+data_num=1000000
 config = EasyDict(
     dict(
         device=device,
+        dataset=dict(
+            data_num=data_num,
+            noise=0.6,
+        ),
         flow_model=dict(
             device=device,
             x_size=x_size,
@@ -56,12 +61,16 @@ config = EasyDict(
                 type="velocity_function",
                 args=dict(
                     t_encoder=t_encoder,
+                    condition_encoder=t_encoder,
                     backbone=dict(
                         type="TemporalSpatialResidualNet",
                         args=dict(
                             hidden_sizes=[512, 256, 128],
                             output_dim=x_size,
                             t_dim=t_embedding_dim,
+                            condition_dim=t_embedding_dim,
+                            condition_hidden_dim=64,
+                            t_condition_hidden_dim=128,
                         ),
                     ),
                 ),
@@ -69,15 +78,15 @@ config = EasyDict(
         ),
         parameter=dict(
             training_loss_type="flow_matching",
-            lr=5e-3,
-            data_num=10000,
-            iterations=2000,
-            batch_size=2048,
+            lr=5e-4,
+            data_num=data_num,
+            iterations=100000,
+            batch_size=40960,
             clip_grad_norm=1.0,
             eval_freq=500,
             checkpoint_freq=100,
-            checkpoint_path="./checkpoint",
-            video_save_path="./video",
+            checkpoint_path="./checkpoint-swiss-roll-icfm-world-model",
+            video_save_path="./video-swiss-roll-icfm-world-model",
             device=device,
         ),
     )
@@ -91,22 +100,26 @@ if __name__ == "__main__":
     )
     flow_model = torch.compile(flow_model)
 
-    # get data
-    x_and_t = make_swiss_roll(
-        n_samples=config.dataset.data_num, noise=config.dataset.noise
-    )
-    t = x_and_t[1].astype(np.float32)
-    t = (t - np.min(t)) / (np.max(t) - np.min(t))
-    x = x_and_t[0].astype(np.float32)[:, [0, 2]]
-    # transform data
-    x[:, 0] = x[:, 0] / np.max(np.abs(x[:, 0]))
-    x[:, 1] = x[:, 1] / np.max(np.abs(x[:, 1]))
-    x = (x - x.min()) / (x.max() - x.min())
-    x = x * 10 - 5
+    def get_data(data_num):
+        # get data
+        x_and_t = make_swiss_roll(
+            n_samples=data_num, noise=config.dataset.noise
+        )
+        t = x_and_t[1].astype(np.float32)
+        t = (t - np.min(t)) / (np.max(t) - np.min(t))
+        x = x_and_t[0].astype(np.float32)[:, [0, 2]]
+        # transform data
+        x[:, 0] = x[:, 0] / np.max(np.abs(x[:, 0]))
+        x[:, 1] = x[:, 1] / np.max(np.abs(x[:, 1]))
+        x = (x - x.min()) / (x.max() - x.min())
+        x = x * 10 - 5
 
-    x0 = x[:-1]
-    x1 = x[1:]
-    action = t[1:] - t[:-1]
+        x0 = x[:-1]
+        x1 = x[1:]
+        action = t[1:] - t[:-1]
+        return x0, x1, action
+    
+    x0, x1, action = get_data(config.dataset.data_num)
 
     #
     optimizer = torch.optim.Adam(
@@ -194,6 +207,52 @@ if __name__ == "__main__":
         plt.close(fig)
         plt.clf()
 
+    def render_3d_trajectory_video(data, video_save_path, iteration, fps=100, dpi=100):
+
+        if not os.path.exists(video_save_path):
+            os.makedirs(video_save_path)
+            
+        T, B, _ = data.shape
+        
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        # Set the axes limits
+        ax.set_xlim(np.min(data[:,:,0]), np.max(data[:,:,0]))
+        ax.set_ylim(np.min(data[:,:,1]), np.max(data[:,:,1]))
+        ax.set_zlim(0, T)
+
+        # Initialize a list of line objects for each point with alpha transparency
+        lines = [ax.plot([], [], [], alpha=0.5)[0] for _ in range(B)]
+
+        # Initialization function to set the background of each frame
+        def init():
+            for line in lines:
+                line.set_data([], [])
+                line.set_3d_properties([])
+            return lines
+
+        # Animation function which updates each frame
+        def update(frame):
+            for i, line in enumerate(lines):
+                x_data = data[:frame+1, i, 0]
+                y_data = data[:frame+1, i, 1]
+                z_data = np.arange(frame+1)
+                line.set_data(x_data, y_data)
+                line.set_3d_properties(z_data)
+            return lines
+
+        # Create the animation
+        ani = animation.FuncAnimation(fig, update, frames=T, init_func=init, blit=True)
+
+        # Save the animation
+        video_filename = os.path.join(video_save_path, f"iteration_3D_{iteration}.mp4")
+        ani.save(video_filename, fps=fps, dpi=dpi)
+
+        # Clean up
+        plt.close(fig)
+        plt.clf()
+
     def save_checkpoint(model, optimizer, iteration):
         if not os.path.exists(config.parameter.checkpoint_path):
             os.makedirs(config.parameter.checkpoint_path)
@@ -226,26 +285,30 @@ if __name__ == "__main__":
         if iteration <= last_iteration:
             continue
 
-        if iteration > 0 and iteration % config.parameter.eval_freq == 0:
+        #if iteration > 0 and iteration % config.parameter.eval_freq == 0:
+        if True:
             flow_model.eval()
             t_span = torch.linspace(0.0, 1.0, 1000)
+            x0_eval, x1_eval, action_eval = get_data(500)
+            x0_eval = torch.tensor(x0_eval).to(config.device)
+            x1_eval = torch.tensor(x1_eval).to(config.device)
+            action_eval = torch.tensor(action_eval).to(config.device)
+            action_eval = -torch.ones_like(action_eval).to(config.device)*0.05
             x_t = (
-                flow_model.sample_forward_process(t_span=t_span, batch_size=500)
+                flow_model.sample_forward_process(t_span=t_span, x_0=x0_eval, condition=action_eval)
                 .cpu()
                 .detach()
             )
             x_t = [
                 x.squeeze(0) for x in torch.split(x_t, split_size_or_sections=1, dim=0)
             ]
-            # render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
+            render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
 
         batch_data = next(data_generator)
-        batch_data = batch_data.to(config.device)
-        # plot2d(batch_data.cpu().numpy())
+
         flow_model.train()
         if config.parameter.training_loss_type == "flow_matching":
-            x0 = flow_model.gaussian_generator(batch_data.shape[0]).to(config.device)
-            loss = flow_model.flow_matching_loss(x0=x0, x1=batch_data)
+            loss = flow_model.flow_matching_loss(x0=batch_data[0], x1=batch_data[1], condition=batch_data[2])
         else:
             raise NotImplementedError("Unknown loss type")
         optimizer.zero_grad()
@@ -262,51 +325,7 @@ if __name__ == "__main__":
             f"iteration {iteration}, gradient {gradient_sum/counter}, loss {loss_sum/counter}"
         )
 
-        if iteration >= 0 and iteration % 100 == 0:
-            logp = compute_likelihood(
-                model=flow_model,
-                x=torch.tensor(data).to(config.device),
-                using_Hutchinson_trace_estimator=True,
-            )
-            logp_mean = logp.mean()
-            bits_per_dim = -logp_mean / (
-                torch.prod(torch.tensor(x_size, device=config.device))
-                * torch.log(torch.tensor(2.0, device=config.device))
-            )
-            log.info(
-                f"iteration {iteration}, gradient {gradient_sum/counter}, loss {loss_sum/counter}, log likelihood {logp_mean.item()}, bits_per_dim {bits_per_dim.item()}"
-            )
-
-            logp = compute_likelihood(
-                model=flow_model,
-                x=torch.tensor(data).to(config.device),
-                using_Hutchinson_trace_estimator=False,
-            )
-            logp_mean = logp.mean()
-            bits_per_dim = -logp_mean / (
-                torch.prod(torch.tensor(x_size, device=config.device))
-                * torch.log(torch.tensor(2.0, device=config.device))
-            )
-            log.info(
-                f"iteration {iteration}, gradient {gradient_sum/counter}, loss {loss_sum/counter}, log likelihood {logp_mean.item()}, bits_per_dim {bits_per_dim.item()}"
-            )
-
         history_iteration.append(iteration)
-
-        if iteration == config.parameter.iterations - 1:
-            flow_model.eval()
-            t_span = torch.linspace(0.0, 1.0, 1000)
-            x_t = (
-                flow_model.sample_forward_process(t_span=t_span, batch_size=500)
-                .cpu()
-                .detach()
-            )
-            x_t = [
-                x.squeeze(0) for x in torch.split(x_t, split_size_or_sections=1, dim=0)
-            ]
-            render_video(
-                x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100
-            )
 
         if (iteration + 1) % config.parameter.checkpoint_freq == 0:
             save_checkpoint(flow_model, optimizer, iteration)
