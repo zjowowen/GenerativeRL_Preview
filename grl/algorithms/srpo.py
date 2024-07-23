@@ -113,7 +113,7 @@ class SRPOCritic(nn.Module):
         self.q0_target = copy.deepcopy(self.q0).requires_grad_(False)
         self.vf = ValueFunction(config.sdim)
 
-    def v_loss(self, data, tau):
+    def v_loss(self, state, action, next_state, tau):
         """
         Overview:
             Calculate the value loss.
@@ -121,21 +121,17 @@ class SRPOCritic(nn.Module):
             data (:obj:`Dict`): The input data.
             tau (:obj:`float`): The threshold.
         """
-        s = data["s"]
-        a = data["a"]
-        r = data["r"]
-        s_ = data["s_"]
-        d = data["d"]
+
         with torch.no_grad():
-            target_q = self.q0_target(a, s).detach()
-            next_v = self.vf(s_).detach()
+            target_q = self.q0_target(action, state).detach()
+            next_v = self.vf(next_state).detach()
         # Update value function
-        v = self.vf(s)
+        v = self.vf(state)
         adv = target_q - v
         v_loss = asymmetric_l2_loss(adv, tau)
         return v_loss, next_v
 
-    def q_loss(self, data, next_v, discount):
+    def q_loss(self, state, action, reward, done, next_v, discount):
         """
         Overview:
             Calculate the Q loss.
@@ -145,12 +141,8 @@ class SRPOCritic(nn.Module):
             discount (:obj:`float`): The discount factor.
         """
         # Update Q function
-        s = data["s"]
-        a = data["a"]
-        r = data["r"]
-        d = data["d"]
-        targets = r + (1.0 - d.float()) * discount * next_v.detach()
-        qs = self.q0.compute_double_q(a, s)
+        targets = reward + (1.0 - done.float()) * discount * next_v.detach()
+        qs = self.q0.compute_double_q(action, state)
         q_loss = sum(torch.nn.functional.mse_loss(q, targets) for q in qs) / len(qs)
         return q_loss
 
@@ -212,7 +204,7 @@ class SRPOPolicy(nn.Module):
 
     def v_loss(
         self,
-        data: Dict[str, torch.Tensor],
+        state, action, next_state,
         tau: int = 0.9,
     ) -> torch.Tensor:
         """
@@ -226,12 +218,15 @@ class SRPOPolicy(nn.Module):
             done (:obj:`torch.Tensor`): The input done.
             fake_next_action (:obj:`torch.Tensor`): The input fake next action.
         """
-        v_loss, next_v = self.critic.v_loss(data, tau)
+        v_loss, next_v = self.critic.v_loss(state, action, next_state, tau)
         return v_loss, next_v
 
     def q_loss(
         self,
-        data: Dict[str, torch.Tensor],
+        state,
+        action,
+        reward,
+        done,
         next_v: torch.Tensor,
         discount_factor: float = 1.0,
     ) -> torch.Tensor:
@@ -248,12 +243,12 @@ class SRPOPolicy(nn.Module):
             discount_factor (:obj:`float`): The discount factor.
         """
 
-        loss = self.critic.q_loss(data, next_v, discount_factor)
+        loss = self.critic.q_loss(state, action, reward, done, next_v, discount_factor)
         return loss
 
     def srpo_actor_loss(
         self,
-        data: Dict[str, torch.Tensor],
+        state,
     ) -> torch.Tensor:
         """
         Overview:
@@ -267,7 +262,6 @@ class SRPOPolicy(nn.Module):
             fake_next_action (:obj:`torch.Tensor`): The input fake next action.
             discount_factor (:obj:`float`): The discount factor.
         """
-        state = data["s"]
         loss, q = self.sro.srpo_loss(state)
         return loss, q
 
@@ -405,7 +399,7 @@ class SRPOAlgorithm:
                 while len(eval_envs) > 0:
                     new_eval_envs = []
                     states = np.stack([env.buffer_state for env in eval_envs])
-                    states = torch.Tensor(states).to("cuda")
+                    states = torch.Tensor(states).to(config.model.SRPOPolicy.device)
                     with torch.no_grad():
                         actions = policy_fn(states).detach().cpu().numpy()
                     for i, env in enumerate(eval_envs):
@@ -451,6 +445,9 @@ class SRPOAlgorithm:
                     batch_size=config.parameter.behaviour_policy.batch_size,
                     shuffle=True,
                     collate_fn=None,
+                    pin_memory=True,
+                    drop_last=True,
+                    num_workers=8,
                 )
             )
 
@@ -466,7 +463,7 @@ class SRPOAlgorithm:
                 data = next(data_generator)
                 behaviour_model_training_loss = self.model[
                     "SRPOPolicy"
-                ].behaviour_policy_loss(data["a"], data["s"])
+                ].behaviour_policy_loss(data["a"].to(config.model.SRPOPolicy.device), data["s"].to(config.model.SRPOPolicy.device))
                 behaviour_model_optimizer.zero_grad()
                 behaviour_model_training_loss.backward()
                 behaviour_model_optimizer.step()
@@ -509,6 +506,9 @@ class SRPOAlgorithm:
                     batch_size=config.parameter.critic.batch_size,
                     shuffle=True,
                     collate_fn=None,
+                    pin_memory=True,
+                    drop_last=True,
+                    num_workers=8,
                 )
             )
 
@@ -518,17 +518,22 @@ class SRPOAlgorithm:
                 data = next(data_generator)
 
                 v_loss, next_v = self.model["SRPOPolicy"].v_loss(
-                    data,
-                    config.parameter.critic.tau,
+                    state=data["s"].to(config.model.SRPOPolicy.device),
+                    action=data["a"].to(config.model.SRPOPolicy.device),
+                    next_state=data["s_"].to(config.model.SRPOPolicy.device),
+                    tau=config.parameter.critic.tau,
                 )
                 v_optimizer.zero_grad(set_to_none=True)
                 v_loss.backward()
                 v_optimizer.step()
 
                 q_loss = self.model["SRPOPolicy"].q_loss(
-                    data,
-                    next_v,
-                    config.parameter.critic.discount_factor,
+                    state=data["s"].to(config.model.SRPOPolicy.device),
+                    action=data["a"].to(config.model.SRPOPolicy.device),
+                    reward=data["r"].to(config.model.SRPOPolicy.device),
+                    done=data["d"].to(config.model.SRPOPolicy.device),
+                    next_v=next_v,
+                    discount=config.parameter.critic.discount_factor,
                 )
                 q_optimizer.zero_grad(set_to_none=True)
                 q_loss.backward()
@@ -574,6 +579,9 @@ class SRPOAlgorithm:
                     batch_size=config.parameter.actor.batch_size,
                     shuffle=True,
                     collate_fn=None,
+                    pin_memory=True,
+                    drop_last=True,
+                    num_workers=8,
                 )
             )
             SRPO_policy_optimizer = torch.optim.Adam(
@@ -589,7 +597,7 @@ class SRPOAlgorithm:
             ):
                 data = next(data_generator)
                 self.model["SRPOPolicy"].sro.diffusion_model.model.eval()
-                actor_loss, q = self.model["SRPOPolicy"].srpo_actor_loss(data)
+                actor_loss, q = self.model["SRPOPolicy"].srpo_actor_loss(data["s"].to(config.model.SRPOPolicy.device))
                 actor_loss = actor_loss.sum(-1).mean()
                 SRPO_policy_optimizer.zero_grad(set_to_none=True)
                 actor_loss.backward()
