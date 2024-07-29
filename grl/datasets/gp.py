@@ -131,20 +131,34 @@ class GPTensorDictDataset(torch.utils.data.Dataset):
     def load_fake_actions(self, fake_actions, fake_next_actions):
         self.fake_actions = fake_actions
         self.fake_next_actions = fake_next_actions
-        self.storage.set(
-            range(self.len), TensorDict(
-                {
-                    "s": self.states,
-                    "a": self.actions,
-                    "r": self.rewards,
-                    "s_": self.next_states,
-                    "d": self.is_finished,
-                    "fake_a": self.fake_actions,
-                    "fake_a_": self.fake_next_actions,
-                },
-                batch_size=[self.len],
+        if self.action_augment_num:
+            self.storage.set(
+                range(self.len), TensorDict(
+                    {
+                        "s": self.states,
+                        "a": self.actions,
+                        "r": self.rewards,
+                        "s_": self.next_states,
+                        "d": self.is_finished,
+                        "fake_a": self.fake_actions,
+                        "fake_a_": self.fake_next_actions,
+                    },
+                    batch_size=[self.len],
+                )
             )
-        )
+        else:
+            self.storage.set(
+                range(self.len), TensorDict(
+                    {
+                        "s": self.states,
+                        "a": self.actions,
+                        "r": self.rewards,
+                        "s_": self.next_states,
+                        "d": self.is_finished,
+                    },
+                    batch_size=[self.len],
+                )
+            )
 
     @abstractmethod
     def return_range(self, dataset, max_episode_steps):
@@ -467,7 +481,7 @@ class GPCustomizedDataset(GPDataset):
         log.info(f"{self.len} data loaded in GPCustomizedDataset")
 
 
-class GPD4RLTensorDictDataset(torch.utils.data.Dataset):
+class GPD4RLTensorDictDataset(GPTensorDictDataset):
     """
     Overview:
         D4RL Dataset for Generative Policy algorithm.
@@ -478,6 +492,7 @@ class GPD4RLTensorDictDataset(torch.utils.data.Dataset):
     def __init__(
         self,
         env_id: str,
+        action_augment_num: int = None,
     ):
         """
         Overview:
@@ -512,37 +527,36 @@ class GPD4RLTensorDictDataset(torch.utils.data.Dataset):
         self.rewards = reward
         self.len = self.states.shape[0]
         log.info(f"{self.len} data loaded in GPD4RLDataset")
+        self.action_augment_num = action_augment_num
         self.storage = LazyTensorStorage(max_size=self.len)
-        self.storage.set(
-            range(self.len), TensorDict(
-                {
-                    "s": self.states,
-                    "a": self.actions,
-                    "r": self.rewards,
-                    "s_": self.next_states,
-                    "d": self.is_finished,
-                    "fake_a": torch.zeros_like(self.actions).unsqueeze(1).repeat_interleave(action_augment_num, dim=1),
-                    "fake_a_": torch.zeros_like(self.actions).unsqueeze(1).repeat_interleave(action_augment_num, dim=1),
-                },
-                batch_size=[self.len],
+        if self.action_augment_num:
+            self.storage.set(
+                range(self.len), TensorDict(
+                    {
+                        "s": self.states,
+                        "a": self.actions,
+                        "r": self.rewards,
+                        "s_": self.next_states,
+                        "d": self.is_finished,
+                        "fake_a": torch.zeros_like(self.actions).unsqueeze(1).repeat_interleave(self.action_augment_num, dim=1),
+                        "fake_a_": torch.zeros_like(self.actions).unsqueeze(1).repeat_interleave(self.action_augment_num, dim=1),
+                    },
+                    batch_size=[self.len],
+                )
             )
-        )
-
-    def load_fake_actions(self, fake_actions, fake_next_actions):
-        self.storage.set(
-            range(self.len), TensorDict(
-                {
-                    "s": self.states,
-                    "a": self.actions,
-                    "r": self.rewards,
-                    "s_": self.next_states,
-                    "d": self.is_finished,
-                    "fake_a": fake_actions,
-                    "fake_a_": fake_next_actions,
-                },
-                batch_size=[self.len],
+        else:
+            self.storage.set(
+                range(self.len), TensorDict(
+                    {
+                        "s": self.states,
+                        "a": self.actions,
+                        "r": self.rewards,
+                        "s_": self.next_states,
+                        "d": self.is_finished,
+                    },
+                    batch_size=[self.len],
+                )
             )
-        )
 
     def return_range(dataset, max_episode_steps):
         returns, lengths = [], []
@@ -623,6 +637,7 @@ class GPCustomizedTensorDictDataset(GPTensorDictDataset):
         self.rewards = reward
         self.len = self.states.shape[0]
         log.info(f"{self.len} data loaded in GPCustomizedDataset")
+        self.action_augment_num = action_augment_num
         self.storage = LazyTensorStorage(max_size=self.len)
         self.storage.set(
             range(self.len), TensorDict(
