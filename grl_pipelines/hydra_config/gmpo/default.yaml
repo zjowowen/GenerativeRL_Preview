@@ -1,0 +1,56 @@
+# @package _global_
+train:
+  project: ${project_name}
+  device: ${device}
+  seed: ${env.seed}
+  wandb:
+    project: "IQL-${env.id}-${algorithm.type}-${algorithm.generative_model_type}"
+  simulator:
+    type: "GymEnvSimulator"
+    args:
+      env_id: ${env.id}
+  dataset:
+    type: "GPD4RLTensorDictDataset"
+    args:
+      env_id: ${env.id}
+  model:
+    GPPolicy:
+      device: ${device}
+      model_type: ${algorithm.model_type}
+      model_loss_type: ${algorithm.model_loss_type}
+      model: ${model}
+      critic:
+        device: ${device}
+        q_alpha: 1.0
+        DoubleQNetwork:
+          backbone:
+            type: "ConcatenateMLP"
+            args:
+              hidden_sizes:  
+                - ${env.total_size}
+                - 256
+                - 256
+              output_size: 1
+              activation: "relu"
+        VNetwork:
+          backbone:
+            type: "MultiLayerPerceptron"
+            args:
+              hidden_sizes:  
+                - ${env.total_size}
+                - 256
+                - 256
+              output_size: 1
+              activation: "relu"
+    GuidedPolicy:
+      model_type: ${algorithm.model_type}
+      model: ${model}
+  
+deploy:
+  device: ${device}
+  env:
+    env_id: ${env.id}
+    seed: ${env.seed}
+  t_span: 32
+
+project_name: "d4rl-${env.id}-${algorithm.type}-${algorithm.generative_model_type}"

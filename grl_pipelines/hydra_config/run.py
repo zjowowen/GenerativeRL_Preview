@@ -10,8 +10,8 @@ from omegaconf import DictConfig, OmegaConf
 
 
 @hydra.main(
-    config_path="/root/code/GenerativeRL_Preview/grl_pipelines/hydra_config/gmpo",
-    config_name="main",
+    config_path=" ",
+    config_name=" ",
 )
 def main(config: DictConfig):
     from grl.algorithms.gmpo import GMPOAlgorithm

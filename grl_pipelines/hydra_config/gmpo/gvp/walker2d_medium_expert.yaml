@@ -1,0 +1,25 @@
+defaults:
+  - ../default.yaml
+  - gvp.yaml
+  - _self_
+
+
+device:  "cuda:0"
+
+env:
+  id: "walker2d-medium-expert-v2"
+  action_size: 6
+  state_size: 17
+  total_size: 23
+  seed: 0
+  
+train:
+  parameter:
+    critic:
+      epochs: 2000
+    guided_policy:
+      batch_size: 4096
+      epochs: 10000
+      learning_rate: 1e-4
+      beta: 1.0
+      weight_clamp: 100
