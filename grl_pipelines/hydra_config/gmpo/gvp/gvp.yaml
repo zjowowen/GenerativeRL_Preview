@@ -1,0 +1,59 @@
+path:
+  type: "gvp"
+
+algorithm:
+  type: "GMPO"
+  model_type: "DiffusionModel"
+  generative_model_type: "GVP"
+  model_loss_type: "flow_matching"
+
+model:
+  device: ${device}
+  x_size: ${env.action_size}
+  solver:
+    type: "ODESolver"
+    args:
+      library: "torchdiffeq"
+  path: ${path}
+  reverse_path: ${path}
+  model:
+    type: "velocity_function"
+    args:
+      t_encoder:
+        type: "GaussianFourierProjectionTimeEncoder"
+        args:
+          embed_dim: 32
+          scale: 30.0
+      backbone:
+        type: "TemporalSpatialResidualNet"
+        args:
+          hidden_sizes: [512, 256, 128]
+          output_dim: ${env.action_size}
+          t_dim: 32
+          condition_dim: ${env.state_size}
+          condition_hidden_dim: 32
+          t_condition_hidden_dim: 128
+
+train:
+  parameter:
+    algorithm_type: ${algorithm.type}
+    behaviour_policy:
+      batch_size: 4096
+      learning_rate: 1e-4
+      epochs: 0
+    t_span: 32
+    critic:
+      batch_size: 4096
+      epochs: 12000
+      learning_rate: 3e-4
+      discount_factor: 0.99
+      update_momentum: 0.005
+      tau: 0.7
+      method: "iql"
+    evaluation:
+      eval: true
+      repeat: 5
+      interval: 100
+    checkpoint_path: "./${project_name}/checkpoint"
+    checkpoint_freq: 10
+

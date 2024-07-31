@@ -1,0 +1,29 @@
+defaults:
+  - ../default.yaml
+  - gvp.yaml
+  - _self_
+
+
+
+
+device:  "cuda:0"
+
+
+
+env:
+  id: "hopper-medium-replay-v2"
+  action_size: 3
+  state_size: 11
+  total_size: 14
+  seed: 0
+
+train:
+  parameter:
+    critic:
+      epochs: 5000
+    guided_policy:
+      batch_size: 4096
+      epochs: 10000
+      learning_rate: 1e-4
+      beta: 6.0
+      weight_clamp: 100

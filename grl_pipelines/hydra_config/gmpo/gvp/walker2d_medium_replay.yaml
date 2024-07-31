@@ -1,0 +1,24 @@
+defaults:
+  - ../default.yaml
+  - gvp.yaml
+  - _self_
+
+device:  "cuda:0"
+
+env:
+  id: "walker2d-medium-replay-v2"
+  action_size: 6
+  state_size: 17
+  total_size: 23
+  seed: 0
+  
+train:
+  parameter:
+    critic:
+      epochs: 5000
+    guided_policy:
+      batch_size: 4096
+      epochs: 10000
+      learning_rate: 1e-4
+      beta: 8.0
+      weight_clamp: 10000

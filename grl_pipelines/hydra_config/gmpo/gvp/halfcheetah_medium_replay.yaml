@@ -1,0 +1,24 @@
+defaults:
+  - ../default.yaml
+  - gvp.yaml
+  - _self_
+
+
+device:  "cuda:0"
+
+
+env:
+  id: "halfcheetah-medium-replay-v2"
+  action_size: 6
+  state_size: 17
+  total_size: 23
+  seed: 0
+
+train:
+  parameter:
+    guided_policy:
+      batch_size: 4096
+      epochs: 10000
+      learning_rate: 1e-4
+      beta: 4.0
+      weight_clamp: 400
