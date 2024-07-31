@@ -12,34 +12,34 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Overview: module code &mdash; GenerativeRL v0.0.1 documentation</title>
+  <title>grl.numerical_methods.ode &mdash; GenerativeRL v0.0.1 documentation</title>
   
 
-  <link rel="shortcut icon" href="../_static/images/favicon.ico" />
-  
-  
-
-  
-
-  
+  <link rel="shortcut icon" href="../../../_static/images/favicon.ico" />
   
   
 
   
 
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <!-- <link rel="stylesheet" href="../_static/pygments.css" type="text/css" /> -->
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/css/style.css" type="text/css" />
-  <link rel="index" title="Index" href="../genindex.html" />
-  <link rel="search" title="Search" href="../search.html" />
-    <link href="../_static/css/style.css" rel="stylesheet" type="text/css">
+  
+  
+  
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!-- <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/style.css" type="text/css" />
+  <link rel="index" title="Index" href="../../../genindex.html" />
+  <link rel="search" title="Search" href="../../../search.html" />
+    <link href="../../../_static/css/style.css" rel="stylesheet" type="text/css">
 
 
   
-  <script src="../_static/js/modernizr.min.js"></script>
+  <script src="../../../_static/js/modernizr.min.js"></script>
   <script>
     MathJax = {
         chtml: {
@@ -55,12 +55,12 @@
 
   <!-- Preload the theme fonts -->
 
-<link rel="preload" href="../_static/fonts/FreightSans/freight-sans-book.woff2" as="font" type="font/woff2" crossorigin="anonymous">
-<link rel="preload" href="../_static/fonts/FreightSans/freight-sans-medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
-<link rel="preload" href="../_static/fonts/IBMPlexMono/IBMPlexMono-Medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
-<link rel="preload" href="../_static/fonts/FreightSans/freight-sans-bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
-<link rel="preload" href="../_static/fonts/FreightSans/freight-sans-medium-italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
-<link rel="preload" href="../_static/fonts/IBMPlexMono/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../_static/fonts/FreightSans/freight-sans-book.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../_static/fonts/FreightSans/freight-sans-medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../_static/fonts/IBMPlexMono/IBMPlexMono-Medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../_static/fonts/FreightSans/freight-sans-bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../_static/fonts/FreightSans/freight-sans-medium-italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../_static/fonts/IBMPlexMono/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
 
 <!-- Preload the katex fonts -->
 
@@ -200,7 +200,7 @@
 
 
 <div role="search">
-  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search Docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
@@ -218,19 +218,19 @@
         
         <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials/installation/index.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials/quick_start/index.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/quick_start/index.html">Quick Start</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../api_doc/agents/index.html">grl.agents</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../api_doc/algorithms/index.html">grl.algorithms</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../api_doc/datasets/index.html">grl.datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../api_doc/generative_models/index.html">grl.generative_models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../api_doc/neural_network/index.html">grl.neural_network</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../api_doc/numerical_methods/index.html">grl.numerical_methods</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../api_doc/rl_modules/index.html">grl.rl_modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../api_doc/utils/index.html">grl.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_doc/agents/index.html">grl.agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_doc/algorithms/index.html">grl.algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_doc/datasets/index.html">grl.datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_doc/generative_models/index.html">grl.generative_models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_doc/neural_network/index.html">grl.neural_network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_doc/numerical_methods/index.html">grl.numerical_methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_doc/rl_modules/index.html">grl.rl_modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_doc/utils/index.html">grl.utils</a></li>
 </ul>
 
         
@@ -263,13 +263,15 @@
   <ul class="pytorch-breadcrumbs">
     
       <li>
-        <a href="../index.html">
+        <a href="../../../index.html">
             Docs
         </a> &gt;
       </li>
 
         
-      <li>Overview: module code</li>
+          <li><a href="../../index.html">Module code</a> &gt;</li>
+        
+      <li>grl.numerical_methods.ode</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
@@ -295,30 +297,33 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
               <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
                 
-  <h1>All modules for which code is available</h1>
-<ul><li><a href="grl/agents/gm.html">grl.agents.gm</a></li>
-<li><a href="grl/agents/qgpo.html">grl.agents.qgpo</a></li>
-<li><a href="grl/agents/srpo.html">grl.agents.srpo</a></li>
-<li><a href="grl/datasets/gp.html">grl.datasets.gp</a></li>
-<li><a href="grl/datasets/qgpo.html">grl.datasets.qgpo</a></li>
-<li><a href="grl/generative_models/conditional_flow_model/independent_conditional_flow_model.html">grl.generative_models.conditional_flow_model.independent_conditional_flow_model</a></li>
-<li><a href="grl/generative_models/conditional_flow_model/optimal_transport_conditional_flow_model.html">grl.generative_models.conditional_flow_model.optimal_transport_conditional_flow_model</a></li>
-<li><a href="grl/generative_models/diffusion_model/diffusion_model.html">grl.generative_models.diffusion_model.diffusion_model</a></li>
-<li><a href="grl/generative_models/diffusion_model/energy_conditional_diffusion_model.html">grl.generative_models.diffusion_model.energy_conditional_diffusion_model</a></li>
-<li><a href="grl/neural_network.html">grl.neural_network</a></li>
-<ul><li><a href="grl/neural_network/transformers/dit.html">grl.neural_network.transformers.dit</a></li>
-</ul><li><a href="grl/numerical_methods/numerical_solvers/dpm_solver.html">grl.numerical_methods.numerical_solvers.dpm_solver</a></li>
-<li><a href="grl/numerical_methods/numerical_solvers/ode_solver.html">grl.numerical_methods.numerical_solvers.ode_solver</a></li>
-<li><a href="grl/numerical_methods/numerical_solvers/sde_solver.html">grl.numerical_methods.numerical_solvers.sde_solver</a></li>
-<li><a href="grl/numerical_methods/ode.html">grl.numerical_methods.ode</a></li>
-<li><a href="grl/numerical_methods/probability_path.html">grl.numerical_methods.probability_path</a></li>
-<li><a href="grl/numerical_methods/sde.html">grl.numerical_methods.sde</a></li>
-<li><a href="grl/rl_modules/simulators/gym_env_simulator.html">grl.rl_modules.simulators.gym_env_simulator</a></li>
-<li><a href="grl/rl_modules/value_network/one_shot_value_function.html">grl.rl_modules.value_network.one_shot_value_function</a></li>
-<li><a href="grl/rl_modules/value_network/q_network.html">grl.rl_modules.value_network.q_network</a></li>
-<li><a href="grl/rl_modules/value_network/value_network.html">grl.rl_modules.value_network.value_network</a></li>
-<li><a href="grl/utils.html">grl.utils</a></li>
-</ul>
+  <h1>Source code for grl.numerical_methods.ode</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
+
+
+<div class="viewcode-block" id="ODE"><a class="viewcode-back" href="../../../api_doc/numerical_methods/index.html#grl.numerical_methods.ODE">[docs]</a><span class="k">class</span> <span class="nc">ODE</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Overview:</span>
+<span class="sd">        Base class for ordinary differential equations.</span>
+<span class="sd">        The ODE is defined as:</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            dx = f(x, t)dt</span>
+
+<span class="sd">        where f(x, t) is the drift term.</span>
+
+<span class="sd">    Interfaces:</span>
+<span class="sd">        ``__init__``</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ODE.__init__"><a class="viewcode-back" href="../../../api_doc/numerical_methods/index.html#grl.numerical_methods.ODE.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">drift</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">drift</span> <span class="o">=</span> <span class="n">drift</span></div></div>
+</pre></div>
 
               </article>
               
@@ -362,20 +367,20 @@
   
 
   
-  <script type="text/javascript" id="documentation_options" data-url_root="../"
-    src="../_static/documentation_options.js"></script>
-  <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-  <script src="../_static/doctools.js"></script>
-  <script src="../_static/sphinx_highlight.js"></script>
+  <script type="text/javascript" id="documentation_options" data-url_root="../../../"
+    src="../../../_static/documentation_options.js"></script>
+  <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+  <script src="../../../_static/doctools.js"></script>
+  <script src="../../../_static/sphinx_highlight.js"></script>
   <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
   
 
   
 
-  <script type="text/javascript" src="../_static/js/vendor/popper.min.js"></script>
-  <script type="text/javascript" src="../_static/js/vendor/bootstrap.min.js"></script>
+  <script type="text/javascript" src="../../../_static/js/vendor/popper.min.js"></script>
+  <script type="text/javascript" src="../../../_static/js/vendor/bootstrap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
-  <script type="text/javascript" src="../_static/js/theme.js"></script>
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
   <script type="text/javascript">
     jQuery(function () {
@@ -414,7 +419,7 @@
 
   <!-- End Mobile Menu -->
 
-  <script type="text/javascript" src="../_static/js/vendor/anchor.min.js"></script>
+  <script type="text/javascript" src="../../../_static/js/vendor/anchor.min.js"></script>
 
   <script type="text/javascript">
     $(document).ready(function () {
