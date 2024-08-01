@@ -37,7 +37,7 @@ train:
             type: "MultiLayerPerceptron"
             args:
               hidden_sizes:  
-                - ${env.total_size}
+                - ${env.state_size}
                 - 256
                 - 256
               output_size: 1
