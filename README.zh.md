@@ -36,11 +36,11 @@
 
 |                                                                                     | [Score Matching](https://ieeexplore.ieee.org/document/6795935) | [Flow Matching](https://arxiv.org/abs/2210.02747) |
 |-------------------------------------------------------------------------------------| -------------------------------------------------------------- | ------------------------------------------------- |
-| **扩散模型**   [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/18yHUAmcMh_7xq2U6TBCtcLKX2y4YvNyk]    |               |               |
+| **扩散模型**   [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/18yHUAmcMh_7xq2U6TBCtcLKX2y4YvNyk)    |               |               |
 | [Linear VP SDE](https://arxiv.org/abs/2011.13456)                                   | ✔                                                              | ✔                                                |
 | [Generalized VP SDE](https://arxiv.org/abs/2209.15571)                              | ✔                                                              | ✔                                                |
 | [Linear SDE](https://arxiv.org/abs/2206.00364)                                      | ✔                                                              | ✔                                                |
-| **流模型**    [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1vrxREVXKsSbnsv9G2CnKPVvrbFZleElI]    |               |                |
+| **流模型**    [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1vrxREVXKsSbnsv9G2CnKPVvrbFZleElI)    |               |                |
 | [Independent Conditional Flow Matching](https://arxiv.org/abs/2302.00482)           | 🚫                                                             | ✔                                                 |
 | [Optimal Transport Conditional Flow Matching](https://arxiv.org/abs/2302.00482)     | 🚫                                                             | ✔                                                 |
 
@@ -50,8 +50,8 @@
 |---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
 | [QGPO](https://arxiv.org/abs/2304.12824)            | ✔                                                                                                                                                                    |  🚫                   |
 | [SRPO](https://arxiv.org/abs/2310.07297)            | ✔                                                                                                                                                                    |  🚫                   |
-| GMPO                                                | ✔  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1A79ueOdLvTfrytjOPyfxb6zSKXi1aePv]           | ✔                     |
-| GMPG                                                | ✔  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1hhMvQsrV-mruvpSCpmnsOxmCb6bMPOBq]           | ✔                     |
+| GMPO                                                | ✔  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1A79ueOdLvTfrytjOPyfxb6zSKXi1aePv)           | ✔                     |
+| GMPG                                                | ✔  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1hhMvQsrV-mruvpSCpmnsOxmCb6bMPOBq)           | ✔                     |
 
 ## 安装
 
