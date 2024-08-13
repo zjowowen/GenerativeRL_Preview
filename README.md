@@ -17,6 +17,7 @@ For stable version of **GenerativeRL**, please visit [GenerativeRL](https://gith
 - [Integrated Algorithms](#integrated-algorithms)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
+- [Tutorials](#tutorials)
 
 ## Features
 
