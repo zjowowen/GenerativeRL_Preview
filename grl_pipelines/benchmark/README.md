@@ -306,4 +306,4 @@ if __name__ == "__main__":
     gp_pipeline(config)
 ```
 
-For evaluation performance, youhave to register the environment in the `gym` library. You can refer to the [gym documentation](https://www.gymlibrary.dev/) for more information.
+For performance evaluation, youhave to register the environment in the `gym` library. You can refer to the [gym documentation](https://www.gymlibrary.dev/) for more information.
