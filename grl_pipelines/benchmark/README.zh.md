@@ -96,6 +96,8 @@ done_np = done.numpy()
 np.savez('data.npz', obs=obs_np, action=action_np, next_obs=next_obs_np, reward=reward_np, done=done_np)
 ```
 
+一个可用的 LunarLanderContinuous-v2 数据集可以从 [这里](https://drive.google.com/file/d/1YnT-Oeu9LPKuS_ZqNc5kol_pMlJ1DwyG/view?usp=drive_link) 下载。
+
 ### 步骤 2: 运行实验
 
 运行以下命令以开展实验：
@@ -105,9 +107,9 @@ np.savez('data.npz', obs=obs_np, action=action_np, next_obs=next_obs_np, reward=
 import torch
 from easydict import EasyDict
 
-env_id = "gym-env-id" #TODO: 指定环境 ID
-action_size = 6 #TODO: 指定动作空间大小
-state_size = 17 #TODO: 指定状态空间大小
+env_id = "LunarLanderContinuous-v2" #TODO: 指定环境 ID
+action_size = 2 #TODO: 指定动作空间大小
+state_size = 8 #TODO: 指定状态空间大小
 algorithm_type = "GMPO" #TODO: 指定算法类型
 solver_type = "ODESolver" #TODO: 指定求解器类型
 model_type = "DiffusionModel" #TODO: 指定模型类型

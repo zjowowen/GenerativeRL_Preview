@@ -96,6 +96,8 @@ done_np = done.numpy()
 np.savez('data.npz', obs=obs_np, action=action_np, next_obs=next_obs_np, reward=reward_np, done=done_np)
 ```
 
+An example of a dataset for the LunarLanderContinuous-v2 environment is provided [here](https://drive.google.com/file/d/1YnT-Oeu9LPKuS_ZqNc5kol_pMlJ1DwyG/view?usp=drive_link).
+
 ### Step 2: Run the benchmark experiment
 
 Run the following command to start the benchmark experiment:
@@ -104,9 +106,9 @@ Run the following command to start the benchmark experiment:
 import torch
 from easydict import EasyDict
 
-env_id = "gym-env-id" #TODO: Specify the environment ID
-action_size = 6 #TODO: Specify the action size
-state_size = 17 #TODO: Specify the state size
+env_id = "LunarLanderContinuous-v2" #TODO: Specify the environment ID
+action_size = 2 #TODO: Specify the action size
+state_size = 8 #TODO: Specify the state size
 algorithm_type = "GMPO" #TODO: Specify the algorithm type
 solver_type = "ODESolver" #TODO: Specify the solver type
 model_type = "DiffusionModel" #TODO: Specify the model type
