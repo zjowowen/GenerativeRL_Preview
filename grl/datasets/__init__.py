@@ -17,6 +17,8 @@ from .gp import (
     GPTensorDictDataset,
     GPD4RLTensorDictDataset,
     GPCustomizedTensorDictDataset,
+    GPDMcontrolTensorDictDataset,
+
 )
 from .minari_dataset import MinariDataset
 
@@ -38,6 +40,7 @@ DATASETS = {
     "GPTensorDictDataset".lower(): GPTensorDictDataset,
     "GPD4RLTensorDictDataset".lower(): GPD4RLTensorDictDataset,
     "GPCustomizedTensorDictDataset".lower(): GPCustomizedTensorDictDataset,
+    "GPDMcontrolTensorDictDataset".lower():GPDMcontrolTensorDictDataset,
 }
 
 

@@ -654,59 +654,145 @@ class GPCustomizedTensorDictDataset(GPTensorDictDataset):
             )
         )
 
-class GPDMcontrolTensorDictDataset(GPTensorDictDataset):
+# class GPDMcontrolTensorDictDataset(torch.utils.data.Dataset):
+#     def __init__(
+#         self,
+#         file_paths: list = None,
+#     ):
+#         self.states_list = []
+#         self.next_states_list = []
+#         self.actions_list = []
+#         self.rewards_list = []
+        
+#         for file_path in file_paths:
+#             data = torch.load(file_path)
+#             obs_keys = list(data[0]["s"].keys())
+            
+#             state_dicts = {key: [] for key in obs_keys}
+#             next_states_dicts = {key: [] for key in obs_keys}
+            
+#             for item in data:
+#                 for key in obs_keys:
+#                     state_dicts[key].append(torch.tensor(item["s"][key], dtype=torch.float32))
+#                     next_states_dicts[key].append(torch.tensor(item["s_"][key], dtype=torch.float32))
+                    
+#                 self.actions_list.append(torch.tensor(item["a"], dtype=torch.float32))
+#                 self.rewards_list.append(torch.tensor(item["r"], dtype=torch.float32).unsqueeze(0))
+            
+#             self.states_list.append({key: torch.stack(state_dicts[key]) for key in obs_keys})
+#             self.next_states_list.append({key: torch.stack(next_states_dicts[key]) for key in obs_keys})
+
+#         # Concatenate all tensors along the first dimension
+#         self.actions = torch.cat(self.actions_list, dim=0)
+#         self.rewards = torch.cat(self.rewards_list, dim=0)
+#         self.states = {key: torch.cat([s[key] for s in self.states_list], dim=0) for key in obs_keys}
+#         self.next_states = {key: torch.cat([s[key] for s in self.next_states_list], dim=0) for key in obs_keys}
+
+#         # The length of the dataset
+#         self.length = self.actions.shape[0]
+        
+#         def __len__(self):
+#             return self.length
+    
+#         def __getitem__(self, index):
+#         # Return a dictionary of the tensors at the given index
+#             state_tensordict = TensorDict({key: self.states[key][index] for key in self.states},batch_size=[])
+#             next_state_tensordict = TensorDict(
+#                 {key: self.next_states[key][index] for key in self.next_states},
+#                 batch_size=[]
+#             )
+#             return TensorDict({
+#                 "s": state_tensordict,
+#                 "s_": next_state_tensordict,
+#                 "a": self.actions[index],
+#                 "r": self.rewards[index],
+#             }, batch_size=[])
+
+
+class GPDMcontrolTensorDictDataset(torch.utils.data.Dataset):
     def __init__(
         self,
-        action_augment_num: int = None,
-        tensor_data_path: str = None,
-        file_paths: list = None,
+        directory: str,
     ):
-        state_dicts = {}
+        import os
+        self.state_dicts = {}
+        self.next_states_dicts = {}
         actions_list = []
-        next_states_dicts = {}
         rewards_list = []
-        for file_path in file_paths:
-            data = torch.load(file_path)
+        npy_files = []
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                if file.endswith('.npy'):
+                    npy_files.append(os.path.join(root, file))
+        for file_path in npy_files:
+            data = np.load(file_path, allow_pickle=True)
             obs_keys = list(data[0]["s"].keys())
             
             for key in obs_keys:
-                if key not in state_dicts:
-                    state_dicts[key] = []
-                    next_states_dicts[key] = []
-                
+                if key not in self.state_dicts:
+                    self.state_dicts[key] = []
+                    self.next_states_dicts[key] = []
+        
                 state_values = np.array([item["s"][key] for item in data], dtype=np.float32)
                 next_state_values = np.array([item["s_"][key] for item in data], dtype=np.float32)
                 
-                state_dicts[key].append(torch.tensor(state_values))
-                next_states_dicts[key].append(torch.tensor(next_state_values))
-            
+                self.state_dicts[key].append(torch.tensor(state_values))
+                self.next_states_dicts[key].append(torch.tensor(next_state_values))
+                    
             actions_values = np.array([item["a"] for item in data], dtype=np.float32)
             rewards_values = np.array([item["r"] for item in data], dtype=np.float32).reshape(-1, 1)
-            
             actions_list.append(torch.tensor(actions_values))
             rewards_list.append(torch.tensor(rewards_values))
-
-        # Concatenate the tensors along the first dimension
-        actions = torch.cat(actions_list, dim=0)
-        rewards = torch.cat(rewards_list, dim=0)
-        state_tensors = {key: torch.cat(state_dicts[key], dim=0) for key in obs_keys}
-        next_state_tensors = {key: torch.cat(next_states_dicts[key], dim=0) for key in obs_keys}
-
-        # Create TensorDicts
-        state_tensordict = TensorDict(state_tensors, batch_size=[state_tensors[obs_keys[0]].shape[0]])
-        next_state_tensordict = TensorDict(next_state_tensors, batch_size=[next_state_tensors[obs_keys[0]].shape[0]])
-
-        # Combine everything into a final TensorDict
-        final_tensordict = TensorDict({
-            "actions": actions,
-            "rewards": rewards,
-            "states": state_tensordict,
-            "next_states": next_state_tensordict
-        }, batch_size=[actions.shape[0]])
-        self.storage = LazyTensorStorage(max_size=self.len)
-        self.storage.set(actions.shape[0],final_tensordict)
-
-
-
+            
+        # Concatenate all tensors along the first dimension
+        self.state = {key: torch.cat(self.state_dicts[key], dim=0) for key in obs_keys}
+        self.next_states = {key: torch.cat(self.next_states_dicts[key], dim=0) for key in obs_keys}
+        self.actions = torch.cat(actions_list, dim=0)
+        self.rewards = torch.cat(rewards_list, dim=0)
         
+    def __len__(self):
+        return self.actions.shape[0]
+    
+    def __getitem__(self, index):
+        # Return a dictionary of the arrays at the given index
+        state_dict = {key: value[index] for key, value in self.state.items()}
+        next_state_dict = {key: value[index] for key, value in self.next_states.items()}
+        return {
+            "s": state_dict ,
+            "s_": next_state_dict,
+            "a": self.actions[index],
+            "r": self.rewards[index],
+        }
+    
+from torch.utils.data import DataLoader
+import torch.nn as nn
+class MyModule(nn.Module):
+    def __init__(self, input_dims, output_dim):
+        super(MyModule, self).__init__()
+        self.fc1 = nn.Linear(input_dims, 512)  
+        self.fc2 = nn.Linear(512, 512)  
+        self.fc3 = nn.Linear(512, output_dim)  # 修正：最后一层输出维度为 output_dim
+
+        self.relu = nn.ReLU()  # ReLU 激活函数
+
+    def forward(self, x: dict) -> torch.Tensor:
+        concatenated_tensor = torch.cat([v for v in x.values()], dim=1)  
+        output = self.relu(self.fc1(concatenated_tensor))  
+        output = self.relu(self.fc2(output))  
+        output = self.fc3(output)  # 最后一层不需要 ReLU
         
+        return output
+
+if __name__ == '__main__':
+    dataset = GPDMcontrolTensorDictDataset("/root/data")
+    
+    dataloader = DataLoader(dataset, batch_size=32, shuffle=True, num_workers=4)
+    
+    for batch in dataloader:
+        states = batch['s']
+        if isinstance(states, dict):
+            batch_size = list(states.values())[0].shape[0]
+            states = TensorDict(states, batch_size=[batch_size])
+        next_states = batch['s_']
+        actions = batch['a']
+        rewards = batch['r']

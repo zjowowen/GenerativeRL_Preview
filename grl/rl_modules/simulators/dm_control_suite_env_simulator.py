@@ -4,7 +4,7 @@ from dm_control import suite
 import numpy as np
 import torch 
 
-class dm_control_suite_EnvSimulator:
+class DmControlEnvSimulator:
     """
     Overview:
         A simple gym environment simulator in GenerativeRL.
@@ -309,3 +309,52 @@ class dm_control_suite_EnvSimulator:
             )
 
         return eval_results
+
+# import torch
+# import numpy as np
+# from tensordict import TensorDict
+
+# file_paths = ["/root/data/dataset_batch_1.pt", "/root/data/dataset_batch_2.pt"]
+# state_dicts = {}
+# actions_list = []
+# next_states_dicts = {}
+# rewards_list = []
+
+# for file_path in file_paths:
+#     data = torch.load(file_path)
+#     obs_keys = list(data[0]["s"].keys())
+    
+#     for key in obs_keys:
+#         if key not in state_dicts:
+#             state_dicts[key] = []
+#             next_states_dicts[key] = []
+        
+#         state_values = np.array([item["s"][key] for item in data], dtype=np.float32)
+#         next_state_values = np.array([item["s_"][key] for item in data], dtype=np.float32)
+        
+#         state_dicts[key].append(torch.tensor(state_values))
+#         next_states_dicts[key].append(torch.tensor(next_state_values))
+    
+#     actions_values = np.array([item["a"] for item in data], dtype=np.float32)
+#     rewards_values = np.array([item["r"] for item in data], dtype=np.float32).reshape(-1, 1)
+    
+#     actions_list.append(torch.tensor(actions_values))
+#     rewards_list.append(torch.tensor(rewards_values))
+
+# # Concatenate the tensors along the first dimension
+# actions = torch.cat(actions_list, dim=0)
+# rewards = torch.cat(rewards_list, dim=0)
+# state_tensors = {key: torch.cat(state_dicts[key], dim=0) for key in obs_keys}
+# next_state_tensors = {key: torch.cat(next_states_dicts[key], dim=0) for key in obs_keys}
+
+# # Create TensorDicts
+# state_tensordict = TensorDict(state_tensors, batch_size=[state_tensors[obs_keys[0]].shape[0]])
+# next_state_tensordict = TensorDict(next_state_tensors, batch_size=[next_state_tensors[obs_keys[0]].shape[0]])
+
+# # Combine everything into a final TensorDict
+# final_tensordict = TensorDict({
+#     "actions": actions,
+#     "rewards": rewards,
+#     "states": state_tensordict,
+#     "next_states": next_state_tensordict
+# }, batch_size=[actions.shape[0]])

@@ -1,7 +1,7 @@
 import os
 import copy
 from typing import List, Tuple, Union
-from torchrl.data import LazyTensorStorage
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -605,6 +605,7 @@ class GMPOAlgorithm:
                 if hasattr(config, "dataset")
                 else self.dataset
             )
+
             # ---------------------------------------
             # Customized training code ↓
             # ---------------------------------------
@@ -765,137 +766,10 @@ class GMPOAlgorithm:
 
                 return evaluation_results
 
-            def collect(
-                model,
-                num_steps,
-                guidance_scale=1.0,
-                random_policy=False,
-                random_ratio=0.0
-            ):
-                if random_policy:
-                    return self.simulator.collect_steps(
-                        policy=None, num_steps=num_steps, random_policy=True
-                    )
-                else:
-                    def policy(obs: np.ndarray) -> np.ndarray:
-                        obs = torch.tensor(
-                            obs,
-                            dtype=torch.float32,
-                            device=config.model.GPPolicy.device,
-                        ).unsqueeze(0)
-                        action = (
-                            model.sample(
-                                condition=obs,
-                                t_span=(
-                                    torch.linspace(0.0, 1.0, config.parameter.t_span).to(
-                                        config.model.GPPolicy.device
-                                    )
-                                    if hasattr(config.parameter, "t_span")
-                                    and config.parameter.t_span is not None
-                                    else None
-                                ),
-                            )
-                            .squeeze(0)
-                            .cpu()
-                            .detach()
-                            .numpy()
-                        )
-                        return action
-
-                        # randomly replace some item of action with random action
-                        if np.random.rand() < random_ratio:
-                            # select random i from 0 to action.shape[0]
-                            i = np.random.randint(0, action.shape[0])
-                            # randomly select a value from -1 to 1
-                            action[i] = np.random.rand() * 2 - 1
-                        return action
-                    return self.simulator.collect_steps(
-                        policy=policy, num_steps=num_steps
-                    )
             # ---------------------------------------
             # behavior training code ↓
             # ---------------------------------------
-            # 收集数据
-            data = collect(
-                self.model["GPPolicy"].guided_model,
-                num_steps=config.parameter.online_rl.collect_steps,
-                guidance_scale=1.0,
-                random_policy=False,
-                random_ratio=0.01,
-            )
-            # 如果 data 不是 TensorDict，则转换
-            if not isinstance(data, TensorDict):
-                def onlinedatatoTensordict(data,action_augment_num):
-                    if isinstance(data, list):
-                        # Assuming data is a list of dictionaries
-                        states = []
-                        actions = []
-                        next_states = []
-                        rewards = []
-                        is_finished = []
 
-                        for item in data:
-                            states.append(torch.from_numpy(item["obs"]).float())
-                            actions.append(torch.from_numpy(item["action"]).float())
-                            next_states.append(torch.from_numpy(item["next_obs"]).float())
-                            rewards.append(torch.tensor(item["reward"]).float().unsqueeze(0))
-                            is_finished.append(torch.tensor(float(item["done"])).float().unsqueeze(0))
-
-                        self.states = torch.stack(states)
-                        self.actions = torch.stack(actions)
-                        self.next_states = torch.stack(next_states)
-                        self.rewards = torch.stack(rewards)
-                        self.is_finished = torch.stack(is_finished)
-                        
-                        # Reward tuning code goes here...
-
-                        self.len = self.states.shape[0]
-                        self.action_augment_num = action_augment_num
-                        self.storage = LazyTensorStorage(max_size=10000)
-
-                        # Storing the data
-                        if self.action_augment_num:
-                            self.storage.set(
-                                range(self.len), TensorDict(
-                                    {
-                                        "s": self.states,
-                                        "a": self.actions,
-                                        "r": self.rewards,
-                                        "s_": self.next_states,
-                                        "d": self.is_finished,
-                                        "fake_a": torch.zeros_like(self.actions).unsqueeze(1).repeat_interleave(self.action_augment_num, dim=1),
-                                        "fake_a_": torch.zeros_like(self.actions).unsqueeze(1).repeat_interleave(self.action_augment_num, dim=1),
-                                    },
-                                    batch_size=[self.len],
-                                )
-                            )
-                        else:
-                            self.storage.set(
-                                range(self.len), TensorDict(
-                                    {
-                                        "s": self.states,
-                                        "a": self.actions,
-                                        "r": self.rewards,
-                                        "s_": self.next_states,
-                                        "d": self.is_finished,
-                                    },
-                                    batch_size=[self.len],
-                                )
-                            )
-                        return self.storage
-                    else:
-                        raise ValueError("Expected data to be a list of dictionaries")               
-                
-                # 将 data 转换为 TensorDict 并存储在 storage 中
-            tensor_data_strorge = onlinedatatoTensordict(data,False)
-
-            replay_buffer=TensorDictReplayBuffer(
-                storage=tensor_data_strorge,
-                batch_size=config.parameter.behaviour_policy.batch_size,
-                sampler=SamplerWithoutReplacement(),
-                prefetch=10,
-                pin_memory=True,
-            )
             # ---------------------------------------
             # behavior training code ↑
             # ---------------------------------------
@@ -911,6 +785,7 @@ class GMPOAlgorithm:
 
             self.model["GPPolicy"].base_model.eval()
             if data_augmentation:
+
                 fake_actions = generate_fake_action(
                     self.model["GPPolicy"],
                     self.dataset.states[:].to(config.model.GPPolicy.device),
@@ -930,21 +805,7 @@ class GMPOAlgorithm:
             # ---------------------------------------
             # make fake action ↑
             # ---------------------------------------
-            if not self.guided_policy_train_epoch > 0:
-                if (
-                    hasattr(config.parameter.guided_policy, "copy_from_basemodel")
-                    and config.parameter.guided_policy.copy_from_basemodel
-                ):
-                    self.model["GPPolicy"].guided_model.model.load_state_dict(
-                        self.model["GPPolicy"].base_model.model.state_dict()
-                    )
 
-            guided_policy_optimizer = torch.optim.Adam(
-                self.model["GPPolicy"].guided_model.parameters(),
-                lr=config.parameter.guided_policy.learning_rate,
-            )
-            guided_policy_train_iter = 0
-            beta = config.parameter.guided_policy.beta
             # ---------------------------------------
             # critic training code ↓
             # ---------------------------------------
@@ -965,13 +826,16 @@ class GMPOAlgorithm:
             #     prefetch=10,
             #     pin_memory=True,
             # )
+            from torch.utils.data import DataLoader
+            dataloader = DataLoader(self.dataset, batch_size=64, shuffle=True)
+
             critic_train_iter = 0
             for epoch in track(
-                range(config.parameter.online_rl.iterations), description="Online RL iteration"
+                range(config.parameter.critic.epochs), description="Critic training"
             ):
                 if self.critic_train_epoch >= epoch:
                     continue
-                
+
                 counter = 1
 
                 v_loss_sum = 0.0
@@ -979,39 +843,11 @@ class GMPOAlgorithm:
                 q_loss_sum = 0.0
                 q_sum = 0.0
                 q_target_sum = 0.0
-                guided_policy_loss_sum = 0.0
-                if config.parameter.algorithm_type == "GMPO":
-                    weight_sum = 0.0
-                    clamped_weight_sum = 0.0
-                    clamped_ratio_sum = 0.0
-                elif config.parameter.algorithm_type in [
-                    "GMPO_softmax_static",
-                    "GMPO_softmax_sample",
-                ]:
-                    energy_sum = 0.0
-                    relative_energy_sum = 0.0
-                    matching_loss_sum = 0.0
-
-
-                # ---------------------------------------
-                # Data collection code ↓
-                # ---------------------------------------
-                data = collect(
-                    self.model["GPPolicy"].guided_model,
-                    num_steps=config.parameter.online_rl.collect_steps,
-                    guidance_scale=1.0,
-                    random_policy=False,
-                    random_ratio=0.01,
-                )
-                tensor_data_strorge = onlinedatatoTensordict(data,False)
-
-                for idx in range(tensor_data_strorge.max_size):
-                    data = tensor_data_strorge.get(idx)
-                    if data is not None:
-                        replay_buffer.add(data)
-
-                for index, data in enumerate(replay_buffer):
-
+                # for index, data in enumerate(replay_buffer):
+                for data in dataloader:
+                    if isinstance(data["s"], dict):
+                        batch_size = list(data["s"].values())[0].shape[0]
+                        data["s"] = TensorDict(data["s"], batch_size=[batch_size])
                     v_loss, next_v = self.model["GPPolicy"].critic.v_loss(
                         state=data["s"].to(config.model.GPPolicy.device),
                         action=data["a"].to(config.model.GPPolicy.device),
@@ -1055,6 +891,91 @@ class GMPOAlgorithm:
 
                     critic_train_iter += 1
                     self.critic_train_epoch = epoch
+
+                wandb.log(
+                    data=dict(v_loss=v_loss_sum / counter, v=v_sum / counter),
+                    commit=False,
+                )
+
+                wandb.log(
+                    data=dict(
+                        critic_train_iter=critic_train_iter,
+                        critic_train_epoch=epoch,
+                        q_loss=q_loss_sum / counter,
+                        q=q_sum / counter,
+                        q_target=q_target_sum / counter,
+                    ),
+                    commit=True,
+                )
+
+                if (
+                    hasattr(config.parameter, "checkpoint_freq")
+                    and (epoch + 1) % config.parameter.checkpoint_freq == 0
+                ):
+                    save_checkpoint(
+                        self.model,
+                        iteration=critic_train_iter,
+                        model_type="critic_model",
+                    )
+            # ---------------------------------------
+            # critic training code ↑
+            # ---------------------------------------
+
+            # ---------------------------------------
+            # guided policy training code ↓
+            # ---------------------------------------
+
+            if not self.guided_policy_train_epoch > 0:
+                if (
+                    hasattr(config.parameter.guided_policy, "copy_from_basemodel")
+                    and config.parameter.guided_policy.copy_from_basemodel
+                ):
+                    self.model["GPPolicy"].guided_model.model.load_state_dict(
+                        self.model["GPPolicy"].base_model.model.state_dict()
+                    )
+
+            guided_policy_optimizer = torch.optim.Adam(
+                self.model["GPPolicy"].guided_model.parameters(),
+                lr=config.parameter.guided_policy.learning_rate,
+            )
+            guided_policy_train_iter = 0
+            beta = config.parameter.guided_policy.beta
+            
+            # replay_buffer=TensorDictReplayBuffer(
+            #     storage=self.dataset.storage,
+            #     batch_size=config.parameter.guided_policy.batch_size,
+            #     sampler=SamplerWithoutReplacement(),
+            #     prefetch=10,
+            #     pin_memory=True,
+            # )
+            
+            for epoch in track(
+                range(config.parameter.guided_policy.epochs),
+                description="Guided policy training",
+            ):
+
+                if self.guided_policy_train_epoch >= epoch:
+                    continue
+
+                counter = 1
+                guided_policy_loss_sum = 0.0
+                if config.parameter.algorithm_type == "GMPO":
+                    weight_sum = 0.0
+                    clamped_weight_sum = 0.0
+                    clamped_ratio_sum = 0.0
+                elif config.parameter.algorithm_type in [
+                    "GMPO_softmax_static",
+                    "GMPO_softmax_sample",
+                ]:
+                    energy_sum = 0.0
+                    relative_energy_sum = 0.0
+                    matching_loss_sum = 0.0
+
+                # for index, data in enumerate(replay_buffer):
+                for data in dataloader:
+                    if isinstance(data["s"], dict):
+                        batch_size = list(data["s"].values())[0].shape[0]
+                        data["s"] = TensorDict(data["s"], batch_size=[batch_size])
                     if config.parameter.algorithm_type == "GMPO":
                         (
                             guided_policy_loss,
@@ -1156,31 +1077,6 @@ class GMPOAlgorithm:
                     guided_policy_train_iter += 1
                     self.guided_policy_train_epoch = epoch
 
-                wandb.log(
-                    data=dict(v_loss=v_loss_sum / counter, v=v_sum / counter),
-                    commit=False,
-                )
-
-                wandb.log(
-                    data=dict(
-                        critic_train_iter=critic_train_iter,
-                        critic_train_epoch=epoch,
-                        q_loss=q_loss_sum / counter,
-                        q=q_sum / counter,
-                        q_target=q_target_sum / counter,
-                    ),
-                    commit=True,
-                )
-
-                if (
-                    hasattr(config.parameter, "checkpoint_freq")
-                    and (epoch + 1) % config.parameter.checkpoint_freq == 0
-                ):
-                    save_checkpoint(
-                        self.model,
-                        iteration=critic_train_iter,
-                        model_type="critic_model",
-                    )
                 if (
                     config.parameter.evaluation.eval
                     and hasattr(config.parameter.evaluation, "interval")
@@ -1246,13 +1142,6 @@ class GMPOAlgorithm:
                         iteration=guided_policy_train_iter,
                         model_type="guided_model",
                     )
-            # ---------------------------------------
-            # critic training code ↑
-            # ---------------------------------------
-
-            # ---------------------------------------
-            # guided policy training code ↓
-            # ---------------------------------------
 
             # ---------------------------------------
             # guided policy training code ↑
