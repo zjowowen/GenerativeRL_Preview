@@ -1,19 +1,19 @@
 import torch
 from easydict import EasyDict
 
-domain_name="walk"
+domain_name="humanoid"
 task_name="run"
-env_id = "walk_walk"
-action_size = 6
-obs_size = 24
-state_size = 32
+env_id=f"{domain_name}-{task_name}"
+action_size = 21
+obs_size = 67
+state_size = 128
 algorithm_type = "GMPO"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
 generative_model_type = "GVP"
 path = dict(type="gvp")
 model_loss_type = "flow_matching"
-project_name = f"{env_id}-{algorithm_type}-{generative_model_type}"
+project_name = f"{domain_name}-{task_name}-{algorithm_type}-{generative_model_type}"
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 t_embedding_dim = 32
 t_encoder = dict(
@@ -23,23 +23,6 @@ t_encoder = dict(
         scale=30.0,
     ),
 )
-
-
-# class Vnetwork(torch.nn.Module):
-#     def __init__(self, input_dims):
-#         super(Vnetwork, self).__init__()
-#         self.fc1 = torch.nn.Linear(input_dims, 256)  
-#         self.fc2 = torch.nn.Linear(256, 256)  
-#         self.fc3 = torch.nn.Linear(256, 1)  # 修正：最后一层输出维度为 output_dim
-#         self.relu = torch.nn.ReLU()  # ReLU 激活函数
-
-#     def forward(self, x: dict) -> torch.Tensor:
-#         concatenated_tensor = torch.cat([v for v in x.values()], dim=1)  
-#         output = self.relu(self.fc1(concatenated_tensor))  
-#         output = self.relu(self.fc2(output))  
-#         output = self.fc3(output)  # 最后一层不需要 ReLU    
-#         return output
-# register_module(Vnetwork, "Vnetwork")
 
 model = dict(
     device=device,
@@ -59,8 +42,8 @@ model = dict(
             condition_encoder=dict(
                 type="statenocder",
                 args=dict(
-                    input_dims=24,
-                    output_dim=32,
+                    input_dims=obs_size ,
+                    output_dim=state_size,
                 )
             ),
             backbone=dict(
@@ -82,12 +65,12 @@ config = EasyDict(
     train=dict(
         project=project_name,
         device=device,
-        wandb=dict(project=f"IQL-{env_id}-{algorithm_type}-{generative_model_type}"),
+        wandb=dict(project=f"IQL-{domain_name}-{task_name}-{algorithm_type}-{generative_model_type}"),
         simulator=dict(
             type="DmControlEnvSimulator",
             args=dict(
-                domain_name="humanoid",
-                task_name="run",
+                domain_name=domain_name,
+                task_name=task_name,
             ),
         ),
         dataset=dict(
@@ -117,8 +100,8 @@ config = EasyDict(
                         state_encoder=dict(
                             type="statenocder",
                             args=dict(
-                                input_dims=24,
-                                output_dim=32,
+                                input_dims=obs_size,
+                                output_dim=state_size,
                             )
                         ),
                     ),
@@ -134,8 +117,8 @@ config = EasyDict(
                         state_encoder=dict(
                             type="statenocder",
                             args=dict(
-                                input_dims=24,
-                                output_dim=32,
+                                input_dims=obs_size,
+                                output_dim=state_size,
                             )
                         ),
                     ),
@@ -156,7 +139,7 @@ config = EasyDict(
             t_span=32,
             critic=dict(
                 batch_size=4096,
-                epochs=5000,
+                epochs=2000,
                 learning_rate=3e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
@@ -193,10 +176,9 @@ config = EasyDict(
 if __name__ == "__main__":
 
     import gym
-    import d4rl
     import numpy as np
 
-    from grl.algorithms.gmpo_temp import GMPOAlgorithm
+    from grl.algorithms.gmpo import GMPOAlgorithm
     from grl.utils.log import log
 
     def gp_pipeline(config):

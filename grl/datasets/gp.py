@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from tensordict import TensorDict
 
-from torchrl.data import LazyTensorStorage
+from torchrl.data import LazyTensorStorage, LazyMemmapStorage
 from grl.utils.log import log
 
 
@@ -654,60 +654,6 @@ class GPCustomizedTensorDictDataset(GPTensorDictDataset):
             )
         )
 
-# class GPDMcontrolTensorDictDataset(torch.utils.data.Dataset):
-#     def __init__(
-#         self,
-#         file_paths: list = None,
-#     ):
-#         self.states_list = []
-#         self.next_states_list = []
-#         self.actions_list = []
-#         self.rewards_list = []
-        
-#         for file_path in file_paths:
-#             data = torch.load(file_path)
-#             obs_keys = list(data[0]["s"].keys())
-            
-#             state_dicts = {key: [] for key in obs_keys}
-#             next_states_dicts = {key: [] for key in obs_keys}
-            
-#             for item in data:
-#                 for key in obs_keys:
-#                     state_dicts[key].append(torch.tensor(item["s"][key], dtype=torch.float32))
-#                     next_states_dicts[key].append(torch.tensor(item["s_"][key], dtype=torch.float32))
-                    
-#                 self.actions_list.append(torch.tensor(item["a"], dtype=torch.float32))
-#                 self.rewards_list.append(torch.tensor(item["r"], dtype=torch.float32).unsqueeze(0))
-            
-#             self.states_list.append({key: torch.stack(state_dicts[key]) for key in obs_keys})
-#             self.next_states_list.append({key: torch.stack(next_states_dicts[key]) for key in obs_keys})
-
-#         # Concatenate all tensors along the first dimension
-#         self.actions = torch.cat(self.actions_list, dim=0)
-#         self.rewards = torch.cat(self.rewards_list, dim=0)
-#         self.states = {key: torch.cat([s[key] for s in self.states_list], dim=0) for key in obs_keys}
-#         self.next_states = {key: torch.cat([s[key] for s in self.next_states_list], dim=0) for key in obs_keys}
-
-#         # The length of the dataset
-#         self.length = self.actions.shape[0]
-        
-#         def __len__(self):
-#             return self.length
-    
-#         def __getitem__(self, index):
-#         # Return a dictionary of the tensors at the given index
-#             state_tensordict = TensorDict({key: self.states[key][index] for key in self.states},batch_size=[])
-#             next_state_tensordict = TensorDict(
-#                 {key: self.next_states[key][index] for key in self.next_states},
-#                 batch_size=[]
-#             )
-#             return TensorDict({
-#                 "s": state_tensordict,
-#                 "s_": next_state_tensordict,
-#                 "a": self.actions[index],
-#                 "r": self.rewards[index],
-#             }, batch_size=[])
-
 
 class GPDMcontrolTensorDictDataset(torch.utils.data.Dataset):
     def __init__(
@@ -749,6 +695,7 @@ class GPDMcontrolTensorDictDataset(torch.utils.data.Dataset):
         self.next_states = {key: torch.cat(self.next_states_dicts[key], dim=0) for key in self.obs_keys}
         self.actions = torch.cat(actions_list, dim=0)
         self.rewards = torch.cat(rewards_list, dim=0)
+        self.dones = torch.zeros_like(self.rewards, dtype=torch.bool)
         
     def __len__(self):
         return self.actions.shape[0]
@@ -762,4 +709,69 @@ class GPDMcontrolTensorDictDataset(torch.utils.data.Dataset):
             "s_": next_state_dict,
             "a": self.actions[index],
             "r": self.rewards[index],
+            "d": self.dones[index],
         }
+    
+
+class GPDMcontrolTensorDictDataset(torch.utils.data.Dataset):
+    def __init__(
+        self,
+        directory: str,
+    ):
+        import os
+        state_dicts = {}
+        next_states_dicts = {}
+        actions_list = []
+        rewards_list = []
+        npy_files = []
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                if file.endswith('.npy'):
+                    npy_files.append(os.path.join(root, file))
+        for file_path in npy_files:
+            data = np.load(file_path, allow_pickle=True)
+            obs_keys = list(data[0]["s"].keys())
+            
+            for key in obs_keys:
+                if key not in state_dicts:
+                    state_dicts[key] = []
+                    next_states_dicts[key] = []
+        
+                state_values = np.array([item["s"][key] for item in data], dtype=np.float32)
+                next_state_values = np.array([item["s_"][key] for item in data], dtype=np.float32)
+                
+                state_dicts[key].append(torch.tensor(state_values))
+                next_states_dicts[key].append(torch.tensor(next_state_values))
+                    
+            actions_values = np.array([item["a"] for item in data], dtype=np.float32)
+            rewards_values = np.array([item["r"] for item in data], dtype=np.float32).reshape(-1, 1)
+            actions_list.append(torch.tensor(actions_values))
+            rewards_list.append(torch.tensor(rewards_values))
+            
+        # Concatenate all tensors along the first dimension
+        actions = torch.cat(actions_list, dim=0)
+        rewards = torch.cat(rewards_list, dim=0)
+        state = TensorDict(
+            {key: torch.cat(state_dicts[key], dim=0) for key in obs_keys},
+            batch_size=[actions.shape[0]],
+        )
+        next_state = TensorDict(
+            {key: torch.cat(next_states_dicts[key], dim=0) for key in obs_keys},
+            batch_size=[actions.shape[0]],
+        )
+        dones = torch.zeros_like(rewards, dtype=torch.bool)
+        self.len = actions.shape[0]
+        self.storage = LazyMemmapStorage(max_size=self.len)
+        self.storage.set(
+            range(self.len), TensorDict(
+                {
+                    "s": state,
+                    "a": actions,
+                    "r": rewards,
+                    "s_": next_state,
+                    "d": dones,
+                },
+                batch_size=[self.len],
+            )
+        )
+        
