@@ -848,6 +848,7 @@ class GMPOAlgorithm:
                     if isinstance(data["s"], dict):
                         batch_size = list(data["s"].values())[0].shape[0]
                         data["s"] = TensorDict(data["s"], batch_size=[batch_size])
+                        data["s_"] = TensorDict(data["s_"], batch_size=[batch_size])
                     v_loss, next_v = self.model["GPPolicy"].critic.v_loss(
                         state=data["s"].to(config.model.GPPolicy.device),
                         action=data["a"].to(config.model.GPPolicy.device),

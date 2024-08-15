@@ -726,9 +726,9 @@ class GPDMcontrolTensorDictDataset(torch.utils.data.Dataset):
                     npy_files.append(os.path.join(root, file))
         for file_path in npy_files:
             data = np.load(file_path, allow_pickle=True)
-            obs_keys = list(data[0]["s"].keys())
+            self.obs_keys = list(data[0]["s"].keys())
             
-            for key in obs_keys:
+            for key in self.obs_keys:
                 if key not in self.state_dicts:
                     self.state_dicts[key] = []
                     self.next_states_dicts[key] = []
@@ -745,8 +745,8 @@ class GPDMcontrolTensorDictDataset(torch.utils.data.Dataset):
             rewards_list.append(torch.tensor(rewards_values))
             
         # Concatenate all tensors along the first dimension
-        self.state = {key: torch.cat(self.state_dicts[key], dim=0) for key in obs_keys}
-        self.next_states = {key: torch.cat(self.next_states_dicts[key], dim=0) for key in obs_keys}
+        self.state = {key: torch.cat(self.state_dicts[key], dim=0) for key in self.obs_keys}
+        self.next_states = {key: torch.cat(self.next_states_dicts[key], dim=0) for key in self.obs_keys}
         self.actions = torch.cat(actions_list, dim=0)
         self.rewards = torch.cat(rewards_list, dim=0)
         
@@ -763,36 +763,3 @@ class GPDMcontrolTensorDictDataset(torch.utils.data.Dataset):
             "a": self.actions[index],
             "r": self.rewards[index],
         }
-    
-from torch.utils.data import DataLoader
-import torch.nn as nn
-class MyModule(nn.Module):
-    def __init__(self, input_dims, output_dim):
-        super(MyModule, self).__init__()
-        self.fc1 = nn.Linear(input_dims, 512)  
-        self.fc2 = nn.Linear(512, 512)  
-        self.fc3 = nn.Linear(512, output_dim)  # 修正：最后一层输出维度为 output_dim
-
-        self.relu = nn.ReLU()  # ReLU 激活函数
-
-    def forward(self, x: dict) -> torch.Tensor:
-        concatenated_tensor = torch.cat([v for v in x.values()], dim=1)  
-        output = self.relu(self.fc1(concatenated_tensor))  
-        output = self.relu(self.fc2(output))  
-        output = self.fc3(output)  # 最后一层不需要 ReLU
-        
-        return output
-
-if __name__ == '__main__':
-    dataset = GPDMcontrolTensorDictDataset("/root/data")
-    
-    dataloader = DataLoader(dataset, batch_size=32, shuffle=True, num_workers=4)
-    
-    for batch in dataloader:
-        states = batch['s']
-        if isinstance(states, dict):
-            batch_size = list(states.values())[0].shape[0]
-            states = TensorDict(states, batch_size=[batch_size])
-        next_states = batch['s_']
-        actions = batch['a']
-        rewards = batch['r']
