@@ -5,14 +5,15 @@ domain_name="humanoid"
 task_name="run"
 env_id=f"{domain_name}-{task_name}"
 action_size = 21
-state_size = 67
-algorithm_type = "GMPO"
+obs_size = 67
+state_size = 128
+algorithm_type = "GMPG"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
 generative_model_type = "GVP"
 path = dict(type="gvp")
 model_loss_type = "flow_matching"
-project_name = f"{domain_name}-{task_name}-{algorithm_type}-{generative_model_type}"
+project_name = f"{env_id}-{algorithm_type}-{generative_model_type}"
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 t_embedding_dim = 32
 t_encoder = dict(
@@ -22,14 +23,13 @@ t_encoder = dict(
         scale=30.0,
     ),
 )
-
 model = dict(
     device=device,
     x_size=action_size,
     solver=dict(
         type="ODESolver",
         args=dict(
-            library="torchdiffeq",
+            library="torchdiffeq_adjoint",
         ),
     ),
     path=path,
@@ -39,9 +39,11 @@ model = dict(
         args=dict(
             t_encoder=t_encoder,
             condition_encoder=dict(
-                type="TensorDictencoder",
+                type="statenocder",
                 args=dict(
-                ),
+                    input_dims=obs_size ,
+                    output_dim=state_size,
+                )
             ),
             backbone=dict(
                 type="TemporalSpatialResidualNet",
@@ -62,7 +64,7 @@ config = EasyDict(
     train=dict(
         project=project_name,
         device=device,
-        wandb=dict(project=f"IQL-{domain_name}-{task_name}-{algorithm_type}-{generative_model_type}"),
+        wandb=dict(project=f"IQL-{env_id}-{algorithm_type}-{generative_model_type}"),
         simulator=dict(
             type="DmControlEnvSimulator",
             args=dict(
@@ -95,9 +97,11 @@ config = EasyDict(
                             ),
                         ),
                         state_encoder=dict(
-                            type="TensorDictencoder",
+                            type="statenocder",
                             args=dict(
-                            ),
+                                input_dims=obs_size,
+                                output_dim=state_size,
+                            )
                         ),
                     ),
                     VNetwork=dict(
@@ -110,9 +114,11 @@ config = EasyDict(
                             ),
                         ),
                         state_encoder=dict(
-                            type="TensorDictencoder",
+                            type="statenocder",
                             args=dict(
-                            ),
+                                input_dims=obs_size,
+                                output_dim=state_size,
+                            )
                         ),
                     ),
                 ),
@@ -127,7 +133,7 @@ config = EasyDict(
             behaviour_policy=dict(
                 batch_size=4096,
                 learning_rate=1e-4,
-                epochs=0,
+                epochs=2000,
             ),
             t_span=32,
             critic=dict(
@@ -140,16 +146,17 @@ config = EasyDict(
                 method="iql",
             ),
             guided_policy=dict(
-                batch_size=4096,
-                epochs=10000,
-                learning_rate=1e-4,
-                beta=1.0,
-                weight_clamp=100,
+                batch_size=40960,
+                epochs=500,
+                learning_rate=1e-6,
+                copy_from_basemodel=True,
+                gradtime_step=1000,
+                beta=4.0,
             ),
             evaluation=dict(
                 eval=True,
-                repeat=5,
-                interval=100,
+                repeat=3,
+                interval=5,
             ),
             checkpoint_path=f"./{project_name}/checkpoint",
             checkpoint_freq=10,
@@ -171,12 +178,12 @@ if __name__ == "__main__":
     import gym
     import numpy as np
 
-    from grl.algorithms.gmpo import GMPOAlgorithm
+    from grl.algorithms.gmpg import GMPGAlgorithm
     from grl.utils.log import log
 
     def gp_pipeline(config):
 
-        gp = GMPOAlgorithm(config)
+        gp = GMPGAlgorithm(config)
 
         # ---------------------------------------
         # Customized train code ↓

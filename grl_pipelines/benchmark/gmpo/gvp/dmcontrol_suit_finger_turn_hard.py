@@ -1,11 +1,11 @@
 import torch
 from easydict import EasyDict
 
-domain_name="humanoid"
-task_name="run"
+domain_name="finger"
+task_name="turn_hard"
 env_id=f"{domain_name}-{task_name}"
-action_size = 21
-state_size = 67
+action_size = 2
+state_size = 12
 algorithm_type = "GMPO"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
@@ -41,7 +41,7 @@ model = dict(
             condition_encoder=dict(
                 type="TensorDictencoder",
                 args=dict(
-                ),
+                            ),
             ),
             backbone=dict(
                 type="TemporalSpatialResidualNet",
@@ -73,7 +73,7 @@ config = EasyDict(
         dataset=dict(
             type="GPDMcontrolTensorDictDataset",
             args=dict(
-                directory="/root/data",
+                directory="/root/dm_control/dm_control_data/walker_walk/walker",
             ),
         ),
         model=dict(

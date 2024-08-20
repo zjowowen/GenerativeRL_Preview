@@ -790,11 +790,22 @@ class GMPGAlgorithm:
                 evaluation_results = dict()
 
                 def policy(obs: np.ndarray) -> np.ndarray:
-                    obs = torch.tensor(
-                        obs,
-                        dtype=torch.float32,
-                        device=config.model.GPPolicy.device,
-                    ).unsqueeze(0)
+                    if isinstance(obs, torch.Tensor):
+                        obs = torch.tensor(
+                            obs,
+                            dtype=torch.float32,
+                            device=config.model.GPPolicy.device,
+                        ).unsqueeze(0)
+                    elif isinstance(obs, dict):
+                        for key in obs:
+                            obs[key] = torch.tensor(
+                                obs[key],
+                                dtype=torch.float32,
+                                device=config.model.GPPolicy.device
+                            ).unsqueeze(0)
+                            if obs[key].dim() == 1 and obs[key].shape[0] == 1:
+                                obs[key] = obs[key].unsqueeze(1)
+                        obs = TensorDict(obs, batch_size=[1])
                     action = (
                         model.sample(
                             condition=obs,
@@ -857,8 +868,7 @@ class GMPGAlgorithm:
 
             # ---------------------------------------
             # behavior training code ↓
-            # ---------------------------------------
-
+            # ---------------------------------------          
             behaviour_policy_optimizer = torch.optim.Adam(
                 self.model["GPPolicy"].base_model.model.parameters(),
                 lr=config.parameter.behaviour_policy.learning_rate,

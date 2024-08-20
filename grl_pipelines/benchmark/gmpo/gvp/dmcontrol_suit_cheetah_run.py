@@ -1,11 +1,11 @@
 import torch
 from easydict import EasyDict
 
-domain_name="humanoid"
+domain_name="cheetah"
 task_name="run"
 env_id=f"{domain_name}-{task_name}"
-action_size = 21
-state_size = 67
+action_size = 6
+state_size = 17
 algorithm_type = "GMPO"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
@@ -41,7 +41,7 @@ model = dict(
             condition_encoder=dict(
                 type="TensorDictencoder",
                 args=dict(
-                ),
+                            ),
             ),
             backbone=dict(
                 type="TemporalSpatialResidualNet",
@@ -62,7 +62,7 @@ config = EasyDict(
     train=dict(
         project=project_name,
         device=device,
-        wandb=dict(project=f"IQL-{domain_name}-{task_name}-{algorithm_type}-{generative_model_type}"),
+        wandb=dict(project=f"IQL-{domain_name}-{task_name}-{algorithm_type}-{generative_model_type}-1"),
         simulator=dict(
             type="DmControlEnvSimulator",
             args=dict(
@@ -73,7 +73,7 @@ config = EasyDict(
         dataset=dict(
             type="GPDMcontrolTensorDictDataset",
             args=dict(
-                directory="/root/data",
+                directory="/root/dm_control/cartpole/data",
             ),
         ),
         model=dict(
