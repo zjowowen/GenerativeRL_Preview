@@ -1,6 +1,7 @@
 import torch
 from easydict import EasyDict
 
+directory=""
 domain_name="walker"
 task_name="walk"
 env_id=f"{domain_name}-{task_name}"
@@ -13,7 +14,7 @@ generative_model_type = "GVP"
 path = dict(type="gvp")
 model_loss_type = "flow_matching"
 project_name = f"{domain_name}-{task_name}-{algorithm_type}-{generative_model_type}"
-device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
+device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
 t_embedding_dim = 32
 t_encoder = dict(
     type="GaussianFourierProjectionTimeEncoder",
@@ -73,7 +74,7 @@ config = EasyDict(
         dataset=dict(
             type="GPDMcontrolTensorDictDataset",
             args=dict(
-                directory="/root/dm_control/dm_control_data/walker_walk/walker",
+                directory=directory,
             ),
         ),
         model=dict(

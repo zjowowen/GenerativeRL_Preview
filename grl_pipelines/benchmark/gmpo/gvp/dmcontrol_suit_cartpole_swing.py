@@ -1,11 +1,12 @@
 import torch
 from easydict import EasyDict
 
+directory=""
 domain_name="cartpole"
 task_name="swingup"
 env_id=f"{domain_name}-{task_name}"
 action_size = 1
-state_size = 15
+state_size = 5
 algorithm_type = "GMPO"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
@@ -13,7 +14,7 @@ generative_model_type = "GVP"
 path = dict(type="gvp")
 model_loss_type = "flow_matching"
 project_name = f"{domain_name}-{task_name}-{algorithm_type}-{generative_model_type}"
-device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
+device = torch.device("cuda:2") if torch.cuda.is_available() else torch.device("cpu")
 t_embedding_dim = 32
 t_encoder = dict(
     type="GaussianFourierProjectionTimeEncoder",
@@ -62,7 +63,7 @@ config = EasyDict(
     train=dict(
         project=project_name,
         device=device,
-        wandb=dict(project=f"IQL-{domain_name}-{task_name}-{algorithm_type}-{generative_model_type}-1"),
+        wandb=dict(project=f"IQL-{domain_name}-{task_name}-{algorithm_type}-{generative_model_type}"),
         simulator=dict(
             type="DmControlEnvSimulator",
             args=dict(
@@ -73,7 +74,7 @@ config = EasyDict(
         dataset=dict(
             type="GPDMcontrolTensorDictDataset",
             args=dict(
-                directory="/root/dm_control/cartpole/data",
+                directory=directory,
             ),
         ),
         model=dict(

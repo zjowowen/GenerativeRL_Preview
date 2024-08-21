@@ -1,6 +1,7 @@
 import torch
 from easydict import EasyDict
 
+directory=""
 domain_name="humanoid"
 task_name="run"
 env_id=f"{domain_name}-{task_name}"
@@ -73,7 +74,7 @@ config = EasyDict(
         dataset=dict(
             type="GPDMcontrolTensorDictDataset",
             args=dict(
-                directory="/root/data",
+                directory=directory,
             ),
         ),
         model=dict(

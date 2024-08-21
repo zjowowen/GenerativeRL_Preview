@@ -1,6 +1,7 @@
 import torch
 from easydict import EasyDict
 
+directory=""
 domain_name="manipulator"
 task_name="insert_peg"
 env_id=f"{domain_name}-{task_name}"
@@ -73,7 +74,7 @@ config = EasyDict(
         dataset=dict(
             type="GPDMcontrolTensorDictDataset",
             args=dict(
-                directory="/root/dm_control/dm_control_data/walker_walk/walker",
+                directory=directory,
             ),
         ),
         model=dict(
