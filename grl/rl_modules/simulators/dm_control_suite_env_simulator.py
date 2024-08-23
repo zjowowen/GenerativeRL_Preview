@@ -27,213 +27,96 @@ class DmControlEnvSimulator:
         # self.observation_space = self.collect_env.observation_space
         self.action_space = self.collect_env.action_spec()
 
-    # def collect_episodes(
-    #     self,
-    #     policy: Union[Callable, torch.nn.Module],
-    #     num_episodes: int = None,
-    #     num_steps: int = None,
-    # ) -> List[Dict]:
-    #     """
-    #     Overview:
-    #         Collect several episodes using the given policy. The environment will be reset at the beginning of each episode.
-    #         No history will be stored in this method. The collected information of steps will be returned as a list of dictionaries.
-    #     Arguments:
-    #         policy (:obj:`Union[Callable, torch.nn.Module]`): The policy to collect episodes.
-    #         num_episodes (:obj:`int`): The number of episodes to collect.
-    #         num_steps (:obj:`int`): The number of steps to collect.
-    #     """
-    #     assert num_episodes is not None or num_steps is not None
-    #     if num_episodes is not None:
-    #         data_list = []
-    #         with torch.no_grad():
-    #             for i in range(num_episodes):
-    #                 time_step = self.collect_env.reset()
-    #                 done = False
-    #                 truncated = False
-    #                 while not done and not truncated:
-    #                     action = policy(obs)
-    #                     next_obs, reward, done, truncated, _ = (
-    #                         self.collect_env.step(action)
-    #                     )
-    #                     data_list.append(
-    #                         dict(
-    #                             obs=obs,
-    #                             action=action,
-    #                             reward=reward,
-    #                             truncated=truncated,
-    #                             done=done,
-    #                             next_obs=next_obs,
-    #                         )
-    #                     )
-    #                     obs = next_obs
-    #         return data_list
-    #     elif num_steps is not None:
-    #         data_list = []
-    #         with torch.no_grad():
-    #             if gym.__version__ >= "0.26.0":
-    #                 while len(data_list) < num_steps:
-    #                     obs, _ = self.collect_env.reset()
-    #                     done = False
-    #                     truncated = False
-    #                     while not done and not truncated:
-    #                         action = policy(obs)
-    #                         next_obs, reward, done, truncated, _ = (
-    #                             self.collect_env.step(action)
-    #                         )
-    #                         data_list.append(
-    #                             dict(
-    #                                 obs=obs,
-    #                                 action=action,
-    #                                 reward=reward,
-    #                                 truncated=truncated,
-    #                                 done=done,
-    #                                 next_obs=next_obs,
-    #                             )
-    #                         )
-    #                         obs = next_obs
-    #             else:
-    #                 while len(data_list) < num_steps:
-    #                     obs = self.collect_env.reset()
-    #                     done = False
-    #                     while not done:
-    #                         action = policy(obs)
-    #                         next_obs, reward, done, _ = self.collect_env.step(action)
-    #                         data_list.append(
-    #                             dict(
-    #                                 obs=obs,
-    #                                 action=action,
-    #                                 reward=reward,
-    #                                 done=done,
-    #                                 next_obs=next_obs,
-    #                             )
-    #                         )
-    #                         obs = next_obs
-    #         return data_list
-
-    # def collect_steps(
-    #     self,
-    #     policy: Union[Callable, torch.nn.Module],
-    #     num_episodes: int = None,
-    #     num_steps: int = None,
-    #     random_policy: bool = False,
-    # ) -> List[Dict]:
-    #     """
-    #     Overview:
-    #         Collect several steps using the given policy. The environment will not be reset until the end of the episode.
-    #         Last observation will be stored in this method. The collected information of steps will be returned as a list of dictionaries.
-    #     Arguments:
-    #         policy (:obj:`Union[Callable, torch.nn.Module]`): The policy to collect steps.
-    #         num_episodes (:obj:`int`): The number of episodes to collect.
-    #         num_steps (:obj:`int`): The number of steps to collect.
-    #         random_policy (:obj:`bool`): Whether to use a random policy.
-    #     """
-    #     assert num_episodes is not None or num_steps is not None
-    #     if num_episodes is not None:
-    #         data_list = []
-    #         with torch.no_grad():
-    #             if gym.__version__ >= "0.26.0":
-    #                 for i in range(num_episodes):
-    #                     obs, _ = self.collect_env.reset()
-    #                     done = False
-    #                     truncated = False
-    #                     while not done and not truncated:
-    #                         if random_policy:
-    #                             action = self.collect_env.action_space.sample()
-    #                         else:
-    #                             action = policy(obs)
-    #                         next_obs, reward, done, truncated, _ = (
-    #                             self.collect_env.step(action)
-    #                         )
-    #                         data_list.append(
-    #                             dict(
-    #                                 obs=obs,
-    #                                 action=action,
-    #                                 reward=reward,
-    #                                 truncated=truncated,
-    #                                 done=done,
-    #                                 next_obs=next_obs,
-    #                             )
-    #                         )
-    #                         obs = next_obs
-    #                 self.last_state_obs, _ = self.collect_env.reset()
-    #                 self.last_state_done = False
-    #                 self.last_state_truncated = False
-    #             else:
-    #                 for i in range(num_episodes):
-    #                     obs = self.collect_env.reset()
-    #                     done = False
-    #                     while not done:
-    #                         if random_policy:
-    #                             action = self.collect_env.action_space.sample()
-    #                         else:
-    #                             action = policy(obs)
-    #                         next_obs, reward, done, _ = self.collect_env.step(action)
-    #                         data_list.append(
-    #                             dict(
-    #                                 obs=obs,
-    #                                 action=action,
-    #                                 reward=reward,
-    #                                 done=done,
-    #                                 next_obs=next_obs,
-    #                             )
-    #                         )
-    #                         obs = next_obs
-    #                 self.last_state_obs = self.collect_env.reset()
-    #                 self.last_state_done = False
-    #         return data_list
-    #     elif num_steps is not None:
-    #         data_list = []
-    #         with torch.no_grad():
-    #             if gym.__version__ >= "0.26.0":
-    #                 while len(data_list) < num_steps:
-    #                     if not self.last_state_done or not self.last_state_truncated:
-    #                         if random_policy:
-    #                             action = self.collect_env.action_space.sample()
-    #                         else:
-    #                             action = policy(self.last_state_obs)
-    #                         next_obs, reward, done, truncated, _ = (
-    #                             self.collect_env.step(action)
-    #                         )
-    #                         data_list.append(
-    #                             dict(
-    #                                 obs=self.last_state_obs,
-    #                                 action=action,
-    #                                 reward=reward,
-    #                                 truncated=truncated,
-    #                                 done=done,
-    #                                 next_obs=next_obs,
-    #                             )
-    #                         )
-    #                         self.last_state_obs = next_obs
-    #                         self.last_state_done = done
-    #                         self.last_state_truncated = truncated
-    #                     else:
-    #                         self.last_state_obs, _ = self.collect_env.reset()
-    #                         self.last_state_done = False
-    #                         self.last_state_truncated = False
-    #             else:
-    #                 while len(data_list) < num_steps:
-    #                     if not self.last_state_done:
-    #                         if random_policy:
-    #                             action = self.collect_env.action_space.sample()
-    #                         else:
-    #                             action = policy(self.last_state_obs)
-    #                         next_obs, reward, done, _ = self.collect_env.step(action)
-    #                         data_list.append(
-    #                             dict(
-    #                                 obs=self.last_state_obs,
-    #                                 action=action,
-    #                                 reward=reward,
-    #                                 done=done,
-    #                                 next_obs=next_obs,
-    #                             )
-    #                         )
-    #                         self.last_state_obs = next_obs
-    #                         self.last_state_done = done
-    #                     else:
-    #                         self.last_state_obs = self.collect_env.reset()
-    #                         self.last_state_done = False
-    #         return data_list
+    def collect_episodes(
+        self,
+        policy: Union[Callable, torch.nn.Module],
+        num_episodes: int = None,
+        num_steps: int = None,
+    ) -> List[Dict]:
+        """
+        Overview:
+            Collect several episodes using the given policy. The environment will be reset at the beginning of each episode.
+            No history will be stored in this method. The collected information of steps will be returned as a list of dictionaries.
+        Arguments:
+            policy (:obj:`Union[Callable, torch.nn.Module]`): The policy to collect episodes.
+            num_episodes (:obj:`int`): The number of episodes to collect.
+            num_steps (:obj:`int`): The number of steps to collect.
+        """
+        assert num_episodes is not None or num_steps is not None
+        if num_episodes is not None:
+            data_list = []
+            with torch.no_grad():
+                for i in range(num_episodes):
+                    obs = self.collect_env.reset().observation
+                    done = False
+                    while not done :
+                        action = policy(obs)
+                        time_step = self.collect_env.step(action)
+                        next_obs = time_step.observation
+                        reward = time_step.reward
+                        done = time_step.last() 
+                        data_list.append(
+                            dict(
+                                obs=obs,
+                                action=action,
+                                reward=reward,
+                                done=done,
+                                next_obs=next_obs,
+                            )
+                        )
+                        obs = next_obs
+            return data_list
+        
+        
+    def collect_steps(
+        self,
+        policy: Union[Callable, torch.nn.Module],
+        num_episodes: int = None,
+        num_steps: int = None,
+        random_policy: bool = False,
+    ) -> List[Dict]:
+        """
+        Overview:
+            Collect several steps using the given policy. The environment will not be reset until the end of the episode.
+            Last observation will be stored in this method. The collected information of steps will be returned as a list of dictionaries.
+        Arguments:
+            policy (:obj:`Union[Callable, torch.nn.Module]`): The policy to collect steps.
+            num_episodes (:obj:`int`): The number of episodes to collect.
+            num_steps (:obj:`int`): The number of steps to collect.
+            random_policy (:obj:`bool`): Whether to use a random policy.
+        """
+        assert num_episodes is not None or num_steps is not None
+        if num_episodes is not None:
+            data_list = []
+            with torch.no_grad():
+                    for i in range(num_episodes):
+                        obs = self.collect_env.reset().observation
+                        done = False
+                        while not done:
+                            if random_policy:
+                                action = np.random.uniform(self.action_space.minimum,
+                                    self.action_space.maximum,
+                                    size=self.action_space.shape)
+                            else:
+                                action = policy(obs)
+                            time_step = self.collect_env.step(action)
+                            next_obs = time_step.observation
+                            reward = time_step.reward
+                            done = time_step.last() 
+                            data_list.append(
+                                dict(
+                                    obs=obs,
+                                    action=action,
+                                    reward=reward,
+                                    done=done,
+                                    next_obs=next_obs,
+                                )
+                            )
+                            obs = next_obs
+                    self.last_state_obs = self.collect_env.reset().observation
+                    self.last_state_done = False
+            return data_list
+        
 
     def evaluate(
         self,
