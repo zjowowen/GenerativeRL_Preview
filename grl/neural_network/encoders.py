@@ -10,7 +10,12 @@ class  TensorDictencoder(torch.nn.Module):
         super(TensorDictencoder, self).__init__()
 
     def forward(self, x: dict) -> torch.Tensor:
-        x = torch.cat([v for v in x.values()], dim=1)  
+        tensors = []
+        for v in x.values():
+            if v.dim() == 3 and v.shape[0] == 1:
+                v = v.view(1, -1)
+            tensors.append(v)
+        x = torch.cat(tensors, dim=1)
         return x
 
 
