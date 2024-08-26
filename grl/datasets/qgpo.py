@@ -10,7 +10,7 @@ import numpy as np
 import torch
 from tensordict import TensorDict
 
-from torchrl.data import LazyTensorStorage
+from torchrl.data import LazyTensorStorage,LazyMemmapStorage
 from grl.utils.log import log
 
 
@@ -606,6 +606,71 @@ class QGPOCustomizedTensorDictDataset(QGPOTensorDictDataset):
                     "d": self.is_finished,
                     "fake_a": torch.zeros_like(self.actions).unsqueeze(1).repeat_interleave(action_augment_num, dim=1),
                     "fake_a_": torch.zeros_like(self.actions).unsqueeze(1).repeat_interleave(action_augment_num, dim=1),
+                },
+                batch_size=[self.len],
+            )
+        )
+
+class QGPODMcontrolTensorDictDataset(QGPOTensorDictDataset):
+    def __init__(
+        self,
+        directory: str,
+        action_augment_num: int = 16,
+    ):
+        import os
+        state_dicts = {}
+        next_states_dicts = {}
+        actions_list = []
+        rewards_list = []
+        npy_files = []
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                if file.endswith('.npy'):
+                    npy_files.append(os.path.join(root, file))
+        for file_path in npy_files:
+            data = np.load(file_path, allow_pickle=True)
+            obs_keys = list(data[0]["s"].keys())
+            
+            for key in obs_keys:
+                if key not in state_dicts:
+                    state_dicts[key] = []
+                    next_states_dicts[key] = []
+        
+                state_values = np.array([item["s"][key] for item in data], dtype=np.float32)
+                next_state_values = np.array([item["s_"][key] for item in data], dtype=np.float32)
+                
+                state_dicts[key].append(torch.tensor(state_values))
+                next_states_dicts[key].append(torch.tensor(next_state_values))
+                    
+            actions_values = np.array([item["a"] for item in data], dtype=np.float32)
+            rewards_values = np.array([item["r"] for item in data], dtype=np.float32).reshape(-1, 1)
+            actions_list.append(torch.tensor(actions_values))
+            rewards_list.append(torch.tensor(rewards_values))
+            
+        # Concatenate all tensors along the first dimension
+        actions = torch.cat(actions_list, dim=0)
+        rewards = torch.cat(rewards_list, dim=0)
+        state = TensorDict(
+            {key: torch.cat(state_dicts[key], dim=0) for key in obs_keys},
+            batch_size=[actions.shape[0]],
+        )
+        next_state = TensorDict(
+            {key: torch.cat(next_states_dicts[key], dim=0) for key in obs_keys},
+            batch_size=[actions.shape[0]],
+        )
+        dones = torch.zeros_like(rewards, dtype=torch.bool)
+        self.len = actions.shape[0]
+        self.storage = LazyMemmapStorage(max_size=self.len)
+        self.storage.set(
+            range(self.len), TensorDict(
+                {
+                    "s": state,
+                    "a": actions,
+                    "r": rewards,
+                    "s_": next_state,
+                    "fake_a": torch.zeros_like(actions).unsqueeze(1).repeat_interleave(action_augment_num, dim=1),
+                    "fake_a_": torch.zeros_like(actions).unsqueeze(1).repeat_interleave(action_augment_num, dim=1),
+                    "d": dones,
                 },
                 batch_size=[self.len],
             )
