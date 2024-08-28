@@ -601,7 +601,7 @@ class QGPOCustomizedTensorDictDataset(QGPOTensorDictDataset):
                 {
                     "s": self.states,
                     "a": self.actions,
-                    "r": self.rewards,
+                    "r": self.actions,
                     "s_": self.next_states,
                     "d": self.is_finished,
                     "fake_a": torch.zeros_like(self.actions).unsqueeze(1).repeat_interleave(action_augment_num, dim=1),
@@ -648,29 +648,29 @@ class QGPODMcontrolTensorDictDataset(QGPOTensorDictDataset):
             rewards_list.append(torch.tensor(rewards_values))
             
         # Concatenate all tensors along the first dimension
-        actions = torch.cat(actions_list, dim=0)
-        rewards = torch.cat(rewards_list, dim=0)
-        state = TensorDict(
+        self.actions = torch.cat(actions_list, dim=0)
+        self.rewards = torch.cat(rewards_list, dim=0)
+        self.states = TensorDict(
             {key: torch.cat(state_dicts[key], dim=0) for key in obs_keys},
             batch_size=[actions.shape[0]],
         )
-        next_state = TensorDict(
+        self.next_states = TensorDict(
             {key: torch.cat(next_states_dicts[key], dim=0) for key in obs_keys},
             batch_size=[actions.shape[0]],
         )
-        dones = torch.zeros_like(rewards, dtype=torch.bool)
+        self.is_finished = torch.zeros_like(rewards, dtype=torch.bool)
         self.len = actions.shape[0]
         self.storage = LazyMemmapStorage(max_size=self.len)
         self.storage.set(
             range(self.len), TensorDict(
                 {
-                    "s": state,
-                    "a": actions,
-                    "r": rewards,
-                    "s_": next_state,
-                    "fake_a": torch.zeros_like(actions).unsqueeze(1).repeat_interleave(action_augment_num, dim=1),
-                    "fake_a_": torch.zeros_like(actions).unsqueeze(1).repeat_interleave(action_augment_num, dim=1),
-                    "d": dones,
+                    "s": self.states,
+                    "a": self.rewards,
+                    "r": self.rewards,
+                    "s_": self.next_states,
+                    "fake_a": torch.zeros_like(self.actions).unsqueeze(1).repeat_interleave(action_augment_num, dim=1),
+                    "fake_a_": torch.zeros_like(self.actions).unsqueeze(1).repeat_interleave(action_augment_num, dim=1),
+                    "d": self.is_finished,
                 },
                 batch_size=[self.len],
             )
