@@ -652,14 +652,14 @@ class QGPODMcontrolTensorDictDataset(QGPOTensorDictDataset):
         self.rewards = torch.cat(rewards_list, dim=0)
         self.states = TensorDict(
             {key: torch.cat(state_dicts[key], dim=0) for key in obs_keys},
-            batch_size=[actions.shape[0]],
+            batch_size=[self.actions.shape[0]],
         )
         self.next_states = TensorDict(
             {key: torch.cat(next_states_dicts[key], dim=0) for key in obs_keys},
-            batch_size=[actions.shape[0]],
+            batch_size=[self.actions.shape[0]],
         )
-        self.is_finished = torch.zeros_like(rewards, dtype=torch.bool)
-        self.len = actions.shape[0]
+        self.is_finished = torch.zeros_like(self.rewards, dtype=torch.bool)
+        self.len = self.actions.shape[0]
         self.storage = LazyMemmapStorage(max_size=self.len)
         self.storage.set(
             range(self.len), TensorDict(
