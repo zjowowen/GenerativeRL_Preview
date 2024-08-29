@@ -601,7 +601,7 @@ class QGPOCustomizedTensorDictDataset(QGPOTensorDictDataset):
                 {
                     "s": self.states,
                     "a": self.actions,
-                    "r": self.actions,
+                    "r": self.rewards,
                     "s_": self.next_states,
                     "d": self.is_finished,
                     "fake_a": torch.zeros_like(self.actions).unsqueeze(1).repeat_interleave(action_augment_num, dim=1),
