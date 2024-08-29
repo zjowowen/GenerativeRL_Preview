@@ -26,6 +26,7 @@ from grl.rl_modules.simulators import create_simulator
 from grl.rl_modules.value_network.q_network import DoubleQNetwork
 from grl.utils.config import merge_two_dicts_into_newone
 from grl.utils.log import log
+import os
 
 
 class QGPOCritic(nn.Module):
@@ -467,6 +468,19 @@ class QGPOAlgorithm:
 
                 return evaluation_results
 
+            def save_pt(path, model, optimizer, iteration, accelerator=None,prefix=""):
+                if not os.path.exists(path):
+                    os.makedirs(path)
+                if  accelerator is not None:
+                    model= accelerator.unwrap_model(model)
+                torch.save(
+                    dict(
+                        model=model.state_dict(),
+                        optimizer=optimizer.state_dict(),
+                        iteration=iteration,
+                    ),
+                    f=os.path.join(path, f"checkpoint_{iteration}{prefix}.pt"),
+                )
 
             replay_buffer=TensorDictReplayBuffer(
                 storage=self.dataset.storage,
@@ -502,6 +516,7 @@ class QGPOAlgorithm:
                         self.model["QGPOPolicy"], train_iter=train_iter
                     )
                     wandb_run.log(data=evaluation_results, commit=False)
+                    save_pt(config.parameter.behaviour_policy.checkpoint_path,self.model["QGPOPolicy"].diffusion_model.model,behaviour_model_optimizer,train_iter)
 
                 wandb_run.log(
                     data=dict(
