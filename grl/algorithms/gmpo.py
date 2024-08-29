@@ -587,7 +587,7 @@ class GMPOAlgorithm:
                 "GMPO_softmax_static",
                 "GMPO_softmax_sample",
             ]
-            run_name = f"{config.parameter.critic.method}-beta-{config.parameter.guided_policy.beta}-batch-{config.parameter.guided_policy.batch_size}-lr-{config.parameter.guided_policy.learning_rate}-{config.model.GPPolicy.model.model.type}-{self.seed_value}"
+            run_name = f"{config.parameter.critic.method}-tau-{config.parameter.critic.tau}-beta-{config.parameter.guided_policy.beta}-batch-{config.parameter.guided_policy.batch_size}-lr-{config.parameter.guided_policy.learning_rate}-{config.model.GPPolicy.model.model.type}-{self.seed_value}"
             wandb.run.name = run_name
             wandb.run.save()
 
