@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-# from grl.neural_network import register_module
+
 class  TensorDictencoder(torch.nn.Module):
     def __init__(self):
         super(TensorDictencoder, self).__init__()
