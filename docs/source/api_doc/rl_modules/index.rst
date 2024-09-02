@@ -12,6 +12,12 @@ GymEnvSimulator
     :special-members: __init__
     :members:
 
+DeepMindControlEnvSimulator
+---------------------
+.. autoclass:: DeepMindControlEnvSimulator
+    :special-members: __init__
+    :members:
+
 OneShotValueFunction
 ---------------------
 .. autoclass:: OneShotValueFunction

@@ -6,9 +6,10 @@ directory=""
 domain_name="walker"
 task_name="walk"
 env_id=f"{domain_name}-{task_name}"
+algorithm="QGPO"
 action_size = 6
 state_size = 24
-project_name =  f"QGPO-{domain_name}-{task_name}"
+project_name =  f"{env_id}-{algorithm}"
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 t_embedding_dim = 32
 t_encoder = dict(
@@ -24,7 +25,7 @@ config = EasyDict(
     train=dict(
         project=project_name,
         simulator=dict(
-            type="DmControlEnvSimulator",
+            type="DeepMindControlEnvSimulator",
             args=dict(
                 domain_name=domain_name,
                 task_name=task_name,
@@ -169,6 +170,7 @@ config = EasyDict(
                 evaluation_interval=10000,
                 guidance_scale=[0.0, 1.0, 2.0, 3.0, 5.0, 8.0, 10.0],
             ),
+            checkpoint_path=f"./{env_id}-{algorithm}",
         ),
     ),
     deploy=dict(

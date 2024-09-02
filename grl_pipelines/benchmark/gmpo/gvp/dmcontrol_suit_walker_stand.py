@@ -65,7 +65,7 @@ config = EasyDict(
         device=device,
         wandb=dict(project=f"IQL-{domain_name}-{task_name}-{algorithm_type}-{generative_model_type}"),
         simulator=dict(
-            type="DmControlEnvSimulator",
+            type="DeepMindControlEnvSimulator",
             args=dict(
                 domain_name=domain_name,
                 task_name=task_name,

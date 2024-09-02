@@ -1,5 +1,5 @@
 from .gym_env_simulator import GymEnvSimulator
-from .dm_control_suite_env_simulator import DmControlEnvSimulator
+from .dm_control_suite_env_simulator import DeepMindControlEnvSimulator
 
 
 def get_simulator(type: str):
@@ -14,5 +14,5 @@ def create_simulator(config):
 
 SIMULATORS = {
     "GymEnvSimulator".lower(): GymEnvSimulator,
-    "DmControlEnvSimulator".lower(): DmControlEnvSimulator,
+    "DeepMindControlEnvSimulator".lower(): DeepMindControlEnvSimulator,
 }

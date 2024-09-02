@@ -1,13 +1,13 @@
 from typing import Callable, Dict, List, Union
 
-from dm_control import suite
 import numpy as np
 import torch 
 
-class DmControlEnvSimulator:
+class DeepMindControlEnvSimulator:
     """
     Overview:
-        A simple gym environment simulator in GenerativeRL.
+        DeepMind control environment simulator in GenerativeRL.
+        Google DeepMind's software stack for physics-based simulation and Reinforcement Learning environments, using MuJoCo physics.
         This simulator is used to collect episodes and steps using a given policy in a gym environment.
         It runs in single process and is suitable for small-scale experiments.
     Interfaces:
@@ -17,10 +17,11 @@ class DmControlEnvSimulator:
     def __init__(self, domain_name: str,task_name: str) -> None:
         """
         Overview:
-            Initialize the GymEnvSimulator according to the given configuration.
+            Initialize the DeepMindControlEnvSimulator according to the given configuration.
         Arguments:
             env_id (:obj:`str`): The id of the gym environment to simulate.
         """
+        from dm_control import suite
         self.env_domain_name = domain_name
         self.task_name=task_name
         self.collect_env = suite.load(domain_name, task_name)
@@ -129,6 +130,9 @@ class DmControlEnvSimulator:
             Evaluate the given policy using the environment. The environment will be reset at the beginning of each episode.
             No history will be stored in this method. The evaluation resultswill be returned as a list of dictionaries.
         """
+        if "suite" not in globals():
+            from dm_control import suite
+
         if num_episodes is None:
             num_episodes = 1
 
@@ -192,52 +196,3 @@ class DmControlEnvSimulator:
             )
 
         return eval_results
-
-# import torch
-# import numpy as np
-# from tensordict import TensorDict
-
-# file_paths = ["/root/data/dataset_batch_1.pt", "/root/data/dataset_batch_2.pt"]
-# state_dicts = {}
-# actions_list = []
-# next_states_dicts = {}
-# rewards_list = []
-
-# for file_path in file_paths:
-#     data = torch.load(file_path)
-#     obs_keys = list(data[0]["s"].keys())
-    
-#     for key in obs_keys:
-#         if key not in state_dicts:
-#             state_dicts[key] = []
-#             next_states_dicts[key] = []
-        
-#         state_values = np.array([item["s"][key] for item in data], dtype=np.float32)
-#         next_state_values = np.array([item["s_"][key] for item in data], dtype=np.float32)
-        
-#         state_dicts[key].append(torch.tensor(state_values))
-#         next_states_dicts[key].append(torch.tensor(next_state_values))
-    
-#     actions_values = np.array([item["a"] for item in data], dtype=np.float32)
-#     rewards_values = np.array([item["r"] for item in data], dtype=np.float32).reshape(-1, 1)
-    
-#     actions_list.append(torch.tensor(actions_values))
-#     rewards_list.append(torch.tensor(rewards_values))
-
-# # Concatenate the tensors along the first dimension
-# actions = torch.cat(actions_list, dim=0)
-# rewards = torch.cat(rewards_list, dim=0)
-# state_tensors = {key: torch.cat(state_dicts[key], dim=0) for key in obs_keys}
-# next_state_tensors = {key: torch.cat(next_states_dicts[key], dim=0) for key in obs_keys}
-
-# # Create TensorDicts
-# state_tensordict = TensorDict(state_tensors, batch_size=[state_tensors[obs_keys[0]].shape[0]])
-# next_state_tensordict = TensorDict(next_state_tensors, batch_size=[next_state_tensors[obs_keys[0]].shape[0]])
-
-# # Combine everything into a final TensorDict
-# final_tensordict = TensorDict({
-#     "actions": actions,
-#     "rewards": rewards,
-#     "states": state_tensordict,
-#     "next_states": next_state_tensordict
-# }, batch_size=[actions.shape[0]])
