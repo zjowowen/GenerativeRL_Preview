@@ -169,7 +169,7 @@ config = EasyDict(
             ),
         ),
         dataset=dict(
-            type="GPCustomizedDataset",
+            type="GPCustomizedTensorDictDataset",
             args=dict(
                 env_id=env_id,
                 numpy_data_path=data_path,
