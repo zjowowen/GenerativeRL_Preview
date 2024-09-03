@@ -697,7 +697,7 @@ class GPDMcontrolTensorDictDataset():
             batch_size=[self.len],
         )
         self.is_finished = torch.zeros_like(self.rewards, dtype=torch.bool)
-        self.storage = LazyTensorStorage(max_size=self.len)
+        self.storage = LazyMemmapStorage(max_size=self.len)
         self.storage.set(
             range(self.len), TensorDict(
                 {
