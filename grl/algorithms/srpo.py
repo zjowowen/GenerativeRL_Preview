@@ -3,7 +3,7 @@ import os
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-import d4rl
+# import d4rl
 import gym
 import numpy as np
 import torch

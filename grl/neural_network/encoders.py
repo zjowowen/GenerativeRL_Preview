@@ -4,21 +4,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-
-class  TensorDictencoder(torch.nn.Module):
-    def __init__(self):
-        super(TensorDictencoder, self).__init__()
-
-    def forward(self, x: dict) -> torch.Tensor:
-        tensors = []
-        for v in x.values():
-            if v.dim() == 3 and v.shape[0] == 1:
-                v = v.view(1, -1)
-            tensors.append(v)
-        x = torch.cat(tensors, dim=1)
-        return x
-
-
 def get_encoder(type: str):
     """
     Overview:
@@ -242,6 +227,65 @@ class SinusoidalPosEmb(nn.Module):
         emb = torch.cat((emb.sin(), emb.cos()), dim=-1)
         return emb
 
+class  TensorDictencoder(torch.nn.Module):
+    def __init__(self):
+        super(TensorDictencoder, self).__init__()
+
+    def forward(self, x: dict) -> torch.Tensor:
+        tensors = []
+        for v in x.values():
+            if v.dim() == 3 and v.shape[0] == 1:
+                v = v.view(1, -1)
+            tensors.append(v)
+        x = torch.cat(tensors, dim=1)
+        return x
+
+class  TensorDictencoder(torch.nn.Module):
+    def __init__(self,usePixel=False,useRichData=True):
+        super(TensorDictencoder, self).__init__()
+        self.usePixel=usePixel
+        self.useRichData=useRichData
+        if self.usePixel ==False:
+            self.useRichData=True
+        else:
+            from torchvision.transforms import v2
+            self.image_transform = transforms = v2.Compose([
+                # v2.ToDtype(torch.float32, scale=True),
+                v2.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
+            ])
+            self.conv_block = nn.Sequential(
+                nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, stride=1, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2),
+                
+                nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2),
+                
+                nn.Flatten()
+            )
+            self.mlp_block = nn.Sequential(
+                nn.Linear(64 * 16 * 16, 512),
+                nn.ReLU(),
+                nn.Linear(512, 128),
+            )
+            
+    def forward(self, x: dict) -> torch.Tensor:
+        tensors = []
+        for v in x.values():
+            if v.dim() == 3 and v.shape[0] == 1:
+                v = v.view(1, -1)
+            if v.dim() == 2 and self.useRichData == True:
+                v.requires_grad = True 
+                tensors.append(v)
+            if v.dim() == 4 and self.usePixel== True:
+                v = v.permute(0, 3, 1, 2)/255.0
+                v = self.image_transform(v)
+                v = self.conv_block(v)
+                v = self.mlp_block(v)
+                tensors.append(v)
+        new = torch.cat(tensors, dim=1)
+        return new
 
 ENCODERS = {
     "GaussianFourierProjectionTimeEncoder".lower(): GaussianFourierProjectionTimeEncoder,

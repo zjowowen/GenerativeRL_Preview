@@ -14,7 +14,7 @@ generative_model_type = "GVP"
 path = dict(type="gvp")
 model_loss_type = "flow_matching"
 project_name = f"{domain_name}-{task_name}-{algorithm_type}-{generative_model_type}"
-device = torch.device("cuda:4") if torch.cuda.is_available() else torch.device("cpu")
+device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 t_embedding_dim = 32
 t_encoder = dict(
     type="GaussianFourierProjectionTimeEncoder",

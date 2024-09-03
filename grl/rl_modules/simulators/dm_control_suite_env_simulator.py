@@ -21,12 +21,22 @@ class DeepMindControlEnvSimulator:
         Arguments:
             env_id (:obj:`str`): The id of the gym environment to simulate.
         """
-        from dm_control import suite
-        self.env_domain_name = domain_name
-        self.task_name=task_name
-        self.collect_env = suite.load(domain_name, task_name)
-        # self.observation_space = self.collect_env.observation_space
-        self.action_space = self.collect_env.action_spec()
+        if domain_name  ==  "rodent" and task_name == "gaps":
+            import os
+            os.environ['MUJOCO_EGL_DEVICE_ID'] = '0' #we make it for 8 gpus
+            from dm_control import composer
+            from dm_control.locomotion.examples import basic_rodent_2020
+            self.collect_env=basic_rodent_2020.rodent_run_gaps()
+            self.action_space = self.collect_env.action_spec()
+        else:
+            from dm_control import suite
+            self.env_domain_name = domain_name
+            self.task_name=task_name
+            self.collect_env = suite.load(domain_name, task_name)
+            # self.observation_space = self.collect_env.observation_space
+            self.action_space = self.collect_env.action_spec()
+        
+        
 
     def collect_episodes(
         self,

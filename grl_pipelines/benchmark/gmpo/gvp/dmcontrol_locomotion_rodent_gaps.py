@@ -1,12 +1,14 @@
 import torch
 from easydict import EasyDict
-
-directory=""
-domain_name="cheetah"
-task_name="run"
+import os
+os.environ['MUJOCO_EGL_DEVICE_ID'] = '0'
+os.environ['MUJOCO_GL'] = 'egl'
+directory="/mnt/nfs3/zhangjinouwen/dataset/dm_control/dm_locomotion/rodent_gaps.npy"
+domain_name="rodent"
+task_name="gaps"
 env_id=f"{domain_name}-{task_name}"
-action_size = 6
-state_size = 17
+action_size = 38
+state_size = 235
 algorithm_type = "GMPO"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
@@ -42,7 +44,7 @@ model = dict(
             condition_encoder=dict(
                 type="TensorDictencoder",
                 args=dict(
-                            ),
+                                    ),
             ),
             backbone=dict(
                 type="TemporalSpatialResidualNet",
@@ -98,7 +100,7 @@ config = EasyDict(
                         state_encoder=dict(
                             type="TensorDictencoder",
                             args=dict(
-                            ),
+                                    ),
                         ),
                     ),
                     VNetwork=dict(
@@ -113,7 +115,7 @@ config = EasyDict(
                         state_encoder=dict(
                             type="TensorDictencoder",
                             args=dict(
-                            ),
+                                        ),
                         ),
                     ),
                 ),

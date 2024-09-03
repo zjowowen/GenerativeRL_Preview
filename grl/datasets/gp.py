@@ -672,7 +672,7 @@ class GPDMcontrolTensorDictDataset():
             if key not in state_dicts:
                 state_dicts[key] = []
                 next_states_dicts[key] = []
-    
+            
             state_values = np.array([item["s"][key] for item in data], dtype=np.float32)
             next_state_values = np.array([item["s_"][key] for item in data], dtype=np.float32)
             
