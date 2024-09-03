@@ -617,55 +617,48 @@ class QGPODMcontrolTensorDictDataset(QGPOTensorDictDataset):
         directory: str,
         action_augment_num: int = 16,
     ):
-        import os
         state_dicts = {}
         next_states_dicts = {}
         actions_list = []
         rewards_list = []
-        npy_files = []
-        for root, dirs, files in os.walk(directory):
-            for file in files:
-                if file.endswith('.npy'):
-                    npy_files.append(os.path.join(root, file))
-        for file_path in npy_files:
-            data = np.load(file_path, allow_pickle=True)
-            obs_keys = list(data[0]["s"].keys())
-            
-            for key in obs_keys:
-                if key not in state_dicts:
-                    state_dicts[key] = []
-                    next_states_dicts[key] = []
         
-                state_values = np.array([item["s"][key] for item in data], dtype=np.float32)
-                next_state_values = np.array([item["s_"][key] for item in data], dtype=np.float32)
-                
-                state_dicts[key].append(torch.tensor(state_values))
-                next_states_dicts[key].append(torch.tensor(next_state_values))
-                    
-            actions_values = np.array([item["a"] for item in data], dtype=np.float32)
-            rewards_values = np.array([item["r"] for item in data], dtype=np.float32).reshape(-1, 1)
-            actions_list.append(torch.tensor(actions_values))
-            rewards_list.append(torch.tensor(rewards_values))
+        data = np.load(directory, allow_pickle=True)
+        obs_keys = list(data[0]["s"].keys())
+        
+        for key in obs_keys:
+            if key not in state_dicts:
+                state_dicts[key] = []
+                next_states_dicts[key] = []
+    
+            state_values = np.array([item["s"][key] for item in data], dtype=np.float32)
+            next_state_values = np.array([item["s_"][key] for item in data], dtype=np.float32)
             
-        # Concatenate all tensors along the first dimension
+            state_dicts[key].append(torch.tensor(state_values))
+            next_states_dicts[key].append(torch.tensor(next_state_values))
+                
+        actions_values = np.array([item["a"] for item in data], dtype=np.float32)
+        rewards_values = np.array([item["r"] for item in data], dtype=np.float32).reshape(-1, 1)
+        actions_list.append(torch.tensor(actions_values))
+        rewards_list.append(torch.tensor(rewards_values))
+            
         self.actions = torch.cat(actions_list, dim=0)
         self.rewards = torch.cat(rewards_list, dim=0)
+        self.len = self.actions.shape[0]
         self.states = TensorDict(
             {key: torch.cat(state_dicts[key], dim=0) for key in obs_keys},
-            batch_size=[self.actions.shape[0]],
+            batch_size=[self.len],
         )
         self.next_states = TensorDict(
             {key: torch.cat(next_states_dicts[key], dim=0) for key in obs_keys},
-            batch_size=[self.actions.shape[0]],
+            batch_size=[self.len],
         )
         self.is_finished = torch.zeros_like(self.rewards, dtype=torch.bool)
-        self.len = self.actions.shape[0]
-        self.storage = LazyMemmapStorage(max_size=self.len)
+        self.storage = LazyTensorStorage(max_size=self.len)
         self.storage.set(
             range(self.len), TensorDict(
                 {
                     "s": self.states,
-                    "a": self.rewards,
+                    "a": self.actions,
                     "r": self.rewards,
                     "s_": self.next_states,
                     "fake_a": torch.zeros_like(self.actions).unsqueeze(1).repeat_interleave(action_augment_num, dim=1),
@@ -675,3 +668,4 @@ class QGPODMcontrolTensorDictDataset(QGPOTensorDictDataset):
                 batch_size=[self.len],
             )
         )
+        
