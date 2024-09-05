@@ -1,5 +1,5 @@
 from .gym_env_simulator import GymEnvSimulator
-from .dm_control_suite_env_simulator import DeepMindControlEnvSimulator
+from .dm_control_env_simulator import DeepMindControlEnvSimulator
 
 
 def get_simulator(type: str):
