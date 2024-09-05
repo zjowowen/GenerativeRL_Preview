@@ -1,3 +1,9 @@
+"""
+This file is a modified version of the original file from the OpenAI improved-diffusion repository.
+<https://github.com/openai/improved-diffusion>
+"""
+
+
 from abc import abstractmethod
 
 import math
