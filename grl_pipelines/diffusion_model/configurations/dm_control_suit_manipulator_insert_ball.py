@@ -28,6 +28,7 @@ config = EasyDict(
             args=dict(
                 domain_name=domain_name,
                 task_name=task_name,
+                dict_return=False,
             ),
         ),
         dataset=dict(

@@ -1,7 +1,7 @@
 import torch
 from easydict import EasyDict
 
-path=""
+path="/mnt/nfs3/zhangjinouwen/dataset/dm_control/my_dm_control_suite/finger_turn_hard.npy"
 domain_name="finger"
 task_name="turn_hard"
 env_id=f"{domain_name}-{task_name}"
@@ -9,7 +9,7 @@ algorithm="QGPO"
 action_size = 2
 state_size = 12
 project_name =  f"{env_id}-{algorithm}"
-device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
+device = torch.device("cuda:6") if torch.cuda.is_available() else torch.device("cpu")
 t_embedding_dim = 32
 t_encoder = dict(
     type="GaussianFourierProjectionTimeEncoder",
@@ -28,15 +28,16 @@ config = EasyDict(
             args=dict(
                 domain_name=domain_name,
                 task_name=task_name,
+                dict_return=False,
             ),
         ),
-        # dataset=dict(
-        #     type="QGPODMcontrolTensorDictDataset",
-        #     args=dict(
-        #         path=path,
-        #         action_augment_num=action_augment_num,
-        #     ),
-        # ),
+        dataset=dict(
+            type="QGPODMcontrolTensorDictDataset",
+            args=dict(
+                path=path,
+                action_augment_num=action_augment_num,
+            ),
+        ),
         model=dict(
             QGPOPolicy=dict(
                 device=device,
@@ -50,11 +51,6 @@ config = EasyDict(
                                 hidden_sizes=[action_size + state_size, 256, 256],
                                 output_size=1,
                                 activation="relu",
-                            ),
-                        ),
-                        state_encoder=dict(
-                            type="TensorDictencoder",
-                            args=dict(
                             ),
                         ),
                     ),
@@ -103,11 +99,6 @@ config = EasyDict(
                         type="noise_function",
                         args=dict(
                             t_encoder=t_encoder,
-                            condition_encoder=dict(
-                                type="TensorDictencoder",
-                                args=dict(
-                                            ),
-                            ),
                             backbone=dict(
                                 type="TemporalSpatialResidualNet",
                                 args=dict(
@@ -123,11 +114,6 @@ config = EasyDict(
                     ),
                     energy_guidance=dict(
                         t_encoder=t_encoder,
-                        condition_encoder=dict(
-                                type="TensorDictencoder",
-                                args=dict(
-                                            ),
-                            ),
                         backbone=dict(
                             type="ConcatenateMLP",
                             args=dict(

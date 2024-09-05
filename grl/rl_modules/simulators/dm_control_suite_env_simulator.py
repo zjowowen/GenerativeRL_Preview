@@ -34,7 +34,7 @@ class DeepMindControlEnvSimulator:
         ``__init__``, ``collect_episodes``, ``collect_steps``, ``evaluate``
     """
 
-    def __init__(self, domain_name: str,task_name: str) -> None:
+    def __init__(self, domain_name: str,task_name: str,dict_return=True) -> None:
         """
         Overview:
             Initialize the DeepMindControlEnvSimulator according to the given configuration.
@@ -59,6 +59,8 @@ class DeepMindControlEnvSimulator:
             self.collect_env = suite.load(domain_name, task_name)
             # self.observation_space = self.collect_env.observation_space
             self.action_space = self.collect_env.action_spec()
+            self.partial_observation=False
+        self.dict_return=dict_return
         
         
 
@@ -206,6 +208,18 @@ class DeepMindControlEnvSimulator:
                 while not done:
                     if self.partial_observation:
                         obs = self.partial_observation_fn(obs)
+                    if not self.dict_return:
+                        obs_values = []
+                        for key, value in obs.items():
+                            if isinstance(value, np.ndarray):
+                                if value.ndim == 3 and value.shape[0] == 1:
+                                    value = value.reshape(1, -1) 
+                                    import ipdb
+                                    ipdb.set_trace()
+                            elif np.isscalar(value): 
+                                value = [value]  
+                            obs_values.append(value)
+                        obs = np.concatenate(obs_values, axis=0)
                     action = policy(obs)
                     time_step = env.step(action)
                     next_obs = time_step.observation
