@@ -26,11 +26,13 @@ class DeepMindControlEnvSimulator:
             os.environ['MUJOCO_EGL_DEVICE_ID'] = '0' #we make it for 8 gpus
             from dm_control import composer
             from dm_control.locomotion.examples import basic_rodent_2020
+            self.domain_name = domain_name
+            self.task_name=task_name
             self.collect_env=basic_rodent_2020.rodent_run_gaps()
             self.action_space = self.collect_env.action_spec()
         else:
             from dm_control import suite
-            self.env_domain_name = domain_name
+            self.domain_name = domain_name
             self.task_name=task_name
             self.collect_env = suite.load(domain_name, task_name)
             # self.observation_space = self.collect_env.observation_space
@@ -159,7 +161,14 @@ class DeepMindControlEnvSimulator:
             return render_output
 
         eval_results = []
-        env = suite.load(self.env_domain_name, self.task_name)
+        if self.domain_name  ==  "rodent" and self.task_name == "gaps":
+            import os
+            os.environ['MUJOCO_EGL_DEVICE_ID'] = '0' 
+            from dm_control import composer
+            from dm_control.locomotion.examples import basic_rodent_2020
+            env=basic_rodent_2020.rodent_run_gaps()
+        else:
+            env = suite.load(self.domain_name, self.task_name)
         for i in range(num_episodes):
             if render:
                 render_output = []
