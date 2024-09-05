@@ -614,7 +614,7 @@ class QGPOCustomizedTensorDictDataset(QGPOTensorDictDataset):
 class QGPODMcontrolTensorDictDataset(QGPOTensorDictDataset):
     def __init__(
         self,
-        directory: str,
+        path: str,
         action_augment_num: int = 16,
     ):
         state_dicts = {}
@@ -622,7 +622,7 @@ class QGPODMcontrolTensorDictDataset(QGPOTensorDictDataset):
         actions_list = []
         rewards_list = []
         
-        data = np.load(directory, allow_pickle=True)
+        data = np.load(path, allow_pickle=True)
         obs_keys = list(data[0]["s"].keys())
         
         for key in obs_keys:

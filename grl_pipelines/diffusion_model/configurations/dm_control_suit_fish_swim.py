@@ -1,7 +1,7 @@
 import torch
 from easydict import EasyDict
 
-directory=""
+path=""
 domain_name="fish"
 task_name="swim"
 env_id=f"{domain_name}-{task_name}"
@@ -33,7 +33,7 @@ config = EasyDict(
         dataset=dict(
             type="QGPODMcontrolTensorDictDataset",
             args=dict(
-                directory=directory,
+                path=path,
                 action_augment_num=action_augment_num,
             ),
         ),

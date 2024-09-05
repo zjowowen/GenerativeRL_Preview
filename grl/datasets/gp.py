@@ -658,14 +658,14 @@ class GPCustomizedTensorDictDataset(GPTensorDictDataset):
 class GPDMcontrolTensorDictDataset():
     def __init__(
         self,
-        directory: str,
+        path: str,
     ):
         state_dicts = {}
         next_states_dicts = {}
         actions_list = []
         rewards_list = []
         
-        data = np.load(directory, allow_pickle=True)
+        data = np.load(path, allow_pickle=True)
         obs_keys = list(data[0]["s"].keys())
         
         for key in obs_keys:
