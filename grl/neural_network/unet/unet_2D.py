@@ -1,7 +1,6 @@
-"""
-This file is a modified version of the original file from the OpenAI improved-diffusion repository.
-<https://github.com/openai/improved-diffusion>
-"""
+#############################################################
+# This is a modified version of Unet from the OpenAI improved-diffusion repository. <https://github.com/openai/improved-diffusion>
+#############################################################
 
 
 from abc import abstractmethod
