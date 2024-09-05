@@ -2,11 +2,11 @@ import torch
 from easydict import EasyDict
 
 directory=""
-domain_name="humanoid"
-task_name="run"
+domain_name="fish"
+task_name="swim"
 env_id=f"{domain_name}-{task_name}"
-action_size = 21
-state_size = 67
+action_size = 5
+state_size = 24
 algorithm_type = "GMPG"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
@@ -64,7 +64,7 @@ config = EasyDict(
         device=device,
         wandb=dict(project=f"IQL-{env_id}-{algorithm_type}-{generative_model_type}"),
         simulator=dict(
-            type="DeepMindControlEnvSimulator",
+            type="DmControlEnvSimulator",
             args=dict(
                 domain_name=domain_name,
                 task_name=task_name,
