@@ -3,7 +3,7 @@ from easydict import EasyDict
 import os
 os.environ['MUJOCO_EGL_DEVICE_ID'] = '0'
 os.environ['MUJOCO_GL'] = 'egl'
-Data_path="/mnt/nfs3/zhangjinouwen/dataset/dm_control/dm_locomotion/rodent_gaps.npy"
+data_path="/mnt/nfs3/zhangjinouwen/dataset/dm_control/dm_locomotion/rodent_gaps.npy"
 domain_name="rodent"
 task_name="gaps"
 usePixel=True
@@ -70,7 +70,7 @@ config = EasyDict(
         device=device,
         wandb=dict(project=f"IQL-{env_id}-{algorithm_type}-{generative_model_type}"),
         simulator=dict(
-            type="DmControlEnvSimulator",
+            type="DeepMindControlEnvSimulator",
             args=dict(
                 domain_name=domain_name,
                 task_name=task_name,
@@ -79,7 +79,7 @@ config = EasyDict(
         dataset=dict(
             type="GPDMcontrolTensorDictDataset",
             args=dict(
-                path=Data_path,
+                path=data_path,
             ),
         ),
         model=dict(

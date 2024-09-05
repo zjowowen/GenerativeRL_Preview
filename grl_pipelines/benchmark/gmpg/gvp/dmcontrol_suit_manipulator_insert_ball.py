@@ -1,7 +1,7 @@
 import torch
 from easydict import EasyDict
 
-path=""
+data_path=""
 domain_name="manipulator"
 task_name="insert_ball"
 env_id=f"{domain_name}-{task_name}"
@@ -64,7 +64,7 @@ config = EasyDict(
         device=device,
         wandb=dict(project=f"IQL-{env_id}-{algorithm_type}-{generative_model_type}"),
         simulator=dict(
-            type="DmControlEnvSimulator",
+            type="DeepMindControlEnvSimulator",
             args=dict(
                 domain_name=domain_name,
                 task_name=task_name,
@@ -73,7 +73,7 @@ config = EasyDict(
         dataset=dict(
             type="GPDMcontrolTensorDictDataset",
             args=dict(
-                path=path,
+                path=data_path,
             ),
         ),
         model=dict(

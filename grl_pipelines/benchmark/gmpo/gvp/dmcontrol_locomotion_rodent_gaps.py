@@ -3,7 +3,7 @@ from easydict import EasyDict
 import os
 os.environ['MUJOCO_EGL_DEVICE_ID'] = '0'
 os.environ['MUJOCO_GL'] = 'egl'
-path="/mnt/nfs3/zhangjinouwen/dataset/dm_control/dm_locomotion/rodent_gaps.npy"
+data_path="/mnt/nfs3/zhangjinouwen/dataset/dm_control/dm_locomotion/rodent_gaps.npy"
 domain_name="rodent"
 task_name="gaps"
 env_id=f"{domain_name}-{task_name}"
@@ -76,7 +76,7 @@ config = EasyDict(
         dataset=dict(
             type="GPDMcontrolTensorDictDataset",
             args=dict(
-                path=path,
+                path=data_path,
             ),
         ),
         model=dict(
