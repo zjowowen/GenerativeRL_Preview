@@ -3,6 +3,26 @@ from typing import Callable, Dict, List, Union
 import numpy as np
 import torch 
 
+
+def partial_observation_rodent(obs_dict):
+    # Define the keys you want to keep
+    keys_to_keep = [
+        'walker/joints_pos',
+        'walker/joints_vel',
+        'walker/tendons_pos',
+        'walker/tendons_vel',
+        'walker/appendages_pos',
+        'walker/world_zaxis',
+        'walker/sensors_accelerometer',
+        'walker/sensors_velocimeter',
+        'walker/sensors_gyro',
+        'walker/sensors_touch',
+        'walker/egocentric_camera'
+    ]
+    # Filter the observation dictionary to only include the specified keys
+    filtered_obs = {key: obs_dict[key] for key in keys_to_keep if key in obs_dict}
+    return filtered_obs
+
 class DeepMindControlEnvSimulator:
     """
     Overview:
@@ -30,6 +50,8 @@ class DeepMindControlEnvSimulator:
             self.task_name=task_name
             self.collect_env=basic_rodent_2020.rodent_run_gaps()
             self.action_space = self.collect_env.action_spec()
+            self.partial_observation=True
+            self.partial_observation_fn=partial_observation_rodent
         else:
             from dm_control import suite
             self.domain_name = domain_name
@@ -182,6 +204,8 @@ class DeepMindControlEnvSimulator:
                 done = False
                 action_spec = env.action_spec()
                 while not done:
+                    if self.partial_observation:
+                        obs = self.partial_observation_fn(obs)
                     action = policy(obs)
                     time_step = env.step(action)
                     next_obs = time_step.observation
