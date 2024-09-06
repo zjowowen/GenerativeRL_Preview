@@ -1,6 +1,6 @@
 import gym
 
-from grl.algorithms.sac_step import SACAlgorithm
+from grl.algorithms.sac import SACAlgorithm
 from grl.utils.log import log
 import torch
 from easydict import EasyDict
