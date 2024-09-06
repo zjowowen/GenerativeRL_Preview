@@ -1,7 +1,7 @@
 from typing import Dict
 import torch
 import numpy as np
-
+from tensordict import TensorDict
 
 def obs_transform(obs, device):
 
@@ -11,6 +11,8 @@ def obs_transform(obs, device):
         obs = {k: torch.from_numpy(v).float().to(device) for k, v in obs.items()}
     elif isinstance(obs, torch.Tensor):
         obs = obs.float().to(device)
+    elif isinstance(obs, TensorDict):
+        obs = obs.to(device)
     else:
         raise ValueError("observation must be a dict, torch.Tensor, or np.ndarray")
 
