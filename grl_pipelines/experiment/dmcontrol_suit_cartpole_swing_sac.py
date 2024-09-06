@@ -1,6 +1,6 @@
 import gym
 
-from grl.algorithms.sac import SACAlgorithm
+from grl.algorithms.sac_step import SACAlgorithm
 from grl.utils.log import log
 import torch
 from easydict import EasyDict
@@ -9,7 +9,7 @@ action_size = 1
 state_size = 5
 domain_name="cartpole"
 task_name="swingup"
-algorithm_type = "SAC"
+algorithm_type = "SAC_Step"
 env_id=f"{domain_name}-{task_name}"
 project_name = f"{env_id}-{algorithm_type}"
 device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
@@ -32,6 +32,13 @@ config = EasyDict(
                 domain_name=domain_name,
                 task_name=task_name,
                 dict_return=False,
+            ),
+        ),
+        replay_buffer=dict(
+            type="TensorDictBuffer",
+            args=dict(
+                size=100000,
+                batch_size=2000,
             ),
         ),
         dataset = dict(
@@ -112,6 +119,7 @@ config = EasyDict(
                 iterations = 100000,
                 collect_steps = 1,
                 collect_steps_at_the_beginning = 10000,
+                update_steps = 1,
                 drop_ratio = 0.00001,
                 batch_size = 2000,
                 random_ratio = 0.0,
