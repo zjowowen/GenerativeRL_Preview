@@ -538,6 +538,7 @@ class SACAlgorithm:
                 if online_rl_iteration == 0 or (online_rl_iteration + 1) % config.parameter.evaluation.evaluation_interval == 0:
                     evaluation_results = evaluate(self.model["Policy"])
                     wandb_run.log(data=evaluation_results, commit=False)
+                    log.info(f"online_rl_iteration: {online_rl_iteration}:" + "".join([f"{key}: {value}, " for key, value in evaluation_results.items()]))
 
 
                 if online_rl_iteration > 0:
@@ -565,10 +566,10 @@ class SACAlgorithm:
                     batch = self.replay_buffer.sample(batch_size=config.parameter.online_rl.batch_size).to(config.model.Policy.device)
                     counter+=1
                     state = batch["obs"]
-                    action = batch["action"].unsqueeze(0) if len(batch["action"].shape) == 1 else batch["action"]
-                    reward = batch["reward"].unsqueeze(0) if len(batch["reward"].shape) == 1 else batch["reward"]
+                    action = batch["action"].unsqueeze(-1) if len(batch["action"].shape) == 1 else batch["action"]
+                    reward = batch["reward"].unsqueeze(-1) if len(batch["reward"].shape) == 1 else batch["reward"]
                     next_state = batch["next_obs"]
-                    done = batch["done"].unsqueeze(0) if len(batch["done"].shape) == 1 else batch["done"]
+                    done = batch["done"].unsqueeze(-1) if len(batch["done"].shape) == 1 else batch["done"]
 
                     action_state_critic_optimizer.zero_grad()
                     
@@ -612,7 +613,8 @@ class SACAlgorithm:
                             q_target_param.data.mul_(config.parameter.critic.update_momentum)
                             q_target_param.data.add_((1-config.parameter.critic.update_momentum)*q_param.data)
 
-                log.info(f"online_rl_iteration: {online_rl_iteration}, q_loss: {q_loss_sum/counter}, q_value: {q_value_sum/counter}, policy_loss: {policy_loss_sum/counter}, logp: {logp_sum/counter}, entropy_coeffi_loss: {entropy_coeffi_loss_sum/counter}, average_action_entropy: {average_action_entropy_sum/counter}, critic_gradient_norm: {critic_gradient_norm_sum/counter}, policy_gradient_norm: {policy_gradient_norm_sum/counter}, entropy_gradient_norm: {entropy_gradient_norm_sum/counter}")
+                if counter % 100 == 0:
+                    log.info(f"online_rl_iteration: {online_rl_iteration}, q_loss: {q_loss_sum/counter}, q_value: {q_value_sum/counter}, policy_loss: {policy_loss_sum/counter}, logp: {logp_sum/counter}, entropy_coeffi_loss: {entropy_coeffi_loss_sum/counter}, average_action_entropy: {average_action_entropy_sum/counter}, critic_gradient_norm: {critic_gradient_norm_sum/counter}, policy_gradient_norm: {policy_gradient_norm_sum/counter}, entropy_gradient_norm: {entropy_gradient_norm_sum/counter}")
 
                 if online_rl_iteration % 10 == 0:
                     wandb.log(

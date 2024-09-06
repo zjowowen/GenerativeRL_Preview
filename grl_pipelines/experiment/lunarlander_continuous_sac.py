@@ -116,7 +116,7 @@ config = EasyDict(
             critic = dict(
                 learning_rate = 1e-4,
                 discount_factor = 0.99,
-                update_momentum = 0.995,
+                update_momentum = 0.005,
                 grad_clip=200.0,
             ),
             entropy = dict(

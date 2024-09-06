@@ -114,28 +114,28 @@ config = EasyDict(
         ),
         parameter = dict(
             entropy_coeffi = 0.2,
-            target_entropy = -2,
+            target_entropy = -1,
             online_rl = dict(
                 iterations = 100000,
                 collect_steps = 1,
-                collect_steps_at_the_beginning = 10000,
+                collect_steps_at_the_beginning = 1000,
                 update_steps = 1,
                 drop_ratio = 0.00001,
                 batch_size = 2000,
                 random_ratio = 0.0,
             ),
             policy = dict(
-                learning_rate = 1e-4,
+                learning_rate = 3e-4,
                 grad_clip = 5.0,
             ),
             critic = dict(
-                learning_rate = 1e-4,
+                learning_rate = 3e-4,
                 discount_factor = 0.99,
-                update_momentum = 0.995,
+                update_momentum = 0.005,
                 grad_clip=200.0,
             ),
             entropy = dict(
-                learning_rate = 1e-4,
+                learning_rate = 3e-4,
                 grad_clip = 1.0,
             ),
             evaluation = dict(
