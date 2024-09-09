@@ -568,6 +568,7 @@ class SACAlgorithm:
                     state = batch["obs"]
                     action = batch["action"].unsqueeze(-1) if len(batch["action"].shape) == 1 else batch["action"]
                     reward = batch["reward"].unsqueeze(-1) if len(batch["reward"].shape) == 1 else batch["reward"]
+                    reward = reward * config.parameter.online_rl.reward_scale if hasattr(config.parameter.online_rl, "reward_scale") else reward
                     next_state = batch["next_obs"]
                     done = batch["done"].unsqueeze(-1) if len(batch["done"].shape) == 1 else batch["done"]
 
