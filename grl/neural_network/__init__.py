@@ -9,6 +9,7 @@ from grl.neural_network.activation import get_activation
 from grl.neural_network.encoders import get_encoder
 from grl.neural_network.residual_network import MLPResNet
 
+from grl.neural_network.neural_operator.fourier_neural_operator import FNO2d, FNO2dTemporal
 
 def register_module(module: nn.Module, name: str):
     """
@@ -611,4 +612,6 @@ MODULES = {
     "DiT3D".lower(): DiT3D,
     "DiT2D".lower(): DiT,
     "DiT1D".lower(): DiT1D,
+    "FNO2d".lower(): FNO2d,
+    "FNO2dTemporal".lower(): FNO2dTemporal,
 }
