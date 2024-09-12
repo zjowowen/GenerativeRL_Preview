@@ -116,6 +116,16 @@ class SpectralTemporalConv2d(nn.Module):
             )
         )
 
+        self.time_hidden_dim = 256
+        self.time_mlp = nn.Sequential(
+            nn.Linear(32, self.time_hidden_dim),
+            nn.ReLU(),
+            nn.Linear(self.time_hidden_dim, self.time_hidden_dim),
+            nn.ReLU(),
+            nn.Linear(self.time_hidden_dim, self.time_hidden_dim),
+            nn.ReLU(),
+        )
+
     # Complex multiplication
     def compl_mul2d(self, input, weights):
         # (batch, in_channel, x,y ), (in_channel, out_channel, x,y) -> (batch, out_channel, x,y)
@@ -125,6 +135,8 @@ class SpectralTemporalConv2d(nn.Module):
         batchsize = x.shape[0]
         # Compute Fourier coeffcients up to factor of e^(- something constant)
         x_ft = torch.fft.rfft2(x)
+
+        t = self.time_mlp(t)
 
         # transform t to complex tensor
         t = t.to(torch.cfloat)
@@ -345,17 +357,8 @@ class FNO2dTemporal(nn.Module):
         self.out_channels = out_channels
         self.num_layers = num_layers
         self.time_encoder = GaussianFourierProjectionTimeEncoder(embed_dim=32, scale=30)
-        self.time_hidden_dim = 256
-        self.time_mlp = nn.Sequential(
-            nn.Linear(32, self.time_hidden_dim),
-            nn.ReLU(),
-            nn.Linear(self.time_hidden_dim, self.time_hidden_dim),
-            nn.ReLU(),
-            nn.Linear(self.time_hidden_dim, self.time_hidden_dim),
-            nn.ReLU(),
-        )
 
-        self.layers = nn.ModuleList(
+        self.layers1 = nn.ModuleList(
             [
                 FNO2dTemporalLayer(
                     self.modes1, self.modes2, self.in_channels, self.out_channels
@@ -364,11 +367,31 @@ class FNO2dTemporal(nn.Module):
             ]
         )
 
+        self.layer1_w = nn.Conv2d(self.in_channels, self.out_channels, 1)
+
+        self.layers2 = nn.ModuleList(
+            [
+                FNO2dTemporalLayer(
+                    self.modes1, self.modes2, self.in_channels, self.out_channels
+                )
+                for _ in range(self.num_layers)
+            ]
+        )
+
+        self.layer2_w = nn.Conv2d(self.in_channels, self.out_channels, 1)
+
     def forward(self, t, x):
         time_embedding = self.time_encoder(t)
-        time_embedding = self.time_mlp(time_embedding)
+        
+        x0 = x
         for i in range(self.num_layers):
-            x = self.layers[i](time_embedding, x)
+            x = self.layers1[i](time_embedding, x)
+        x = x + self.layer1_w(x0)
+        #x1 = x
+        #for i in range(self.num_layers):
+        #    x = self.layers2[i](time_embedding, x)
+        #x = x + self.layer2_w(x1)
+
         return x
 
 
