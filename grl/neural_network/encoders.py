@@ -4,6 +4,19 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+def register_encoder(module: nn.Module, name: str):
+    """
+    Overview:
+        Register the encoder to the module dictionary.
+    Arguments:
+        - module (:obj:`nn.Module`): The module to be registered.
+        - name (:obj:`str`): The name of the module.
+    """
+    global ENCODERS
+    if name.lower() in ENCODERS:
+        raise KeyError(f"Encoder {name} is already registered.")
+    ENCODERS[name.lower()] = module
+
 def get_encoder(type: str):
     """
     Overview:
