@@ -801,7 +801,7 @@ class GMPGAlgorithm:
                 evaluation_results = dict()
 
                 def policy(obs: np.ndarray) -> np.ndarray:
-                    if isinstance(obs, torch.Tensor):
+                    if isinstance(obs, np.ndarray):
                         obs = torch.tensor(
                             obs,
                             dtype=torch.float32,
@@ -894,13 +894,49 @@ class GMPGAlgorithm:
             )
 
             behaviour_policy_train_iter = 0
+            
+            
             for epoch in track(
                 range(config.parameter.behaviour_policy.epochs),
                 description="Behaviour policy training",
             ):
                 if self.behaviour_policy_train_epoch >= epoch:
                     continue
-
+                if epoch % 1 == 0:
+                    for index, data in enumerate(replay_buffer):
+                        from grl.utils import plot_distribution
+                        if not os.path.exists(config.parameter.checkpoint_path):
+                            os.makedirs(config.parameter.checkpoint_path)
+                        origin_path=os.path.join(config.parameter.checkpoint_path,f"origin_{epoch}.png")
+                        bc_path=os.path.join(config.parameter.checkpoint_path,f"gmpg_{epoch}")
+                        plot_distribution(data["a"],origin_path)
+                        
+                        action=self.model["GPPolicy"].behaviour_policy_sample(
+                            state=data["s"].to(config.model.GPPolicy.device),
+                            t_span=(
+                                torch.linspace(0.0, 1.0, config.parameter.t_span).to(
+                                    config.model.GPPolicy.device
+                                )
+                                if hasattr(config.parameter, "t_span")
+                                and config.parameter.t_span is not None
+                                else None
+                            ),
+                        )
+                        plot_distribution(action,bc_path)
+                        
+                        
+                        evaluation_results = evaluate(
+                            self.model["GPPolicy"].guided_model,
+                            train_epoch=epoch,
+                            repeat=(
+                                1
+                                if not hasattr(config.parameter.evaluation, "repeat")
+                                else config.parameter.evaluation.repeat
+                            ),
+                        )
+                        wandb.log(data=evaluation_results, commit=False)
+                        break
+                
                 counter = 1
                 behaviour_policy_loss_sum = 0
                 for index, data in enumerate(replay_buffer):
@@ -928,21 +964,6 @@ class GMPGAlgorithm:
                     behaviour_policy_train_iter += 1
                     self.behaviour_policy_train_epoch = epoch
                     
-                    if (
-                        behaviour_policy_train_iter
-                        % 50
-                        == 0
-                    ):
-                        evaluation_results = evaluate(
-                            self.model["GPPolicy"].guided_model,
-                            train_epoch=epoch,
-                            repeat=(
-                                1
-                                if not hasattr(config.parameter.evaluation, "repeat")
-                                else config.parameter.evaluation.repeat
-                            ),
-                        )
-                        wandb.log(data=evaluation_results, commit=False)
 
                 wandb.log(
                     data=dict(

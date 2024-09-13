@@ -286,10 +286,13 @@ class  TensorDictencoder(torch.nn.Module):
     def forward(self, x: dict) -> torch.Tensor:
         tensors = []
         for v in x.values():
+            if v.dim() == 1 and self.useRichData == True:
+                v = v.unsqueeze(-1)
             if v.dim() == 3 and v.shape[0] == 1:
+                import ipdb
+                ipdb.set_trace()
                 v = v.view(1, -1)
             if v.dim() == 2 and self.useRichData == True:
-                v.requires_grad = True 
                 tensors.append(v)
             if v.dim() == 4 and self.usePixel== True:
                 v = v.permute(0, 3, 1, 2)/255.0
@@ -300,10 +303,57 @@ class  TensorDictencoder(torch.nn.Module):
         new = torch.cat(tensors, dim=1)
         return new
 
+class  walker_encoder(torch.nn.Module):
+    def __init__(self,mean,std,min_val,max_val):
+        super(walker_encoder, self).__init__()
+        self.mean=mean
+        self.std=std
+        self.min_val=min_val
+        self.max_val=max_val        
+        self.orientation_mlp = nn.Sequential(
+            nn.Linear(14, 28),
+            nn.ReLU(),
+            nn.Linear(28, 28)
+        )
+        
+        self.velocity_mlp = nn.Sequential(
+            nn.Linear(9, 18),
+            nn.ReLU(),
+            nn.Linear(18, 18),
+        )
+        
+        self.height_mlp = nn.Sequential(
+            nn.Linear(1, 2),
+            nn.ReLU(),
+            nn.Linear(2, 2),
+        )
+        
+            
+    def forward(self, x: dict) -> torch.Tensor:
+        orientation_output = self.orientation_mlp(x['orientations'])
+        if x['velocity'].shape[0]==1:
+            device=x['velocity'].device
+            self.mean = torch.tensor( self.mean, device=device)
+            self.std = torch.tensor(self.std, device=device)
+            self.min_val = torch.tensor(self.min_val, device=device)
+            self.max_val = torch.tensor(self.max_val, device=device)
+            standardized_data = (x['velocity'] - self.mean) / self.std
+            data = (standardized_data - self.min_val) / (self.max_val - self.min_val)
+            x['velocity'] = data*2-1
+        velocity_output = self.velocity_mlp(x['velocity'])
+        height=x["height"]
+        if height.dim() == 1:  # Check if it's [b]
+            height = height.unsqueeze(-1)  # Expand to [b, 1]
+        height_output = self.height_mlp(height)        
+        combined_output = torch.cat([orientation_output, velocity_output, height_output], dim=-1)
+        return combined_output
+
+
 ENCODERS = {
     "GaussianFourierProjectionTimeEncoder".lower(): GaussianFourierProjectionTimeEncoder,
     "GaussianFourierProjectionEncoder".lower(): GaussianFourierProjectionEncoder,
     "ExponentialFourierProjectionTimeEncoder".lower(): ExponentialFourierProjectionTimeEncoder,
     "SinusoidalPosEmb".lower(): SinusoidalPosEmb,
     "TensorDictencoder".lower(): TensorDictencoder,
+    "walker_encoder".lower(): walker_encoder,
 }
