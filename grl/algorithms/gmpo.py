@@ -701,7 +701,7 @@ class GMPOAlgorithm:
                 evaluation_results = dict()
 
                 def policy(obs: np.ndarray) -> np.ndarray:
-                    if isinstance(obs, torch.Tensor):
+                    if isinstance(obs, np.ndarray):
                         obs = torch.tensor(
                             obs,
                             dtype=torch.float32,

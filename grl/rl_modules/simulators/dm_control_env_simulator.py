@@ -356,10 +356,8 @@ class DeepMindControlEnvSimulator:
                         obs_values = []
                         for key, value in obs.items():
                             if isinstance(value, np.ndarray):
-                                if value.ndim == 3 and value.shape[0] == 1:
-                                    value = value.reshape(1, -1) 
-                                    import ipdb
-                                    ipdb.set_trace()
+                                if value.ndim == 2 :
+                                    value = value.reshape(-1) 
                             elif np.isscalar(value): 
                                 value = [value]  
                             obs_values.append(value)
