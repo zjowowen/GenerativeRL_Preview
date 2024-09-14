@@ -918,9 +918,7 @@ class GMPGAlgorithm:
                         from grl.utils import plot_distribution
                         if not os.path.exists(config.parameter.checkpoint_path):
                             os.makedirs(config.parameter.checkpoint_path)
-                        plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"action_base_kde_{epoch}.png"),2,"kde")
-                        plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"action_base_hexbin{epoch}.png"),2,"hexbin")
-                        plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"action_base_hist2d{epoch}.png"),2,"hist2d")
+                        plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"action_base_{epoch}.png"))
                         
                         action=self.model["GPPolicy"].behaviour_policy_sample(
                             state=data["s"].to(config.model.GPPolicy.device),
@@ -933,9 +931,7 @@ class GMPGAlgorithm:
                                 else None
                             ),
                         )
-                        plot_distribution(action,os.path.join(config.parameter.checkpoint_path,f"action_base_model_kde_{epoch}_{evaluation_results['evaluation/return_mean']}.png"),2,"kde")
-                        plot_distribution(action,os.path.join(config.parameter.checkpoint_path,f"action_base_model_hexbin_{epoch}_{evaluation_results['evaluation/return_mean']}.png"),2,"hexbin")
-                        plot_distribution(action,os.path.join(config.parameter.checkpoint_path,f"action_base_model_hist2d_{epoch}_{evaluation_results['evaluation/return_mean']}.png"),2,"hist2d")
+                        plot_distribution(action,os.path.join(config.parameter.checkpoint_path,f"action_base_model_{epoch}_{evaluation_results['evaluation/return_mean']}.png"))
                         
                         wandb.log(data=evaluation_results, commit=False)
                         break
@@ -1149,9 +1145,7 @@ class GMPGAlgorithm:
                         from grl.utils import plot_distribution
                         if not os.path.exists(config.parameter.checkpoint_path):
                             os.makedirs(config.parameter.checkpoint_path)
-                        plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"action_guided_kde_{epoch}.png"),2,"kde")
-                        plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"action_guided_hexbin{epoch}.png"),2,"hexbin")
-                        plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"action_guided_hist2d{epoch}.png"),2,"hist2d")
+                        plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"action_guided_{epoch}.png"))
                         
                         action=self.model["GPPolicy"].sample(
                             state=data["s"].to(config.model.GPPolicy.device),
@@ -1164,9 +1158,7 @@ class GMPGAlgorithm:
                                 else None
                             ),
                         )
-                        plot_distribution(action,os.path.join(config.parameter.checkpoint_path,f"action_guided_model_kde_{epoch}_{evaluation_results['evaluation/return_mean']}.png"),2,"kde")
-                        plot_distribution(action,os.path.join(config.parameter.checkpoint_path,f"action_guided_model_hexbin_{epoch}_{evaluation_results['evaluation/return_mean']}.png"),2,"hexbin")
-                        plot_distribution(action,os.path.join(config.parameter.checkpoint_path,f"action_guided_model_hist2d_{epoch}_{evaluation_results['evaluation/return_mean']}.png"),2,"hist2d")
+                        plot_distribution(action,os.path.join(config.parameter.checkpoint_path,f"action_guided_model_{epoch}_{evaluation_results['evaluation/return_mean']}.png"))
                         
                         wandb.log(data=evaluation_results, commit=False)
                         break
