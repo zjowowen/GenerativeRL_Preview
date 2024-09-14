@@ -802,6 +802,44 @@ class GMPOAlgorithm:
                 if self.behaviour_policy_train_epoch >= epoch:
                     continue
 
+                if hasattr(config.parameter.evaluation, "analysis_interval") and epoch % config.parameter.evaluation.analysis_interval == 0:
+                    for index, data in enumerate(replay_buffer):
+
+                        evaluation_results = evaluate(
+                            self.model["GPPolicy"].base_model,
+                            train_epoch=epoch,
+                            repeat=(
+                                1
+                                if not hasattr(config.parameter.evaluation, "repeat")
+                                else config.parameter.evaluation.repeat
+                            ),
+                        )
+
+                        from grl.utils import plot_distribution
+                        if not os.path.exists(config.parameter.checkpoint_path):
+                            os.makedirs(config.parameter.checkpoint_path)
+                        plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"action_base_kde_{epoch}.png"),2,"kde")
+                        plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"action_base_hexbin{epoch}.png"),2,"hexbin")
+                        plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"action_base_hist2d{epoch}.png"),2,"hist2d")
+                        
+                        action=self.model["GPPolicy"].sample(
+                            state=data["s"].to(config.model.GPPolicy.device),
+                            t_span=(
+                                torch.linspace(0.0, 1.0, config.parameter.t_span).to(
+                                    config.model.GPPolicy.device
+                                )
+                                if hasattr(config.parameter, "t_span")
+                                and config.parameter.t_span is not None
+                                else None
+                            ),
+                        )
+                        plot_distribution(action,os.path.join(config.parameter.checkpoint_path,f"action_base_model_kde_{epoch}_{evaluation_results['evaluation/return_mean']}.png"),2,"kde")
+                        plot_distribution(action,os.path.join(config.parameter.checkpoint_path,f"action_base_model_hexbin_{epoch}_{evaluation_results['evaluation/return_mean']}.png"),2,"hexbin")
+                        plot_distribution(action,os.path.join(config.parameter.checkpoint_path,f"action_base_model_hist2d_{epoch}_{evaluation_results['evaluation/return_mean']}.png"),2,"hist2d")
+                        
+                        wandb.log(data=evaluation_results, commit=False)
+                        break
+
                 counter = 1
                 behaviour_policy_loss_sum = 0
                 for index, data in enumerate(replay_buffer):
@@ -1030,6 +1068,44 @@ class GMPOAlgorithm:
                 if self.guided_policy_train_epoch >= epoch:
                     continue
 
+                if hasattr(config.parameter.evaluation, "analysis_interval") and epoch % config.parameter.evaluation.analysis_interval == 0:
+                    for index, data in enumerate(replay_buffer):
+
+                        evaluation_results = evaluate(
+                            self.model["GPPolicy"].guided_model,
+                            train_epoch=epoch,
+                            repeat=(
+                                1
+                                if not hasattr(config.parameter.evaluation, "repeat")
+                                else config.parameter.evaluation.repeat
+                            ),
+                        )
+
+                        from grl.utils import plot_distribution
+                        if not os.path.exists(config.parameter.checkpoint_path):
+                            os.makedirs(config.parameter.checkpoint_path)
+                        plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"action_guided_kde_{epoch}.png"),2,"kde")
+                        plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"action_guided_hexbin{epoch}.png"),2,"hexbin")
+                        plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"action_guided_hist2d{epoch}.png"),2,"hist2d")
+                        
+                        action=self.model["GPPolicy"].sample(
+                            state=data["s"].to(config.model.GPPolicy.device),
+                            t_span=(
+                                torch.linspace(0.0, 1.0, config.parameter.t_span).to(
+                                    config.model.GPPolicy.device
+                                )
+                                if hasattr(config.parameter, "t_span")
+                                and config.parameter.t_span is not None
+                                else None
+                            ),
+                        )
+                        plot_distribution(action,os.path.join(config.parameter.checkpoint_path,f"action_guided_model_kde_{epoch}_{evaluation_results['evaluation/return_mean']}.png"),2,"kde")
+                        plot_distribution(action,os.path.join(config.parameter.checkpoint_path,f"action_guided_model_hexbin_{epoch}_{evaluation_results['evaluation/return_mean']}.png"),2,"hexbin")
+                        plot_distribution(action,os.path.join(config.parameter.checkpoint_path,f"action_guided_model_hist2d_{epoch}_{evaluation_results['evaluation/return_mean']}.png"),2,"hist2d")
+                        
+                        wandb.log(data=evaluation_results, commit=False)
+                        break
+
                 counter = 1
                 guided_policy_loss_sum = 0.0
                 if config.parameter.algorithm_type == "GMPO":
@@ -1148,9 +1224,9 @@ class GMPOAlgorithm:
 
                 if (
                     config.parameter.evaluation.eval
-                    and hasattr(config.parameter.evaluation, "interval")
+                    and hasattr(config.parameter.evaluation, "epoch_interval")
                     and (self.guided_policy_train_epoch + 1)
-                    % config.parameter.evaluation.interval
+                    % config.parameter.evaluation.epoch_interval
                     == 0
                 ):
                     evaluation_results = evaluate(
