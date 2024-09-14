@@ -1,81 +1,80 @@
-import numpy as np
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-import wandb
-
-# def plot_distribution(data, save_path):
-#     """
-#     绘制给定数据的分布图并保存为图片。
-
-#     参数:
-#     data (torch.Tensor or np.ndarray): 数据，形状为 (batch, dim)。
-#     save_path (str): 图片保存的路径。
-#     """
-#     if hasattr(data, 'detach') and callable(data.detach):
-#         data = data.detach().cpu().numpy()
-#     assert len(data.shape) == 2, "data 需要是一个二维张量或数组"
-#     dim = data.shape[1]
-#     df = pd.DataFrame(data, columns=[f'Dim {i+1}' for i in range(dim)])
-#     g = sns.PairGrid(df)
-#     g.map_diag(sns.histplot, kde=False, color='skyblue', edgecolor='black')
-#     g.map_offdiag(sns.kdeplot, cmap='Blues', fill=True, thresh=0)
-#     sns.set_style('whitegrid')
-#     plt.suptitle('Analyse Data Distribution', fontsize=16, y=1.02)
-#     plt.tight_layout()
-#     plt.savefig(save_path, dpi=500, bbox_inches='tight')
-#     plt.close()
-    
-    
-def plot_distribution(data, save_path, plot_type='kde'):
+def plot_distribution(data, save_path, size=None, plot_type='hist2d',dpi=500):
     """
-    绘制给定数据的分布图并保存为图片
+    Plot the distribution of the given data and save it as an image.
 
-    参数:
-    data (torch.Tensor or np.ndarray): 数据，形状为 (batch, dim)。
-    save_path (str): 图片保存的路径。
-    plot_type (str): 指定二维图的类型，可选值为 'kde'、'hexbin' 或 'hist2d'。
-    wandb_log (bool): 如果为 True，则将图片上传到 wandb。
+    Parameters:
+    data (torch.Tensor or np.ndarray): Data with shape (batch, dim).
+    save_path (str): Path to save the image.
+    size (int):size of picture
+    plot_type (str): Specify the type of 2D plot; options are 'kde', 'hexbin', or 'hist2d'.
     """
-    # 如果 data 是 torch.Tensor，将其转为 numpy
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import pandas as pd
+    import seaborn as sns
+    # If data is a torch.Tensor, convert it to numpy
     if hasattr(data, 'detach') and callable(data.detach):
         data = data.detach().cpu().numpy()
     
-    # 确保数据是二维的
-    assert len(data.shape) == 2, "data 需要是一个二维张量或数组"
+    # Ensure the data is 2-dimensional
+    assert len(data.shape) == 2, "data needs to be a 2-dimensional tensor or array"
     dim = data.shape[1]
     
-    # 将数据转换为 DataFrame
+    # Convert data to DataFrame
     df = pd.DataFrame(data, columns=[f'Dim {i+1}' for i in range(dim)])
-
-    # 创建 PairGrid
+    
+    # Create PairGrid
     g = sns.PairGrid(df)
-    g.map_diag(sns.histplot, kde=False, color='skyblue', edgecolor='black')
 
-    # 根据指定的 plot_type 绘图
+    # Plot according to the specified plot_type
     if plot_type == 'kde':
+        g.map_diag(sns.histplot, kde=False, color='skyblue', edgecolor='black')
         g.map_offdiag(sns.kdeplot, cmap='Blues', fill=True, thresh=0)
+    
     elif plot_type == 'hexbin':
+        sns.set_style('whitegrid')
+        g.map_diag(sns.histplot, kde=False, color='skyblue', edgecolor='black')
+        # Save the first mappable object
+        mappables = []
         def hexbin_func(x, y, **kwargs):
-            plt.hexbin(x, y, gridsize=30, cmap='Blues')
+            ax = plt.gca()
+            hb = ax.hexbin(x, y, gridsize=30, cmap='Blues')
+            mappables.append(hb)
         g.map_offdiag(hexbin_func)
+    
     elif plot_type == 'hist2d':
+        sns.set_style('whitegrid')
+        g.map_diag(sns.histplot, kde=False, color='magenta', edgecolor='black')
+        # Save the first mappable object
+        mappables = []
         def hist2d_func(x, y, **kwargs):
-            plt.hist2d(x, y, bins=30, cmap='Blues')
+            ax = plt.gca()
+            counts, xedges, yedges, im = ax.hist2d(x, y, bins=30, cmap='Purples')
+            mappables.append(im)
         g.map_offdiag(hist2d_func)
     else:
-        raise ValueError("plot_type 参数必须是 'kde'、'hexbin' 或 'hist2d'")
+        raise ValueError("plot_type parameter must be 'kde', 'hexbin', or 'hist2d'")
     
-    # 设置风格和布局
-    sns.set_style('whitegrid')
+    if plot_type != "kde" and mappables:
+        # Add a colorbar at the bottom of the plot
+        cbar = g.fig.colorbar(
+            mappables[0],
+            ax=g.axes,
+            orientation='horizontal',
+            fraction=0.05,  # Adjust as needed
+            pad=0.1         # Adjust as needed
+        )
+        cbar.ax.set_xlabel('Density')
+    
+    if size is not None:
+        for i in range(dim):
+            for j in range(dim):
+                ax = g.axes[i, j]
+                ax.set_xlim(-size, size)
+                if i != j:  # Only set y-axis limits for off-diagonal subplots
+                    ax.set_ylim(-size, size)
+    # Set title and layout
     plt.suptitle('Analyse Data Distribution', fontsize=16, y=1.02)
-    plt.tight_layout()
-
-    # 保存图片
-    plt.savefig(save_path, dpi=500, bbox_inches='tight')
+    # Save image
+    plt.savefig(save_path, dpi=dpi, bbox_inches='tight')
     plt.close()
-    
-    # # 将图片上传到 wandb
-    # if wandb_log:
-    #     wandb_image = wandb.Image(save_path, caption="Data Distribution")
-    #     wandb.log({"distribution_plot": wandb_image})

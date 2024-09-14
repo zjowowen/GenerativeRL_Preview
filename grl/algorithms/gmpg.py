@@ -902,14 +902,14 @@ class GMPGAlgorithm:
             ):
                 if self.behaviour_policy_train_epoch >= epoch:
                     continue
-                if epoch % 1 == 0:
+                if epoch % 10 == 0:
                     for index, data in enumerate(replay_buffer):
                         from grl.utils import plot_distribution
                         if not os.path.exists(config.parameter.checkpoint_path):
                             os.makedirs(config.parameter.checkpoint_path)
-                        origin_path=os.path.join(config.parameter.checkpoint_path,f"origin_{epoch}.png")
-                        bc_path=os.path.join(config.parameter.checkpoint_path,f"gmpg_{epoch}")
-                        plot_distribution(data["a"],origin_path)
+                        plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"origin_kde_{epoch}.png"),2,"kde")
+                        plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"origin_hexbin{epoch}.png"),2,"hexbin")
+                        plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"origin_hist2d{epoch}.png"),2,"hist2d")
                         
                         action=self.model["GPPolicy"].behaviour_policy_sample(
                             state=data["s"].to(config.model.GPPolicy.device),
@@ -922,8 +922,9 @@ class GMPGAlgorithm:
                                 else None
                             ),
                         )
-                        plot_distribution(action,bc_path)
-                        
+                        plot_distribution(action,os.path.join(config.parameter.checkpoint_path,f"bc_kde_{epoch}.png"),2,"kde")
+                        plot_distribution(action,os.path.join(config.parameter.checkpoint_path,f"bc_hexbin_{epoch}.png"),2,"hexbin")
+                        plot_distribution(action,os.path.join(config.parameter.checkpoint_path,f"bc_hist2d_{epoch}"),2,"hist2d")
                         
                         evaluation_results = evaluate(
                             self.model["GPPolicy"].guided_model,
@@ -1130,6 +1131,41 @@ class GMPGAlgorithm:
                 if self.guided_policy_train_epoch >= epoch:
                     continue
 
+                if epoch % 10 == 0:
+                    for index, data in enumerate(replay_buffer):
+                        from grl.utils import plot_distribution
+                        if not os.path.exists(config.parameter.checkpoint_path):
+                            os.makedirs(config.parameter.checkpoint_path)
+                        plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"origin_guided_kde_{epoch}.png"),2,"kde")
+                        plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"origin_guided_hexbin{epoch}.png"),2,"hexbin")
+                        plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"origin_guided_hist2d{epoch}.png"),2,"hist2d")
+                        
+                        action=self.model["GPPolicy"].sample(
+                            state=data["s"].to(config.model.GPPolicy.device),
+                            t_span=(
+                                torch.linspace(0.0, 1.0, config.parameter.t_span).to(
+                                    config.model.GPPolicy.device
+                                )
+                                if hasattr(config.parameter, "t_span")
+                                and config.parameter.t_span is not None
+                                else None
+                            ),
+                        )
+                        plot_distribution(action,os.path.join(config.parameter.checkpoint_path,f"bc_guided_kde_{epoch}.png"),2,"kde")
+                        plot_distribution(action,os.path.join(config.parameter.checkpoint_path,f"bc_guided_hexbin_{epoch}.png"),2,"hexbin")
+                        plot_distribution(action,os.path.join(config.parameter.checkpoint_path,f"bc_guided_hist2d_{epoch}"),2,"hist2d")
+                        
+                        evaluation_results = evaluate(
+                            self.model["GPPolicy"].guided_model,
+                            train_epoch=epoch,
+                            repeat=(
+                                1
+                                if not hasattr(config.parameter.evaluation, "repeat")
+                                else config.parameter.evaluation.repeat
+                            ),
+                        )
+                        wandb.log(data=evaluation_results, commit=False)
+                        break
                 counter = 1
                 guided_policy_loss_sum = 0.0
                 for index, data in enumerate(replay_buffer):
