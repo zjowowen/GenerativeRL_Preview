@@ -363,7 +363,7 @@ class QGPOAlgorithm:
 
                 self.critic_train_epoch = load_model(
                     path=config.parameter.checkpoint_path,
-                    model=self.model["QGPOPolicy"].critic.q,
+                    model=self.model["QGPOPolicy"].critic,
                     optimizer=None,
                     prefix="critic",
                 )
@@ -679,7 +679,7 @@ class QGPOAlgorithm:
                         )
                         save_model(
                             path=config.parameter.checkpoint_path,
-                            model=self.model["QGPOPolicy"].critic.q,
+                            model=self.model["QGPOPolicy"].critic,
                             optimizer=q_optimizer,
                             iteration=epoch,
                             prefix="critic",
