@@ -1182,7 +1182,7 @@ class GMPGAlgorithm:
                             ),
                         )
 
-                        plot_distribution(action,os.path.join(config.parameter.checkpoint_path,f"action_guided_model_{epoch}_{evaluation_results['evaluation/return_mean']}.png"))
+                        plot_distribution(action.detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_guided_model_{epoch}_{evaluation_results['evaluation/return_mean']}.png"))
                         
                         wandb.log(data=evaluation_results, commit=False)
                         break
