@@ -929,19 +929,9 @@ class GMPGAlgorithm:
                 if hasattr(config.parameter.evaluation, "analysis_interval") and epoch % config.parameter.evaluation.analysis_interval == 0:
                     for index, data in enumerate(replay_buffer):
 
-                        evaluation_results = evaluate(
-                            self.model["GPPolicy"].base_model,
-                            train_epoch=epoch,
-                            repeat=(
-                                1
-                                if not hasattr(config.parameter.evaluation, "repeat")
-                                else config.parameter.evaluation.repeat
-                            ),
-                        )
-
                         if not os.path.exists(config.parameter.checkpoint_path):
                             os.makedirs(config.parameter.checkpoint_path)
-                        plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"action_base_{epoch}.png"))
+                        plot_distribution(data["a"].detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_base_{epoch}.png"))
                         
                         action=self.model["GPPolicy"].behaviour_policy_sample(
                             state=data["s"].to(config.model.GPPolicy.device),
@@ -954,7 +944,18 @@ class GMPGAlgorithm:
                                 else None
                             ),
                         )
-                        plot_distribution(action,os.path.join(config.parameter.checkpoint_path,f"action_base_model_{epoch}_{evaluation_results['evaluation/return_mean']}.png"))
+
+                        evaluation_results = evaluate(
+                            self.model["GPPolicy"].base_model,
+                            train_epoch=epoch,
+                            repeat=(
+                                1
+                                if not hasattr(config.parameter.evaluation, "repeat")
+                                else config.parameter.evaluation.repeat
+                            ),
+                        )
+
+                        plot_distribution(action.detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_base_model_{epoch}_{evaluation_results['evaluation/return_mean']}.png"))
                         
                         wandb.log(data=evaluation_results, commit=False)
                         break
@@ -1155,19 +1156,9 @@ class GMPGAlgorithm:
                 if hasattr(config.parameter.evaluation, "analysis_interval") and epoch % config.parameter.evaluation.analysis_interval == 0:
                     for index, data in enumerate(replay_buffer):
 
-                        evaluation_results = evaluate(
-                            self.model["GPPolicy"].guided_model,
-                            train_epoch=epoch,
-                            repeat=(
-                                1
-                                if not hasattr(config.parameter.evaluation, "repeat")
-                                else config.parameter.evaluation.repeat
-                            ),
-                        )
-
                         if not os.path.exists(config.parameter.checkpoint_path):
                             os.makedirs(config.parameter.checkpoint_path)
-                        plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"action_guided_{epoch}.png"))
+                        plot_distribution(data["a"].detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_guided_{epoch}.png"))
                         
                         action=self.model["GPPolicy"].sample(
                             state=data["s"].to(config.model.GPPolicy.device),
@@ -1180,6 +1171,17 @@ class GMPGAlgorithm:
                                 else None
                             ),
                         )
+
+                        evaluation_results = evaluate(
+                            self.model["GPPolicy"].guided_model,
+                            train_epoch=epoch,
+                            repeat=(
+                                1
+                                if not hasattr(config.parameter.evaluation, "repeat")
+                                else config.parameter.evaluation.repeat
+                            ),
+                        )
+
                         plot_distribution(action,os.path.join(config.parameter.checkpoint_path,f"action_guided_model_{epoch}_{evaluation_results['evaluation/return_mean']}.png"))
                         
                         wandb.log(data=evaluation_results, commit=False)

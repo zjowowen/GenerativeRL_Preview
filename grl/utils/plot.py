@@ -19,11 +19,11 @@ def plot_distribution(data: np.ndarray, save_path:str, size=None, dpi=500):
     B, N = data.shape  # B: number of samples, N: number of features
 
     # Create a figure with N * N subplots
-    fig, axes = plt.subplots(N, N, figsize=size if size else (12, 12))
+    fig, axes = plt.subplots(N, N, figsize=size if size else (4*N, 4*N))
     plt.subplots_adjust(wspace=0.4, hspace=0.4)
 
     # First, calculate the global minimum and maximum for the 2D histograms (normalized as percentages)
-    hist_range = [[np.min(data[:, i]), np.max(data[:, i])] for i in range(N)]
+    hist_range = [[np.min(data[:, i])*1.02, np.max(data[:, i]*1.02)] for i in range(N)]
     global_min, global_max = float('inf'), float('-inf')
 
     # Loop to calculate the min and max percentage values across all 2D histograms
@@ -41,7 +41,7 @@ def plot_distribution(data: np.ndarray, save_path:str, size=None, dpi=500):
             if i == j:
                 # Diagonal: plot 1D histogram for feature i
                 axes[i, j].hist(data[:, i], bins=30, color='skyblue', edgecolor='black')
-                axes[i, j].set_title(f'Hist of Feature {i+1}')
+                # axes[i, j].set_title(f'Hist of Feature {i+1}')
             else:
                 # Off-diagonal: calculate 2D histogram and plot using pcolormesh with unified color scale (as percentage)
                 hist, xedges, yedges = np.histogram2d(data[:, j], data[:, i], bins=30, range=[hist_range[j], hist_range[i]])
