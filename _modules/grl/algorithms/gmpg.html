@@ -335,7 +335,7 @@
 <span class="kn">from</span> <span class="nn">grl.utils</span> <span class="kn">import</span> <span class="n">set_seed</span>
 <span class="kn">from</span> <span class="nn">grl.utils.statistics</span> <span class="kn">import</span> <span class="n">sort_files_by_criteria</span>
 <span class="kn">from</span> <span class="nn">grl.generative_models.metric</span> <span class="kn">import</span> <span class="n">compute_likelihood</span>
-
+<span class="kn">from</span> <span class="nn">grl.utils.plot</span> <span class="kn">import</span> <span class="n">plot_distribution</span>
 
 <span class="k">def</span> <span class="nf">asymmetric_l2_loss</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">tau</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">tau</span> <span class="o">-</span> <span class="p">(</span><span class="n">u</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">())</span> <span class="o">*</span> <span class="n">u</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
@@ -790,7 +790,41 @@
         <span class="n">loss_q</span> <span class="o">=</span> <span class="o">-</span><span class="n">beta</span> <span class="o">*</span> <span class="n">q_value_repeated</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
         <span class="n">loss_p</span> <span class="o">=</span> <span class="n">log_p_per_dim</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
         <span class="n">loss_u</span> <span class="o">=</span> <span class="o">-</span><span class="n">log_mu_per_dim</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="n">loss_q</span><span class="p">,</span> <span class="n">loss_p</span><span class="p">,</span> <span class="n">loss_u</span></div>
+        <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="n">loss_q</span><span class="p">,</span> <span class="n">loss_p</span><span class="p">,</span> <span class="n">loss_u</span>
+
+    <span class="k">def</span> <span class="nf">policy_gradient_loss_add_matching_loss</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">action</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span>
+        <span class="n">maximum_likelihood</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">gradtime_step</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+        <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">repeats</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="p">):</span>
+
+        <span class="n">t_span</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">gradtime_step</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">repeats</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">state_repeated</span><span class="o">=</span><span class="n">state</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">state_repeated</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span>
+                <span class="n">state</span><span class="p">,</span> <span class="n">repeats</span><span class="o">=</span><span class="n">repeats</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">()</span>
+ 
+        <span class="n">action_repeated</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">guided_model</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+            <span class="n">t_span</span><span class="o">=</span><span class="n">t_span</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="n">state_repeated</span><span class="p">,</span> <span class="n">with_grad</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+
+        <span class="n">q_value_repeated</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">critic</span><span class="p">(</span><span class="n">action_repeated</span><span class="p">,</span> <span class="n">state_repeated</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">loss_q</span> <span class="o">=</span> <span class="o">-</span><span class="n">beta</span> <span class="o">*</span> <span class="n">q_value_repeated</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+        <span class="n">loss_matching</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">behaviour_policy_loss</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="n">action</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">,</span> <span class="n">maximum_likelihood</span><span class="o">=</span><span class="n">maximum_likelihood</span><span class="p">)</span>
+
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">loss_q</span> <span class="o">+</span> <span class="n">loss_matching</span>
+
+        <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="n">loss_q</span><span class="p">,</span> <span class="n">loss_matching</span></div>
+    
 
 
 <div class="viewcode-block" id="GMPGAlgorithm"><a class="viewcode-back" href="../../../api_doc/algorithms/index.html#grl.algorithms.GMPGAlgorithm">[docs]</a><span class="k">class</span> <span class="nc">GMPGAlgorithm</span><span class="p">:</span>
@@ -1205,7 +1239,6 @@
                             <span class="p">),</span>
                         <span class="p">)</span>
 
-                        <span class="kn">from</span> <span class="nn">grl.utils</span> <span class="kn">import</span> <span class="n">plot_distribution</span>
                         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">checkpoint_path</span><span class="p">):</span>
                             <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">checkpoint_path</span><span class="p">)</span>
                         <span class="n">plot_distribution</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">],</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">checkpoint_path</span><span class="p">,</span><span class="sa">f</span><span class="s2">&quot;action_base_</span><span class="si">{</span><span class="n">epoch</span><span class="si">}</span><span class="s2">.png&quot;</span><span class="p">))</span>
@@ -1432,7 +1465,6 @@
                             <span class="p">),</span>
                         <span class="p">)</span>
 
-                        <span class="kn">from</span> <span class="nn">grl.utils</span> <span class="kn">import</span> <span class="n">plot_distribution</span>
                         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">checkpoint_path</span><span class="p">):</span>
                             <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">checkpoint_path</span><span class="p">)</span>
                         <span class="n">plot_distribution</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">],</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">checkpoint_path</span><span class="p">,</span><span class="sa">f</span><span class="s2">&quot;action_guided_</span><span class="si">{</span><span class="n">epoch</span><span class="si">}</span><span class="s2">.png&quot;</span><span class="p">))</span>
