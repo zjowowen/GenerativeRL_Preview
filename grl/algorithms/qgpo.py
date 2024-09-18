@@ -416,20 +416,6 @@ class QGPOAlgorithm:
             )
 
             # ---------------------------------------
-            # Customized model initialization code ↓
-            # ---------------------------------------
-
-            if hasattr(config.model, "QGPOPolicy"):
-                self.model["QGPOPolicy"] = QGPOPolicy(config.model.QGPOPolicy)
-                self.model["QGPOPolicy"].to(config.model.QGPOPolicy.device)
-                if torch.__version__ >= "2.0.0":
-                    self.model["QGPOPolicy"] = torch.compile(self.model["QGPOPolicy"])
-
-            # ---------------------------------------
-            # Customized model initialization code ↑
-            # ---------------------------------------
-
-            # ---------------------------------------
             # Customized training code ↓
             # ---------------------------------------
 
