@@ -654,11 +654,11 @@ class QGPOAlgorithm:
                         energy_guidance_optimizer.step()
                         energy_guidance_loss_sum += energy_guidance_loss.item()
 
+                        counter += 1
+
                     if epoch < config.parameter.critic.stop_training_iterations:
                         progress.update(critic_training, advance=1)
                     progress.update(energy_guidance_training, advance=1)
-
-                    counter += 1
 
                     if (
                         epoch == 0
