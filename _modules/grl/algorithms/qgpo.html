@@ -954,11 +954,11 @@
                         <span class="n">energy_guidance_optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
                         <span class="n">energy_guidance_loss_sum</span> <span class="o">+=</span> <span class="n">energy_guidance_loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 
+                        <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
+
                     <span class="k">if</span> <span class="n">epoch</span> <span class="o">&lt;</span> <span class="n">config</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">critic</span><span class="o">.</span><span class="n">stop_training_iterations</span><span class="p">:</span>
                         <span class="n">progress</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">critic_training</span><span class="p">,</span> <span class="n">advance</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
                     <span class="n">progress</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">energy_guidance_training</span><span class="p">,</span> <span class="n">advance</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-                    <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
 
                     <span class="k">if</span> <span class="p">(</span>
                         <span class="n">epoch</span> <span class="o">==</span> <span class="mi">0</span>
