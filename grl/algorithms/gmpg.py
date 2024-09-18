@@ -35,7 +35,7 @@ from grl.utils.log import log
 from grl.utils import set_seed
 from grl.utils.statistics import sort_files_by_criteria
 from grl.generative_models.metric import compute_likelihood
-
+from grl.utils.plot import plot_distribution
 
 def asymmetric_l2_loss(u, tau):
     return torch.mean(torch.abs(tau - (u < 0).float()) * u**2)
@@ -492,6 +492,40 @@ class GMPGPolicy(nn.Module):
         loss_u = -log_mu_per_dim.detach().mean()
         return loss, loss_q, loss_p, loss_u
 
+    def policy_gradient_loss_add_matching_loss(
+        self,
+        action: Union[torch.Tensor, TensorDict],
+        state: Union[torch.Tensor, TensorDict],
+        maximum_likelihood: bool = False,
+        gradtime_step: int = 1000,
+        beta: float = 1.0,
+        repeats: int = 1,
+    ):
+
+        t_span = torch.linspace(0.0, 1.0, gradtime_step).to(state.device)
+
+        if repeats == 1:
+            state_repeated=state
+        else:
+            state_repeated = torch.repeat_interleave(
+                state, repeats=repeats, dim=0
+            ).requires_grad_()
+ 
+        action_repeated = self.guided_model.sample(
+            t_span=t_span, condition=state_repeated, with_grad=True
+        )
+
+        q_value_repeated = self.critic(action_repeated, state_repeated).squeeze(dim=-1)
+
+        loss_q = -beta * q_value_repeated.mean()
+
+        loss_matching = self.behaviour_policy_loss(action=action, state=state, maximum_likelihood=maximum_likelihood)
+
+        loss = loss_q + loss_matching
+
+        return loss, loss_q, loss_matching
+    
+
 
 class GMPGAlgorithm:
     """
@@ -905,7 +939,6 @@ class GMPGAlgorithm:
                             ),
                         )
 
-                        from grl.utils import plot_distribution
                         if not os.path.exists(config.parameter.checkpoint_path):
                             os.makedirs(config.parameter.checkpoint_path)
                         plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"action_base_{epoch}.png"))
@@ -1132,7 +1165,6 @@ class GMPGAlgorithm:
                             ),
                         )
 
-                        from grl.utils import plot_distribution
                         if not os.path.exists(config.parameter.checkpoint_path):
                             os.makedirs(config.parameter.checkpoint_path)
                         plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"action_guided_{epoch}.png"))
