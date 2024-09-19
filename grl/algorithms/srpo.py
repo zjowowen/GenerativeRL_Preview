@@ -524,7 +524,12 @@ class SRPOAlgorithm:
                     == 0
                 ):
                     evaluation_results = evaluate(
-                        self.model["SRPOPolicy"], train_epoch=epoch,method="diffusion"
+                        self.model["SRPOPolicy"], train_epoch=epoch,method="diffusion",
+                        repeat=(
+                            1
+                            if not hasattr(config.parameter.evaluation, "repeat")
+                            else config.parameter.evaluation.repeat
+                        ),
                     )
                     wandb_run.log(data=evaluation_results, commit=False)
                     save_model(
@@ -674,7 +679,12 @@ class SRPOAlgorithm:
                     == 0
                 ):
                     evaluation_results = evaluate(
-                        self.model["SRPOPolicy"], train_epoch=epoch,method="diracpolicy"
+                        self.model["SRPOPolicy"], train_epoch=epoch,method="diracpolicy",
+                        repeat=(
+                            1
+                            if not hasattr(config.parameter.evaluation, "repeat")
+                            else config.parameter.evaluation.repeat
+                        ),
                     )
                     wandb_run.log(
                         data=evaluation_results,
