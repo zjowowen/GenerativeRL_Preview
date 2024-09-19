@@ -474,7 +474,7 @@ class ConcatenateMLP(nn.Module):
         return self.model(torch.cat(x, dim=-1))
 
 
-class ALLCONCATMLP(nn.Module):
+class AllCatMLP(nn.Module):
     def __init__(self, **kwargs):
         super().__init__()
         self.main = MLPResNet(**kwargs)
@@ -603,7 +603,7 @@ MODULES = {
     "ConcatenateLayer".lower(): ConcatenateLayer,
     "MultiLayerPerceptron".lower(): MultiLayerPerceptron,
     "ConcatenateMLP".lower(): ConcatenateMLP,
-    "ALLCONCATMLP".lower(): ALLCONCATMLP,
+    "AllCatMLP".lower(): AllCatMLP,
     "TemporalSpatialResidualNet".lower(): TemporalSpatialResidualNet,
     "DiT".lower(): DiT,
     "DiT_3D".lower(): DiT3D,
