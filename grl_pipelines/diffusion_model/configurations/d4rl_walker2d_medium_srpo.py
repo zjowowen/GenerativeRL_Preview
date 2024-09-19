@@ -1,11 +1,14 @@
 import torch
 from easydict import EasyDict
+import d4rl
 
-action_size = 3
-state_size = 11
+action_size = 6
+state_size = 17
+env_id="walker2d-medium-v2"
+algorithm="SRPO"
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 
-t_embedding_dim = 64  # CHANGE
+t_embedding_dim = 64  
 t_encoder = dict(
     type="GaussianFourierProjectionTimeEncoder",
     args=dict(
@@ -16,17 +19,18 @@ t_encoder = dict(
 
 config = EasyDict(
     train=dict(
-        project="d4rl-hopper-srpo",
+        project=f"{env_id}-{algorithm}",
+        device=device,
         simulator=dict(
             type="GymEnvSimulator",
             args=dict(
-                env_id="Hopper-v2",
+                env_id=env_id,
             ),
         ),
         dataset=dict(
-            type="D4RLDataset",
+            type="GPD4RLTensorDictDataset",
             args=dict(
-                env_id="hopper-medium-expert-v2",
+                env_id=env_id,
             ),
         ),
         model=dict(
@@ -53,17 +57,23 @@ config = EasyDict(
                             ),
                         ),
                     ),
+                    VNetwork=dict(
+                        backbone=dict(
+                            type="MultiLayerPerceptron",
+                            args=dict(
+                                hidden_sizes=[state_size, 256, 256],
+                                output_size=1,
+                                activation="relu",
+                            ),
+                        ),
+                    ),
                 ),
                 diffusion_model=dict(
                     device=device,
                     x_size=action_size,
                     alpha=1.0,
-                    beta=0.01,
+                    beta=0.1,
                     solver=dict(
-                        # type = "ODESolver",
-                        # args = dict(
-                        #     library="torchdyn",
-                        # ),
                         type="DPMSolver",
                         args=dict(
                             order=2,
@@ -81,7 +91,7 @@ config = EasyDict(
                         args=dict(
                             t_encoder=t_encoder,
                             backbone=dict(
-                                type="ALLCONCATMLP",
+                                type="AllCatMLP",
                                 args=dict(
                                     input_dim=state_size + action_size,
                                     output_dim=action_size,
@@ -97,33 +107,71 @@ config = EasyDict(
             behaviour_policy=dict(
                 batch_size=2048,
                 learning_rate=3e-4,
-                iterations=2000000,
+                iterations=2000,
             ),
-            action_augment_num=16,
             critic=dict(
-                batch_size=256,
-                iterations=2000000,
+                batch_size=4096,
+                iterations=2000,
                 learning_rate=3e-4,
                 discount_factor=0.99,
                 tau=0.7,
-                moment=0.995,
+                update_momentum=0.995,
+                checkpoint_freq=10,
             ),
-            actor=dict(
+            policy=dict(
                 batch_size=256,
-                iterations=2000000,
                 learning_rate=3e-4,
+                tmax=2000000,
+                iterations=2000,
             ),
             evaluation=dict(
-                evaluation_interval=1000,
+                evaluation_interval=500,
+                repeat=5,
             ),
+            checkpoint_path=f"./{env_id}-{algorithm}",
         ),
     ),
     deploy=dict(
         device=device,
         env=dict(
-            env_id="HalfCheetah-v2",
+            env_id=env_id,
             seed=0,
         ),
         num_deploy_steps=1000,
     ),
 )
+
+import gym
+
+from grl.algorithms.srpo import SRPOAlgorithm
+from grl.utils.log import log
+
+def srpo_pipeline(config):
+
+    srpo = SRPOAlgorithm(config)
+
+    # ---------------------------------------
+    # Customized train code ↓
+    # ---------------------------------------
+    srpo.train()
+    # ---------------------------------------
+    # Customized train code ↑
+    # ---------------------------------------
+
+    # ---------------------------------------
+    # Customized deploy code ↓
+    # ---------------------------------------
+    agent = srpo.deploy()
+    env = gym.make(config.deploy.env.env_id)
+    env.reset()
+    for _ in range(config.deploy.num_deploy_steps):
+        env.render()
+        env.step(agent.act(env.observation))
+    # ---------------------------------------
+    # Customized deploy code ↑
+    # ---------------------------------------
+
+
+if __name__ == "__main__":
+    log.info("config: \n{}".format(config))
+    srpo_pipeline(config)
