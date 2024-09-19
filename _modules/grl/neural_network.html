@@ -774,7 +774,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span></div></div>
 
 
-<span class="k">class</span> <span class="nc">ALLCONCATMLP</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">AllCatMLP</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">main</span> <span class="o">=</span> <span class="n">MLPResNet</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -903,7 +903,7 @@
     <span class="s2">&quot;ConcatenateLayer&quot;</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">ConcatenateLayer</span><span class="p">,</span>
     <span class="s2">&quot;MultiLayerPerceptron&quot;</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">MultiLayerPerceptron</span><span class="p">,</span>
     <span class="s2">&quot;ConcatenateMLP&quot;</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">ConcatenateMLP</span><span class="p">,</span>
-    <span class="s2">&quot;ALLCONCATMLP&quot;</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">ALLCONCATMLP</span><span class="p">,</span>
+    <span class="s2">&quot;AllCatMLP&quot;</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">AllCatMLP</span><span class="p">,</span>
     <span class="s2">&quot;TemporalSpatialResidualNet&quot;</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">TemporalSpatialResidualNet</span><span class="p">,</span>
     <span class="s2">&quot;DiT&quot;</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">DiT</span><span class="p">,</span>
     <span class="s2">&quot;DiT_3D&quot;</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">DiT3D</span><span class="p">,</span>
