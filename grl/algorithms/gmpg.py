@@ -919,7 +919,8 @@ class GMPGAlgorithm:
 
             behaviour_policy_train_iter = 0
             
-            
+            logp=[]
+            end_return=[]
             for epoch in track(
                 range(config.parameter.behaviour_policy.epochs),
                 description="Behaviour policy training",
@@ -927,6 +928,7 @@ class GMPGAlgorithm:
                 if self.behaviour_policy_train_epoch >= epoch:
                     continue
                 if hasattr(config.parameter.evaluation, "analysis_interval") and epoch % config.parameter.evaluation.analysis_interval == 0:
+                    timlimited=10
                     for index, data in enumerate(replay_buffer):
 
                         if not os.path.exists(config.parameter.checkpoint_path):
@@ -957,8 +959,19 @@ class GMPGAlgorithm:
 
                         plot_distribution(action.detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_base_model_{epoch}_{evaluation_results['evaluation/return_mean']}.png"))
                         
+                        log_p= compute_likelihood(
+                            model=self.model["GPPolicy"].base_model,
+                            x=data["a"].to(config.model.GPPolicy.device),
+                            condition=data["s"].to(config.model.GPPolicy.device),
+                            t=torch.linspace(0.0, 1.0, 100).to(config.model.GPPolicy.device),
+                            using_Hutchinson_trace_estimator=True,
+                        )
+                        logp.append(log_p)
+                        end_return.append(evaluation_results["evaluation/return_mean"])
                         wandb.log(data=evaluation_results, commit=False)
-                        break
+                        timlimited+=1
+                        if timlimited>10:
+                            break
                 
                 counter = 1
                 behaviour_policy_loss_sum = 0
@@ -1010,7 +1023,8 @@ class GMPGAlgorithm:
             # ---------------------------------------
             # behavior training code ↑
             # ---------------------------------------
-
+            np.save(os.path.join(config.parameter.checkpoint_path,f"logp.npy"),logp)
+            np.save(os.path.join(config.parameter.checkpoint_path,f"end_return.npy"),end_return)
             # ---------------------------------------
             # critic training code ↓
             # ---------------------------------------
