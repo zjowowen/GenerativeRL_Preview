@@ -122,7 +122,7 @@ config = EasyDict(
                 learning_rate=3e-4,
                 discount_factor=0.99,
                 tau=0.7,
-                update_momentum=0.995,
+                update_momentum=0.005,
                 checkpoint_freq=10,
             ),
             policy=dict(
