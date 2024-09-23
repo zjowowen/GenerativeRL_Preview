@@ -977,7 +977,6 @@ class GMPGAlgorithm:
                         wandb.log(data=evaluation_results, commit=False)
                         
                         timlimited+=1
-                        
                         if timlimited>10:
                             break
                 
@@ -1170,7 +1169,13 @@ class GMPGAlgorithm:
                 prefetch=10,
                 pin_memory=True,
             )
-
+            
+            logp_min=[]
+            logp_max=[]
+            logp_mean=[]
+            logp_sum=[]
+            end_return=[]
+            
             guided_policy_train_iter = 0
             beta = config.parameter.guided_policy.beta
             for epoch in track(
@@ -1180,26 +1185,29 @@ class GMPGAlgorithm:
 
                 if self.guided_policy_train_epoch >= epoch:
                     continue
-
+                
+                timlimited=0
+                
                 if hasattr(config.parameter.evaluation, "analysis_interval") and epoch % config.parameter.evaluation.analysis_interval == 0:
                     for index, data in enumerate(replay_buffer):
-
-                        if not os.path.exists(config.parameter.checkpoint_path):
-                            os.makedirs(config.parameter.checkpoint_path)
-                        plot_distribution(data["a"].detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_guided_{epoch}.png"))
                         
-                        action=self.model["GPPolicy"].sample(
-                            state=data["s"].to(config.model.GPPolicy.device),
-                            t_span=(
-                                torch.linspace(0.0, 1.0, config.parameter.t_span).to(
-                                    config.model.GPPolicy.device
-                                )
-                                if hasattr(config.parameter, "t_span")
-                                and config.parameter.t_span is not None
-                                else None
-                            ),
-                        )
-
+                        if timlimited==0:
+                            if not os.path.exists(config.parameter.checkpoint_path):
+                                os.makedirs(config.parameter.checkpoint_path)
+                            plot_distribution(data["a"].detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_guided_{epoch}.png"))
+                            
+                            action=self.model["GPPolicy"].sample(
+                                state=data["s"].to(config.model.GPPolicy.device),
+                                t_span=(
+                                    torch.linspace(0.0, 1.0, config.parameter.t_span).to(
+                                        config.model.GPPolicy.device
+                                    )
+                                    if hasattr(config.parameter, "t_span")
+                                    and config.parameter.t_span is not None
+                                    else None
+                                ),
+                            )
+                            
                         evaluation_results = evaluate(
                             self.model["GPPolicy"].guided_model,
                             train_epoch=epoch,
@@ -1209,9 +1217,25 @@ class GMPGAlgorithm:
                                 else config.parameter.evaluation.repeat
                             ),
                         )
-
-                        plot_distribution(action.detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_guided_model_{epoch}_{evaluation_results['evaluation/return_mean']}.png"))
                         
+                        log_p= compute_likelihood(
+                            model=self.model["GPPolicy"].guided_model,
+                            x=data["a"].to(config.model.GPPolicy.device),
+                            condition=data["s"].to(config.model.GPPolicy.device),
+                            t=torch.linspace(0.0, 1.0, 100).to(config.model.GPPolicy.device),
+                            using_Hutchinson_trace_estimator=True,
+                        )
+                        
+                        logp_max.append(log_p.max().detach().cpu().numpy())
+                        logp_min.append(log_p.min().detach().cpu().numpy())
+                        logp_mean.append(log_p.mean().detach().cpu().numpy())
+                        logp_sum.append(log_p.sum().detach().cpu().numpy())
+                        end_return.append(evaluation_results["evaluation/return_mean"])
+                        
+                        if timlimited==0:
+                            plot_distribution(action.detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_guided_model_{epoch}_{evaluation_results['evaluation/return_mean']}.png"))
+                        
+                        timlimited +=1
                         wandb.log(data=evaluation_results, commit=False)
                         break
                 counter = 1
@@ -1383,6 +1407,14 @@ class GMPGAlgorithm:
                         ),
                         commit=True,
                     )
+            logp_dict = {
+                "logp_max": logp_max,
+                "logp_min": logp_min,
+                "logp_mean": logp_mean,
+                "logp_sum": logp_sum,
+                "end_return": end_return
+            }
+            np.savez(os.path.join(config.parameter.checkpoint_path, "logp_data_guided.npz"), **logp_dict)    
 
             # ---------------------------------------
             # guided policy training code ↑
