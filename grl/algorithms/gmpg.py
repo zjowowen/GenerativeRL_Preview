@@ -919,7 +919,10 @@ class GMPGAlgorithm:
 
             behaviour_policy_train_iter = 0
             
-            logp=[]
+            logp_min=[]
+            logp_max=[]
+            logp_mean=[]
+            logp_sum=[]
             end_return=[]
             for epoch in track(
                 range(config.parameter.behaviour_policy.epochs),
@@ -928,36 +931,35 @@ class GMPGAlgorithm:
                 if self.behaviour_policy_train_epoch >= epoch:
                     continue
                 if hasattr(config.parameter.evaluation, "analysis_interval") and epoch % config.parameter.evaluation.analysis_interval == 0:
-                    timlimited=10
+                    timlimited=0
                     for index, data in enumerate(replay_buffer):
-
-                        if not os.path.exists(config.parameter.checkpoint_path):
-                            os.makedirs(config.parameter.checkpoint_path)
-                        plot_distribution(data["a"].detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_base_{epoch}.png"))
-                        
-                        action=self.model["GPPolicy"].behaviour_policy_sample(
-                            state=data["s"].to(config.model.GPPolicy.device),
-                            t_span=(
-                                torch.linspace(0.0, 1.0, config.parameter.t_span).to(
-                                    config.model.GPPolicy.device
-                                )
-                                if hasattr(config.parameter, "t_span")
-                                and config.parameter.t_span is not None
-                                else None
-                            ),
-                        )
+                        if timlimited ==0 :
+                            if not os.path.exists(config.parameter.checkpoint_path):
+                                os.makedirs(config.parameter.checkpoint_path)
+                            plot_distribution(data["a"].detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_base_{epoch}.png"))
+                            
+                            action=self.model["GPPolicy"].behaviour_policy_sample(
+                                state=data["s"].to(config.model.GPPolicy.device),
+                                t_span=(
+                                    torch.linspace(0.0, 1.0, config.parameter.t_span).to(
+                                        config.model.GPPolicy.device
+                                    )
+                                    if hasattr(config.parameter, "t_span")
+                                    and config.parameter.t_span is not None
+                                    else None
+                                ),
+                            )
 
                         evaluation_results = evaluate(
                             self.model["GPPolicy"].base_model,
                             train_epoch=epoch,
                             repeat=(
-                                1
-                                if not hasattr(config.parameter.evaluation, "repeat")
-                                else config.parameter.evaluation.repeat
+                                3
                             ),
                         )
-
-                        plot_distribution(action.detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_base_model_{epoch}_{evaluation_results['evaluation/return_mean']}.png"))
+                        
+                        if timlimited ==0 :
+                            plot_distribution(action.detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_base_model_{epoch}_{evaluation_results['evaluation/return_mean']}.png"))
                         
                         log_p= compute_likelihood(
                             model=self.model["GPPolicy"].base_model,
@@ -966,10 +968,16 @@ class GMPGAlgorithm:
                             t=torch.linspace(0.0, 1.0, 100).to(config.model.GPPolicy.device),
                             using_Hutchinson_trace_estimator=True,
                         )
-                        logp.append(log_p)
+                        logp_max.append(log_p.max().detach().cpu().numpy())
+                        logp_min.append(log_p.min().detach().cpu().numpy())
+                        logp_mean.append(log_p.mean().detach().cpu().numpy())
+                        logp_sum.append(log_p.sum().detach().cpu().numpy())
                         end_return.append(evaluation_results["evaluation/return_mean"])
+                        
                         wandb.log(data=evaluation_results, commit=False)
+                        
                         timlimited+=1
+                        
                         if timlimited>10:
                             break
                 
@@ -1023,8 +1031,14 @@ class GMPGAlgorithm:
             # ---------------------------------------
             # behavior training code ↑
             # ---------------------------------------
-            np.save(os.path.join(config.parameter.checkpoint_path,f"logp.npy"),logp)
-            np.save(os.path.join(config.parameter.checkpoint_path,f"end_return.npy"),end_return)
+            logp_dict = {
+                "logp_max": logp_max,
+                "logp_min": logp_min,
+                "logp_mean": logp_mean,
+                "logp_sum": logp_sum,
+                "end_return": end_return
+            }
+            np.savez(os.path.join(config.parameter.checkpoint_path, "logp_data.npz"), **logp_dict)           
             # ---------------------------------------
             # critic training code ↓
             # ---------------------------------------
