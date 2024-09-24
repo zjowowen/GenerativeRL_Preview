@@ -10,7 +10,7 @@ action_size = 1
 state_size = 5
 
 project_name =  f"{env_id}-{algorithm}"
-device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
+device = torch.device("cuda:5") if torch.cuda.is_available() else torch.device("cpu")
 t_embedding_dim = 64
 t_encoder = dict(
     type="GaussianFourierProjectionTimeEncoder",
@@ -30,14 +30,12 @@ config = EasyDict(
             args=dict(
                 domain_name=domain_name,
                 task_name=task_name,
-                dict_return=False,
             ),
         ),
         dataset=dict(
-            type="QGPODMcontrolTensorDictDataset",
+            type="GPDMcontrolTensorDictDataset",
             args=dict(
                 path=path,
-                action_augment_num=action_augment_num,
             ),
         ),
         model=dict(
@@ -45,10 +43,7 @@ config = EasyDict(
                 device=device,
                 critic=dict(
                     device=device,
-                    adim=action_size,
-                    sdim=state_size,
-                    layers=2,
-                    update_momentum=0.95,
+                    q_alpha=1.0,
                     DoubleQNetwork=dict(
                         backbone=dict(
                             type="ConcatenateMLP",
@@ -56,6 +51,11 @@ config = EasyDict(
                                 hidden_sizes=[action_size + state_size, 256, 256],
                                 output_size=1,
                                 activation="relu",
+                            ),
+                        ),
+                        state_encoder=dict(
+                            type="TensorDictencoder",
+                            args=dict(
                             ),
                         ),
                     ),
@@ -66,6 +66,11 @@ config = EasyDict(
                                 hidden_sizes=[state_size, 256, 256],
                                 output_size=1,
                                 activation="relu",
+                            ),
+                        ),
+                        state_encoder=dict(
+                            type="TensorDictencoder",
+                            args=dict(
                             ),
                         ),
                     ),
@@ -92,6 +97,11 @@ config = EasyDict(
                         type="noise_function",
                         args=dict(
                             t_encoder=t_encoder,
+                            condition_encoder=dict(
+                                type="TensorDictencoder",
+                                args=dict(
+                                            ),
+                            ),
                             backbone=dict(
                                 type="AllCatMLP",
                                 args=dict(
@@ -109,20 +119,20 @@ config = EasyDict(
             behaviour_policy=dict(
                 batch_size=2048,
                 learning_rate=3e-4,
-                iterations=2000,
+                iterations=4000,
             ),
             critic=dict(
                 batch_size=4096,
-                iterations=2000,
+                iterations=20000,
                 learning_rate=3e-4,
                 discount_factor=0.99,
                 tau=0.7,
                 update_momentum=0.005,
-                checkpoint_freq=100,
             ),
             evaluation=dict(
-                evaluation_interval=100,
+                evaluation_interval=1000,
                 repeat=5,
+                interval=1000,
             ),
             checkpoint_path=f"./{env_id}-{algorithm}",
         ),

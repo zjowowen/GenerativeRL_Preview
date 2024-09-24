@@ -218,7 +218,6 @@ class IDQLPolicy(nn.Module):
         Returns:
             q (:obj:`torch.Tensor`): The Q value.
         """
-
         return self.critic(action, state)
     
 class IDQLAlgorithm:
