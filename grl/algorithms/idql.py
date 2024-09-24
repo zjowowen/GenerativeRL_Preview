@@ -57,8 +57,7 @@ class IDQLCritic(nn.Module):
     Interfaces:
         ``__init__``, ``v_loss``, ``q_loss
     """
-
-    def __init__(self, config) -> None:
+    def __init__(self, config: EasyDict):
         """
         Overview:
             Initialize the critic network.
@@ -66,48 +65,59 @@ class IDQLCritic(nn.Module):
             config (:obj:`EasyDict`): The configuration.
         """
         super().__init__()
-        self.q0 = DoubleQNetwork(config.DoubleQNetwork)
-        self.q0_target = copy.deepcopy(self.q0).requires_grad_(False)
-        self.vf = VNetwork(config.VNetwork)
+        self.config = config
+        self.q_alpha = config.q_alpha
+        self.q = DoubleQNetwork(config.DoubleQNetwork)
+        self.q_target = copy.deepcopy(self.q).requires_grad_(False)
+        self.v = VNetwork(config.VNetwork)
 
-    def v_loss(self, state, action, next_state, tau):
+    def forward(
+        self,
+        action: Union[torch.Tensor, TensorDict],
+        state: Union[torch.Tensor, TensorDict] = None,
+    ) -> torch.Tensor:
         """
         Overview:
-            Calculate the value loss.
+            Return the output of GPO critic.
         Arguments:
-            data (:obj:`Dict`): The input data.
-            tau (:obj:`float`): The threshold.
+            action (:obj:`torch.Tensor`): The input action.
+            state (:obj:`torch.Tensor`): The input state.
         """
 
+        return self.q(action, state)
+    
+    def compute_double_q(
+        self,
+        action: Union[torch.Tensor, TensorDict],
+        state: Union[torch.Tensor, TensorDict] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Overview:
+            Return the output of two Q networks.
+        Arguments:
+            action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.
+            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+        Returns:
+            q1 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the first Q network.
+            q2 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the second Q network.
+        """
+        return self.q.compute_double_q(action, state)
+    
+    def v_loss(self, state, action, next_state, tau):
         with torch.no_grad():
-            target_q = self.q0_target(action, state).detach()
-            next_v = self.vf(next_state).detach()
+            target_q = self.q_target(action, state).detach()
+            next_v = self.v(next_state).detach()
         # Update value function
-        v = self.vf(state)
+        v = self.v(state)
         adv = target_q - v
         v_loss = asymmetric_l2_loss(adv, tau)
         return v_loss, next_v
-
-    def q_loss(self, state, action, reward, done, next_v, discount):
-        """
-        Overview:
-            Calculate the Q loss.
-        Arguments:
-            data (:obj:`Dict`): The input data.
-            next_v (:obj:`torch.Tensor`): The input next state value.
-            discount (:obj:`float`): The discount factor.
-        """
-        # Update Q function
-        targets = reward + (1.0 - done.float()) * discount * next_v.detach()
-        q0,q1 = self.q0.compute_double_q(action, state)
-        q_loss = (
-                torch.nn.functional.mse_loss(q0, targets)
-                + torch.nn.functional.mse_loss(q1, targets)
-            ) / 2
-        return q_loss,torch.mean(q0), torch.mean(targets)
     
-    def q_target_min(self,state,action):
-        return  self.q0_target.compute_mininum_q(state, action)
+    def iql_q_loss(self, state, action, reward, done, next_v, discount):
+        q_target = reward + (1.0 - done.float()) * discount * next_v.detach()
+        qs = self.q.compute_double_q(action, state)
+        q_loss = sum(torch.nn.functional.mse_loss(q, q_target) for q in qs) / len(qs)
+        return q_loss, torch.mean(qs[0]), torch.mean(q_target)
 
 
 class IDQLPolicy(nn.Module):
@@ -193,52 +203,24 @@ class IDQLPolicy(nn.Module):
         """
 
         return self.diffusion_model.score_matching_loss(action, state)
-        
-    def v_loss(
+
+    def compute_q(
         self,
-        state, action, next_state,
-        tau: int = 0.9,
+        state: Union[torch.Tensor, TensorDict],
+        action: Union[torch.Tensor, TensorDict],
     ) -> torch.Tensor:
         """
         Overview:
-            Calculate the Q loss.
+            Calculate the Q value.
         Arguments:
-            action (:obj:`torch.Tensor`): The input action.
-            state (:obj:`torch.Tensor`): The input state.
-            reward (:obj:`torch.Tensor`): The input reward.
-            next_state (:obj:`torch.Tensor`): The input next state.
-            done (:obj:`torch.Tensor`): The input done.
-            fake_next_action (:obj:`torch.Tensor`): The input fake next action.
-        """
-        v_loss, next_v = self.critic.v_loss(state, action, next_state, tau)
-        return v_loss, next_v
-
-    def q_loss(
-        self,
-        state,
-        action,
-        reward,
-        done,
-        next_v: torch.Tensor,
-        discount: float = 1.0,
-    ) -> torch.Tensor:
-        """
-        Overview:
-            Calculate the Q loss.
-        Arguments:
-            action (:obj:`torch.Tensor`): The input action.
-            state (:obj:`torch.Tensor`): The input state.
-            reward (:obj:`torch.Tensor`): The input reward.
-            next_state (:obj:`torch.Tensor`): The input next state.
-            done (:obj:`torch.Tensor`): The input done.
-            fake_next_action (:obj:`torch.Tensor`): The input fake next action.
-            discount_factor (:obj:`float`): The discount factor.
+            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.
+        Returns:
+            q (:obj:`torch.Tensor`): The Q value.
         """
 
-        loss = self.critic.q_loss(state, action, reward, done, next_v, discount)
-        return loss
-
-
+        return self.critic(action, state)
+    
 class IDQLAlgorithm:
 
     def __init__(
@@ -422,11 +404,11 @@ class IDQLAlgorithm:
             )
 
             q_optimizer = torch.optim.Adam(
-                self.model["IDQLPolicy"].critic.q0.parameters(),
+                self.model["IDQLPolicy"].critic.q.parameters(),
                 lr=config.parameter.critic.learning_rate,
             )
             v_optimizer = torch.optim.Adam(
-                self.model["IDQLPolicy"].critic.vf.parameters(),
+                self.model["IDQLPolicy"].critic.v.parameters(),
                 lr=config.parameter.critic.learning_rate,
             )
 
@@ -434,15 +416,19 @@ class IDQLAlgorithm:
                 range(config.parameter.critic.iterations),
                 description="Critic training",
             ):
-                counter = 0
-                q_sum=0.0
-                q_loss_sum = 0.0
-                v_loss_sum = 0.0
                 if self.critic_train_epoch >= epoch:
                     continue
-                
+
+                counter = 1
+
+                v_loss_sum = 0.0
+                v_sum = 0.0
+                q_loss_sum = 0.0
+                q_sum = 0.0
+                q_target_sum = 0.0
                 for index, data in enumerate(replay_buffer):
-                    v_loss, next_v = self.model["IDQLPolicy"].v_loss(
+
+                    v_loss, next_v = self.model["IDQLPolicy"].critic.v_loss(
                         state=data["s"].to(config.model.IDQLPolicy.device),
                         action=data["a"].to(config.model.IDQLPolicy.device),
                         next_state=data["s_"].to(config.model.IDQLPolicy.device),
@@ -451,8 +437,7 @@ class IDQLAlgorithm:
                     v_optimizer.zero_grad(set_to_none=True)
                     v_loss.backward()
                     v_optimizer.step()
-
-                    q_loss,q_mean,q_target = self.model["IDQLPolicy"].q_loss(
+                    q_loss, q, q_target = self.model["IDQLPolicy"].critic.iql_q_loss(
                         state=data["s"].to(config.model.IDQLPolicy.device),
                         action=data["a"].to(config.model.IDQLPolicy.device),
                         reward=data["r"].to(config.model.IDQLPolicy.device),
@@ -460,45 +445,58 @@ class IDQLAlgorithm:
                         next_v=next_v,
                         discount=config.parameter.critic.discount_factor,
                     )
-                    
                     q_optimizer.zero_grad(set_to_none=True)
                     q_loss.backward()
                     q_optimizer.step()
-                    
-                    counter += 1
-                    q_loss_sum += q_loss.item()
-                    v_loss_sum += v_loss.item()
-                    q_sum +=q_mean.item()
-            
+
                     # Update target
                     for param, target_param in zip(
-                        self.model["IDQLPolicy"].critic.q0.parameters(),
-                        self.model["IDQLPolicy"].critic.q0_target.parameters(),
+                        self.model["IDQLPolicy"].critic.q.parameters(),
+                        self.model["IDQLPolicy"].critic.q_target.parameters(),
                     ):
                         target_param.data.copy_(
                             config.parameter.critic.update_momentum * param.data
-                            + (1 - config.parameter.critic.update_momentum) * target_param.data
+                            + (1 - config.parameter.critic.update_momentum)
+                            * target_param.data
                         )
+
+                    counter += 1
+
+                    q_loss_sum += q_loss.item()
+                    q_sum += q.mean().item()
+                    q_target_sum += q_target.mean().item()
+
+                    v_loss_sum += v_loss.item()
+                    v_sum += next_v.mean().item()
+                    self.critic_train_epoch = epoch
+
+                wandb.log(
+                    data=dict(v_loss=v_loss_sum / counter, v=v_sum / counter),
+                    commit=False,
+                )
 
                 wandb.log(
                     data=dict(
                         critic_train_epoch=epoch,
                         q_loss=q_loss_sum / counter,
-                        v_loss=v_loss_sum / counter,
                         q=q_sum / counter,
+                        q_target=q_target_sum / counter,
                     ),
                     commit=True,
                 )
+
                 if (
-                    hasattr(config.parameter.critic, "checkpoint_freq")
-                    and (epoch + 1) % config.parameter.critic.checkpoint_freq == 0
-                ):
+                        epoch == 0
+                        or (epoch + 1)
+                        % config.parameter.evaluation.evaluation_interval
+                        == 0
+                    ):
                     save_model(
-                        path=config.parameter.checkpoint_path,
-                        model=self.model["IDQLPolicy"].critic,
-                        optimizer=q_optimizer,
-                        iteration=epoch,
-                        prefix="critic",
+                            path=config.parameter.checkpoint_path,
+                            model=self.model["IDQLPolicy"].critic,
+                            optimizer=q_optimizer,
+                            iteration=epoch,
+                            prefix="critic",
                     )
 
 
@@ -553,10 +551,10 @@ class IDQLAlgorithm:
                     wandb_run.log(data=evaluation_results, commit=False)
                     save_model(
                         path=config.parameter.checkpoint_path,
-                        model=self.model["IDQLPolicy"].diffusion_model.model,
-                        optimizer=behaviour_model_optimizer,
+                        model=self.model["IDQLPolicy"].critic.model,
+                        optimizer=q_optimizer,
                         iteration=epoch,
-                        prefix="behaviour_policy",
+                        prefix="critic",
                     )
                     
                 wandb_run.log(
