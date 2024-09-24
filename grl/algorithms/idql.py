@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import os
 from datetime import datetime
 
-
+import torch.nn.functional as F
 import d4rl
 import gym
 import numpy as np
@@ -25,9 +25,16 @@ from grl.agents.srpo import SRPOAgent
 from grl.datasets import create_dataset
 
 from grl.datasets.d4rl import D4RLDataset
-
-from grl.generative_models.sro import SRPOConditionalDiffusionModel
-from grl.neural_network import MultiLayerPerceptron
+from grl.generative_models.diffusion_model import DiffusionModel
+from grl.generative_models.conditional_flow_model.optimal_transport_conditional_flow_model import (
+    OptimalTransportConditionalFlowModel,
+)
+from grl.generative_models.conditional_flow_model.independent_conditional_flow_model import (
+    IndependentConditionalFlowModel,
+)
+from grl.generative_models.bridge_flow_model.schrodinger_bridge_conditional_flow_model import (
+    SchrodingerBridgeConditionalFlowModel,
+)
 from grl.rl_modules.simulators import create_simulator
 
 from grl.rl_modules.value_network.q_network import DoubleQNetwork
@@ -40,33 +47,10 @@ from grl.utils.log import log
 from grl.utils.model_utils import save_model, load_model
 
 
-class Dirac_Policy(nn.Module):
-    """
-    Overview:
-        The deterministic policy network used in SRPO algorithm.
-    Interfaces:
-        ``__init__``, ``forward``, ``select_actions``
-    """
-    def __init__(self, action_dim: int, state_dim: int, layer: int = 2):
-        super().__init__()
-        self.net = MultiLayerPerceptron(
-            hidden_sizes=[state_dim] + [256 for _ in range(layer)],
-            output_size=action_dim,
-            activation="relu",
-            final_activation="tanh",
-        )
-
-    def forward(self, state: torch.Tensor):
-        return self.net(state)
-
-    def select_actions(self, state: torch.Tensor):
-        return self(state)
-
-
 def asymmetric_l2_loss(u, tau):
     return torch.mean(torch.abs(tau - (u < 0).float()) * u**2)
 
-class SRPOCritic(nn.Module):
+class IDQLCritic(nn.Module):
     """
     Overview:
         The critic network used in SRPO algorithm.
@@ -102,6 +86,23 @@ class SRPOCritic(nn.Module):
 
         return self.q(action, state)
     
+    def compute_double_q(
+        self,
+        action: Union[torch.Tensor, TensorDict],
+        state: Union[torch.Tensor, TensorDict] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Overview:
+            Return the output of two Q networks.
+        Arguments:
+            action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.
+            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+        Returns:
+            q1 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the first Q network.
+            q2 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the second Q network.
+        """
+        return self.q.compute_double_q(action, state)
+    
     def v_loss(self, state, action, next_state, tau):
         with torch.no_grad():
             target_q = self.q_target(action, state).detach()
@@ -119,7 +120,7 @@ class SRPOCritic(nn.Module):
         return q_loss, torch.mean(qs[0]), torch.mean(q_target)
 
 
-class SRPOPolicy(nn.Module):
+class IDQLPolicy(nn.Module):
     """
     Overview:
         The SRPO policy network.
@@ -138,42 +139,38 @@ class SRPOPolicy(nn.Module):
         self.config = config
         self.device = config.device
 
-        self.policy = Dirac_Policy(**config.policy_model)
-        self.critic = SRPOCritic(config.critic)
-        self.sro = SRPOConditionalDiffusionModel(
-            config=config.diffusion_model,
-            value_model=self.critic,
-            distribution_model=self.policy,
-        )
+        self.critic = IDQLCritic(config.critic)
+        self.diffusion_model = DiffusionModel(config.diffusion_model)
     
-    def sample(
+    def behaviour_policy_sample(
         self,
         state: Union[torch.Tensor, TensorDict],
         batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
-        guidance_scale: Union[torch.Tensor, float] = torch.tensor(1.0),
         solver_config: EasyDict = None,
         t_span: torch.Tensor = None,
+        with_grad: bool = False,
     ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
-            Return the output of QGPO policy, which is the action conditioned on the state.
+            Return the output of behaviour policy, which is the action conditioned on the state.
         Arguments:
             state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            guidance_scale (:obj:`Union[torch.Tensor, float]`): The guidance scale.
+            batch_size (:obj:`Union[torch.Size, int, Tuple[int], List[int]]`): The batch size.
             solver_config (:obj:`EasyDict`): The configuration for the ODE solver.
             t_span (:obj:`torch.Tensor`): The time span for the ODE solver or SDE solver.
+            with_grad (:obj:`bool`): Whether to calculate the gradient.
         Returns:
             action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
-        return self.sro.diffusion_model.sample(
+        return self.diffusion_model.sample(
             t_span=t_span,
             condition=state,
             batch_size=batch_size,
-            with_grad=False,
+            with_grad=with_grad,
             solver_config=solver_config,
         )
 
-    def forward(
+    def get_action(
         self, state: Union[torch.Tensor, TensorDict]
     ) -> Union[torch.Tensor, TensorDict]:
         """
@@ -184,12 +181,18 @@ class SRPOPolicy(nn.Module):
         Returns:
             action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
-        return self.policy.select_actions(state)
+        state_rpt = torch.repeat_interleave(state, repeats=200, dim=0)
+        with torch.no_grad():
+            action = self.behaviour_policy_sample(state=state_rpt)
+            q_value = self.critic.q_target_min(state_rpt, action).flatten()
+            idx = torch.multinomial(F.softmax(q_value), 1)
+        return action[idx]
 
     def behaviour_policy_loss(
         self,
         action: Union[torch.Tensor, TensorDict],
         state: Union[torch.Tensor, TensorDict],
+        maximum_likelihood: bool = False,
     ):
         """
         Overview:
@@ -199,29 +202,25 @@ class SRPOPolicy(nn.Module):
             state (:obj:`torch.Tensor`): The input state.
         """
 
-        return self.sro.score_matching_loss(action, state)
+        return self.diffusion_model.score_matching_loss(action, state)
 
-    def srpo_actor_loss(
+    def compute_q(
         self,
-        state,
+        state: Union[torch.Tensor, TensorDict],
+        action: Union[torch.Tensor, TensorDict],
     ) -> torch.Tensor:
         """
         Overview:
-            Calculate the Q loss.
+            Calculate the Q value.
         Arguments:
-            action (:obj:`torch.Tensor`): The input action.
-            state (:obj:`torch.Tensor`): The input state.
-            reward (:obj:`torch.Tensor`): The input reward.
-            next_state (:obj:`torch.Tensor`): The input next state.
-            done (:obj:`torch.Tensor`): The input done.
-            fake_next_action (:obj:`torch.Tensor`): The input fake next action.
-            discount_factor (:obj:`float`): The discount factor.
+            state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
+            action (:obj:`Union[torch.Tensor, TensorDict]`): The input action.
+        Returns:
+            q (:obj:`torch.Tensor`): The Q value.
         """
-        loss, q = self.sro.srpo_loss(state)
-        return loss, q
-
-
-class SRPOAlgorithm:
+        return self.critic(action, state)
+    
+class IDQLAlgorithm:
 
     def __init__(
         self,
@@ -257,19 +256,18 @@ class SRPOAlgorithm:
             self.model = model
             self.behaviour_train_epoch = 0
             self.critic_train_epoch = 0
-            self.policy_train_epoch = 0
         else:
             self.model = torch.nn.ModuleDict()
             config = self.config.train
-            assert hasattr(config.model, "SRPOPolicy")
+            assert hasattr(config.model, "IDQLPolicy")
 
             if torch.__version__ >= "2.0.0":
-                self.model["SRPOPolicy"] = torch.compile(
-                    SRPOPolicy(config.model.SRPOPolicy).to(config.model.SRPOPolicy.device)
+                self.model["IDQLPolicy"] = torch.compile(
+                    IDQLPolicy(config.model.IDQLPolicy).to(config.model.IDQLPolicy.device)
                 )
             else:
-                self.model["SRPOPolicy"] = SRPOPolicy(config.model.SRPOPolicy).to(
-                    config.model.SRPOPolicy.device
+                self.model["IDQLPolicy"] = IDQLPolicy(config.model.IDQLPolicy).to(
+                    config.model.IDQLPolicy.device
                 )
 
             if (
@@ -278,27 +276,20 @@ class SRPOAlgorithm:
             ):
                 self.behaviour_train_epoch = load_model(
                     path=config.parameter.checkpoint_path,
-                    model=self.model["SRPOPolicy"].sro.diffusion_model.model,
+                    model=self.model["IDQLPolicy"].diffusion_model.model,
                     optimizer=None,
                     prefix="behaviour_policy",
                 )
                 
                 self.critic_train_epoch = load_model(
                     path=config.parameter.checkpoint_path,
-                    model=self.model["SRPOPolicy"].critic,
+                    model=self.model["IDQLPolicy"].critic,
                     optimizer=None,
                     prefix="critic",
                 )
 
-                self.policy_train_epoch = load_model(
-                    path=config.parameter.checkpoint_path,
-                    model=self.model["SRPOPolicy"].policy,
-                    optimizer=None,
-                    prefix="policy",
-                )
             else:
                 self.behaviour_policy_train_epoch = 0
-                self.energy_guidance_train_epoch = 0
                 self.critic_train_epoch = 0
 
         # ---------------------------------------
@@ -345,68 +336,36 @@ class SRPOAlgorithm:
                 else self.dataset
             )
             
-            def evaluate(model, train_epoch,method="diffusion",repeat=1):
+            def evaluate(model, train_epoch,repeat=1):
                 evaluation_results = dict()
 
-                if method=="diffusion":
-                    def policy(obs: np.ndarray) -> np.ndarray:
-                        if isinstance(obs, np.ndarray):
-                            obs = torch.tensor(
-                                obs,
+                def policy(obs: np.ndarray) -> np.ndarray:
+                    if isinstance(obs, np.ndarray):
+                        obs = torch.tensor(
+                            obs,
+                            dtype=torch.float32,
+                            device=config.model.IDQLPolicy.device,
+                        ).unsqueeze(0)
+                    elif isinstance(obs, dict):
+                        for key in obs:
+                            obs[key] = torch.tensor(
+                                obs[key],
                                 dtype=torch.float32,
-                                device=config.model.SRPOPolicy.device,
+                                device=config.model.IDQLPolicy.device
                             ).unsqueeze(0)
-                        elif isinstance(obs, dict):
-                            for key in obs:
-                                obs[key] = torch.tensor(
-                                    obs[key],
-                                    dtype=torch.float32,
-                                    device=config.model.SRPOPolicy.device
-                                ).unsqueeze(0)
-                                if obs[key].dim() == 1 and obs[key].shape[0] == 1:
-                                    obs[key] = obs[key].unsqueeze(1)
-                            obs = TensorDict(obs, batch_size=[1])
-                    
-                        action = (
-                            model.sample(
-                                state=obs,
-                                t_span=(
-                                    torch.linspace(0.0, 1.0, config.parameter.t_span).to(
-                                        config.model.SRPOPolicy.device
-                                    )
-                                    if hasattr(config.parameter, "t_span")
-                                    and config.parameter.t_span is not None
-                                    else None
-                                ),
-                            )
-                            .squeeze(0)
-                            .cpu()
-                            .detach()
-                            .numpy()
-                        )
-                        return action
+                            if obs[key].dim() == 1 and obs[key].shape[0] == 1:
+                                obs[key] = obs[key].unsqueeze(1)
+                        obs = TensorDict(obs, batch_size=[1])
+                
+                    action = (
+                        model.get_action(state=obs)
+                        .squeeze(0)
+                        .cpu()
+                        .detach()
+                        .numpy()
+                    )
+                    return action
 
-                elif method=="diracpolicy":
-                    def policy(obs: np.ndarray) -> np.ndarray:
-                        if isinstance(obs, np.ndarray):
-                            obs = torch.tensor(
-                                obs,
-                                dtype=torch.float32,
-                                device=config.model.SRPOPolicy.device,
-                            ).unsqueeze(0)
-                        elif isinstance(obs, dict):
-                            for key in obs:
-                                obs[key] = torch.tensor(
-                                    obs[key],
-                                    dtype=torch.float32,
-                                    device=config.model.SRPOPolicy.device
-                                ).unsqueeze(0)
-                                if obs[key].dim() == 1 and obs[key].shape[0] == 1:
-                                    obs[key] = obs[key].unsqueeze(1)
-                            obs = TensorDict(obs, batch_size=[1])
-                    
-                        action = (model(obs).squeeze(0).cpu().detach().numpy())
-                        return action
                 eval_results = self.simulator.evaluate(
                     policy=policy, num_episodes=repeat
                 )
@@ -434,72 +393,7 @@ class SRPOAlgorithm:
             # ---------------------------------------
             # Customized training code ↓
             # ---------------------------------------
-
-            replay_buffer=TensorDictReplayBuffer(
-                storage=self.dataset.storage,
-                batch_size=config.parameter.behaviour_policy.batch_size,
-                sampler=SamplerWithoutReplacement(),
-                prefetch=10,
-                pin_memory=True,
-            )
             
-            behaviour_model_optimizer = torch.optim.Adam(
-                self.model["SRPOPolicy"].sro.diffusion_model.model.parameters(),
-                lr=config.parameter.behaviour_policy.learning_rate,
-            )
-
-            for epoch in track(
-                range(config.parameter.behaviour_policy.iterations),
-                description="Behaviour policy training",
-            ):
-                if self.behaviour_train_epoch >= epoch:
-                    continue
-                
-                counter=0
-                behaviour_model_training_loss_sum = 0.0
-                for index, data in enumerate(replay_buffer):
-                    behaviour_model_training_loss = self.model[
-                        "SRPOPolicy"
-                    ].behaviour_policy_loss(data["a"].to(config.model.SRPOPolicy.device), data["s"].to(config.model.SRPOPolicy.device))
-                    behaviour_model_optimizer.zero_grad()
-                    behaviour_model_training_loss.backward()
-                    behaviour_model_optimizer.step()
-                    counter += 1
-                    behaviour_model_training_loss_sum += behaviour_model_training_loss.item()
-            
-                self.behaviour_policy_train_epoch = epoch
-                
-                if (
-                    epoch == 0
-                    or (epoch + 1)
-                    % config.parameter.evaluation.evaluation_interval
-                    == 0
-                ):
-                    evaluation_results = evaluate(
-                        self.model["SRPOPolicy"], train_epoch=epoch,method="diffusion",
-                        repeat=(
-                            1
-                            if not hasattr(config.parameter.evaluation, "repeat")
-                            else config.parameter.evaluation.repeat
-                        ),
-                    )
-                    wandb_run.log(data=evaluation_results, commit=False)
-                    save_model(
-                        path=config.parameter.checkpoint_path,
-                        model=self.model["SRPOPolicy"].sro.diffusion_model.model,
-                        optimizer=behaviour_model_optimizer,
-                        iteration=epoch,
-                        prefix="behaviour_policy",
-                    )
-                    
-                wandb_run.log(
-                    data=dict(
-                        behaviour_policy_train_epoch=epoch,
-                        behaviour_model_training_loss=behaviour_model_training_loss_sum / counter,
-                    ),
-                    commit=True,
-                )
-                
             replay_buffer=TensorDictReplayBuffer(
                 storage=self.dataset.storage,
                 batch_size=config.parameter.critic.batch_size,
@@ -509,11 +403,11 @@ class SRPOAlgorithm:
             )
 
             q_optimizer = torch.optim.Adam(
-                self.model["SRPOPolicy"].critic.q.parameters(),
+                self.model["IDQLPolicy"].critic.q.parameters(),
                 lr=config.parameter.critic.learning_rate,
             )
             v_optimizer = torch.optim.Adam(
-                self.model["SRPOPolicy"].critic.v.parameters(),
+                self.model["IDQLPolicy"].critic.v.parameters(),
                 lr=config.parameter.critic.learning_rate,
             )
 
@@ -533,20 +427,20 @@ class SRPOAlgorithm:
                 q_target_sum = 0.0
                 for index, data in enumerate(replay_buffer):
 
-                    v_loss, next_v = self.model["SRPOPolicy"].critic.v_loss(
-                        state=data["s"].to(config.model.SRPOPolicy.device),
-                        action=data["a"].to(config.model.SRPOPolicy.device),
-                        next_state=data["s_"].to(config.model.SRPOPolicy.device),
+                    v_loss, next_v = self.model["IDQLPolicy"].critic.v_loss(
+                        state=data["s"].to(config.model.IDQLPolicy.device),
+                        action=data["a"].to(config.model.IDQLPolicy.device),
+                        next_state=data["s_"].to(config.model.IDQLPolicy.device),
                         tau=config.parameter.critic.tau,
                     )
                     v_optimizer.zero_grad(set_to_none=True)
                     v_loss.backward()
                     v_optimizer.step()
-                    q_loss, q, q_target = self.model["SRPOPolicy"].critic.iql_q_loss(
-                        state=data["s"].to(config.model.SRPOPolicy.device),
-                        action=data["a"].to(config.model.SRPOPolicy.device),
-                        reward=data["r"].to(config.model.SRPOPolicy.device),
-                        done=data["d"].to(config.model.SRPOPolicy.device),
+                    q_loss, q, q_target = self.model["IDQLPolicy"].critic.iql_q_loss(
+                        state=data["s"].to(config.model.IDQLPolicy.device),
+                        action=data["a"].to(config.model.IDQLPolicy.device),
+                        reward=data["r"].to(config.model.IDQLPolicy.device),
+                        done=data["d"].to(config.model.IDQLPolicy.device),
                         next_v=next_v,
                         discount=config.parameter.critic.discount_factor,
                     )
@@ -556,8 +450,8 @@ class SRPOAlgorithm:
 
                     # Update target
                     for param, target_param in zip(
-                        self.model["SRPOPolicy"].critic.q.parameters(),
-                        self.model["SRPOPolicy"].critic.q_target.parameters(),
+                        self.model["IDQLPolicy"].critic.q.parameters(),
+                        self.model["IDQLPolicy"].critic.q_target.parameters(),
                     ):
                         target_param.data.copy_(
                             config.parameter.critic.update_momentum * param.data
@@ -598,48 +492,47 @@ class SRPOAlgorithm:
                     ):
                     save_model(
                             path=config.parameter.checkpoint_path,
-                            model=self.model["SRPOPolicy"].critic,
+                            model=self.model["IDQLPolicy"].critic,
                             optimizer=q_optimizer,
                             iteration=epoch,
                             prefix="critic",
                     )
-            
+
+
             replay_buffer=TensorDictReplayBuffer(
                 storage=self.dataset.storage,
-                batch_size=config.parameter.policy.batch_size,
+                batch_size=config.parameter.behaviour_policy.batch_size,
                 sampler=SamplerWithoutReplacement(),
                 prefetch=10,
                 pin_memory=True,
             )
-            SRPO_policy_optimizer = torch.optim.Adam(
-                self.model["SRPOPolicy"].policy.parameters(), lr=config.parameter.policy.learning_rate
+            
+            behaviour_model_optimizer = torch.optim.Adam(
+                self.model["IDQLPolicy"].diffusion_model.model.parameters(),
+                lr=config.parameter.behaviour_policy.learning_rate,
             )
-            SRPO_policy_lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-                SRPO_policy_optimizer,
-                T_max=config.parameter.policy.tmax,
-                eta_min=0.0,
-            )
-               
+
             for epoch in track(
-                range(config.parameter.policy.iterations),
-                description="Policy training",
+                range(config.parameter.behaviour_policy.iterations),
+                description="Behaviour policy training",
             ):
-                counter = 0
-                policy_loss_sum = 0
-                if self.policy_train_epoch >= epoch:
+                if self.behaviour_train_epoch >= epoch:
                     continue
-        
+                
+                counter=0
+                behaviour_model_training_loss_sum = 0.0
                 for index, data in enumerate(replay_buffer):
-                    self.model["SRPOPolicy"].sro.diffusion_model.model.eval()
-                    policy_loss, q = self.model["SRPOPolicy"].srpo_actor_loss(data["s"].to(config.model.SRPOPolicy.device))
-                    policy_loss = policy_loss.sum(-1).mean()
-                    SRPO_policy_optimizer.zero_grad(set_to_none=True)
-                    policy_loss.backward()
-                    SRPO_policy_optimizer.step()
-                    SRPO_policy_lr_scheduler.step()
-                    counter +=1
-                    policy_loss_sum += policy_loss
-                    
+                    behaviour_model_training_loss = self.model[
+                        "IDQLPolicy"
+                    ].behaviour_policy_loss(data["a"].to(config.model.IDQLPolicy.device), data["s"].to(config.model.IDQLPolicy.device))
+                    behaviour_model_optimizer.zero_grad()
+                    behaviour_model_training_loss.backward()
+                    behaviour_model_optimizer.step()
+                    counter += 1
+                    behaviour_model_training_loss_sum += behaviour_model_training_loss.item()
+            
+                self.behaviour_policy_train_epoch = epoch
+                
                 if (
                     epoch == 0
                     or (epoch + 1)
@@ -647,29 +540,31 @@ class SRPOAlgorithm:
                     == 0
                 ):
                     evaluation_results = evaluate(
-                        self.model["SRPOPolicy"], train_epoch=epoch,method="diracpolicy",
+                        self.model["IDQLPolicy"], train_epoch=epoch,
                         repeat=(
                             1
                             if not hasattr(config.parameter.evaluation, "repeat")
                             else config.parameter.evaluation.repeat
                         ),
                     )
-                    wandb_run.log(
-                        data=evaluation_results,
-                        commit=False,
-                    )
+                    wandb_run.log(data=evaluation_results, commit=False)
                     save_model(
                         path=config.parameter.checkpoint_path,
-                        model=self.model["SRPOPolicy"].policy,
-                        optimizer=SRPO_policy_optimizer,
+                        model=self.model["IDQLPolicy"].critic.model,
+                        optimizer=q_optimizer,
                         iteration=epoch,
-                        prefix="policy",
+                        prefix="critic",
                     )
-                wandb.log(
+                    
+                wandb_run.log(
                     data=dict(
-                        policy_loss=policy_loss_sum/counter,
+                        behaviour_policy_train_epoch=epoch,
+                        behaviour_model_training_loss=behaviour_model_training_loss_sum / counter,
                     ),
-                    commit=True,)
+                    commit=True,
+                )
+                
+            
             # ---------------------------------------
             # Customized training code ↑
             # ---------------------------------------
@@ -693,7 +588,7 @@ class SRPOAlgorithm:
             config=config,
             model=torch.nn.ModuleDict(
                 {
-                    "SRPOPolicy": self.deter_policy.select_actions,
+                    "IDQLPolicy": self.deter_policy.select_actions,
                 }
             ),
         )

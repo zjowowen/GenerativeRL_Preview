@@ -75,7 +75,7 @@ class SRPOConditionalDiffusionModel(nn.Module):
                 t_random, x_t, condition
             ).detach()
         detach_x = x.detach().requires_grad_(True)
-        qs = self.value_model.q0_target.compute_double_q(detach_x, condition)
+        qs = self.value_model.q_target.compute_double_q(detach_x, condition)
         q = (qs[0].squeeze() + qs[1].squeeze()) / 2.0
         guidance = torch.autograd.grad(torch.sum(q), detach_x)[0].detach()
         loss = (episilon * x) * wt - (guidance * x) * self.env_beta

@@ -49,8 +49,8 @@ def plot_distribution(data: np.ndarray, save_path:str, size=None, dpi=500):
 
                 # Use pcolormesh to plot the 2D histogram
                 mesh = axes[i, j].pcolormesh(xedges, yedges, hist_percentage.T, cmap='Blues', vmin=global_min, vmax=global_max)
-                axes[i, j].set_xlabel(f'Feature {j+1}')
-                axes[i, j].set_ylabel(f'Feature {i+1}')
+                axes[i, j].set_xlabel(f'Dimension {j+1}')
+                axes[i, j].set_ylabel(f'Dimension {i+1}')
 
     # Add a single colorbar for all pcolormesh plots (showing percentage)
     cbar = fig.colorbar(mesh, ax=axes, orientation='vertical', fraction=0.02, pad=0.04)
