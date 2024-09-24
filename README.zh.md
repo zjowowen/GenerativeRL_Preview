@@ -37,7 +37,7 @@
 
 ## 已集成的生成式模型
 
-|                                                                                     | [Score Matching](https://ieeexplore.ieee.org/document/6795935) | [Flow Matching](https://arxiv.org/abs/2210.02747) |
+| **连续变量模型**                                                                     | [Score Matching](https://ieeexplore.ieee.org/document/6795935) | [Flow Matching](https://arxiv.org/abs/2210.02747) |
 |-------------------------------------------------------------------------------------| -------------------------------------------------------------- | ------------------------------------------------- |
 | **扩散模型**   [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/18yHUAmcMh_7xq2U6TBCtcLKX2y4YvNyk)    |               |               |
 | [Linear VP SDE](https://arxiv.org/abs/2011.13456)                                   | ✔                                                              | ✔                                                |
@@ -46,6 +46,10 @@
 | **流模型**    [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1vrxREVXKsSbnsv9G2CnKPVvrbFZleElI)    |               |                |
 | [Independent Conditional Flow Matching](https://arxiv.org/abs/2302.00482)           | 🚫                                                             | ✔                                                 |
 | [Optimal Transport Conditional Flow Matching](https://arxiv.org/abs/2302.00482)     | 🚫                                                             | ✔                                                 |
+
+| **离散变量模型**                                                                     |  [Discrete Flow Matching](https://arxiv.org/abs/2407.15595)    |
+|-------------------------------------------------------------------------------------| -------------------------------------------------------------- |
+| [U-coupling/Linear Path](https://arxiv.org/abs/2407.15595)                          |  ✔                                                             | 
 
 ## 已集成的生成式强化学习算法
 
