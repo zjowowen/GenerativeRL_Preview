@@ -59,3 +59,34 @@ def plot_distribution(data: np.ndarray, save_path:str, size=None, dpi=500):
     # Save the figure to the provided path
     plt.savefig(save_path, dpi=dpi, bbox_inches='tight')
     plt.close(fig)
+
+   
+def plot_histogram2d_x_y(x_data, y_data, save_path:str, size=None, dpi=500):
+    # Set up a figure with 3 subplots: 2D histogram, KDE, and scatter plot
+    if isinstance(x_data, list):
+        x_data=np.array(x_data)
+    if isinstance(y_data, list):
+        y_data=np.array(y_data)
+    global_min, global_max = float('inf'), float('-inf')
+    fig, ax = plt.subplots(figsize=size if size else (8, 6))
+    x_max=((x_data.max() + 99) // 100) * 100
+    y_max=np.ceil(y_data.max() / 2) * 2
+    y_min=(y_data.min()// 2) * 2
+    # 2D Histogram for density
+    hist2d, xedges, yedges = np.histogram2d(x_data, y_data, bins=100, range=[[0, x_max], [y_min, y_max]])
+    hist_percentage = hist2d / hist2d.sum()  # Normalize the histogram
+    global_min = min(global_min, hist_percentage.min())
+    global_max = max(global_max, hist_percentage.max())
+    # Plot the 2D histogram
+    mesh =ax.pcolormesh(xedges, yedges, hist_percentage.T, cmap='Blues', vmin=global_min, vmax=global_max)
+    ax.set_xlabel('Returns')
+    ax.set_ylabel('LogP')
+    ax.set_title('2D Histogram Density Plot')
+
+    # Add colorbar to the 2D histogram
+    cb = fig.colorbar(mesh, ax=ax,orientation='vertical', fraction=0.02, pad=0.04)
+    cb.set_label('Percentage (%)')
+    
+    # Save the plot
+    plt.savefig(save_path, dpi=dpi)
+    plt.close(fig)

@@ -33,6 +33,7 @@ from grl.rl_modules.value_network.value_network import VNetwork, DoubleVNetwork
 from grl.utils.config import merge_two_dicts_into_newone
 from grl.utils.log import log
 from grl.utils import set_seed
+from grl.utils.plot import plot_distribution,plot_histogram2d_x_y
 from grl.utils.statistics import sort_files_by_criteria
 from grl.generative_models.metric import compute_likelihood
 
@@ -814,8 +815,6 @@ class GMPOAlgorithm:
                                 else config.parameter.evaluation.repeat
                             ),
                         )
-
-                        from grl.utils import plot_distribution
                         if not os.path.exists(config.parameter.checkpoint_path):
                             os.makedirs(config.parameter.checkpoint_path)
                         plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"action_base_{epoch}.png"))
@@ -1046,6 +1045,8 @@ class GMPOAlgorithm:
                 lr=config.parameter.guided_policy.learning_rate,
             )
             guided_policy_train_iter = 0
+            logp_mean=[]
+            end_return=[]
             beta = config.parameter.guided_policy.beta
             
             replay_buffer=TensorDictReplayBuffer(
@@ -1065,8 +1066,25 @@ class GMPOAlgorithm:
                     continue
 
                 if hasattr(config.parameter.evaluation, "analysis_interval") and epoch % config.parameter.evaluation.analysis_interval == 0:
+                    timlimited=0
                     for index, data in enumerate(replay_buffer):
-
+                        if timlimited ==0 :
+                            if not os.path.exists(config.parameter.checkpoint_path):
+                                os.makedirs(config.parameter.checkpoint_path)
+                            plot_distribution(data["a"].detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_base_{epoch}.png"))
+                            
+                            action=self.model["GPPolicy"].sample(
+                                state=data["s"].to(config.model.GPPolicy.device),
+                                t_span=(
+                                    torch.linspace(0.0, 1.0, config.parameter.t_span).to(
+                                        config.model.GPPolicy.device
+                                    )
+                                    if hasattr(config.parameter, "t_span")
+                                    and config.parameter.t_span is not None
+                                    else None
+                                ),
+                            )
+                            
                         evaluation_results = evaluate(
                             self.model["GPPolicy"].guided_model,
                             train_epoch=epoch,
@@ -1076,26 +1094,28 @@ class GMPOAlgorithm:
                                 else config.parameter.evaluation.repeat
                             ),
                         )
-
-                        from grl.utils import plot_distribution
-                        if not os.path.exists(config.parameter.checkpoint_path):
-                            os.makedirs(config.parameter.checkpoint_path)
-                        plot_distribution(data["a"],os.path.join(config.parameter.checkpoint_path,f"action_guided_{epoch}.png"))
                         
-                        action=self.model["GPPolicy"].sample(
-                            state=data["s"].to(config.model.GPPolicy.device),
-                            t_span=(
-                                torch.linspace(0.0, 1.0, config.parameter.t_span).to(
-                                    config.model.GPPolicy.device
-                                )
-                                if hasattr(config.parameter, "t_span")
-                                and config.parameter.t_span is not None
-                                else None
-                            ),
+                        log_p= compute_likelihood(
+                            model=self.model["GPPolicy"].guided_model,
+                            x=data["a"].to(config.model.GPPolicy.device),
+                            condition=data["s"].to(config.model.GPPolicy.device),
+                            t=torch.linspace(0.0, 1.0, 100).to(config.model.GPPolicy.device),
+                            using_Hutchinson_trace_estimator=True,
                         )
-                        plot_distribution(action,os.path.join(config.parameter.checkpoint_path,f"action_guided_model_{epoch}_{evaluation_results['evaluation/return_mean']}.png"))
+                        logp_mean.append(log_p.mean().detach().cpu().numpy())
                         
+                        if timlimited ==0 :
+                            plot_distribution(action.detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_guided_model_{epoch}_{evaluation_results['evaluation/return_mean']}.png"))
+                        timlimited+=1
                         wandb.log(data=evaluation_results, commit=False)
+                        if timlimited>10:
+                            logp_dict = {                            
+                                        "logp_mean": logp_mean,
+                                        "end_return": end_return
+                                    }
+                            np.savez(os.path.join(config.parameter.checkpoint_path, f"logp_data_guided_{epoch}.npz"), **logp_dict)
+                            plot_histogram2d_x_y(end_return,logp_mean,os.path.join(config.parameter.checkpoint_path,f"return_logp_guided_{epoch}.png"))
+                            break
                         break
 
                 counter = 1
