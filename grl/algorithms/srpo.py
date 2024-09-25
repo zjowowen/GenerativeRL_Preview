@@ -57,6 +57,9 @@ class Dirac_Policy(nn.Module):
         )
 
     def forward(self, state: torch.Tensor):
+        if isinstance(state, TensorDict):
+            values = [v for v in state.values()]
+            state = torch.cat(values, dim=1).to(state.device)
         return self.net(state)
 
     def select_actions(self, state: torch.Tensor):
