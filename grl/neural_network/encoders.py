@@ -83,7 +83,6 @@ class GaussianFourierProjectionTimeEncoder(nn.Module):
         x_proj = x[..., None] * self.W[None, :]
         return torch.cat([torch.sin(x_proj), torch.cos(x_proj)], dim=-1)
 
-
 class GaussianFourierProjectionEncoder(nn.Module):
     r"""
     Overview:
@@ -145,7 +144,6 @@ class GaussianFourierProjectionEncoder(nn.Module):
             x_proj = torch.flatten(x_proj, start_dim=-1 - self.x_shape.__len__())
 
         return x_proj
-
 
 class ExponentialFourierProjectionTimeEncoder(nn.Module):
     r"""
@@ -225,7 +223,6 @@ class ExponentialFourierProjectionTimeEncoder(nn.Module):
         t_emb = self.mlp(t_freq)
         return t_emb
 
-
 class SinusoidalPosEmb(nn.Module):
     def __init__(self, dim):
         super().__init__()
@@ -240,7 +237,7 @@ class SinusoidalPosEmb(nn.Module):
         emb = torch.cat((emb.sin(), emb.cos()), dim=-1)
         return emb
 
-class  TensorDictencoder(torch.nn.Module):
+class TensorDictencoder(nn.Module):
     def __init__(self):
         super(TensorDictencoder, self).__init__()
 
@@ -253,7 +250,7 @@ class  TensorDictencoder(torch.nn.Module):
         x = torch.cat(tensors, dim=1)
         return x
 
-class  TensorDictencoder(torch.nn.Module):
+class TensorDictencoder(nn.Module):
     def __init__(self,usePixel=False,useRichData=True):
         super(TensorDictencoder, self).__init__()
         self.usePixel=usePixel
@@ -303,7 +300,7 @@ class  TensorDictencoder(torch.nn.Module):
         new = torch.cat(tensors, dim=1)
         return new
 
-class  walker_encoder(torch.nn.Module):
+class walker_encoder(nn.Module):
     def __init__(self,mean,std,min_val,max_val):
         super(walker_encoder, self).__init__()
         self.mean=mean
@@ -348,6 +345,31 @@ class  walker_encoder(torch.nn.Module):
         combined_output = torch.cat([orientation_output, velocity_output, height_output], dim=-1)
         return combined_output
 
+class DiscreteEmbeddingEncoder(nn.Module):
+
+    def __init__(self, x_dim, x_num, hidden_dim):
+        super().__init__()
+        
+        self.x_dim = x_dim
+        self.x_num = x_num
+        self.hidden_dim = hidden_dim
+        self.embedding = nn.Embedding(self.x_dim, self.hidden_dim)
+        self.linear = nn.Linear(self.hidden_dim*self.x_num, self.hidden_dim)
+
+    def forward(
+        self,
+        x: torch.Tensor
+    ) -> torch.Tensor:
+        """
+        Overview:
+            Return the output of the model at time t given the initial state.
+        """
+        x = self.embedding(x)
+        x = torch.reshape(x, (x.shape[0], -1))
+        x = self.linear(x)
+
+        return x
+
 
 ENCODERS = {
     "GaussianFourierProjectionTimeEncoder".lower(): GaussianFourierProjectionTimeEncoder,
@@ -356,4 +378,5 @@ ENCODERS = {
     "SinusoidalPosEmb".lower(): SinusoidalPosEmb,
     "TensorDictencoder".lower(): TensorDictencoder,
     "walker_encoder".lower(): walker_encoder,
+    "DiscreteEmbeddingEncoder".lower(): DiscreteEmbeddingEncoder,
 }

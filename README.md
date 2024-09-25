@@ -37,7 +37,7 @@ For stable version of **GenerativeRL**, please visit [GenerativeRL](https://gith
 
 ## Integrated Generative Models
 
-|                                                                                     | [Score Matching](https://ieeexplore.ieee.org/document/6795935) | [Flow Matching](https://arxiv.org/abs/2210.02747) |
+| **Models for Continuous Variables**                                                 | [Score Matching](https://ieeexplore.ieee.org/document/6795935) | [Flow Matching](https://arxiv.org/abs/2210.02747) |
 |-------------------------------------------------------------------------------------| -------------------------------------------------------------- | ------------------------------------------------- |
 | **Diffusion Model**   [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/18yHUAmcMh_7xq2U6TBCtcLKX2y4YvNyk)    |             |         |
 | [Linear VP SDE](https://arxiv.org/abs/2011.13456)                                   | ✔                                                              | ✔                                                |
@@ -47,7 +47,9 @@ For stable version of **GenerativeRL**, please visit [GenerativeRL](https://gith
 | [Independent Conditional Flow Matching](https://arxiv.org/abs/2302.00482)           |  🚫                                                            | ✔                                                |
 | [Optimal Transport Conditional Flow Matching](https://arxiv.org/abs/2302.00482)     |  🚫                                                            | ✔                                                |
 
-
+| **Models for Discrete Variables**                                                   |  [Discrete Flow Matching](https://arxiv.org/abs/2407.15595)    |
+|-------------------------------------------------------------------------------------| -------------------------------------------------------------- |
+| [U-coupling/Linear Path](https://arxiv.org/abs/2407.15595)                          |  ✔                                                             | 
 
 ## Integrated Algorithms
 
