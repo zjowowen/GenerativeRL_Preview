@@ -187,7 +187,9 @@ class DiscreteFlowMatchingModel(nn.Module):
 
         for t, t_next in zip(t_span[:-1], t_span[1:]):
             t = t.to(self.device)
+            t_next = t_next.to(self.device)
             t = t.repeat(batch_size)
+            t_next = t_next.repeat(batch_size)
             probability_denoiser = self.model(t, xt)  # of shape (B, N, D)
             probability_denoiser_softmax = softmax(probability_denoiser)
             xt_one_hot = torch.nn.functional.one_hot(
@@ -196,7 +198,7 @@ class DiscreteFlowMatchingModel(nn.Module):
             conditional_probability_velocity = torch.einsum(
                 "b,bij->bij", 1 / (1 - t), probability_denoiser_softmax - xt_one_hot
             )
-            xt_new = xt_one_hot + (t_next - t) * conditional_probability_velocity
+            xt_new = xt_one_hot + torch.einsum("b,bij->bij", t_next - t, conditional_probability_velocity)
             # sample from xt_new
             xt = torch.distributions.Categorical(probs=xt_new).sample()
             xt_history.append(xt)
@@ -267,8 +269,17 @@ class DiscreteFlowMatchingModel(nn.Module):
         probability_denoiser_softmax = softmax(probability_denoiser)
         # probability_denoiser_softmax is of shape (B, N, D)
 
+        eps = 1e-6
+        probability_denoiser_softmax = torch.clamp(probability_denoiser_softmax, eps, 1 - eps)
+
         loss = -torch.sum(
             x1_one_hot * torch.log(probability_denoiser_softmax), dim=[-1, -2]
         )
+
+        if torch.any(torch.isnan(loss)):
+            print("loss is nan")
+
+        # drop item if it is nan
+        loss = loss[~torch.isnan(loss)]
 
         return loss.mean() if average else loss
