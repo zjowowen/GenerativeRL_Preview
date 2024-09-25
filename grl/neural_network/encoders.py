@@ -238,21 +238,8 @@ class SinusoidalPosEmb(nn.Module):
         return emb
 
 class TensorDictencoder(nn.Module):
-    def __init__(self):
-        super(TensorDictencoder, self).__init__()
-
-    def forward(self, x: dict) -> torch.Tensor:
-        tensors = []
-        for v in x.values():
-            if v.dim() == 3 and v.shape[0] == 1:
-                v = v.view(1, -1)
-            tensors.append(v)
-        x = torch.cat(tensors, dim=1)
-        return x
-
-class TensorDictencoder(nn.Module):
     def __init__(self,usePixel=False,useRichData=True):
-        super(TensorDictencoder, self).__init__()
+        super().__init__()
         self.usePixel=usePixel
         self.useRichData=useRichData
         if self.usePixel ==False:
@@ -299,6 +286,61 @@ class TensorDictencoder(nn.Module):
                 tensors.append(v)
         new = torch.cat(tensors, dim=1)
         return new
+
+class TensorDictNewEncoder(nn.Module):
+    def __init__(self,usePixel=False,useRichData=True,normalize_dict=None):
+        super().__init__()
+        self.usePixel=usePixel
+        self.useRichData=useRichData
+        self.normalize_dict=normalize_dict
+        if self.usePixel ==False:
+            self.useRichData=True
+        else:
+            from torchvision.transforms import v2
+            self.image_transform = transforms = v2.Compose([
+                # v2.ToDtype(torch.float32, scale=True),
+                v2.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
+            ])
+            self.conv_block = nn.Sequential(
+                nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, stride=1, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2),
+                
+                nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2),
+                
+                nn.Flatten()
+            )
+            self.mlp_block = nn.Sequential(
+                nn.Linear(64 * 16 * 16, 512),
+                nn.ReLU(),
+                nn.Linear(512, 128),
+            )
+            
+    def forward(self, x: dict) -> torch.Tensor:
+        tensors = []
+        for k, v in x.items():
+            if self.normalize_dict is not None and k in self.normalize_dict:
+                v = (v - self.normalize_dict[k][0]) / self.normalize_dict[k][1]
+
+            if v.dim() == 1 and self.useRichData == True:
+                v = v.unsqueeze(-1)
+            if v.dim() == 3 and v.shape[0] == 1:
+                import ipdb
+                ipdb.set_trace()
+                v = v.view(1, -1)
+            if v.dim() == 2 and self.useRichData == True:
+                tensors.append(v)
+            if v.dim() == 4 and self.usePixel== True:
+                v = v.permute(0, 3, 1, 2)/255.0
+                v = self.image_transform(v)
+                v = self.conv_block(v)
+                v = self.mlp_block(v)
+                tensors.append(v)
+        new = torch.cat(tensors, dim=1)
+        return new
+
 
 class walker_encoder(nn.Module):
     def __init__(self,mean,std,min_val,max_val):
@@ -377,6 +419,7 @@ ENCODERS = {
     "ExponentialFourierProjectionTimeEncoder".lower(): ExponentialFourierProjectionTimeEncoder,
     "SinusoidalPosEmb".lower(): SinusoidalPosEmb,
     "TensorDictencoder".lower(): TensorDictencoder,
+    "TensorDictNewEncoder".lower(): TensorDictNewEncoder,
     "walker_encoder".lower(): walker_encoder,
     "DiscreteEmbeddingEncoder".lower(): DiscreteEmbeddingEncoder,
 }
