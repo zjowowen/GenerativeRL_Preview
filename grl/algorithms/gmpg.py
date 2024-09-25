@@ -954,7 +954,9 @@ class GMPGAlgorithm:
                             self.model["GPPolicy"].base_model,
                             train_epoch=epoch,
                             repeat=(
-                                3
+                                1
+                                if not hasattr(config.parameter.evaluation, "repeat")
+                                else config.parameter.evaluation.repeat
                             ),
                         )
                         
@@ -978,7 +980,15 @@ class GMPGAlgorithm:
                         
                         timlimited+=1
                         if timlimited>10:
-                            plot_histogram2d_x_y(end_return,logp_mean,os.path.join(config.parameter.checkpoint_path,f"return_logp_{epoch}.png"))
+                            logp_dict = {
+                                        "logp_max": logp_max,
+                                        "logp_min": logp_min,
+                                        "logp_mean": logp_mean,
+                                        "logp_sum": logp_sum,
+                                        "end_return": end_return
+                                    }
+                            np.savez(os.path.join(config.parameter.checkpoint_path, f"logp_data_based_{epoch}.npz"), **logp_dict)
+                            plot_histogram2d_x_y(end_return,logp_mean,os.path.join(config.parameter.checkpoint_path,f"return_logp_base_{epoch}.png"))
                             break
                 
                 counter = 1
@@ -1031,14 +1041,6 @@ class GMPGAlgorithm:
             # ---------------------------------------
             # behavior training code ↑
             # ---------------------------------------
-            logp_dict = {
-                "logp_max": logp_max,
-                "logp_min": logp_min,
-                "logp_mean": logp_mean,
-                "logp_sum": logp_sum,
-                "end_return": end_return
-            }
-            np.savez(os.path.join(config.parameter.checkpoint_path, "logp_data.npz"), **logp_dict)           
             # ---------------------------------------
             # critic training code ↓
             # ---------------------------------------
@@ -1384,6 +1386,14 @@ class GMPGAlgorithm:
                             timlimited +=1
                             wandb.log(data=evaluation_results, commit=False)
                             if timlimited >5:
+                                logp_dict = {
+                                        "logp_max": logp_max,
+                                        "logp_min": logp_min,
+                                        "logp_mean": logp_mean,
+                                        "logp_sum": logp_sum,
+                                        "end_return": end_return
+                                    }
+                                np.savez(os.path.join(config.parameter.checkpoint_path, f"logp_data_guided_{epoch}.npz"), **logp_dict)
                                 plot_histogram2d_x_y(end_return,logp_mean,os.path.join(config.parameter.checkpoint_path,f"return_logp_guided_{guided_policy_train_iter}.png"))
                                 break
                     
@@ -1412,14 +1422,6 @@ class GMPGAlgorithm:
                         ),
                         commit=True,
                     )    
-            logp_dict = {
-                    "logp_max": logp_max,
-                    "logp_min": logp_min,
-                    "logp_mean": logp_mean,
-                    "logp_sum": logp_sum,
-                    "end_return": end_return
-                }
-            np.savez(os.path.join(config.parameter.checkpoint_path, f"logp_data_guided_{epoch}.npz"), **logp_dict)
 
             # ---------------------------------------
             # guided policy training code ↑

@@ -24,7 +24,7 @@ def plot_distribution(data: np.ndarray, save_path:str, size=None, dpi=500):
 
     # First, calculate the global minimum and maximum for the 2D histograms (normalized as percentages)
     hist_range = [[np.min(data[:, i])*1.02, np.max(data[:, i]*1.02)] for i in range(N)]
-    global_min, global_max = float('-inf'), float('inf')
+    global_min, global_max = float('inf'), float('-inf')
 
     # Loop to calculate the min and max percentage values across all 2D histograms
     for i in range(N):
@@ -63,6 +63,10 @@ def plot_distribution(data: np.ndarray, save_path:str, size=None, dpi=500):
    
 def plot_histogram2d_x_y(x_data, y_data, save_path:str, size=None, dpi=500):
     # Set up a figure with 3 subplots: 2D histogram, KDE, and scatter plot
+    if isinstance(x_data, list):
+        x_data=np.array(x_data)
+    if isinstance(y_data, list):
+        y_data=np.array(y_data)
     global_min, global_max = float('inf'), float('-inf')
     fig, ax = plt.subplots(figsize=size if size else (8, 6))
     x_max=((x_data.max() + 99) // 100) * 100
