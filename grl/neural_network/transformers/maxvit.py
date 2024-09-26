@@ -611,7 +611,7 @@ class MaxVit(nn.Module):
         mlp_dropout: float = 0.0,
         attention_dropout: float = 0.0,
         # task parameters
-        num_classes: int = 1000,
+        output_dim:int = 1000,
     ) -> None:
         super().__init__()
         _log_api_usage_once(self)
@@ -696,8 +696,8 @@ class MaxVit(nn.Module):
             nn.Flatten(),
             nn.LayerNorm(block_channels[-1]),
             nn.Linear(block_channels[-1], block_channels[-1]),
-            # nn.Tanh(),
-            # nn.Linear(block_channels[-1], num_classes, bias=False),
+            nn.ReLU(),
+            nn.Linear(block_channels[-1], output_dim),
         )
 
         self._init_weights()
