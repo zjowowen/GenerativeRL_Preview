@@ -1103,11 +1103,14 @@ class GMPOAlgorithm:
                             using_Hutchinson_trace_estimator=True,
                         )
                         logp_mean.append(log_p.mean().detach().cpu().numpy())
+                        end_return.append(evaluation_results["evaluation/return_mean"])
                         
                         if timlimited ==0 :
                             plot_distribution(action.detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_guided_model_{epoch}_{evaluation_results['evaluation/return_mean']}.png"))
                         timlimited+=1
                         wandb.log(data=evaluation_results, commit=False)
+
+
                         if timlimited>10:
                             logp_dict = {                            
                                         "logp_mean": logp_mean,
@@ -1116,7 +1119,6 @@ class GMPOAlgorithm:
                             np.savez(os.path.join(config.parameter.checkpoint_path, f"logp_data_guided_{epoch}.npz"), **logp_dict)
                             plot_histogram2d_x_y(end_return,logp_mean,os.path.join(config.parameter.checkpoint_path,f"return_logp_guided_{epoch}.png"))
                             break
-                        break
 
                 counter = 1
                 guided_policy_loss_sum = 0.0
