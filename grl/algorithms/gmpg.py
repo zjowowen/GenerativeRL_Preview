@@ -1338,9 +1338,19 @@ class GMPGAlgorithm:
                     timlimited=0
                 
                     if hasattr(config.parameter.evaluation, "analysis_interval") and guided_policy_train_iter % config.parameter.evaluation.analysis_interval == 0:
+                        if hasattr(config.parameter.evaluation, "analysis_repeat"):
+                            analysis_repeat=config.parameter.evaluation.analysis_repeat
+                        else:
+                            analysis_repeat=10
+                        
+                        if hasattr(config.parameter.evaluation, "analysis_distribution"):
+                            analysis_distribution=config.parameter.evaluation.analysis_distribution
+                        else:
+                            analysis_distribution=True
+                            
                         for index, data in enumerate(replay_buffer):
                             
-                            if timlimited==0:
+                            if timlimited==0 and analysis_distribution:
                                 if not os.path.exists(config.parameter.checkpoint_path):
                                     os.makedirs(config.parameter.checkpoint_path)
                                 plot_distribution(data["a"].detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_guided_{guided_policy_train_iter}.png"))
@@ -1381,12 +1391,12 @@ class GMPGAlgorithm:
                             logp_sum.append(log_p.sum().detach().cpu().numpy())
                             end_return.append(evaluation_results["evaluation/return_mean"])
                             
-                            if timlimited==0:
+                            if timlimited==0 and analysis_distribution:
                                 plot_distribution(action.detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_guided_model_{guided_policy_train_iter}_{evaluation_results['evaluation/return_mean']}.png"))
                             
                             timlimited +=1
                             wandb.log(data=evaluation_results, commit=False)
-                            if timlimited >5:
+                            if timlimited >analysis_repeat:
                                 logp_dict = {
                                         "logp_max": logp_max,
                                         "logp_min": logp_min,
