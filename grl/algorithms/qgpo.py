@@ -422,29 +422,62 @@ class QGPOAlgorithm:
             def generate_fake_action(model, states, action_augment_num):
                 # model.eval()
                 fake_actions_sampled = []
-                for states in track(
-                    np.array_split(states, states.shape[0] // 4096 + 1),
-                    description="Generate fake actions",
-                ):
-                    # TODO: mkae it batchsize
-                    fake_actions_per_state = []
-                    for _ in range(action_augment_num):
-                        fake_actions_per_state.append(
-                            model.sample(
-                                state=states,
-                                guidance_scale=0.0,
-                                t_span=(
-                                    torch.linspace(
-                                        0.0, 1.0, config.parameter.fake_data_t_span
-                                    ).to(states.device)
-                                    if config.parameter.fake_data_t_span is not None
-                                    else None
-                                ),
-                            )
+                if isinstance(states, TensorDict):
+                    from torchrl.data import LazyTensorStorage
+                    storage = LazyTensorStorage(max_size=states.shape[0])
+                    storage.set(
+                        range(states.shape[0]), TensorDict(
+                            {
+                                "s": states,
+                            },
+                            batch_size=[states.shape[0]],
                         )
-                    fake_actions_sampled.append(
-                        torch.stack(fake_actions_per_state, dim=1)
                     )
+                    for index in torch.split(torch.arange(0, states.shape[0], 1), 4096):
+                        index = index.int()
+                        data = storage[index]
+                        fake_actions_per_state = []
+                        for _ in range(action_augment_num):
+                            fake_actions_per_state.append(
+                                model.sample(
+                                    state=data["s"].to(config.model.QGPOPolicy.device),
+                                    guidance_scale=0.0,
+                                    t_span=(
+                                        torch.linspace(
+                                            0.0, 1.0, config.parameter.fake_data_t_span
+                                        ).to(config.model.QGPOPolicy.device)
+                                        if config.parameter.fake_data_t_span is not None
+                                        else None
+                                    ),
+                                )
+                            )
+                        fake_actions_sampled.append(
+                            torch.stack(fake_actions_per_state, dim=1)
+                        )
+                else:
+                    for states in track(
+                        np.array_split(states, states.shape[0] // 4096 + 1),
+                        description="Generate fake actions",
+                    ):
+                        # TODO: mkae it batchsize
+                        fake_actions_per_state = []
+                        for _ in range(action_augment_num):
+                            fake_actions_per_state.append(
+                                model.sample(
+                                    state=states,
+                                    guidance_scale=0.0,
+                                    t_span=(
+                                        torch.linspace(
+                                            0.0, 1.0, config.parameter.fake_data_t_span
+                                        ).to(states.device)
+                                        if config.parameter.fake_data_t_span is not None
+                                        else None
+                                    ),
+                                )
+                            )
+                        fake_actions_sampled.append(
+                            torch.stack(fake_actions_per_state, dim=1)
+                        )
                 fake_actions = torch.cat(fake_actions_sampled, dim=0)
                 return fake_actions
 
@@ -534,33 +567,33 @@ class QGPOAlgorithm:
                     counter += 1
                     behaviour_model_training_loss_sum += behaviour_model_training_loss.item()
 
-                if (
-                    epoch == 0
-                    or (epoch + 1)
-                    % config.parameter.evaluation.evaluation_interval
-                    == 0
-                ):
-                    evaluation_results = evaluate(
-                        self.model["QGPOPolicy"], epoch=epoch
-                    )
-                    wandb_run.log(data=evaluation_results, commit=False)
-                    save_model(
-                        path=config.parameter.checkpoint_path,
-                        model=self.model["QGPOPolicy"].diffusion_model.model,
-                        optimizer=behaviour_model_optimizer,
-                        iteration=epoch,
-                        prefix="behaviour_policy",
-                    )
+                # if (
+                #     epoch == 0
+                #     or (epoch + 1)
+                #     % config.parameter.evaluation.evaluation_interval
+                #     == 0
+                # ):
+                #     evaluation_results = evaluate(
+                #         self.model["QGPOPolicy"], epoch=epoch
+                #     )
+                #     wandb_run.log(data=evaluation_results, commit=False)
+                #     save_model(
+                #         path=config.parameter.checkpoint_path,
+                #         model=self.model["QGPOPolicy"].diffusion_model.model,
+                #         optimizer=behaviour_model_optimizer,
+                #         iteration=epoch,
+                #         prefix="behaviour_policy",
+                #     )
 
-                self.behaviour_policy_train_epoch = epoch
+                # self.behaviour_policy_train_epoch = epoch
 
-                wandb_run.log(
-                    data=dict(
-                        behaviour_policy_train_epoch=epoch,
-                        behaviour_model_training_loss=behaviour_model_training_loss_sum / counter,
-                    ),
-                    commit=True,
-                )
+                # wandb_run.log(
+                #     data=dict(
+                #         behaviour_policy_train_epoch=epoch,
+                #         behaviour_model_training_loss=behaviour_model_training_loss_sum / counter,
+                #     ),
+                #     commit=True,
+                # )
 
             fake_actions = generate_fake_action(
                 self.model["QGPOPolicy"],
