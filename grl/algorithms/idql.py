@@ -1,6 +1,3 @@
-#############################################################
-# This QGPO model is a modification implementation from https://github.com/thu-ml/SRPO
-#############################################################
 import copy
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 

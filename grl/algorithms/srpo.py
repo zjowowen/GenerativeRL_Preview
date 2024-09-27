@@ -1,15 +1,9 @@
 #############################################################
-# This QGPO model is a modification implementation from https://github.com/thu-ml/SRPO
+# This SRPO model is a modification implementation from https://github.com/thu-ml/SRPO
 #############################################################
 import copy
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-import os
-from datetime import datetime
-
-
-import d4rl
-import gym
 import numpy as np
 import torch
 import torch.nn as nn
