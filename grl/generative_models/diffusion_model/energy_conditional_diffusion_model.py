@@ -347,9 +347,9 @@ class EnergyConditionalDiffusionModel(nn.Module):
                     {
                         key: torch.repeat_interleave(value, torch.prod(extra_batch_size), dim=0)
                         for key, value in condition.items()
-                    }
+                    },
+                    batch_size=int(torch.prod(torch.tensor([*condition.batch_size,extra_batch_size]))),
                 )
-                repeated_condition.batch_size = torch.Size([torch.prod(extra_batch_size).item()])
                 repeated_condition.to(condition.device)
                 condition = repeated_condition
             else:
