@@ -1276,6 +1276,7 @@ class GMPGAlgorithm:
                     guided_policy_loss = guided_policy_loss * (
                         data["s"].shape[0] / config.parameter.guided_policy.batch_size
                     )
+                    guided_policy_loss = guided_policy_loss.mean()
                     guided_policy_loss.backward()
                     guided_policy_optimizer.step()
                     counter += 1
