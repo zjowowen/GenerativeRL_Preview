@@ -175,14 +175,14 @@ config = EasyDict(
             algorithm_type=algorithm_type,
             number_stack_time_step=stack_frames,
             behaviour_policy=dict(
-                batch_size=128,
+                batch_size=4096,
                 learning_rate=1e-4,
                 epochs=2000,
             ),
             t_span=32,
             critic=dict(
-                batch_size=128,
-                epochs=2000,
+                batch_size=4096,
+                epochs=5000,
                 learning_rate=3e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
@@ -190,7 +190,7 @@ config = EasyDict(
                 method="iql",
             ),
             guided_policy=dict(
-                batch_size=128,
+                batch_size=4096,
                 epochs=500,
                 learning_rate=1e-6,
                 copy_from_basemodel=True,
