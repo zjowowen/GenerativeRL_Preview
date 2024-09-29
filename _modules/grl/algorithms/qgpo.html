@@ -414,10 +414,18 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
             <span class="n">softmax</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Softmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">next_state</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">):</span>
+                <span class="n">new_next_state</span> <span class="o">=</span> <span class="n">next_state</span><span class="o">.</span><span class="n">clone</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">next_state</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+                        <span class="n">stacked_value</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">value</span><span class="p">]</span> <span class="o">*</span> <span class="n">fake_next_action</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                        <span class="n">new_next_state</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">stacked_value</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">new_next_state</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">next_state</span><span class="p">]</span> <span class="o">*</span> <span class="n">fake_next_action</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
             <span class="n">next_energy</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">q_target</span><span class="p">(</span>
                     <span class="n">fake_next_action</span><span class="p">,</span>
-                    <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">next_state</span><span class="p">]</span> <span class="o">*</span> <span class="n">fake_next_action</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                    <span class="n">new_next_state</span><span class="p">,</span>
                 <span class="p">)</span>
                 <span class="o">.</span><span class="n">detach</span><span class="p">()</span>
                 <span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
@@ -875,33 +883,33 @@
                     <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
                     <span class="n">behaviour_model_training_loss_sum</span> <span class="o">+=</span> <span class="n">behaviour_model_training_loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 
-                <span class="c1"># if (</span>
-                <span class="c1">#     epoch == 0</span>
-                <span class="c1">#     or (epoch + 1)</span>
-                <span class="c1">#     % config.parameter.evaluation.evaluation_interval</span>
-                <span class="c1">#     == 0</span>
-                <span class="c1"># ):</span>
-                <span class="c1">#     evaluation_results = evaluate(</span>
-                <span class="c1">#         self.model[&quot;QGPOPolicy&quot;], epoch=epoch</span>
-                <span class="c1">#     )</span>
-                <span class="c1">#     wandb_run.log(data=evaluation_results, commit=False)</span>
-                <span class="c1">#     save_model(</span>
-                <span class="c1">#         path=config.parameter.checkpoint_path,</span>
-                <span class="c1">#         model=self.model[&quot;QGPOPolicy&quot;].diffusion_model.model,</span>
-                <span class="c1">#         optimizer=behaviour_model_optimizer,</span>
-                <span class="c1">#         iteration=epoch,</span>
-                <span class="c1">#         prefix=&quot;behaviour_policy&quot;,</span>
-                <span class="c1">#     )</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="n">epoch</span> <span class="o">==</span> <span class="mi">0</span>
+                    <span class="ow">or</span> <span class="p">(</span><span class="n">epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="o">%</span> <span class="n">config</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">evaluation</span><span class="o">.</span><span class="n">evaluation_interval</span>
+                    <span class="o">==</span> <span class="mi">0</span>
+                <span class="p">):</span>
+                    <span class="n">evaluation_results</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;QGPOPolicy&quot;</span><span class="p">],</span> <span class="n">epoch</span><span class="o">=</span><span class="n">epoch</span>
+                    <span class="p">)</span>
+                    <span class="n">wandb_run</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">evaluation_results</span><span class="p">,</span> <span class="n">commit</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                    <span class="n">save_model</span><span class="p">(</span>
+                        <span class="n">path</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">checkpoint_path</span><span class="p">,</span>
+                        <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;QGPOPolicy&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">diffusion_model</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+                        <span class="n">optimizer</span><span class="o">=</span><span class="n">behaviour_model_optimizer</span><span class="p">,</span>
+                        <span class="n">iteration</span><span class="o">=</span><span class="n">epoch</span><span class="p">,</span>
+                        <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;behaviour_policy&quot;</span><span class="p">,</span>
+                    <span class="p">)</span>
 
-                <span class="c1"># self.behaviour_policy_train_epoch = epoch</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">behaviour_policy_train_epoch</span> <span class="o">=</span> <span class="n">epoch</span>
 
-                <span class="c1"># wandb_run.log(</span>
-                <span class="c1">#     data=dict(</span>
-                <span class="c1">#         behaviour_policy_train_epoch=epoch,</span>
-                <span class="c1">#         behaviour_model_training_loss=behaviour_model_training_loss_sum / counter,</span>
-                <span class="c1">#     ),</span>
-                <span class="c1">#     commit=True,</span>
-                <span class="c1"># )</span>
+                <span class="n">wandb_run</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+                    <span class="n">data</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+                        <span class="n">behaviour_policy_train_epoch</span><span class="o">=</span><span class="n">epoch</span><span class="p">,</span>
+                        <span class="n">behaviour_model_training_loss</span><span class="o">=</span><span class="n">behaviour_model_training_loss_sum</span> <span class="o">/</span> <span class="n">counter</span><span class="p">,</span>
+                    <span class="p">),</span>
+                    <span class="n">commit</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="p">)</span>
 
             <span class="n">fake_actions</span> <span class="o">=</span> <span class="n">generate_fake_action</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;QGPOPolicy&quot;</span><span class="p">],</span>
