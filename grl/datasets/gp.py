@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from typing import List
 
+import os
 import gym
 import numpy as np
 import torch
@@ -710,4 +711,218 @@ class GPDMcontrolTensorDictDataset():
                 batch_size=[self.len],
             )
         )
+
+
+class GPDMControlVisualTensorDictDataset_backup(torch.utils.data.Dataset):
+    def __init__(
+        self,
+        env_id: str,
+        policy_type: str,
+        pixel_size: int,
+        path: str,
+    ):
+        assert env_id in ["cheetah_run", "humanoid_walk", "walker_walk"]
+        assert policy_type in ["expert", "medium", "medium_expert", "medium_replay", "random"]
+        assert pixel_size in [64, 84]
+        if pixel_size == 64:
+            npz_folder_path = os.path.join(path, env_id, policy_type, "64px")
+        else:
+            npz_folder_path = os.path.join(path, env_id, policy_type, "84px")
+
+        # find all npz files in the folder
+        npz_files = [f for f in os.listdir(npz_folder_path) if f.endswith(".npz")]
         
+        transition_counter = 0
+
+        obs_list = []
+        action_list = []
+        reward_list = []
+        next_obs_list = []
+        is_finished_list = []
+        episode_list = []
+        step_list = []
+
+        # open all npz files in the folder
+        for index, npz_file in enumerate(npz_files):
+            
+            npz_path = os.path.join(npz_folder_path, npz_file)
+            data = np.load(npz_path, allow_pickle=True)
+            
+            obs = torch.from_numpy(data["image"][:-1])
+            action = torch.from_numpy(data["action"][1:])
+            reward = torch.from_numpy(data["reward"][1:])
+            next_obs = torch.from_numpy(data["image"][1:])
+            is_finished = torch.from_numpy(data["is_last"][1:] + data["is_terminal"][1:])
+            episode = torch.tensor([index] * obs.shape[0])
+            step = torch.arange(obs.shape[0])
+            transition_counter += obs.shape[0]
+            obs_list.append(obs)
+            action_list.append(action)
+            reward_list.append(reward)
+            next_obs_list.append(next_obs)
+            is_finished_list.append(is_finished)
+            episode_list.append(episode)
+            step_list.append(step)
+
+        self.states = torch.cat(obs_list, dim=0)
+        self.actions = torch.cat(action_list, dim=0)
+        self.rewards = torch.cat(reward_list, dim=0)
+        self.next_states = torch.cat(next_obs_list, dim=0)
+        self.is_finished = torch.cat(is_finished_list, dim=0)
+        self.episode = torch.cat(episode_list, dim=0)
+        self.step = torch.cat(step_list, dim=0)
+        self.len = self.states.shape[0]
+        self.storage = LazyMemmapStorage(max_size=self.len)
+
+        self.storage.set(
+            range(self.len), TensorDict(
+                {
+                    "s": self.states,
+                    "a": self.actions,
+                    "r": self.rewards,
+                    "s_": self.next_states,
+                    "d": self.is_finished,
+                    "episode": self.episode,
+                    "step": self.step,
+                },
+                batch_size=[self.len],
+            )
+        )
+
+    def __getitem__(self, index):
+        """
+        Overview:
+            Get data by index
+        Arguments:
+            index (:obj:`int`): Index of data
+        Returns:
+            data (:obj:`dict`): Data dict
+        
+        .. note::
+            The data dict contains the following keys:
+            
+            s (:obj:`torch.Tensor`): State
+            a (:obj:`torch.Tensor`): Action
+            r (:obj:`torch.Tensor`): Reward
+            s_ (:obj:`torch.Tensor`): Next state
+            d (:obj:`torch.Tensor`): Is finished
+            episode (:obj:`torch.Tensor`): Episode index
+        """
+
+        data = self.storage.get(index=index)
+        return data
+
+    def __len__(self):
+        return self.len
+    
+
+class GPDMControlVisualTensorDictDataset(torch.utils.data.Dataset):
+    def __init__(
+        self,
+        env_id: str,
+        policy_type: str,
+        pixel_size: int,
+        path: str,
+        stack_frames: int,
+    ):
+        assert env_id in ["cheetah_run", "humanoid_walk", "walker_walk"]
+        assert policy_type in ["expert", "medium", "medium_expert", "medium_replay", "random"]
+        assert pixel_size in [64, 84]
+        if pixel_size == 64:
+            npz_folder_path = os.path.join(path, env_id, policy_type, "64px")
+        else:
+            npz_folder_path = os.path.join(path, env_id, policy_type, "84px")
+
+        # find all npz files in the folder
+        npz_files = [f for f in os.listdir(npz_folder_path) if f.endswith(".npz")]
+        
+        transition_counter = 0
+
+        obs_list = []
+        action_list = []
+        reward_list = []
+        next_obs_list = []
+        is_finished_list = []
+        episode_list = []
+        step_list = []
+
+        # open all npz files in the folder
+        for index, npz_file in enumerate(npz_files):
+            
+            npz_path = os.path.join(npz_folder_path, npz_file)
+            data = np.load(npz_path, allow_pickle=True)
+            
+            length = data["image"].shape[0]
+            obs = torch.stack([torch.from_numpy(data["image"][i:length-stack_frames+i]) for i in range(stack_frames)], dim=1)
+            next_obs = torch.stack([torch.from_numpy(data["image"][i+1:length-stack_frames+i+1]) for i in range(stack_frames)], dim=1)
+
+            action = torch.from_numpy(data["action"][stack_frames:])
+            reward = torch.from_numpy(data["reward"][stack_frames:])
+            
+            is_finished = torch.from_numpy(data["is_last"][stack_frames:] + data["is_terminal"][stack_frames:])
+            episode = torch.tensor([index] * obs.shape[0])
+            step = torch.arange(obs.shape[0])
+            transition_counter += obs.shape[0]
+            obs_list.append(obs)
+            action_list.append(action)
+            reward_list.append(reward)
+            next_obs_list.append(next_obs)
+            is_finished_list.append(is_finished)
+            episode_list.append(episode)
+            step_list.append(step)
+
+            if index>20:
+                break
+
+
+        self.states = torch.cat(obs_list, dim=0)
+        self.actions = torch.cat(action_list, dim=0)
+        self.rewards = torch.cat(reward_list, dim=0)
+        self.next_states = torch.cat(next_obs_list, dim=0)
+        self.is_finished = torch.cat(is_finished_list, dim=0)
+        self.episode = torch.cat(episode_list, dim=0)
+        self.step = torch.cat(step_list, dim=0)
+        self.len = self.states.shape[0]
+        self.storage = LazyMemmapStorage(max_size=self.len)
+
+        self.storage.set(
+            range(self.len), TensorDict(
+                {
+                    "s": self.states,
+                    "a": self.actions,
+                    "r": self.rewards,
+                    "s_": self.next_states,
+                    "d": self.is_finished,
+                    "episode": self.episode,
+                    "step": self.step,
+                },
+                batch_size=[self.len],
+            )
+        )
+
+    def __getitem__(self, index):
+        """
+        Overview:
+            Get data by index
+        Arguments:
+            index (:obj:`int`): Index of data
+        Returns:
+            data (:obj:`dict`): Data dict
+        
+        .. note::
+            The data dict contains the following keys:
+            
+            s (:obj:`torch.Tensor`): State
+            a (:obj:`torch.Tensor`): Action
+            r (:obj:`torch.Tensor`): Reward
+            s_ (:obj:`torch.Tensor`): Next state
+            d (:obj:`torch.Tensor`): Is finished
+            episode (:obj:`torch.Tensor`): Episode index
+        """
+
+        data = self.storage.get(index=index)
+        return data
+
+    def __len__(self):
+        return self.len
+ 

@@ -12,7 +12,7 @@ task_name="walk"
 algorithm_type = "SAC_Step"
 env_id=f"{domain_name}-{task_name}"
 project_name = f"{env_id}-{algorithm_type}"
-device = torch.device('cuda:1') if torch.cuda.is_available() else torch.device('cpu')
+device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 t_embedding_dim = 32
 t_encoder = dict(
     type = "GaussianFourierProjectionTimeEncoder",
@@ -100,12 +100,13 @@ config = EasyDict(
                             sigma_lambda=dict(
                                 hidden_sizes=[state_size, 128, 128],
                                 output_size=action_size,
-                                activation="relu",
+                                activation="tanh",
+                                scale=10.0,
                             ),
                             sigma_offdiag=dict(
                                 hidden_sizes=[state_size, 128, 128],
                                 output_size=action_size*(action_size-1)//2,
-                                activation="relu",
+                                activation="tanh",
                             ),
                         ),
                     ),
@@ -133,14 +134,14 @@ config = EasyDict(
                 learning_rate = 3e-4,
                 discount_factor = 0.99,
                 update_momentum = 0.005,
-                grad_clip=200.0,
+                grad_clip=1.0,
             ),
             entropy = dict(
                 learning_rate = 3e-4,
                 grad_clip = 1.0,
             ),
             evaluation = dict(
-                evaluation_interval = 1000,
+                evaluation_interval = 100,
             ),
         ),
     ),

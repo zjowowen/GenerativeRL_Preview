@@ -602,7 +602,7 @@ class AllCatMLP(nn.Module):
 
 
 from .transformers.dit import DiT, DiT1D, DiT2D, DiT3D
-
+from .transformers.maxvit import MaxViT_t
 
 class Sequential(nn.Module):
 
@@ -720,4 +720,5 @@ MODULES = {
     "DiT1D".lower(): DiT1D,
     "FNO2d".lower(): FNO2d,
     "FNO2dTemporal".lower(): FNO2dTemporal,
+    "MaxViT_t".lower(): MaxViT_t,
 }

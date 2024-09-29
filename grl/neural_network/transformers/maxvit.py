@@ -689,8 +689,6 @@ class MaxVit(nn.Module):
             input_size = self.blocks[-1].grid_size
             p_idx += num_layers
 
-        # see https://github.com/google-research/maxvit/blob/da76cf0d8a6ec668cc31b399c4126186da7da944/maxvit/models/maxvit.py#L1137-L1158
-        # for why there is Linear -> Tanh -> Linear
         self.fetch_feature = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
             nn.Flatten(),
@@ -766,17 +764,18 @@ def _maxvit(
     return model
 
 class MaxViT_t(nn.Module):
-    def __init__(self):
-        super(MaxViT_t, self).__init__()
+    def __init__(self, input_size=224, output_dim=1000):
+        super().__init__()
         self.maxvit = MaxVit(
             input_channels=3,
-            input_size=[224, 224],
+            input_size=[input_size, input_size],
             stem_channels=64,
             partition_size=7,
             block_channels=[64, 128, 256, 512],
             block_layers=[2, 2, 5, 2],
             head_dim=32,
             stochastic_depth_prob=0.2,
+            output_dim=output_dim
         )
     
     def forward(self, x):

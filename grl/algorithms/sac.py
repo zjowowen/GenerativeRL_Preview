@@ -73,10 +73,9 @@ class NonegativeFunction(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.model = MultiLayerPerceptron(**config)
-        self.relu = nn.ReLU()
-
+        
     def forward(self, x):
-        return self.relu(self.model(x))
+        return torch.exp(self.model(x))
 
 class TanhFunction(nn.Module):
 
@@ -90,7 +89,7 @@ class TanhFunction(nn.Module):
     
 class CovarianceMatrix(nn.Module):
 
-    def __init__(self, config, delta=1e-8):
+    def __init__(self, config, delta=1e-1):
         super().__init__()
         self.dim = config.dim
 
@@ -110,7 +109,9 @@ class CovarianceMatrix(nn.Module):
         #sigma_offdiag=self.sigma_offdiag(x)
         #sigma_offdiag=sigma_offdiag.reshape(-1, self.dim, self.dim)
         #low_t_m = low_t_m + sigma_offdiag.masked_fill(self.mask, 0)
-        lambda_ = self.delta + self.sigma_lambda(x)
+        # lambda_ = self.delta + self.sigma_lambda(x)
+        # clamp into [delta, 100]
+        lambda_ = torch.clamp(self.sigma_lambda(x), self.delta, 1.0)
         low_t_m=torch.einsum("bj,bjk,bk->bjk", lambda_, low_t_m, lambda_)
 
         return low_t_m
