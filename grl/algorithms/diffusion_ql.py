@@ -12,7 +12,7 @@ from torchrl.data import TensorDictReplayBuffer
 from torchrl.data.replay_buffers.samplers import SamplerWithoutReplacement
 
 import wandb
-from grl.agents.gm import GPAgent
+from grl.agents.diffusion_ql import DiffusionQLAgent
 
 from grl.datasets import create_dataset
 from grl.datasets.gp import GPDataset, GPD4RLDataset
@@ -35,13 +35,13 @@ from grl.utils.log import log
 from grl.utils import set_seed
 from grl.utils.statistics import sort_files_by_criteria
 from grl.generative_models.metric import compute_likelihood
-from grl.utils.plot import plot_distribution,plot_histogram2d_x_y
+from grl.utils.plot import plot_distribution
 
 def asymmetric_l2_loss(u, tau):
     return torch.mean(torch.abs(tau - (u < 0).float()) * u**2)
 
 
-class GMPGCritic(nn.Module):
+class DiffusionQLCritic(nn.Module):
     """
     Overview:
         Critic network.
@@ -157,14 +157,14 @@ class GMPGCritic(nn.Module):
         return q_loss, torch.mean(qs[0]), torch.mean(q_target)
 
 
-class GMPGPolicy(nn.Module):
+class DiffusionQLPolicy(nn.Module):
 
     def __init__(self, config: EasyDict):
         super().__init__()
         self.config = config
         self.device = config.device
 
-        self.critic = GMPGCritic(config.critic)
+        self.critic = DiffusionQLCritic(config.critic)
         self.model_type = config.model_type
         if self.model_type == "DiffusionModel":
             self.base_model = DiffusionModel(config.model)
@@ -379,118 +379,6 @@ class GMPGPolicy(nn.Module):
                 -log_mu_per_dim.detach().mean(),
             )
 
-    def policy_gradient_loss_by_REINFORCE(
-        self,
-        state: Union[torch.Tensor, TensorDict],
-        gradtime_step: int = 1000,
-        beta: float = 1.0,
-        repeats: int = 1,
-        weight_clamp: float = 100.0,
-    ):
-        t_span = torch.linspace(0.0, 1.0, gradtime_step).to(state.device)
-
-        state_repeated = torch.repeat_interleave(state, repeats=repeats, dim=0)
-        action_repeated = self.base_model.sample(
-            t_span=t_span, condition=state_repeated, with_grad=False
-        )
-        q_value_repeated = self.critic(action_repeated, state_repeated).squeeze(dim=-1)
-        v_value_repeated = self.critic.v(state_repeated).squeeze(dim=-1)
-
-        weight = (
-            torch.exp(beta * (q_value_repeated - v_value_repeated)).clamp(
-                max=weight_clamp
-            )
-            / weight_clamp
-        )
-
-        log_p = compute_likelihood(
-            model=self.guided_model,
-            x=action_repeated,
-            condition=state_repeated,
-            t=t_span,
-            using_Hutchinson_trace_estimator=True,
-        )
-        bits_ratio = torch.prod(
-            torch.tensor(action_repeated.shape[1], device=state.device)
-        ) * torch.log(torch.tensor(2.0, device=state.device))
-        log_p_per_dim = log_p / bits_ratio
-        log_mu = compute_likelihood(
-            model=self.base_model,
-            x=action_repeated,
-            condition=state_repeated,
-            t=t_span,
-            using_Hutchinson_trace_estimator=True,
-        )
-        log_mu_per_dim = log_mu / bits_ratio
-
-        loss = (
-            (
-                -beta * q_value_repeated.detach()
-                + log_p_per_dim.detach()
-                - log_mu_per_dim.detach()
-            )
-            * log_p_per_dim
-            * weight
-        )
-        with torch.no_grad():
-            loss_q = -beta * q_value_repeated.detach().mean()
-            loss_p = log_p_per_dim.detach().mean()
-            loss_u = -log_mu_per_dim.detach().mean()
-        return loss, loss_q, loss_p, loss_u
-
-    def policy_gradient_loss_by_REINFORCE_softmax(
-        self,
-        state: Union[torch.Tensor, TensorDict],
-        gradtime_step: int = 1000,
-        beta: float = 1.0,
-        repeats: int = 10,
-    ):
-        assert repeats > 1
-        t_span = torch.linspace(0.0, 1.0, gradtime_step).to(state.device)
-
-        state_repeated = torch.repeat_interleave(state, repeats=repeats, dim=0)
-        action_repeated = self.base_model.sample(
-            t_span=t_span, condition=state_repeated, with_grad=False
-        )
-        q_value_repeated = self.critic(action_repeated, state_repeated).squeeze(dim=-1)
-        q_value_reshaped = q_value_repeated.reshape(-1, repeats)
-
-        weight = nn.Softmax(dim=1)(q_value_reshaped * beta)
-        weight = weight.reshape(-1)
-
-        log_p = compute_likelihood(
-            model=self.guided_model,
-            x=action_repeated,
-            condition=state_repeated,
-            t=t_span,
-            using_Hutchinson_trace_estimator=True,
-        )
-        bits_ratio = torch.prod(
-            torch.tensor(action_repeated.shape[1], device=state.device)
-        ) * torch.log(torch.tensor(2.0, device=state.device))
-        log_p_per_dim = log_p / bits_ratio
-        log_mu = compute_likelihood(
-            model=self.base_model,
-            x=action_repeated,
-            condition=state_repeated,
-            t=t_span,
-            using_Hutchinson_trace_estimator=True,
-        )
-        log_mu_per_dim = log_mu / bits_ratio
-
-        loss = (
-            (
-                -beta * q_value_repeated.detach()
-                + log_p_per_dim.detach()
-                - log_mu_per_dim.detach()
-            )
-            * log_p_per_dim
-            * weight
-        )
-        loss_q = -beta * q_value_repeated.detach().mean()
-        loss_p = log_p_per_dim.detach().mean()
-        loss_u = -log_mu_per_dim.detach().mean()
-        return loss, loss_q, loss_p, loss_u
 
     def policy_gradient_loss_add_matching_loss(
         self,
@@ -527,10 +415,10 @@ class GMPGPolicy(nn.Module):
     
 
 
-class GMPGAlgorithm:
+class DiffusionQLAlgorithm:
     """
     Overview:
-        The Generative Model Policy Gradient(GMPG) algorithm.
+        The Diffusion-QL algorithm.
     Interfaces:
         ``__init__``, ``train``, ``deploy``
     """
@@ -577,10 +465,10 @@ class GMPGAlgorithm:
 
             if torch.__version__ >= "2.0.0":
                 self.model["GPPolicy"] = torch.compile(
-                    GMPGPolicy(config.model.GPPolicy).to(config.model.GPPolicy.device)
+                    DiffusionQLPolicy(config.model.GPPolicy).to(config.model.GPPolicy.device)
                 )
             else:
-                self.model["GPPolicy"] = GMPGPolicy(config.model.GPPolicy).to(
+                self.model["GPPolicy"] = DiffusionQLPolicy(config.model.GPPolicy).to(
                     config.model.GPPolicy.device
                 )
 
@@ -706,10 +594,7 @@ class GMPGAlgorithm:
                 config.parameter.guided_policy.beta = 1.0
 
             assert config.parameter.algorithm_type in [
-                "GMPG",
-                "GMPG_REINFORCE",
-                "GMPG_REINFORCE_softmax",
-                "GMPG_add_matching",
+                "DiffusionQL",
             ]
             run_name = f"{config.parameter.critic.method}-beta-{config.parameter.guided_policy.beta}-T-{config.parameter.guided_policy.gradtime_step}-batch-{config.parameter.guided_policy.batch_size}-lr-{config.parameter.guided_policy.learning_rate}-seed-{self.seed_value}"
             wandb.run.name = run_name
@@ -799,10 +684,29 @@ class GMPGAlgorithm:
             def generate_fake_action(model, states, action_augment_num):
 
                 fake_actions_sampled = []
-                for states in track(
-                    np.array_split(states, states.shape[0] // 4096 + 1),
-                    description="Generate fake actions",
-                ):
+                for states in np.array_split(states, states.shape[0] // 4096 + 1):
+
+                    fake_actions_ = model.behaviour_policy_sample(
+                        state=states,
+                        batch_size=action_augment_num,
+                        t_span=(
+                            torch.linspace(0.0, 1.0, config.parameter.t_span).to(
+                                states.device
+                            )
+                            if hasattr(config.parameter, "t_span")
+                            and config.parameter.t_span is not None
+                            else None
+                        ),
+                    )
+                    fake_actions_sampled.append(torch.einsum("nbd->bnd", fake_actions_))
+
+                fake_actions = torch.cat(fake_actions_sampled, dim=0)
+                return fake_actions
+
+            def generate_fake_action_   (model, states, action_augment_num):
+
+                fake_actions_sampled = []
+                for states in np.array_split(states, states.shape[0] // 4096 + 1):
 
                     fake_actions_ = model.behaviour_policy_sample(
                         state=states,
@@ -919,11 +823,7 @@ class GMPGAlgorithm:
 
             behaviour_policy_train_iter = 0
             
-            logp_min=[]
-            logp_max=[]
-            logp_mean=[]
-            logp_sum=[]
-            end_return=[]
+            
             for epoch in track(
                 range(config.parameter.behaviour_policy.epochs),
                 description="Behaviour policy training",
@@ -931,24 +831,23 @@ class GMPGAlgorithm:
                 if self.behaviour_policy_train_epoch >= epoch:
                     continue
                 if hasattr(config.parameter.evaluation, "analysis_interval") and epoch % config.parameter.evaluation.analysis_interval == 0:
-                    timlimited=0
                     for index, data in enumerate(replay_buffer):
-                        if timlimited ==0 :
-                            if not os.path.exists(config.parameter.checkpoint_path):
-                                os.makedirs(config.parameter.checkpoint_path)
-                            plot_distribution(data["a"].detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_base_{epoch}.png"))
-                            
-                            action=self.model["GPPolicy"].behaviour_policy_sample(
-                                state=data["s"].to(config.model.GPPolicy.device),
-                                t_span=(
-                                    torch.linspace(0.0, 1.0, config.parameter.t_span).to(
-                                        config.model.GPPolicy.device
-                                    )
-                                    if hasattr(config.parameter, "t_span")
-                                    and config.parameter.t_span is not None
-                                    else None
-                                ),
-                            )
+
+                        if not os.path.exists(config.parameter.checkpoint_path):
+                            os.makedirs(config.parameter.checkpoint_path)
+                        plot_distribution(data["a"].detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_base_{epoch}.png"))
+                        
+                        action=self.model["GPPolicy"].behaviour_policy_sample(
+                            state=data["s"].to(config.model.GPPolicy.device),
+                            t_span=(
+                                torch.linspace(0.0, 1.0, config.parameter.t_span).to(
+                                    config.model.GPPolicy.device
+                                )
+                                if hasattr(config.parameter, "t_span")
+                                and config.parameter.t_span is not None
+                                else None
+                            ),
+                        )
 
                         evaluation_results = evaluate(
                             self.model["GPPolicy"].base_model,
@@ -959,37 +858,11 @@ class GMPGAlgorithm:
                                 else config.parameter.evaluation.repeat
                             ),
                         )
-                        
-                        if timlimited ==0 :
-                            plot_distribution(action.detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_base_model_{epoch}_{evaluation_results['evaluation/return_mean']}.png"))
-                        
-                        log_p= compute_likelihood(
-                            model=self.model["GPPolicy"].base_model,
-                            x=data["a"].to(config.model.GPPolicy.device),
-                            condition=data["s"].to(config.model.GPPolicy.device),
-                            t=torch.linspace(0.0, 1.0, 100).to(config.model.GPPolicy.device),
-                            using_Hutchinson_trace_estimator=True,
-                        )
-                        logp_max.append(log_p.max().detach().cpu().numpy())
-                        logp_min.append(log_p.min().detach().cpu().numpy())
-                        logp_mean.append(log_p.mean().detach().cpu().numpy())
-                        logp_sum.append(log_p.sum().detach().cpu().numpy())
-                        end_return.append(evaluation_results["evaluation/return_mean"])
+
+                        plot_distribution(action.detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_base_model_{epoch}_{evaluation_results['evaluation/return_mean']}.png"))
                         
                         wandb.log(data=evaluation_results, commit=False)
-                        
-                        timlimited+=1
-                        if timlimited>10:
-                            logp_dict = {
-                                        "logp_max": logp_max,
-                                        "logp_min": logp_min,
-                                        "logp_mean": logp_mean,
-                                        "logp_sum": logp_sum,
-                                        "end_return": end_return
-                                    }
-                            np.savez(os.path.join(config.parameter.checkpoint_path, f"logp_data_based_{epoch}.npz"), **logp_dict)
-                            plot_histogram2d_x_y(end_return,logp_mean,os.path.join(config.parameter.checkpoint_path,f"return_logp_base_{epoch}.png"))
-                            break
+                        break
                 
                 counter = 1
                 behaviour_policy_loss_sum = 0
@@ -1041,118 +914,9 @@ class GMPGAlgorithm:
             # ---------------------------------------
             # behavior training code ↑
             # ---------------------------------------
-            # ---------------------------------------
-            # critic training code ↓
-            # ---------------------------------------
-
-            q_optimizer = torch.optim.Adam(
-                self.model["GPPolicy"].critic.q.parameters(),
-                lr=config.parameter.critic.learning_rate,
-            )
-            v_optimizer = torch.optim.Adam(
-                self.model["GPPolicy"].critic.v.parameters(),
-                lr=config.parameter.critic.learning_rate,
-            )
-
-            replay_buffer=TensorDictReplayBuffer(
-                storage=self.dataset.storage,
-                batch_size=config.parameter.critic.batch_size,
-                sampler=SamplerWithoutReplacement(),
-                prefetch=10,
-                pin_memory=True,
-            )
-
-            critic_train_iter = 0
-            for epoch in track(
-                range(config.parameter.critic.epochs), description="Critic training"
-            ):
-                if self.critic_train_epoch >= epoch:
-                    continue
-
-                counter = 1
-
-                v_loss_sum = 0.0
-                v_sum = 0.0
-                q_loss_sum = 0.0
-                q_sum = 0.0
-                q_target_sum = 0.0
-                for index, data in enumerate(replay_buffer):
-
-                    v_loss, next_v = self.model["GPPolicy"].critic.v_loss(
-                        state=data["s"].to(config.model.GPPolicy.device),
-                        action=data["a"].to(config.model.GPPolicy.device),
-                        next_state=data["s_"].to(config.model.GPPolicy.device),
-                        tau=config.parameter.critic.tau,
-                    )
-                    v_optimizer.zero_grad(set_to_none=True)
-                    v_loss.backward()
-                    v_optimizer.step()
-                    q_loss, q, q_target = self.model["GPPolicy"].critic.iql_q_loss(
-                        state=data["s"].to(config.model.GPPolicy.device),
-                        action=data["a"].to(config.model.GPPolicy.device),
-                        reward=data["r"].to(config.model.GPPolicy.device),
-                        done=data["d"].to(config.model.GPPolicy.device),
-                        next_v=next_v,
-                        discount=config.parameter.critic.discount_factor,
-                    )
-                    q_optimizer.zero_grad(set_to_none=True)
-                    q_loss.backward()
-                    q_optimizer.step()
-
-                    # Update target
-                    for param, target_param in zip(
-                        self.model["GPPolicy"].critic.parameters(),
-                        self.model["GPPolicy"].critic.q_target.parameters(),
-                    ):
-                        target_param.data.copy_(
-                            config.parameter.critic.update_momentum * param.data
-                            + (1 - config.parameter.critic.update_momentum)
-                            * target_param.data
-                        )
-
-                    counter += 1
-
-                    q_loss_sum += q_loss.item()
-                    q_sum += q.mean().item()
-                    q_target_sum += q_target.mean().item()
-
-                    v_loss_sum += v_loss.item()
-                    v_sum += next_v.mean().item()
-
-                    critic_train_iter += 1
-                    self.critic_train_epoch = epoch
-
-                wandb.log(
-                    data=dict(v_loss=v_loss_sum / counter, v=v_sum / counter),
-                    commit=False,
-                )
-
-                wandb.log(
-                    data=dict(
-                        critic_train_iter=critic_train_iter,
-                        critic_train_epoch=epoch,
-                        q_loss=q_loss_sum / counter,
-                        q=q_sum / counter,
-                        q_target=q_target_sum / counter,
-                    ),
-                    commit=True,
-                )
-
-                if (
-                    hasattr(config.parameter, "checkpoint_freq")
-                    and (epoch + 1) % config.parameter.checkpoint_freq == 0
-                ):
-                    save_checkpoint(
-                        self.model,
-                        iteration=critic_train_iter,
-                        model_type="critic_model",
-                    )
-            # ---------------------------------------
-            # critic training code ↑
-            # ---------------------------------------
 
             # ---------------------------------------
-            # guided policy training code ↓
+            # critic and guided policy joint training code ↓
             # ---------------------------------------
 
             if not self.guided_policy_train_epoch > 0:
@@ -1165,6 +929,15 @@ class GMPGAlgorithm:
                 lr=config.parameter.guided_policy.learning_rate,
             )
 
+            q_optimizer = torch.optim.Adam(
+                self.model["GPPolicy"].critic.q.parameters(),
+                lr=config.parameter.critic.learning_rate,
+            )
+            v_optimizer = torch.optim.Adam(
+                self.model["GPPolicy"].critic.v.parameters(),
+                lr=config.parameter.critic.learning_rate,
+            )
+
             replay_buffer=TensorDictReplayBuffer(
                 storage=self.dataset.storage,
                 batch_size=config.parameter.guided_policy.batch_size,
@@ -1172,85 +945,149 @@ class GMPGAlgorithm:
                 prefetch=10,
                 pin_memory=True,
             )
-            
-            logp_min=[]
-            logp_max=[]
-            logp_mean=[]
-            logp_sum=[]
-            end_return=[]
-            
+
+            critic_train_iter = 0
             guided_policy_train_iter = 0
             beta = config.parameter.guided_policy.beta
-            for epoch in track(
-                range(config.parameter.guided_policy.epochs),
-                description="Guided policy training",
-            ):
 
-                if self.guided_policy_train_epoch >= epoch:
-                    continue
+            for epoch in track(
+                range(max(config.parameter.critic.epochs, config.parameter.guided_policy.epochs)), description="Critic and Guided policy training"
+            ):
                 
-                counter = 1
-                guided_policy_loss_sum = 0.0
-                for index, data in enumerate(replay_buffer):
-                    if config.parameter.algorithm_type == "GMPG":
-                        (
-                            guided_policy_loss,
-                            q_loss,
-                            log_p_loss,
-                            log_u_loss,
-                        ) = self.model["GPPolicy"].policy_gradient_loss(
-                            data["s"].to(config.model.GPPolicy.device),
-                            gradtime_step=config.parameter.guided_policy.gradtime_step,
-                            beta=beta,
-                            repeats=(
-                                config.parameter.guided_policy.repeats
-                                if hasattr(config.parameter.guided_policy, "repeats")
-                                else 1
-                            ),
-                        )
-                    elif config.parameter.algorithm_type == "GMPG_REINFORCE":
-                        (
-                            guided_policy_loss,
-                            q_loss,
-                            log_p_loss,
-                            log_u_loss,
-                        ) = self.model["GPPolicy"].policy_gradient_loss_by_REINFORCE(
-                            data["s"].to(config.model.GPPolicy.device),
-                            gradtime_step=config.parameter.guided_policy.gradtime_step,
-                            beta=beta,
-                            repeats=(
-                                config.parameter.guided_policy.repeats
-                                if hasattr(config.parameter.guided_policy, "repeats")
-                                else 1
-                            ),
-                            weight_clamp=(
-                                config.parameter.guided_policy.weight_clamp
-                                if hasattr(
-                                    config.parameter.guided_policy, "weight_clamp"
+                if hasattr(config.parameter.evaluation, "analysis_interval") and epoch % config.parameter.evaluation.analysis_interval == 0:
+                    for index, data in enumerate(replay_buffer):
+
+                        if not os.path.exists(config.parameter.checkpoint_path):
+                            os.makedirs(config.parameter.checkpoint_path)
+                        plot_distribution(data["a"].detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_guided_{epoch}.png"))
+                        
+                        action=self.model["GPPolicy"].sample(
+                            state=data["s"].to(config.model.GPPolicy.device),
+                            t_span=(
+                                torch.linspace(0.0, 1.0, config.parameter.t_span).to(
+                                    config.model.GPPolicy.device
                                 )
-                                else 100.0
+                                if hasattr(config.parameter, "t_span")
+                                and config.parameter.t_span is not None
+                                else None
                             ),
                         )
-                    elif config.parameter.algorithm_type == "GMPG_REINFORCE_softmax":
-                        (
-                            guided_policy_loss,
-                            q_loss,
-                            log_p_loss,
-                            log_u_loss,
-                        ) = self.model[
-                            "GPPolicy"
-                        ].policy_gradient_loss_by_REINFORCE_softmax(
-                            data["s"].to(config.model.GPPolicy.device),
-                            gradtime_step=config.parameter.guided_policy.gradtime_step,
-                            beta=beta,
-                            repeats=(
-                                config.parameter.guided_policy.repeats
-                                if hasattr(config.parameter.guided_policy, "repeats")
-                                else 32
+
+                        evaluation_results = evaluate(
+                            self.model["GPPolicy"].guided_model,
+                            train_epoch=epoch,
+                            repeat=(
+                                1
+                                if not hasattr(config.parameter.evaluation, "repeat")
+                                else config.parameter.evaluation.repeat
                             ),
                         )
-                    elif config.parameter.algorithm_type == "GMPG_add_matching":
-                        guided_policy_loss = self.model[
+
+                        plot_distribution(action.detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_guided_model_{epoch}_{evaluation_results['evaluation/return_mean']}.png"))
+                        
+                        wandb.log(data=evaluation_results, commit=False)
+                        break
+
+                for index, data in enumerate(replay_buffer):
+
+                    if epoch < config.parameter.critic.epochs:
+
+                        if self.critic_train_epoch >= epoch:
+                            continue
+
+
+                        if config.parameter.critic.method.lower() == "in_support_ql":
+
+                            fake_next_action = generate_fake_action(
+                                self.model["GPPolicy"],
+                                states=data["s_"].to(config.model.GPPolicy.device),
+                                action_augment_num=config.parameter.critic.action_augment_num,
+                            )
+
+                            q_loss, q, q_target = self.model["GPPolicy"].critic.in_support_ql_loss(
+                                action=data["a"].to(config.model.GPPolicy.device),
+                                state=data["s"].to(config.model.GPPolicy.device),
+                                reward=data["r"].to(config.model.GPPolicy.device),
+                                next_state=data["s_"].to(config.model.GPPolicy.device),
+                                done=data["d"].to(config.model.GPPolicy.device),
+                                fake_next_action=fake_next_action,
+                                discount_factor=config.parameter.critic.discount_factor,
+                            )
+
+                            q_optimizer.zero_grad(set_to_none=True)
+                            q_loss.backward()
+                            q_optimizer.step()
+
+                            # Update target
+                            for param, target_param in zip(
+                                self.model["GPPolicy"].critic.parameters(),
+                                self.model["GPPolicy"].critic.q_target.parameters(),
+                            ):
+                                target_param.data.copy_(
+                                    config.parameter.critic.update_momentum * param.data
+                                    + (1 - config.parameter.critic.update_momentum)
+                                    * target_param.data
+                                )
+
+                        elif config.parameter.critic.method.lower() == "iql":
+                            v_loss, next_v = self.model["GPPolicy"].critic.v_loss(
+                                state=data["s"].to(config.model.GPPolicy.device),
+                                action=data["a"].to(config.model.GPPolicy.device),
+                                next_state=data["s_"].to(config.model.GPPolicy.device),
+                                tau=config.parameter.critic.tau,
+                            )
+                            v_optimizer.zero_grad(set_to_none=True)
+                            v_loss.backward()
+                            v_optimizer.step()
+                            q_loss, q, q_target = self.model["GPPolicy"].critic.iql_q_loss(
+                                state=data["s"].to(config.model.GPPolicy.device),
+                                action=data["a"].to(config.model.GPPolicy.device),
+                                reward=data["r"].to(config.model.GPPolicy.device),
+                                done=data["d"].to(config.model.GPPolicy.device),
+                                next_v=next_v,
+                                discount=config.parameter.critic.discount_factor,
+                            )
+                            q_optimizer.zero_grad(set_to_none=True)
+                            q_loss.backward()
+                            q_optimizer.step()
+
+                            # Update target
+                            for param, target_param in zip(
+                                self.model["GPPolicy"].critic.parameters(),
+                                self.model["GPPolicy"].critic.q_target.parameters(),
+                            ):
+                                target_param.data.copy_(
+                                    config.parameter.critic.update_momentum * param.data
+                                    + (1 - config.parameter.critic.update_momentum)
+                                    * target_param.data
+                                )
+
+                        critic_train_iter += 1
+                        self.critic_train_epoch = epoch
+
+                        if config.parameter.critic.method.lower() == "iql":
+                            wandb.log(
+                                data=dict(v_loss=v_loss.item(), v=next_v.mean().item()),
+                                commit=False,
+                            )
+
+                        wandb.log(
+                            data=dict(
+                                critic_train_iter=critic_train_iter,
+                                critic_train_epoch=epoch,
+                                q_loss=q_loss.item(),
+                                q=q.mean().item(),
+                                q_target=q_target.mean().item(),
+                            ),
+                            commit=True,
+                        )
+
+                    if epoch < config.parameter.guided_policy.epochs:
+
+                        if self.guided_policy_train_epoch >= epoch:
+                            continue
+
+                        guided_policy_loss, guided_policy_loss_q, guided_policy_loss_matching = self.model[
                             "GPPolicy"
                         ].policy_gradient_loss_add_matching_loss(
                             data["a"].to(config.model.GPPolicy.device),
@@ -1270,26 +1107,25 @@ class GMPGAlgorithm:
                                 else 1
                             ),
                         )
-                    else:
-                        raise NotImplementedError
-                    guided_policy_optimizer.zero_grad()
-                    guided_policy_loss = guided_policy_loss * (
-                        data["s"].shape[0] / config.parameter.guided_policy.batch_size
-                    )
-                    guided_policy_loss = guided_policy_loss.mean()
-                    guided_policy_loss.backward()
-                    guided_policy_optimizer.step()
-                    counter += 1
 
-                    if config.parameter.algorithm_type == "GMPG_add_matching":
+                        guided_policy_optimizer.zero_grad()
+                        guided_policy_loss = guided_policy_loss * (
+                            data["s"].shape[0] / config.parameter.guided_policy.batch_size
+                        )
+                        guided_policy_loss.backward()
+                        guided_policy_optimizer.step()
+
                         wandb.log(
                             data=dict(
                                 guided_policy_train_iter=guided_policy_train_iter,
                                 guided_policy_train_epoch=epoch,
                                 guided_policy_loss=guided_policy_loss.item(),
+                                guided_policy_loss_q=guided_policy_loss_q.item(),
+                                guided_policy_loss_matching=guided_policy_loss_matching.item(),
                             ),
                             commit=False,
                         )
+
                         if (
                             hasattr(config.parameter, "checkpoint_freq")
                             and (guided_policy_train_iter + 1)
@@ -1298,75 +1134,25 @@ class GMPGAlgorithm:
                         ):
                             save_checkpoint(
                                 self.model,
-                                iteration=guided_policy_train_iter,
-                                model_type="guided_model",
+                                iteration=critic_train_iter,
+                                model_type="critic_model",
                             )
 
-                    elif config.parameter.algorithm_type in [
-                        "GMPG",
-                        "GMPG_REINFORCE",
-                        "GMPG_REINFORCE_softmax",
-                    ]:
-                        wandb.log(
-                            data=dict(
-                                guided_policy_train_iter=guided_policy_train_iter,
-                                guided_policy_train_epoch=epoch,
-                                guided_policy_loss=guided_policy_loss.item(),
-                                q_loss=q_loss.item(),
-                                log_p_loss=log_p_loss.item(),
-                                log_u_loss=log_u_loss.item(),
-                            ),
-                            commit=False,
-                        )
-                        if (
-                            hasattr(config.parameter, "checkpoint_freq")
-                            and (guided_policy_train_iter + 1)
-                            % config.parameter.checkpoint_freq
-                            == 0
-                        ):
                             save_checkpoint(
                                 self.model,
                                 iteration=guided_policy_train_iter,
                                 model_type="guided_model",
                             )
 
-                    guided_policy_loss_sum += guided_policy_loss.item()
-
-                    
-                    self.guided_policy_train_epoch = epoch
-                    
-                    timlimited=0
-                
-                    if hasattr(config.parameter.evaluation, "analysis_interval") and guided_policy_train_iter % config.parameter.evaluation.analysis_interval == 0:
-                        if hasattr(config.parameter.evaluation, "analysis_repeat"):
-                            analysis_repeat=config.parameter.evaluation.analysis_repeat
-                        else:
-                            analysis_repeat=10
-                        
-                        if hasattr(config.parameter.evaluation, "analysis_distribution"):
-                            analysis_distribution=config.parameter.evaluation.analysis_distribution
-                        else:
-                            analysis_distribution=True
-                            
-                        for index, data in enumerate(replay_buffer):
-                            
-                            if timlimited==0 and analysis_distribution:
-                                if not os.path.exists(config.parameter.checkpoint_path):
-                                    os.makedirs(config.parameter.checkpoint_path)
-                                plot_distribution(data["a"].detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_guided_{guided_policy_train_iter}.png"))
-                                
-                                action=self.model["GPPolicy"].sample(
-                                    state=data["s"].to(config.model.GPPolicy.device),
-                                    t_span=(
-                                        torch.linspace(0.0, 1.0, config.parameter.t_span).to(
-                                            config.model.GPPolicy.device
-                                        )
-                                        if hasattr(config.parameter, "t_span")
-                                        and config.parameter.t_span is not None
-                                        else None
-                                    ),
-                                )
-                                
+                        guided_policy_train_iter += 1
+                        self.guided_policy_train_epoch = epoch
+                        if (
+                            config.parameter.evaluation.eval
+                            and hasattr(config.parameter.evaluation, "interval")
+                            and guided_policy_train_iter
+                            % config.parameter.evaluation.interval
+                            == 0
+                        ):
                             evaluation_results = evaluate(
                                 self.model["GPPolicy"].guided_model,
                                 train_epoch=epoch,
@@ -1376,66 +1162,23 @@ class GMPGAlgorithm:
                                     else config.parameter.evaluation.repeat
                                 ),
                             )
-                            
-                            log_p= compute_likelihood(
-                                model=self.model["GPPolicy"].guided_model,
-                                x=data["a"].to(config.model.GPPolicy.device),
-                                condition=data["s"].to(config.model.GPPolicy.device),
-                                t=torch.linspace(0.0, 1.0, 100).to(config.model.GPPolicy.device),
-                                using_Hutchinson_trace_estimator=True,
-                            )
-                            
-                            logp_max.append(log_p.max().detach().cpu().numpy())
-                            logp_min.append(log_p.min().detach().cpu().numpy())
-                            logp_mean.append(log_p.mean().detach().cpu().numpy())
-                            logp_sum.append(log_p.sum().detach().cpu().numpy())
-                            end_return.append(evaluation_results["evaluation/return_mean"])
-                            
-                            if timlimited==0 and analysis_distribution:
-                                plot_distribution(action.detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_guided_model_{guided_policy_train_iter}_{evaluation_results['evaluation/return_mean']}.png"))
-                            
-                            timlimited +=1
                             wandb.log(data=evaluation_results, commit=False)
-                            if timlimited >analysis_repeat:
-                                logp_dict = {
-                                        "logp_max": logp_max,
-                                        "logp_min": logp_min,
-                                        "logp_mean": logp_mean,
-                                        "logp_sum": logp_sum,
-                                        "end_return": end_return
-                                    }
-                                np.savez(os.path.join(config.parameter.checkpoint_path, f"logp_data_guided_{epoch}.npz"), **logp_dict)
-                                plot_histogram2d_x_y(end_return,logp_mean,os.path.join(config.parameter.checkpoint_path,f"return_logp_guided_{guided_policy_train_iter}.png"))
-                                break
-                    
-                    if (
-                        config.parameter.evaluation.eval
-                        and hasattr(config.parameter.evaluation, "interval")
-                        and guided_policy_train_iter
-                        % config.parameter.evaluation.interval
-                        == 0
-                    ):
-                        evaluation_results = evaluate(
-                            self.model["GPPolicy"].guided_model,
-                            train_epoch=epoch,
-                            repeat=(
-                                1
-                                if not hasattr(config.parameter.evaluation, "repeat")
-                                else config.parameter.evaluation.repeat
+
+                        wandb.log(
+                            data=dict(
+                                guided_policy_train_iter=guided_policy_train_iter,
+                                guided_policy_train_epoch=epoch,
                             ),
+                            commit=True,
                         )
-                        wandb.log(data=evaluation_results, commit=False)
-                    guided_policy_train_iter += 1
-                    wandb.log(
-                        data=dict(
-                            guided_policy_train_iter=guided_policy_train_iter,
-                            guided_policy_train_epoch=epoch,
-                        ),
-                        commit=True,
-                    )    
+
+
+
+
+
 
             # ---------------------------------------
-            # guided policy training code ↑
+            # critic and guided policy joint training code ↑
             # ---------------------------------------
 
             # ---------------------------------------
@@ -1444,7 +1187,7 @@ class GMPGAlgorithm:
 
         wandb.finish()
 
-    def deploy(self, config: EasyDict = None) -> GPAgent:
+    def deploy(self, config: EasyDict = None) -> DiffusionQLAgent:
 
         if config is not None:
             config = merge_two_dicts_into_newone(self.config.deploy, config)
@@ -1452,7 +1195,7 @@ class GMPGAlgorithm:
             config = self.config.deploy
 
         assert "GPPolicy" in self.model, "The model must be trained first."
-        return GPAgent(
+        return DiffusionQLAgent(
             config=config,
             model=copy.deepcopy(self.model["GPPolicy"].guided_model),
         )

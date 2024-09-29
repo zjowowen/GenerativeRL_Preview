@@ -10,12 +10,13 @@ def set_seed(seed_value=None, cudnn_deterministic=True, cudnn_benchmark=False):
     Overview:
         Set the random seed. If no seed value is provided, generate a random seed.
     Arguments:
-        - seed_value (:obj:`int`, optional): The random seed to set. If None, a random seed will be generated.
-        - cudnn_deterministic (:obj:`bool`, optional): Whether to make cuDNN operations deterministic. Defaults to True.
-        - cudnn_benchmark (:obj:`bool`, optional): Whether to enable cuDNN benchmarking for convolutional operations. Defaults to False.
+        seed_value (:obj:`int`, optional): The random seed to set. If None, a random seed will be generated.
+        cudnn_deterministic (:obj:`bool`, optional): Whether to make cuDNN operations deterministic. Defaults to True.
+        cudnn_benchmark (:obj:`bool`, optional): Whether to enable cuDNN benchmarking for convolutional operations. Defaults to False.
     Returns:
-        - seed_value (:obj:`int`): The seed value used.
+        seed_value (:obj:`int`): The seed value used.
     """
+
     if seed_value is None:
         # Generate a random seed from system randomness
         seed_value = int.from_bytes(os.urandom(4), "little")
