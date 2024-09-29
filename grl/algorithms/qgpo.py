@@ -106,10 +106,18 @@ class QGPOCritic(nn.Module):
         """
         with torch.no_grad():
             softmax = nn.Softmax(dim=1)
+            if isinstance(next_state, TensorDict):
+                new_next_state = next_state.clone(False)
+                for key, value in next_state.items():
+                    if isinstance(value, torch.Tensor):
+                        stacked_value = torch.stack([value] * fake_next_action.shape[1], axis=1)
+                        new_next_state.set(key, stacked_value)
+            else:
+                new_next_state = torch.stack([next_state] * fake_next_action.shape[1], axis=1)
             next_energy = (
                 self.q_target(
                     fake_next_action,
-                    torch.stack([next_state] * fake_next_action.shape[1], axis=1),
+                    new_next_state,
                 )
                 .detach()
                 .squeeze(dim=-1)
@@ -567,33 +575,33 @@ class QGPOAlgorithm:
                     counter += 1
                     behaviour_model_training_loss_sum += behaviour_model_training_loss.item()
 
-                # if (
-                #     epoch == 0
-                #     or (epoch + 1)
-                #     % config.parameter.evaluation.evaluation_interval
-                #     == 0
-                # ):
-                #     evaluation_results = evaluate(
-                #         self.model["QGPOPolicy"], epoch=epoch
-                #     )
-                #     wandb_run.log(data=evaluation_results, commit=False)
-                #     save_model(
-                #         path=config.parameter.checkpoint_path,
-                #         model=self.model["QGPOPolicy"].diffusion_model.model,
-                #         optimizer=behaviour_model_optimizer,
-                #         iteration=epoch,
-                #         prefix="behaviour_policy",
-                #     )
+                if (
+                    epoch == 0
+                    or (epoch + 1)
+                    % config.parameter.evaluation.evaluation_interval
+                    == 0
+                ):
+                    evaluation_results = evaluate(
+                        self.model["QGPOPolicy"], epoch=epoch
+                    )
+                    wandb_run.log(data=evaluation_results, commit=False)
+                    save_model(
+                        path=config.parameter.checkpoint_path,
+                        model=self.model["QGPOPolicy"].diffusion_model.model,
+                        optimizer=behaviour_model_optimizer,
+                        iteration=epoch,
+                        prefix="behaviour_policy",
+                    )
 
-                # self.behaviour_policy_train_epoch = epoch
+                self.behaviour_policy_train_epoch = epoch
 
-                # wandb_run.log(
-                #     data=dict(
-                #         behaviour_policy_train_epoch=epoch,
-                #         behaviour_model_training_loss=behaviour_model_training_loss_sum / counter,
-                #     ),
-                #     commit=True,
-                # )
+                wandb_run.log(
+                    data=dict(
+                        behaviour_policy_train_epoch=epoch,
+                        behaviour_model_training_loss=behaviour_model_training_loss_sum / counter,
+                    ),
+                    commit=True,
+                )
 
             fake_actions = generate_fake_action(
                 self.model["QGPOPolicy"],

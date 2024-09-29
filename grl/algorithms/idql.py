@@ -184,7 +184,7 @@ class IDQLPolicy(nn.Module):
         state_rpt = torch.repeat_interleave(state, repeats=200, dim=0)
         with torch.no_grad():
             action = self.behaviour_policy_sample(state=state_rpt)
-            q_value = self.critic.q_target_min(state_rpt, action).flatten()
+            q_value = self.critic.q_target.compute_mininum_q(state_rpt, action).flatten()
             idx = torch.multinomial(F.softmax(q_value), 1)
         return action[idx]
 
@@ -550,10 +550,10 @@ class IDQLAlgorithm:
                     wandb_run.log(data=evaluation_results, commit=False)
                     save_model(
                         path=config.parameter.checkpoint_path,
-                        model=self.model["IDQLPolicy"].critic.model,
-                        optimizer=q_optimizer,
+                        model=self.model["IDQLPolicy"].diffusion_model.model,
+                        optimizer=behaviour_model_optimizer,
                         iteration=epoch,
-                        prefix="critic",
+                        prefix="behaviour_policy",
                     )
                     
                 wandb_run.log(

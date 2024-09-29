@@ -38,10 +38,7 @@ config = EasyDict(
                 device=device,
                 critic=dict(
                     device=device,
-                    adim=action_size,
-                    sdim=state_size,
-                    layers=2,
-                    update_momentum=0.95,
+                    q_alpha=1.0,
                     DoubleQNetwork=dict(
                         backbone=dict(
                             type="ConcatenateMLP",
@@ -111,11 +108,11 @@ config = EasyDict(
                 discount_factor=0.99,
                 tau=0.7,
                 update_momentum=0.005,
-                checkpoint_freq=100,
             ),
             evaluation=dict(
                 evaluation_interval=500,
                 repeat=5,
+                interval=1000,
             ),
             checkpoint_path=f"./{env_id}-{algorithm}",
         ),
