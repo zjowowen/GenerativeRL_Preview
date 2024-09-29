@@ -871,10 +871,6 @@ class GPDMControlVisualTensorDictDataset(torch.utils.data.Dataset):
             episode_list.append(episode)
             step_list.append(step)
 
-            if index>20:
-                break
-
-
         self.states = torch.cat(obs_list, dim=0)
         self.actions = torch.cat(action_list, dim=0)
         self.rewards = torch.cat(reward_list, dim=0)
