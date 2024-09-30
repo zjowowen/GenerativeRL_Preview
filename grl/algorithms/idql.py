@@ -178,10 +178,15 @@ class IDQLPolicy(nn.Module):
         Returns:
             action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
-        state_rpt = torch.repeat_interleave(state, repeats=200, dim=0)
+        if isinstance(state, TensorDict):
+            state_rpt = TensorDict({}, batch_size=[state.batch_size[0] * 200]).to(state.device)
+            for key, value in state.items():
+                state_rpt[key] = torch.repeat_interleave(value, repeats=200, dim=0)
+        else:
+            state_rpt = torch.repeat_interleave(state, repeats=200, dim=0)
         with torch.no_grad():
             action = self.behaviour_policy_sample(state=state_rpt)
-            q_value = self.critic.q_target.compute_mininum_q(state_rpt, action).flatten()
+            q_value = self.critic.q_target.compute_mininum_q(action,state_rpt).flatten()
             idx = torch.multinomial(F.softmax(q_value), 1)
         return action[idx]
 
