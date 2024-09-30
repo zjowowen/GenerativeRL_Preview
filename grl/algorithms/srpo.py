@@ -19,7 +19,7 @@ from grl.agents.srpo import SRPOAgent
 from grl.datasets import create_dataset
 
 from grl.datasets.d4rl import D4RLDataset
-
+from grl.neural_network.encoders import get_encoder
 from grl.generative_models.sro import SRPOConditionalDiffusionModel
 from grl.neural_network import MultiLayerPerceptron
 from grl.rl_modules.simulators import create_simulator
@@ -41,19 +41,28 @@ class Dirac_Policy(nn.Module):
     Interfaces:
         ``__init__``, ``forward``, ``select_actions``
     """
-    def __init__(self, action_dim: int, state_dim: int, layer: int = 2):
+    def __init__(self,config: EasyDict):
         super().__init__()
+        action_dim=config.action_dim
+        state_dim=config.state_dim
+        layer=config.layer
         self.net = MultiLayerPerceptron(
             hidden_sizes=[state_dim] + [256 for _ in range(layer)],
             output_size=action_dim,
             activation="relu",
             final_activation="tanh",
         )
+        
+        if hasattr(config, "state_encoder"):
+            self.state_encoder = get_encoder(config.state_encoder.type)(
+                **config.state_encoder.args
+            )
+        else:
+            self.state_encoder = torch.nn.Identity()
+        
 
     def forward(self, state: torch.Tensor):
-        if isinstance(state, TensorDict):
-            values = [v for v in state.values()]
-            state = torch.cat(values, dim=1).to(state.device)
+        state=self.state_encoder(state)
         return self.net(state)
 
     def select_actions(self, state: torch.Tensor):
@@ -135,7 +144,7 @@ class SRPOPolicy(nn.Module):
         self.config = config
         self.device = config.device
 
-        self.policy = Dirac_Policy(**config.policy_model)
+        self.policy = Dirac_Policy(config.policy_model)
         self.critic = SRPOCritic(config.critic)
         self.sro = SRPOConditionalDiffusionModel(
             config=config.diffusion_model,
