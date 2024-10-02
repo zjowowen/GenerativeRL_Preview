@@ -2,11 +2,11 @@ import torch
 from easydict import EasyDict
 
 data_path=""
-domain_name="manipulator"
-task_name="insert_peg"
+domain_name="walker"
+task_name="walk"
 env_id=f"{domain_name}-{task_name}"
-action_size = 5
-state_size = 44
+action_size = 6
+state_size = 24
 algorithm_type = "GMPG"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
