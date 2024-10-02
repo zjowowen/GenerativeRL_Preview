@@ -20,10 +20,19 @@ def idql_pipeline(config):
     # ---------------------------------------
     agent = idql.deploy()
     env = gym.make(config.deploy.env.env_id)
-    env.reset()
-    for _ in range(config.deploy.num_deploy_steps):
-        env.render()
-        env.step(agent.act(env.observation))
+    total_reward_list = []
+    for i in range(100):
+        observation = env.reset()
+        total_reward = 0
+        while True:
+            # env.render()
+            observation, reward, done, _ = env.step(agent.act(observation))
+            total_reward += reward
+            if done:
+                observation = env.reset()
+                print(f"Episode {i}, total_reward: {total_reward}")
+                total_reward_list.append(total_reward)
+                break
     # ---------------------------------------
     # Customized deploy code ↑
     # ---------------------------------------
