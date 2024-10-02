@@ -58,14 +58,8 @@ class IDQLAgent:
             obs = obs.unsqueeze(0)
             action = (
                 self.model["IDQLPolicy"]
-                .sample(
+                .get_action(
                     state=obs,
-                    t_span=(
-                        torch.linspace(0.0, 1.0, self.config.t_span).to(obs.device)
-                        if self.config.t_span is not None
-                        else None
-                    ),
-                    guidance_scale=self.guidance_scale,
                 )
                 .squeeze(0)
                 .cpu()
