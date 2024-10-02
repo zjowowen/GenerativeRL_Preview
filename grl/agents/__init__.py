@@ -42,3 +42,4 @@ from .base import BaseAgent
 from .qgpo import QGPOAgent
 from .srpo import SRPOAgent
 from .gm import GPAgent
+from .idql import IDQLAgent

@@ -17,7 +17,7 @@ from torchrl.data import TensorDictReplayBuffer
 from torchrl.data.replay_buffers.samplers import SamplerWithoutReplacement
 from grl.rl_modules.value_network.value_network import VNetwork, DoubleVNetwork
 import wandb
-from grl.agents.srpo import SRPOAgent
+from grl.agents.idql import IDQLAgent
 
 from grl.datasets import create_dataset
 
@@ -573,7 +573,7 @@ class IDQLAlgorithm:
 
             wandb.finish()
 
-    def deploy(self, config: EasyDict = None) -> SRPOAgent:
+    def deploy(self, config: EasyDict = None) -> IDQLAgent:
         """
         Overview:
             Deploy the model using the given configuration.
@@ -586,11 +586,7 @@ class IDQLAlgorithm:
         else:
             config = self.config.deploy
 
-        return SRPOAgent(
+        return IDQLAgent(
             config=config,
-            model=torch.nn.ModuleDict(
-                {
-                    "IDQLPolicy": self.deter_policy.select_actions,
-                }
-            ),
+            model=copy.deepcopy(self.model),
         )
