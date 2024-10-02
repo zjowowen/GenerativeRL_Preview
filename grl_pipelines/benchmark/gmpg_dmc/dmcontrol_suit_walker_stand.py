@@ -1,12 +1,48 @@
 import torch
 from easydict import EasyDict
+from grl.neural_network.encoders import register_encoder
+import torch.nn as nn
+class walker_encoder(nn.Module):
+    def __init__(self):
+        super(walker_encoder, self).__init__()
+        self.orientation_mlp = nn.Sequential(
+            nn.Linear(14, 28),
+            nn.ReLU(),
+            nn.Linear(28, 28),
+            nn.LayerNorm(28),
+        )
 
-data_path="/mnt/d/Project/datasets/dm_control/my_dm_control_suite/walker_stand.npy"
+        self.velocity_mlp = nn.Sequential(
+            nn.Linear(9, 18),
+            nn.ReLU(),
+            nn.Linear(18, 18),
+            nn.LayerNorm(18)
+        )
+        
+        self.height_mlp = nn.Sequential(
+            nn.Linear(1, 2),
+            nn.ReLU(),
+            nn.Linear(2, 2),
+            nn.LayerNorm(2),
+        )
+    
+    def forward(self, x: dict) -> torch.Tensor:
+        orientation_output = self.orientation_mlp(x['orientations'])
+        velocity_output = self.velocity_mlp(x['velocity'])
+        height=x["height"]
+        if height.dim() == 1:  
+            height = height.unsqueeze(-1)  
+        height_output = self.height_mlp(height)  
+        combined_output = torch.cat([orientation_output, velocity_output, height_output], dim=-1)
+        return combined_output
+register_encoder(walker_encoder,"walker_encoder")  
+
+data_path=""
 domain_name="walker"
 task_name="stand"
 env_id=f"{domain_name}-{task_name}"
 action_size = 6
-state_size = 24
+state_size = 48
 algorithm_type = "GMPG"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
@@ -39,7 +75,7 @@ model = dict(
         args=dict(
             t_encoder=t_encoder,
             condition_encoder=dict(
-                type="TensorDictencoder",
+                type="walker_encoder",
                 args=dict(
                             ),
             ),
@@ -95,7 +131,7 @@ config = EasyDict(
                             ),
                         ),
                         state_encoder=dict(
-                            type="TensorDictencoder",
+                            type="walker_encoder",
                             args=dict(
                             ),
                         ),
@@ -110,7 +146,7 @@ config = EasyDict(
                             ),
                         ),
                         state_encoder=dict(
-                            type="TensorDictencoder",
+                            type="walker_encoder",
                             args=dict(
                             ),
                         ),
