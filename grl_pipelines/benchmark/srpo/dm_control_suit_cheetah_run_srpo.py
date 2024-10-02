@@ -1,14 +1,17 @@
 import torch
 from easydict import EasyDict
-import d4rl
 
+path=""
+domain_name="cheetah"
+task_name="run"
+env_id=f"{domain_name}-{task_name}"
+algorithm="SRPO"
 action_size = 6
 state_size = 17
-env_id="walker2d-medium-v2"
-algorithm="SRPO"
-device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 
-t_embedding_dim = 64  
+project_name =  f"{env_id}-{algorithm}"
+device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
+t_embedding_dim = 64
 t_encoder = dict(
     type="GaussianFourierProjectionTimeEncoder",
     args=dict(
@@ -16,21 +19,25 @@ t_encoder = dict(
         scale=30.0,
     ),
 )
+solver_type = "DPMSolver"
+action_augment_num = 16
 
 config = EasyDict(
     train=dict(
-        project=f"{env_id}-{algorithm}",
-        device=device,
+        project=project_name,
         simulator=dict(
-            type="GymEnvSimulator",
+            type="DeepMindControlEnvSimulator",
             args=dict(
-                env_id=env_id,
+                domain_name=domain_name,
+                task_name=task_name,
+                dict_return=False,
             ),
         ),
         dataset=dict(
-            type="GPD4RLTensorDictDataset",
+            type="QGPODMcontrolTensorDictDataset",
             args=dict(
-                env_id=env_id,
+                path=path,
+                action_augment_num=action_augment_num,
             ),
         ),
         model=dict(
@@ -122,10 +129,10 @@ config = EasyDict(
                 batch_size=256,
                 learning_rate=3e-4,
                 tmax=2000000,
-                iterations=2000,
+                iterations=200000,
             ),
             evaluation=dict(
-                evaluation_interval=500,
+                evaluation_interval=100,
                 repeat=5,
             ),
             checkpoint_path=f"./{env_id}-{algorithm}",
@@ -175,3 +182,4 @@ def srpo_pipeline(config):
 if __name__ == "__main__":
     log.info("config: \n{}".format(config))
     srpo_pipeline(config)
+

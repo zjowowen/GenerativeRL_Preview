@@ -1,16 +1,16 @@
 import torch
 from easydict import EasyDict
 
-path="/mnt/nfs3/zhangjinouwen/dataset/dm_control/my_dm_control_suite/cartpole_swingup.npy"
+path=""
 domain_name="cartpole"
 task_name="swingup"
 env_id=f"{domain_name}-{task_name}"
-algorithm="IDQL"
+algorithm="SRPO"
 action_size = 1
 state_size = 5
 
 project_name =  f"{env_id}-{algorithm}"
-device = torch.device("cuda:5") if torch.cuda.is_available() else torch.device("cpu")
+device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 t_embedding_dim = 64
 t_encoder = dict(
     type="GaussianFourierProjectionTimeEncoder",
@@ -39,8 +39,13 @@ config = EasyDict(
             ),
         ),
         model=dict(
-            IDQLPolicy=dict(
+            SRPOPolicy=dict(
                 device=device,
+                policy_model=dict(
+                    state_dim=state_size,
+                    action_dim=action_size,
+                    layer=2,
+                ),
                 critic=dict(
                     device=device,
                     q_alpha=1.0,
@@ -119,7 +124,7 @@ config = EasyDict(
             behaviour_policy=dict(
                 batch_size=2048,
                 learning_rate=3e-4,
-                iterations=4000,
+                iterations=2000,
             ),
             critic=dict(
                 batch_size=4096,
@@ -128,6 +133,12 @@ config = EasyDict(
                 discount_factor=0.99,
                 tau=0.7,
                 update_momentum=0.005,
+            ),
+            policy=dict(
+                batch_size=256,
+                learning_rate=3e-4,
+                tmax=2000000,
+                iterations=200000,
             ),
             evaluation=dict(
                 evaluation_interval=1000,
@@ -149,17 +160,17 @@ config = EasyDict(
 
 import gym
 
-from grl.algorithms.idql import IDQLAlgorithm
+from grl.algorithms.srpo import SRPOAlgorithm
 from grl.utils.log import log
 
-def idql_pipeline(config):
+def srpo_pipeline(config):
 
-    idql = IDQLAlgorithm(config)
+    srpo = SRPOAlgorithm(config)
 
     # ---------------------------------------
     # Customized train code ↓
     # ---------------------------------------
-    idql.train()
+    srpo.train()
     # ---------------------------------------
     # Customized train code ↑
     # ---------------------------------------
@@ -167,7 +178,7 @@ def idql_pipeline(config):
     # ---------------------------------------
     # Customized deploy code ↓
     # ---------------------------------------
-    agent = idql.deploy()
+    agent = srpo.deploy()
     env = gym.make(config.deploy.env.env_id)
     env.reset()
     for _ in range(config.deploy.num_deploy_steps):
@@ -180,5 +191,5 @@ def idql_pipeline(config):
 
 if __name__ == "__main__":
     log.info("config: \n{}".format(config))
-    idql_pipeline(config)
+    srpo_pipeline(config)
 

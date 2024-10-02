@@ -1,17 +1,16 @@
 import torch
 from easydict import EasyDict
 
-path="/mnt/nfs3/zhangjinouwen/dataset/dm_control/my_dm_control_suite/cartpole_swingup.npy"
+path=""
 domain_name="cartpole"
 task_name="swingup"
 env_id=f"{domain_name}-{task_name}"
-algorithm="SRPO"
+algorithm="QGPO"
 action_size = 1
 state_size = 5
-
 project_name =  f"{env_id}-{algorithm}"
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
-t_embedding_dim = 64
+t_embedding_dim = 32
 t_encoder = dict(
     type="GaussianFourierProjectionTimeEncoder",
     args=dict(
@@ -21,7 +20,6 @@ t_encoder = dict(
 )
 solver_type = "DPMSolver"
 action_augment_num = 16
-
 config = EasyDict(
     train=dict(
         project=project_name,
@@ -30,22 +28,19 @@ config = EasyDict(
             args=dict(
                 domain_name=domain_name,
                 task_name=task_name,
+                dict_return=False,
             ),
         ),
         dataset=dict(
-            type="GPDMcontrolTensorDictDataset",
+            type="QGPODMcontrolTensorDictDataset",
             args=dict(
                 path=path,
+                action_augment_num=action_augment_num,
             ),
         ),
         model=dict(
-            SRPOPolicy=dict(
+            QGPOPolicy=dict(
                 device=device,
-                policy_model=dict(
-                    state_dim=state_size,
-                    action_dim=action_size,
-                    layer=2,
-                ),
                 critic=dict(
                     device=device,
                     q_alpha=1.0,
@@ -58,42 +53,44 @@ config = EasyDict(
                                 activation="relu",
                             ),
                         ),
-                        state_encoder=dict(
-                            type="TensorDictencoder",
-                            args=dict(
-                            ),
-                        ),
-                    ),
-                    VNetwork=dict(
-                        backbone=dict(
-                            type="MultiLayerPerceptron",
-                            args=dict(
-                                hidden_sizes=[state_size, 256, 256],
-                                output_size=1,
-                                activation="relu",
-                            ),
-                        ),
-                        state_encoder=dict(
-                            type="TensorDictencoder",
-                            args=dict(
-                            ),
-                        ),
                     ),
                 ),
                 diffusion_model=dict(
                     device=device,
                     x_size=action_size,
                     alpha=1.0,
-                    beta=0.1,
-                    solver=dict(
-                        type="DPMSolver",
-                        args=dict(
-                            order=2,
-                            device=device,
-                            steps=17,
-                        ),
+                    solver=(
+                        dict(
+                            type="DPMSolver",
+                            args=dict(
+                                order=2,
+                                device=device,
+                                steps=17,
+                            ),
+                        )
+                        if solver_type == "DPMSolver"
+                        else (
+                            dict(
+                                type="ODESolver",
+                                args=dict(
+                                    library="torchdyn",
+                                ),
+                            )
+                            if solver_type == "ODESolver"
+                            else dict(
+                                type="SDESolver",
+                                args=dict(
+                                    library="torchsde",
+                                ),
+                            )
+                        )
                     ),
                     path=dict(
+                        type="linear_vp_sde",
+                        beta_0=0.1,
+                        beta_1=20.0,
+                    ),
+                    reverse_path=dict(
                         type="linear_vp_sde",
                         beta_0=0.1,
                         beta_1=20.0,
@@ -102,18 +99,31 @@ config = EasyDict(
                         type="noise_function",
                         args=dict(
                             t_encoder=t_encoder,
-                            condition_encoder=dict(
-                                type="TensorDictencoder",
-                                args=dict(
-                                            ),
-                            ),
                             backbone=dict(
-                                type="AllCatMLP",
+                                type="TemporalSpatialResidualNet",
                                 args=dict(
-                                    input_dim=state_size + action_size,
+                                    hidden_sizes=[512, 256, 128],
                                     output_dim=action_size,
-                                    num_blocks=3,
+                                    t_dim=t_embedding_dim,
+                                    condition_dim=state_size,
+                                    condition_hidden_dim=32,
+                                    t_condition_hidden_dim=128,
                                 ),
+                            ),
+                        ),
+                    ),
+                    energy_guidance=dict(
+                        t_encoder=t_encoder,
+                        backbone=dict(
+                            type="ConcatenateMLP",
+                            args=dict(
+                                hidden_sizes=[
+                                    action_size + state_size + t_embedding_dim,
+                                    256,
+                                    256,
+                                ],
+                                output_size=1,
+                                activation="silu",
                             ),
                         ),
                     ),
@@ -122,28 +132,28 @@ config = EasyDict(
         ),
         parameter=dict(
             behaviour_policy=dict(
-                batch_size=2048,
-                learning_rate=3e-4,
-                iterations=2000,
+                batch_size=4096,
+                learning_rate=1e-4,
+                iterations=600000,
+            ),
+            action_augment_num=action_augment_num,
+            fake_data_t_span=None if solver_type == "DPMSolver" else 32,
+            energy_guided_policy=dict(
+                batch_size=256,
             ),
             critic=dict(
-                batch_size=4096,
-                iterations=20000,
+                stop_training_iterations=500000,
                 learning_rate=3e-4,
                 discount_factor=0.99,
-                tau=0.7,
                 update_momentum=0.005,
             ),
-            policy=dict(
-                batch_size=256,
+            energy_guidance=dict(
+                iterations=600000,
                 learning_rate=3e-4,
-                tmax=2000000,
-                iterations=200000,
             ),
             evaluation=dict(
-                evaluation_interval=1000,
-                repeat=5,
-                interval=1000,
+                evaluation_interval=10000,
+                guidance_scale=[0.0, 1.0, 2.0, 3.0, 5.0, 8.0, 10.0],
             ),
             checkpoint_path=f"./{env_id}-{algorithm}",
         ),
@@ -151,26 +161,28 @@ config = EasyDict(
     deploy=dict(
         device=device,
         env=dict(
-            env_id=env_id,
+            env_id="Walker2d-v2",
             seed=0,
         ),
         num_deploy_steps=1000,
+        t_span=None if solver_type == "DPMSolver" else 32,
     ),
 )
 
 import gym
 
-from grl.algorithms.srpo import SRPOAlgorithm
+from grl.algorithms.qgpo import QGPOAlgorithm
 from grl.utils.log import log
 
-def srpo_pipeline(config):
 
-    srpo = SRPOAlgorithm(config)
+def qgpo_pipeline(config):
+
+    qgpo = QGPOAlgorithm(config)
 
     # ---------------------------------------
     # Customized train code ↓
     # ---------------------------------------
-    srpo.train()
+    qgpo.train()
     # ---------------------------------------
     # Customized train code ↑
     # ---------------------------------------
@@ -178,12 +190,12 @@ def srpo_pipeline(config):
     # ---------------------------------------
     # Customized deploy code ↓
     # ---------------------------------------
-    agent = srpo.deploy()
+    agent = qgpo.deploy()
     env = gym.make(config.deploy.env.env_id)
-    env.reset()
+    observation = env.reset()
     for _ in range(config.deploy.num_deploy_steps):
         env.render()
-        env.step(agent.act(env.observation))
+        observation, reward, done, _ = env.step(agent.act(observation))
     # ---------------------------------------
     # Customized deploy code ↑
     # ---------------------------------------
@@ -191,5 +203,5 @@ def srpo_pipeline(config):
 
 if __name__ == "__main__":
     log.info("config: \n{}".format(config))
-    srpo_pipeline(config)
+    qgpo_pipeline(config)
 
