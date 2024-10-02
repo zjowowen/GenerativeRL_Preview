@@ -697,9 +697,5 @@ class SRPOAlgorithm:
 
         return SRPOAgent(
             config=config,
-            model=torch.nn.ModuleDict(
-                {
-                    "SRPOPolicy": self.deter_policy.select_actions,
-                }
-            ),
+            model=copy.deepcopy(self.model),
         )

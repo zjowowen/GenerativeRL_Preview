@@ -54,9 +54,12 @@ class SRPOAgent:
             # ---------------------------------------
             # Customized inference code ↓
             # ---------------------------------------
-
-            action = self.model(obs)
-
+            obs = obs.unsqueeze(0)
+            action = (
+                self.model["SRPOPolicy"].policy(obs)
+                .detach()
+                .numpy()
+            )
             # ---------------------------------------
             # Customized inference code ↑
             # ---------------------------------------
