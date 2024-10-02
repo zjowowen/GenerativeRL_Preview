@@ -57,7 +57,9 @@ class SRPOAgent:
             obs = obs.unsqueeze(0)
             action = (
                 self.model["SRPOPolicy"].policy(obs)
+                .squeeze(0)
                 .detach()
+                .cpu()
                 .numpy()
             )
             # ---------------------------------------
