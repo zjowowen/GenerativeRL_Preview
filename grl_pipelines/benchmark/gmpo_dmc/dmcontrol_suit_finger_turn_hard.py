@@ -1,12 +1,64 @@
 import torch
 from easydict import EasyDict
+from grl.neural_network.encoders import register_encoder
+import torch.nn as nn
+class finger_turn_hard(nn.Module):
+    def __init__(self):
+        super(finger_turn_hard, self).__init__()
+        self.position = nn.Sequential(
+            nn.Linear(4,8),
+            nn.ReLU(),
+            nn.Linear(8, 8),
+            nn.LayerNorm(8)
+        )
+
+        self.dist_to_target = nn.Sequential(
+            nn.Linear(1, 2),
+            nn.ReLU(),
+            nn.Linear(2, 2),
+            nn.LayerNorm(2)
+        )
+        
+        self.touch=nn.Sequential(
+            nn.Linear(2, 4),
+            nn.ReLU(),
+            nn.Linear(4, 4),
+            nn.LayerNorm(4)
+        )
+        
+        self.target_position=nn.Sequential(
+            nn.Linear(2, 4),
+            nn.ReLU(),
+            nn.Linear(4, 4),
+            nn.LayerNorm(4)
+        )
+        
+        self.velocity=nn.Sequential(
+            nn.Linear(3, 6),
+            nn.ReLU(),
+            nn.Linear(6, 6),
+            nn.LayerNorm(6)
+        )
+    def forward(self, x: dict) -> torch.Tensor:
+        if x["dist_to_target"].dim() == 1:
+            dist_to_target=x["dist_to_target"].unsqueeze(-1)  
+        else:
+            dist_to_target=x["dist_to_target"]
+        position = self.position(x["position"])
+        dist_to_target = self.dist_to_target(dist_to_target)
+        touch = self.touch(x["touch"])
+        target = self.target_position(x["target_position"])
+        velocity = self.velocity(x["velocity"])
+        combined_output = torch.cat([position, dist_to_target, touch, target, velocity], dim=-1)
+        return combined_output
+register_encoder(finger_turn_hard,"finger_turn_hard") 
 
 data_path=""
-domain_name="manipulator"
-task_name="insert_ball"
+domain_name="finger"
+task_name="turn_hard"
 env_id=f"{domain_name}-{task_name}"
-action_size = 5
-state_size = 44
+action_size = 2
+state_size = 24
 algorithm_type = "GMPO"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
@@ -39,11 +91,6 @@ model = dict(
         type="velocity_function",
         args=dict(
             t_encoder=t_encoder,
-            condition_encoder=dict(
-                type="TensorDictencoder",
-                args=dict(
-                            ),
-            ),
             backbone=dict(
                 type="TemporalSpatialResidualNet",
                 args=dict(
@@ -96,7 +143,7 @@ config = EasyDict(
                             ),
                         ),
                         state_encoder=dict(
-                            type="TensorDictencoder",
+                            type="finger_turn_hard",
                             args=dict(
                             ),
                         ),
@@ -111,7 +158,7 @@ config = EasyDict(
                             ),
                         ),
                         state_encoder=dict(
-                            type="TensorDictencoder",
+                            type="finger_turn_hard",
                             args=dict(
                             ),
                         ),
@@ -133,7 +180,7 @@ config = EasyDict(
             t_span=32,
             critic=dict(
                 batch_size=4096,
-                epochs=2000,
+                epochs=8000,
                 learning_rate=3e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
@@ -153,7 +200,7 @@ config = EasyDict(
                 epoch_interval=100,
             ),
             checkpoint_path=f"./{project_name}/checkpoint",
-            checkpoint_freq=10,
+            checkpoint_freq=100,
         ),
     ),
     deploy=dict(

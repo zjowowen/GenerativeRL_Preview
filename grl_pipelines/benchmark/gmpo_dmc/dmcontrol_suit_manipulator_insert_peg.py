@@ -1,19 +1,85 @@
 import torch
 from easydict import EasyDict
+from grl.neural_network.encoders import register_encoder
+import torch.nn as nn
+
+class manipulator_insert (nn.Module):
+    def __init__(self):
+        super(manipulator_insert, self).__init__()
+        self.arm_pos = nn.Sequential(
+            nn.Linear(16,32),
+            nn.ReLU(),
+            nn.Linear(32, 32),
+            nn.LayerNorm(32),
+        )
+        self.arm_vel = nn.Sequential(
+            nn.Linear(8, 16),
+            nn.ReLU(),
+            nn.Linear(16, 16),
+            nn.LayerNorm(16)
+        )
+        self.touch = nn.Sequential(
+            nn.Linear(5, 10),
+            nn.ReLU(),
+            nn.Linear(10, 10),
+            nn.LayerNorm(10)
+        )
+        self.hand_pos = nn.Sequential(
+            nn.Linear(4, 8),
+            nn.ReLU(),
+            nn.Linear(8, 8),
+            nn.LayerNorm(8)
+        )
+        self.object_pos = nn.Sequential(
+            nn.Linear(4, 8),
+            nn.ReLU(),
+            nn.Linear(8, 8),
+            nn.LayerNorm(8)
+        )
+        self.object_vel = nn.Sequential(
+            nn.Linear(3, 6),
+            nn.ReLU(),
+            nn.Linear(6, 6),
+            nn.LayerNorm(6)
+        )
+        self.target_pos = nn.Sequential(
+            nn.Linear(4, 8),
+            nn.ReLU(),
+            nn.Linear(8, 8),
+            nn.LayerNorm(8)
+        )
+        self.fish_swim = nn.Sequential(
+            nn.Linear(26, 52),
+            nn.ReLU(),
+            nn.Linear(52, 52),
+            nn.LayerNorm(52)
+        )
+    def forward(self, x: dict) -> torch.Tensor:
+        shape=x["arm_pos"].shape
+        arm_pos=self.arm_pos(x["arm_pos"].view(shape[0],-1))
+        arm_vel=self.arm_vel(x["arm_vel"])
+        touch=self.touch(x["touch"])
+        hand_pos=self.hand_pos(x["hand_pos"])
+        object_pos=self.object_pos(x["object_pos"])
+        object_vel=self.object_vel(x["object_vel"])
+        target_pos=self.target_pos(x["target_pos"])
+        combined_output = torch.cat([arm_pos,arm_vel, touch,hand_pos,object_pos,object_vel,target_pos], dim=-1)
+        return combined_output
+register_encoder(manipulator_insert,"manipulator_insert") 
 
 data_path=""
-domain_name="walker"
-task_name="walk"
+domain_name="manipulator"
+task_name="insert_peg"
 env_id=f"{domain_name}-{task_name}"
-action_size = 6
-state_size = 24
-algorithm_type = "GMPG"
+action_size = 5
+state_size = 88
+algorithm_type = "GMPO"
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
 generative_model_type = "GVP"
 path = dict(type="gvp")
 model_loss_type = "flow_matching"
-project_name = f"{env_id}-{algorithm_type}-{generative_model_type}"
+project_name = f"{domain_name}-{task_name}-{algorithm_type}-{generative_model_type}"
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 t_embedding_dim = 32
 t_encoder = dict(
@@ -23,13 +89,14 @@ t_encoder = dict(
         scale=30.0,
     ),
 )
+
 model = dict(
     device=device,
     x_size=action_size,
     solver=dict(
         type="ODESolver",
         args=dict(
-            library="torchdiffeq_adjoint",
+            library="torchdiffeq",
         ),
     ),
     path=path,
@@ -39,7 +106,7 @@ model = dict(
         args=dict(
             t_encoder=t_encoder,
             condition_encoder=dict(
-                type="TensorDictencoder",
+                type="manipulator_insert",
                 args=dict(
                             ),
             ),
@@ -62,7 +129,7 @@ config = EasyDict(
     train=dict(
         project=project_name,
         device=device,
-        wandb=dict(project=f"IQL-{env_id}-{algorithm_type}-{generative_model_type}"),
+        wandb=dict(project=f"IQL-{domain_name}-{task_name}-{algorithm_type}-{generative_model_type}"),
         simulator=dict(
             type="DeepMindControlEnvSimulator",
             args=dict(
@@ -95,7 +162,7 @@ config = EasyDict(
                             ),
                         ),
                         state_encoder=dict(
-                            type="TensorDictencoder",
+                            type="manipulator_insert",
                             args=dict(
                             ),
                         ),
@@ -110,7 +177,7 @@ config = EasyDict(
                             ),
                         ),
                         state_encoder=dict(
-                            type="TensorDictencoder",
+                            type="manipulator_insert",
                             args=dict(
                             ),
                         ),
@@ -127,12 +194,12 @@ config = EasyDict(
             behaviour_policy=dict(
                 batch_size=4096,
                 learning_rate=1e-4,
-                epochs=2000,
+                epochs=0,
             ),
             t_span=32,
             critic=dict(
                 batch_size=4096,
-                epochs=2000,
+                epochs=5000,
                 learning_rate=3e-4,
                 discount_factor=0.99,
                 update_momentum=0.005,
@@ -140,20 +207,19 @@ config = EasyDict(
                 method="iql",
             ),
             guided_policy=dict(
-                batch_size=40960,
-                epochs=500,
-                learning_rate=1e-6,
-                copy_from_basemodel=True,
-                gradtime_step=1000,
-                beta=4.0,
+                batch_size=4096,
+                epochs=10000,
+                learning_rate=1e-4,
+                beta=1.0,
+                weight_clamp=100,
             ),
             evaluation=dict(
                 eval=True,
-                repeat=3,
-                interval=5,
+                repeat=5,
+                epoch_interval=100,
             ),
             checkpoint_path=f"./{project_name}/checkpoint",
-            checkpoint_freq=10,
+            checkpoint_freq=100,
         ),
     ),
     deploy=dict(
@@ -172,12 +238,12 @@ if __name__ == "__main__":
     import gym
     import numpy as np
 
-    from grl.algorithms.gmpg import GMPGAlgorithm
+    from grl.algorithms.gmpo import GMPOAlgorithm
     from grl.utils.log import log
 
     def gp_pipeline(config):
 
-        gp = GMPGAlgorithm(config)
+        gp = GMPOAlgorithm(config)
 
         # ---------------------------------------
         # Customized train code ↓
