@@ -1285,6 +1285,48 @@ x: <span class="math notranslate nohighlight">\((T, N, D)\)</span>, if extra bat
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="grl.generative_models.IndependentConditionalFlowModel.forward_sample">
+<span class="sig-name descname"><span class="pre">forward_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_span</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/conditional_flow_model/independent_conditional_flow_model.html#IndependentConditionalFlowModel.forward_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.IndependentConditionalFlowModel.forward_sample" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Overview:</dt><dd><p>Use forward path of the diffusion model given the sampled x. Note that this is not the reverse process, and thus is not designed for sampling form the diffusion model.
+Rather, it is used for encode a sampled x to the latent space.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input state.</p></li>
+<li><p><strong>t_span</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The time span.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
+<li><p><strong>with_grad</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to return the gradient.</p></li>
+<li><p><strong>solver_config</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">EasyDict</span></code>) – The configuration of the solver.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="grl.generative_models.IndependentConditionalFlowModel.forward_sample_process">
+<span class="sig-name descname"><span class="pre">forward_sample_process</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_span</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/conditional_flow_model/independent_conditional_flow_model.html#IndependentConditionalFlowModel.forward_sample_process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.IndependentConditionalFlowModel.forward_sample_process" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Overview:</dt><dd><p>Use forward path of the diffusion model given the sampled x. Note that this is not the reverse process, and thus is not designed for sampling form the diffusion model.
+Rather, it is used for encode a sampled x to the latent space. Return all intermediate states.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input state.</p></li>
+<li><p><strong>t_span</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.Tensor</span></code>) – The time span.</p></li>
+<li><p><strong>condition</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Union[torch.Tensor,</span> <span class="pre">TensorDict,</span> <span class="pre">treetensor.torch.Tensor]</span></code>) – The input condition.</p></li>
+<li><p><strong>with_grad</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to return the gradient.</p></li>
+<li><p><strong>solver_config</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">EasyDict</span></code>) – The configuration of the solver.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="grl.generative_models.IndependentConditionalFlowModel.log_prob">
 <span class="sig-name descname"><span class="pre">log_prob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_prob_x_0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">function_log_prob_x_0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">using_Hutchinson_trace_estimator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/grl/generative_models/conditional_flow_model/independent_conditional_flow_model.html#IndependentConditionalFlowModel.log_prob"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grl.generative_models.IndependentConditionalFlowModel.log_prob" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="simple">
@@ -1646,6 +1688,8 @@ x: <span class="math notranslate nohighlight">\((T, N, D)\)</span>, if extra bat
 <li><a class="reference internal" href="#grl.generative_models.IndependentConditionalFlowModel"><code class="docutils literal notranslate"><span class="pre">IndependentConditionalFlowModel</span></code></a><ul>
 <li><a class="reference internal" href="#grl.generative_models.IndependentConditionalFlowModel.__init__"><code class="docutils literal notranslate"><span class="pre">IndependentConditionalFlowModel.__init__()</span></code></a></li>
 <li><a class="reference internal" href="#grl.generative_models.IndependentConditionalFlowModel.flow_matching_loss"><code class="docutils literal notranslate"><span class="pre">IndependentConditionalFlowModel.flow_matching_loss()</span></code></a></li>
+<li><a class="reference internal" href="#grl.generative_models.IndependentConditionalFlowModel.forward_sample"><code class="docutils literal notranslate"><span class="pre">IndependentConditionalFlowModel.forward_sample()</span></code></a></li>
+<li><a class="reference internal" href="#grl.generative_models.IndependentConditionalFlowModel.forward_sample_process"><code class="docutils literal notranslate"><span class="pre">IndependentConditionalFlowModel.forward_sample_process()</span></code></a></li>
 <li><a class="reference internal" href="#grl.generative_models.IndependentConditionalFlowModel.log_prob"><code class="docutils literal notranslate"><span class="pre">IndependentConditionalFlowModel.log_prob()</span></code></a></li>
 <li><a class="reference internal" href="#grl.generative_models.IndependentConditionalFlowModel.sample"><code class="docutils literal notranslate"><span class="pre">IndependentConditionalFlowModel.sample()</span></code></a></li>
 <li><a class="reference internal" href="#grl.generative_models.IndependentConditionalFlowModel.sample_forward_process"><code class="docutils literal notranslate"><span class="pre">IndependentConditionalFlowModel.sample_forward_process()</span></code></a></li>
