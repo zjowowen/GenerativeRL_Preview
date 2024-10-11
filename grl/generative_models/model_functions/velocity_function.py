@@ -272,7 +272,7 @@ class VelocityFunction:
         elif self.model_type == "score_function":
             raise NotImplementedError("Not implemented yet")
         elif self.model_type == "velocity_function":
-            eps = 1e-5
+            eps = 0.0
             batch_size, device = get_batch_size_and_device(x0)
             t_random = (
                 torch.rand(batch_size, device=device) * (self.process.t_max - eps) + eps

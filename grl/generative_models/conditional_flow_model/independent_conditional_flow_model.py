@@ -571,3 +571,109 @@ class IndependentConditionalFlowModel(nn.Module):
         return self.velocity_function_.flow_matching_loss_icfm(
             self.model, x0, x1, condition, average
         )
+
+    def forward_sample(
+        self,
+        x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        t_span: torch.Tensor,
+        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        with_grad: bool = False,
+        solver_config: EasyDict = None,
+    ):
+        """
+        Overview:
+            Use forward path of the diffusion model given the sampled x. Note that this is not the reverse process, and thus is not designed for sampling form the diffusion model.
+            Rather, it is used for encode a sampled x to the latent space.
+
+        Arguments:
+            x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
+            t_span (:obj:`torch.Tensor`): The time span.
+            condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
+            with_grad (:obj:`bool`): Whether to return the gradient.
+            solver_config (:obj:`EasyDict`): The configuration of the solver.
+        """
+        
+        return self.forward_sample_process(
+            x=x,
+            t_span=t_span,
+            condition=condition,
+            with_grad=with_grad,
+            solver_config=solver_config,
+        )[-1]
+        
+    def forward_sample_process(
+        self,
+        x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        t_span: torch.Tensor,
+        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        with_grad: bool = False,
+        solver_config: EasyDict = None,
+    ):
+        """
+        Overview:
+            Use forward path of the diffusion model given the sampled x. Note that this is not the reverse process, and thus is not designed for sampling form the diffusion model.
+            Rather, it is used for encode a sampled x to the latent space. Return all intermediate states.
+
+        Arguments:
+            x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
+            t_span (:obj:`torch.Tensor`): The time span.
+            condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
+            with_grad (:obj:`bool`): Whether to return the gradient.
+            solver_config (:obj:`EasyDict`): The configuration of the solver.
+        """
+
+        # TODO: very important function
+        # TODO: validate these functions
+        t_span = t_span.to(self.device)
+        
+        if solver_config is not None:
+            solver = get_solver(solver_config.type)(**solver_config.args)
+        else:
+            assert hasattr(
+                self, "solver"
+            ), "solver must be specified in config or solver_config"
+            solver = self.solver
+        
+        if isinstance(solver, ODESolver):
+            def reverse_drift(t, x):
+                reverse_t=t_span.max()-t+t_span.min()
+                return - self.model(t=reverse_t, x=x, condition=condition)
+
+            # TODO: make it compatible with TensorDict
+            if solver.library == "torchdiffeq_adjoint":
+                if with_grad:
+                    data = solver.integrate(
+                        drift=reverse_drift,
+                        x0=x,
+                        t_span=t_span,
+                        adjoint_params=find_parameters(self.model),
+                    )
+                else:
+                    with torch.no_grad():
+                        data = solver.integrate(
+                            drift=reverse_drift,
+                            x0=x,
+                            t_span=t_span,
+                            adjoint_params=find_parameters(self.model),
+                        )
+            else:
+                if with_grad:
+                    data = solver.integrate(
+                        drift=reverse_drift,
+                        x0=x,
+                        t_span=t_span,
+                    )
+                else:
+                    with torch.no_grad():
+                        data = solver.integrate(
+                            drift=reverse_drift,
+                            x0=x,
+                            t_span=t_span,
+                        )
+        else:
+            raise NotImplementedError(
+                "Solver type {} is not implemented".format(self.config.solver.type)
+            )
+        return data
+                
+        
