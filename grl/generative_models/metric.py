@@ -137,3 +137,30 @@ def compute_likelihood(
     log_likelihood = logp_x1 - logp_x1_minus_logp_x0
 
     return log_likelihood
+
+
+def compute_straightness(model,batch_size=128):
+    model.eval()
+    model_type = model.get_type()
+    if model_type == "DiffusionModel":
+        raise NotImplementedError("DiffusionModel is not supported yet.")
+    elif model_type in [
+        "IndependentConditionalFlowModel",
+        "OptimalTransportConditionalFlowModel",
+    ]:
+        device = next(model.parameters()).device
+        t_span = torch.linspace(0.0, 1.0, 100).to(device)   
+        x0 = model.gaussian_generator(batch_size).to(device)
+        path = model.sample_forward_process(t_span=t_span, x_0=x0)
+        velocity = path[-1] - x0
+        straightness_sum = []
+        for i in range(len(t_span)):
+            x=path[i]
+            t=t_span[i].repeat(x.shape[0])
+            velcoity_model=model.velocity_function_.forward(model=model.model,t=t,x=x)
+            straightness_sum.append(torch.nn.functional.mse_loss(velocity, velcoity_model))
+        straightness=torch.stack(straightness_sum).mean()
+        return straightness
+    else:
+        raise ValueError("Invalid model type: {}".format(model.get_type()))
+        
