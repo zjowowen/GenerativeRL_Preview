@@ -675,86 +675,7 @@ class GPDeepMindControlTensorDictDataset(GPTensorDictDataset):
     def __init__(
         self,
         path: str,
-        dcit_calulate: bool = False,
         action_augment_num: int = 16,
-    ):
-        actions_list = []
-        rewards_list = []
-        if dcit_calulate:
-            state_dicts = {}
-            next_states_dicts = {}
-        else:
-            state_list = []
-            next_state_list = []
-
-        data = np.load(path, allow_pickle=True)
-        obs_keys = list(data[0]["s"].keys())
-
-        for key in obs_keys:
-            state_values = np.array([item["s"][key] for item in data], dtype=np.float32)
-            next_state_values = np.array(
-                [item["s_"][key] for item in data], dtype=np.float32
-            )
-            if dcit_calulate:
-                if key not in state_dicts:
-                    state_dicts[key] = []
-                    next_states_dicts[key] = []
-                state_dicts[key].append(torch.tensor(state_values))
-                next_states_dicts[key].append(torch.tensor(next_state_values))
-
-            else:
-                state_list.append(torch.tensor(state_values))
-                next_state_list.append(torch.tensor(next_state_values))
-
-        actions_values = np.array([item["a"] for item in data], dtype=np.float32)
-        rewards_values = np.array(
-            [item["r"] for item in data], dtype=np.float32
-        ).reshape(-1, 1)
-        actions_list.append(torch.tensor(actions_values))
-        rewards_list.append(torch.tensor(rewards_values))
-        self.actions = torch.cat(actions_list, dim=0)
-        self.rewards = torch.cat(rewards_list, dim=0)
-        self.is_finished = torch.zeros_like(self.rewards, dtype=torch.bool)
-        if dcit_calulate:
-            self.len = self.actions.shape[0]
-            self.states = TensorDict(
-                {key: torch.cat(state_dicts[key], dim=0) for key in obs_keys},
-                batch_size=[self.len],
-            )
-            self.next_states = TensorDict(
-                {key: torch.cat(next_states_dicts[key], dim=0) for key in obs_keys},
-                batch_size=[self.len],
-            )
-        else:
-            self.len = self.actions.shape[0]
-            self.states = torch.cat(state_list, dim=1)
-            self.next_states = torch.cat(next_state_list, dim=1)
-        self.storage = LazyTensorStorage(max_size=self.len)
-        self.storage.set(
-            range(self.len),
-            TensorDict(
-                {
-                    "s": self.states,
-                    "a": self.actions,
-                    "r": self.rewards,
-                    "s_": self.next_states,
-                    "fake_a": torch.zeros_like(self.actions)
-                    .unsqueeze(1)
-                    .repeat_interleave(action_augment_num, dim=1),
-                    "fake_a_": torch.zeros_like(self.actions)
-                    .unsqueeze(1)
-                    .repeat_interleave(action_augment_num, dim=1),
-                    "d": self.is_finished,
-                },
-                batch_size=[self.len],
-            ),
-        )
-
-
-class GPDMcontrolTensorDictDataset:
-    def __init__(
-        self,
-        path: str,
     ):
         state_dicts = {}
         next_states_dicts = {}
@@ -796,7 +717,7 @@ class GPDMcontrolTensorDictDataset:
             batch_size=[self.len],
         )
         self.is_finished = torch.zeros_like(self.rewards, dtype=torch.bool)
-        self.storage = LazyMemmapStorage(max_size=self.len)
+        self.storage = LazyTensorStorage(max_size=self.len)
         self.storage.set(
             range(self.len),
             TensorDict(
@@ -805,6 +726,12 @@ class GPDMcontrolTensorDictDataset:
                     "a": self.actions,
                     "r": self.rewards,
                     "s_": self.next_states,
+                    "fake_a": torch.zeros_like(self.actions)
+                    .unsqueeze(1)
+                    .repeat_interleave(action_augment_num, dim=1),
+                    "fake_a_": torch.zeros_like(self.actions)
+                    .unsqueeze(1)
+                    .repeat_interleave(action_augment_num, dim=1),
                     "d": self.is_finished,
                 },
                 batch_size=[self.len],
