@@ -3,6 +3,7 @@ import torch
 import numpy as np
 from tensordict import TensorDict
 
+
 def obs_transform(obs, device):
 
     if isinstance(obs, np.ndarray):

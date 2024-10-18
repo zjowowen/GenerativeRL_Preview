@@ -10,7 +10,7 @@ from grl.agents import obs_transform, action_transform
 class SRPOAgent:
     """
     Overview:
-        The QGPO agent.
+        The SRPO agent.
     Interface:
         ``__init__``, ``action``
     """
@@ -56,11 +56,7 @@ class SRPOAgent:
             # ---------------------------------------
             obs = obs.unsqueeze(0)
             action = (
-                self.model["SRPOPolicy"].policy(obs)
-                .squeeze(0)
-                .detach()
-                .cpu()
-                .numpy()
+                self.model["SRPOPolicy"].policy(obs).squeeze(0).detach().cpu().numpy()
             )
             # ---------------------------------------
             # Customized inference code ↑

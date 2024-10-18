@@ -10,7 +10,7 @@ from grl.agents import obs_transform, action_transform
 class IDQLAgent:
     """
     Overview:
-        The QGPO agent.
+        The IDQL agent.
     Interface:
         ``__init__``, ``action``
     """
