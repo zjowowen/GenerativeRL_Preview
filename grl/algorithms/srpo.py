@@ -34,28 +34,28 @@ class Dirac_Policy(nn.Module):
     Interfaces:
         ``__init__``, ``forward``, ``select_actions``
     """
-    def __init__(self,config: EasyDict):
+
+    def __init__(self, config: EasyDict):
         super().__init__()
-        action_dim=config.action_dim
-        state_dim=config.state_dim
-        layer=config.layer
+        action_dim = config.action_dim
+        state_dim = config.state_dim
+        layer = config.layer
         self.net = MultiLayerPerceptron(
             hidden_sizes=[state_dim] + [256 for _ in range(layer)],
             output_size=action_dim,
             activation="relu",
             final_activation="tanh",
         )
-        
+
         if hasattr(config, "state_encoder"):
             self.state_encoder = get_encoder(config.state_encoder.type)(
                 **config.state_encoder.args
             )
         else:
             self.state_encoder = torch.nn.Identity()
-        
 
     def forward(self, state: torch.Tensor):
-        state=self.state_encoder(state)
+        state = self.state_encoder(state)
         return self.net(state)
 
     def select_actions(self, state: torch.Tensor):
@@ -65,6 +65,7 @@ class Dirac_Policy(nn.Module):
 def asymmetric_l2_loss(u, tau):
     return torch.mean(torch.abs(tau - (u < 0).float()) * u**2)
 
+
 class SRPOCritic(nn.Module):
     """
     Overview:
@@ -72,6 +73,7 @@ class SRPOCritic(nn.Module):
     Interfaces:
         ``__init__``, ``v_loss``, ``q_loss
     """
+
     def __init__(self, config: EasyDict):
         """
         Overview:
@@ -100,7 +102,7 @@ class SRPOCritic(nn.Module):
         """
 
         return self.q(action, state)
-    
+
     def v_loss(self, state, action, next_state, tau):
         with torch.no_grad():
             target_q = self.q_target(action, state).detach()
@@ -110,7 +112,7 @@ class SRPOCritic(nn.Module):
         adv = target_q - v
         v_loss = asymmetric_l2_loss(adv, tau)
         return v_loss, next_v
-    
+
     def iql_q_loss(self, state, action, reward, done, next_v, discount):
         q_target = reward + (1.0 - done.float()) * discount * next_v.detach()
         qs = self.q.compute_double_q(action, state)
@@ -144,7 +146,7 @@ class SRPOPolicy(nn.Module):
             value_model=self.critic,
             distribution_model=self.policy,
         )
-    
+
     def sample(
         self,
         state: Union[torch.Tensor, TensorDict],
@@ -224,7 +226,7 @@ class SRPOAlgorithm:
         self,
         config: EasyDict = None,
         simulator=None,
-        dataset = None,
+        dataset=None,
         model: Union[torch.nn.Module, torch.nn.ModuleDict] = None,
     ):
         """
@@ -249,7 +251,7 @@ class SRPOAlgorithm:
         # ---------------------------------------
 
         self.model = model if model is not None else torch.nn.ModuleDict()
-        
+
         if model is not None:
             self.model = model
             self.behaviour_train_epoch = 0
@@ -262,7 +264,9 @@ class SRPOAlgorithm:
 
             if torch.__version__ >= "2.0.0":
                 self.model["SRPOPolicy"] = torch.compile(
-                    SRPOPolicy(config.model.SRPOPolicy).to(config.model.SRPOPolicy.device)
+                    SRPOPolicy(config.model.SRPOPolicy).to(
+                        config.model.SRPOPolicy.device
+                    )
                 )
             else:
                 self.model["SRPOPolicy"] = SRPOPolicy(config.model.SRPOPolicy).to(
@@ -279,7 +283,7 @@ class SRPOAlgorithm:
                     optimizer=None,
                     prefix="behaviour_policy",
                 )
-                
+
                 self.critic_train_epoch = load_model(
                     path=config.parameter.checkpoint_path,
                     model=self.model["SRPOPolicy"].critic,
@@ -320,7 +324,7 @@ class SRPOAlgorithm:
             if config is not None
             else self.config.train
         )
-        
+
         with wandb.init(
             project=(
                 config.project if hasattr(config, "project") else __class__.__name__
@@ -341,11 +345,12 @@ class SRPOAlgorithm:
                 if hasattr(config, "dataset")
                 else self.dataset
             )
-            
-            def evaluate(model, train_epoch,method="diffusion",repeat=1):
+
+            def evaluate(model, train_epoch, method="diffusion", repeat=1):
                 evaluation_results = dict()
 
-                if method=="diffusion":
+                if method == "diffusion":
+
                     def policy(obs: np.ndarray) -> np.ndarray:
                         if isinstance(obs, np.ndarray):
                             obs = torch.tensor(
@@ -358,19 +363,19 @@ class SRPOAlgorithm:
                                 obs[key] = torch.tensor(
                                     obs[key],
                                     dtype=torch.float32,
-                                    device=config.model.SRPOPolicy.device
+                                    device=config.model.SRPOPolicy.device,
                                 ).unsqueeze(0)
                                 if obs[key].dim() == 1 and obs[key].shape[0] == 1:
                                     obs[key] = obs[key].unsqueeze(1)
                             obs = TensorDict(obs, batch_size=[1])
-                    
+
                         action = (
                             model.sample(
                                 state=obs,
                                 t_span=(
-                                    torch.linspace(0.0, 1.0, config.parameter.t_span).to(
-                                        config.model.SRPOPolicy.device
-                                    )
+                                    torch.linspace(
+                                        0.0, 1.0, config.parameter.t_span
+                                    ).to(config.model.SRPOPolicy.device)
                                     if hasattr(config.parameter, "t_span")
                                     and config.parameter.t_span is not None
                                     else None
@@ -383,7 +388,8 @@ class SRPOAlgorithm:
                         )
                         return action
 
-                elif method=="diracpolicy":
+                elif method == "diracpolicy":
+
                     def policy(obs: np.ndarray) -> np.ndarray:
                         if isinstance(obs, np.ndarray):
                             obs = torch.tensor(
@@ -396,14 +402,15 @@ class SRPOAlgorithm:
                                 obs[key] = torch.tensor(
                                     obs[key],
                                     dtype=torch.float32,
-                                    device=config.model.SRPOPolicy.device
+                                    device=config.model.SRPOPolicy.device,
                                 ).unsqueeze(0)
                                 if obs[key].dim() == 1 and obs[key].shape[0] == 1:
                                     obs[key] = obs[key].unsqueeze(1)
                             obs = TensorDict(obs, batch_size=[1])
-                    
-                        action = (model(obs).squeeze(0).cpu().detach().numpy())
+
+                        action = model(obs).squeeze(0).cpu().detach().numpy()
                         return action
+
                 eval_results = self.simulator.evaluate(
                     policy=policy, num_episodes=repeat
                 )
@@ -419,7 +426,7 @@ class SRPOAlgorithm:
                 evaluation_results[f"evaluation/return_std"] = return_std
                 evaluation_results[f"evaluation/return_max"] = return_max
                 evaluation_results[f"evaluation/return_min"] = return_min
-                
+
                 if repeat > 1:
                     log.info(
                         f"Train epoch: {train_epoch}, return_mean: {return_mean}, return_std: {return_std}, return_max: {return_max}, return_min: {return_min}"
@@ -428,18 +435,19 @@ class SRPOAlgorithm:
                     log.info(f"Train epoch: {train_epoch}, return: {return_mean}")
 
                 return evaluation_results
+
             # ---------------------------------------
             # Customized training code ↓
             # ---------------------------------------
 
-            replay_buffer=TensorDictReplayBuffer(
+            replay_buffer = TensorDictReplayBuffer(
                 storage=self.dataset.storage,
                 batch_size=config.parameter.behaviour_policy.batch_size,
                 sampler=SamplerWithoutReplacement(),
                 prefetch=10,
                 pin_memory=True,
             )
-            
+
             behaviour_model_optimizer = torch.optim.Adam(
                 self.model["SRPOPolicy"].sro.diffusion_model.model.parameters(),
                 lr=config.parameter.behaviour_policy.learning_rate,
@@ -451,29 +459,35 @@ class SRPOAlgorithm:
             ):
                 if self.behaviour_train_epoch >= epoch:
                     continue
-                
-                counter=0
+
+                counter = 0
                 behaviour_model_training_loss_sum = 0.0
                 for index, data in enumerate(replay_buffer):
                     behaviour_model_training_loss = self.model[
                         "SRPOPolicy"
-                    ].behaviour_policy_loss(data["a"].to(config.model.SRPOPolicy.device), data["s"].to(config.model.SRPOPolicy.device))
+                    ].behaviour_policy_loss(
+                        data["a"].to(config.model.SRPOPolicy.device),
+                        data["s"].to(config.model.SRPOPolicy.device),
+                    )
                     behaviour_model_optimizer.zero_grad()
                     behaviour_model_training_loss.backward()
                     behaviour_model_optimizer.step()
                     counter += 1
-                    behaviour_model_training_loss_sum += behaviour_model_training_loss.item()
-            
+                    behaviour_model_training_loss_sum += (
+                        behaviour_model_training_loss.item()
+                    )
+
                 self.behaviour_policy_train_epoch = epoch
-                
+
                 if (
                     epoch == 0
-                    or (epoch + 1)
-                    % config.parameter.evaluation.evaluation_interval
+                    or (epoch + 1) % config.parameter.evaluation.evaluation_interval
                     == 0
                 ):
                     evaluation_results = evaluate(
-                        self.model["SRPOPolicy"], train_epoch=epoch,method="diffusion",
+                        self.model["SRPOPolicy"],
+                        train_epoch=epoch,
+                        method="diffusion",
                         repeat=(
                             1
                             if not hasattr(config.parameter.evaluation, "repeat")
@@ -488,16 +502,17 @@ class SRPOAlgorithm:
                         iteration=epoch,
                         prefix="behaviour_policy",
                     )
-                    
+
                 wandb_run.log(
                     data=dict(
                         behaviour_policy_train_epoch=epoch,
-                        behaviour_model_training_loss=behaviour_model_training_loss_sum / counter,
+                        behaviour_model_training_loss=behaviour_model_training_loss_sum
+                        / counter,
                     ),
                     commit=True,
                 )
-                
-            replay_buffer=TensorDictReplayBuffer(
+
+            replay_buffer = TensorDictReplayBuffer(
                 storage=self.dataset.storage,
                 batch_size=config.parameter.critic.batch_size,
                 sampler=SamplerWithoutReplacement(),
@@ -588,20 +603,19 @@ class SRPOAlgorithm:
                 )
 
                 if (
-                        epoch == 0
-                        or (epoch + 1)
-                        % config.parameter.evaluation.evaluation_interval
-                        == 0
-                    ):
+                    epoch == 0
+                    or (epoch + 1) % config.parameter.evaluation.evaluation_interval
+                    == 0
+                ):
                     save_model(
-                            path=config.parameter.checkpoint_path,
-                            model=self.model["SRPOPolicy"].critic,
-                            optimizer=q_optimizer,
-                            iteration=epoch,
-                            prefix="critic",
+                        path=config.parameter.checkpoint_path,
+                        model=self.model["SRPOPolicy"].critic,
+                        optimizer=q_optimizer,
+                        iteration=epoch,
+                        prefix="critic",
                     )
-            
-            replay_buffer=TensorDictReplayBuffer(
+
+            replay_buffer = TensorDictReplayBuffer(
                 storage=self.dataset.storage,
                 batch_size=config.parameter.policy.batch_size,
                 sampler=SamplerWithoutReplacement(),
@@ -609,14 +623,15 @@ class SRPOAlgorithm:
                 pin_memory=True,
             )
             SRPO_policy_optimizer = torch.optim.Adam(
-                self.model["SRPOPolicy"].policy.parameters(), lr=config.parameter.policy.learning_rate
+                self.model["SRPOPolicy"].policy.parameters(),
+                lr=config.parameter.policy.learning_rate,
             )
             SRPO_policy_lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
                 SRPO_policy_optimizer,
                 T_max=config.parameter.policy.tmax,
                 eta_min=0.0,
             )
-               
+
             for epoch in track(
                 range(config.parameter.policy.iterations),
                 description="Policy training",
@@ -625,26 +640,29 @@ class SRPOAlgorithm:
                 policy_loss_sum = 0
                 if self.policy_train_epoch >= epoch:
                     continue
-        
+
                 for index, data in enumerate(replay_buffer):
                     self.model["SRPOPolicy"].sro.diffusion_model.model.eval()
-                    policy_loss, q = self.model["SRPOPolicy"].srpo_actor_loss(data["s"].to(config.model.SRPOPolicy.device))
+                    policy_loss, q = self.model["SRPOPolicy"].srpo_actor_loss(
+                        data["s"].to(config.model.SRPOPolicy.device)
+                    )
                     policy_loss = policy_loss.sum(-1).mean()
                     SRPO_policy_optimizer.zero_grad(set_to_none=True)
                     policy_loss.backward()
                     SRPO_policy_optimizer.step()
                     SRPO_policy_lr_scheduler.step()
-                    counter +=1
+                    counter += 1
                     policy_loss_sum += policy_loss
-                    
+
                 if (
                     epoch == 0
-                    or (epoch + 1)
-                    % config.parameter.evaluation.evaluation_interval
+                    or (epoch + 1) % config.parameter.evaluation.evaluation_interval
                     == 0
                 ):
                     evaluation_results = evaluate(
-                        self.model["SRPOPolicy"], train_epoch=epoch,method="diracpolicy",
+                        self.model["SRPOPolicy"],
+                        train_epoch=epoch,
+                        method="diracpolicy",
                         repeat=(
                             1
                             if not hasattr(config.parameter.evaluation, "repeat")
@@ -664,9 +682,10 @@ class SRPOAlgorithm:
                     )
                 wandb.log(
                     data=dict(
-                        policy_loss=policy_loss_sum/counter,
+                        policy_loss=policy_loss_sum / counter,
                     ),
-                    commit=True,)
+                    commit=True,
+                )
             # ---------------------------------------
             # Customized training code ↑
             # ---------------------------------------
