@@ -8,28 +8,21 @@ import numpy as np
 import torch
 import torch.nn as nn
 from easydict import EasyDict
-from rich.progress import Progress, track
+from rich.progress import track
 from tensordict import TensorDict
 from torchrl.data import TensorDictReplayBuffer
 from torchrl.data.replay_buffers.samplers import SamplerWithoutReplacement
 from grl.rl_modules.value_network.value_network import VNetwork, DoubleVNetwork
 import wandb
 from grl.agents.srpo import SRPOAgent
-
 from grl.datasets import create_dataset
-
-from grl.datasets.d4rl import D4RLDataset
 from grl.neural_network.encoders import get_encoder
 from grl.generative_models.sro import SRPOConditionalDiffusionModel
 from grl.neural_network import MultiLayerPerceptron
 from grl.rl_modules.simulators import create_simulator
-
 from grl.rl_modules.value_network.q_network import DoubleQNetwork
-
 from grl.utils import set_seed
-
 from grl.utils.config import merge_two_dicts_into_newone
-
 from grl.utils.log import log
 from grl.utils.model_utils import save_model, load_model
 
@@ -100,7 +93,7 @@ class SRPOCritic(nn.Module):
     ) -> torch.Tensor:
         """
         Overview:
-            Return the output of GPO critic.
+            Return the output of critic.
         Arguments:
             action (:obj:`torch.Tensor`): The input action.
             state (:obj:`torch.Tensor`): The input state.
@@ -130,7 +123,7 @@ class SRPOPolicy(nn.Module):
     Overview:
         The SRPO policy network.
     Interfaces:
-        ``__init__``, ``forward``, ``behaviour_policy_loss``, ``v_loss``, ``q_loss``, ``srpo_actor_loss``
+        ``__init__``, ``forward``, ``sample``, ``behaviour_policy_loss``, ``srpo_actor_loss``
     """
 
     def __init__(self, config: EasyDict):
@@ -156,16 +149,14 @@ class SRPOPolicy(nn.Module):
         self,
         state: Union[torch.Tensor, TensorDict],
         batch_size: Union[torch.Size, int, Tuple[int], List[int]] = None,
-        guidance_scale: Union[torch.Tensor, float] = torch.tensor(1.0),
         solver_config: EasyDict = None,
         t_span: torch.Tensor = None,
     ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
-            Return the output of QGPO policy, which is the action conditioned on the state.
+            Return the output of SRPO policy, which is the action conditioned on the state.
         Arguments:
             state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
-            guidance_scale (:obj:`Union[torch.Tensor, float]`): The guidance scale.
             solver_config (:obj:`EasyDict`): The configuration for the ODE solver.
             t_span (:obj:`torch.Tensor`): The time span for the ODE solver or SDE solver.
         Returns:
@@ -184,7 +175,7 @@ class SRPOPolicy(nn.Module):
     ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
-            Return the output of QGPO policy, which is the action conditioned on the state.
+            Return the output of SRPO policy, which is the action conditioned on the state.
         Arguments:
             state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
         Returns:
@@ -233,18 +224,18 @@ class SRPOAlgorithm:
         self,
         config: EasyDict = None,
         simulator=None,
-        dataset: D4RLDataset = None,
+        dataset = None,
         model: Union[torch.nn.Module, torch.nn.ModuleDict] = None,
     ):
         """
         Overview:
-            Initialize the QGPO algorithm.
+            Initialize the SRPO algorithm.
         Arguments:
             config (:obj:`EasyDict`): The configuration , which must contain the following keys:
                 train (:obj:`EasyDict`): The training configuration.
                 deploy (:obj:`EasyDict`): The deployment configuration.
             simulator (:obj:`object`): The environment simulator.
-            dataset (:obj:`QGPODataset`): The dataset.
+            dataset (:obj:`Dataset`): The dataset.
             model (:obj:`Union[torch.nn.Module, torch.nn.ModuleDict]`): The model.
         Interface:
             ``__init__``, ``train``, ``deploy``
