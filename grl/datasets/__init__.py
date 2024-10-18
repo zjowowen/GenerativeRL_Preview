@@ -7,7 +7,7 @@ from .qgpo import (
     QGPOTensorDictDataset,
     QGPOD4RLTensorDictDataset,
     QGPOCustomizedTensorDictDataset,
-    QGPODMcontrolTensorDictDataset,
+    QGPODeepMindControlTensorDictDataset,
 )
 from .gp import (
     GPDataset,
@@ -41,9 +41,9 @@ DATASETS = {
     "GPTensorDictDataset".lower(): GPTensorDictDataset,
     "GPD4RLTensorDictDataset".lower(): GPD4RLTensorDictDataset,
     "GPCustomizedTensorDictDataset".lower(): GPCustomizedTensorDictDataset,
-    "GPDMcontrolTensorDictDataset".lower():GPDMcontrolTensorDictDataset,
-    "QGPODMcontrolTensorDictDataset".lower():QGPODMcontrolTensorDictDataset,
-    "GPDMControlVisualTensorDictDataset".lower():GPDMControlVisualTensorDictDataset,
+    "GPDMcontrolTensorDictDataset".lower(): GPDMcontrolTensorDictDataset,
+    "QGPODeepMindControlTensorDictDataset".lower(): QGPODeepMindControlTensorDictDataset,
+    "GPDMControlVisualTensorDictDataset".lower(): GPDMControlVisualTensorDictDataset,
 }
 
 
