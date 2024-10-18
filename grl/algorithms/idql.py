@@ -1,45 +1,23 @@
 import copy
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
-
-import os
-from datetime import datetime
-
 import torch.nn.functional as F
-import d4rl
-import gym
 import numpy as np
 import torch
 import torch.nn as nn
 from easydict import EasyDict
-from rich.progress import Progress, track
+from rich.progress import track
 from tensordict import TensorDict
 from torchrl.data import TensorDictReplayBuffer
 from torchrl.data.replay_buffers.samplers import SamplerWithoutReplacement
 from grl.rl_modules.value_network.value_network import VNetwork, DoubleVNetwork
 import wandb
 from grl.agents.idql import IDQLAgent
-
 from grl.datasets import create_dataset
-
-from grl.datasets.d4rl import D4RLDataset
 from grl.generative_models.diffusion_model import DiffusionModel
-from grl.generative_models.conditional_flow_model.optimal_transport_conditional_flow_model import (
-    OptimalTransportConditionalFlowModel,
-)
-from grl.generative_models.conditional_flow_model.independent_conditional_flow_model import (
-    IndependentConditionalFlowModel,
-)
-from grl.generative_models.bridge_flow_model.schrodinger_bridge_conditional_flow_model import (
-    SchrodingerBridgeConditionalFlowModel,
-)
 from grl.rl_modules.simulators import create_simulator
-
 from grl.rl_modules.value_network.q_network import DoubleQNetwork
-
 from grl.utils import set_seed
-
 from grl.utils.config import merge_two_dicts_into_newone
-
 from grl.utils.log import log
 from grl.utils.model_utils import save_model, load_model
 
@@ -50,7 +28,7 @@ def asymmetric_l2_loss(u, tau):
 class IDQLCritic(nn.Module):
     """
     Overview:
-        The critic network used in SRPO algorithm.
+        The critic network used in IDQL algorithm.
     Interfaces:
         ``__init__``, ``v_loss``, ``q_loss
     """
@@ -75,7 +53,7 @@ class IDQLCritic(nn.Module):
     ) -> torch.Tensor:
         """
         Overview:
-            Return the output of GPO critic.
+            Return the output of critic.
         Arguments:
             action (:obj:`torch.Tensor`): The input action.
             state (:obj:`torch.Tensor`): The input state.
@@ -120,7 +98,7 @@ class IDQLCritic(nn.Module):
 class IDQLPolicy(nn.Module):
     """
     Overview:
-        The SRPO policy network.
+        The IDQL policy network.
     Interfaces:
         ``__init__``, ``forward``, ``behaviour_policy_loss``, ``v_loss``, ``q_loss``, ``srpo_actor_loss``
     """
@@ -128,13 +106,14 @@ class IDQLPolicy(nn.Module):
     def __init__(self, config: EasyDict):
         """
         Overview:
-            Initialize the SRPO policy network.
+            Initialize the IDQL policy network.
         Arguments:
             config (:obj:`EasyDict`): The configuration.
         """
         super().__init__()
         self.config = config
         self.device = config.device
+        self.repeat_sample_batch = config.repeat_sample_batch if hasattr(config, "repeat_sample_batch") else 100
 
         self.critic = IDQLCritic(config.critic)
         self.diffusion_model = DiffusionModel(config.diffusion_model)
@@ -172,18 +151,18 @@ class IDQLPolicy(nn.Module):
     ) -> Union[torch.Tensor, TensorDict]:
         """
         Overview:
-            Return the output of QGPO policy, which is the action conditioned on the state.
+            Return the output of IDQL policy, which is the action conditioned on the state.
         Arguments:
             state (:obj:`Union[torch.Tensor, TensorDict]`): The input state.
         Returns:
             action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
         if isinstance(state, TensorDict):
-            state_rpt = TensorDict({}, batch_size=[state.batch_size[0] * 200]).to(state.device)
+            state_rpt = TensorDict({}, batch_size=[state.batch_size[0] * self.repeat_sample_batch]).to(state.device)
             for key, value in state.items():
-                state_rpt[key] = torch.repeat_interleave(value, repeats=200, dim=0)
+                state_rpt[key] = torch.repeat_interleave(value, repeats=self.repeat_sample_batch, dim=0)
         else:
-            state_rpt = torch.repeat_interleave(state, repeats=200, dim=0)
+            state_rpt = torch.repeat_interleave(state, repeats=self.repeat_sample_batch, dim=0)
         with torch.no_grad():
             action = self.behaviour_policy_sample(state=state_rpt)
             q_value = self.critic.q_target.compute_mininum_q(action,state_rpt).flatten()
@@ -204,7 +183,10 @@ class IDQLPolicy(nn.Module):
             state (:obj:`torch.Tensor`): The input state.
         """
 
-        return self.diffusion_model.score_matching_loss(action, state)
+        if maximum_likelihood:
+            return self.diffusion_model.score_matching_loss(action, state)
+        else:
+            return self.diffusion_model.score_matching_loss(action, state, weighting_scheme="vanilla")
 
     def compute_q(
         self,
@@ -228,12 +210,12 @@ class IDQLAlgorithm:
         self,
         config: EasyDict = None,
         simulator=None,
-        dataset: D4RLDataset = None,
+        dataset= None,
         model: Union[torch.nn.Module, torch.nn.ModuleDict] = None,
     ):
         """
         Overview:
-            Initialize the QGPO algorithm.
+            Initialize the IDQL algorithm.
         Arguments:
             config (:obj:`EasyDict`): The configuration , which must contain the following keys:
                 train (:obj:`EasyDict`): The training configuration.
