@@ -25,6 +25,7 @@ from grl.utils.model_utils import save_model, load_model
 def asymmetric_l2_loss(u, tau):
     return torch.mean(torch.abs(tau - (u < 0).float()) * u**2)
 
+
 class IDQLCritic(nn.Module):
     """
     Overview:
@@ -32,6 +33,7 @@ class IDQLCritic(nn.Module):
     Interfaces:
         ``__init__``, ``v_loss``, ``q_loss
     """
+
     def __init__(self, config: EasyDict):
         """
         Overview:
@@ -60,7 +62,7 @@ class IDQLCritic(nn.Module):
         """
 
         return self.q(action, state)
-    
+
     def compute_double_q(
         self,
         action: Union[torch.Tensor, TensorDict],
@@ -77,7 +79,7 @@ class IDQLCritic(nn.Module):
             q2 (:obj:`Union[torch.Tensor, TensorDict]`): The output of the second Q network.
         """
         return self.q.compute_double_q(action, state)
-    
+
     def v_loss(self, state, action, next_state, tau):
         with torch.no_grad():
             target_q = self.q_target(action, state).detach()
@@ -87,7 +89,7 @@ class IDQLCritic(nn.Module):
         adv = target_q - v
         v_loss = asymmetric_l2_loss(adv, tau)
         return v_loss, next_v
-    
+
     def iql_q_loss(self, state, action, reward, done, next_v, discount):
         q_target = reward + (1.0 - done.float()) * discount * next_v.detach()
         qs = self.q.compute_double_q(action, state)
@@ -113,11 +115,15 @@ class IDQLPolicy(nn.Module):
         super().__init__()
         self.config = config
         self.device = config.device
-        self.repeat_sample_batch = config.repeat_sample_batch if hasattr(config, "repeat_sample_batch") else 100
+        self.repeat_sample_batch = (
+            config.repeat_sample_batch
+            if hasattr(config, "repeat_sample_batch")
+            else 100
+        )
 
         self.critic = IDQLCritic(config.critic)
         self.diffusion_model = DiffusionModel(config.diffusion_model)
-    
+
     def behaviour_policy_sample(
         self,
         state: Union[torch.Tensor, TensorDict],
@@ -158,14 +164,22 @@ class IDQLPolicy(nn.Module):
             action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
         if isinstance(state, TensorDict):
-            state_rpt = TensorDict({}, batch_size=[state.batch_size[0] * self.repeat_sample_batch]).to(state.device)
+            state_rpt = TensorDict(
+                {}, batch_size=[state.batch_size[0] * self.repeat_sample_batch]
+            ).to(state.device)
             for key, value in state.items():
-                state_rpt[key] = torch.repeat_interleave(value, repeats=self.repeat_sample_batch, dim=0)
+                state_rpt[key] = torch.repeat_interleave(
+                    value, repeats=self.repeat_sample_batch, dim=0
+                )
         else:
-            state_rpt = torch.repeat_interleave(state, repeats=self.repeat_sample_batch, dim=0)
+            state_rpt = torch.repeat_interleave(
+                state, repeats=self.repeat_sample_batch, dim=0
+            )
         with torch.no_grad():
             action = self.behaviour_policy_sample(state=state_rpt)
-            q_value = self.critic.q_target.compute_mininum_q(action,state_rpt).flatten()
+            q_value = self.critic.q_target.compute_mininum_q(
+                action, state_rpt
+            ).flatten()
             idx = torch.multinomial(F.softmax(q_value), 1)
         return action[idx]
 
@@ -186,7 +200,9 @@ class IDQLPolicy(nn.Module):
         if maximum_likelihood:
             return self.diffusion_model.score_matching_loss(action, state)
         else:
-            return self.diffusion_model.score_matching_loss(action, state, weighting_scheme="vanilla")
+            return self.diffusion_model.score_matching_loss(
+                action, state, weighting_scheme="vanilla"
+            )
 
     def compute_q(
         self,
@@ -203,14 +219,15 @@ class IDQLPolicy(nn.Module):
             q (:obj:`torch.Tensor`): The Q value.
         """
         return self.critic(action, state)
-    
+
+
 class IDQLAlgorithm:
 
     def __init__(
         self,
         config: EasyDict = None,
         simulator=None,
-        dataset= None,
+        dataset=None,
         model: Union[torch.nn.Module, torch.nn.ModuleDict] = None,
     ):
         """
@@ -235,7 +252,7 @@ class IDQLAlgorithm:
         # ---------------------------------------
 
         self.model = model if model is not None else torch.nn.ModuleDict()
-        
+
         if model is not None:
             self.model = model
             self.behaviour_train_epoch = 0
@@ -247,7 +264,9 @@ class IDQLAlgorithm:
 
             if torch.__version__ >= "2.0.0":
                 self.model["IDQLPolicy"] = torch.compile(
-                    IDQLPolicy(config.model.IDQLPolicy).to(config.model.IDQLPolicy.device)
+                    IDQLPolicy(config.model.IDQLPolicy).to(
+                        config.model.IDQLPolicy.device
+                    )
                 )
             else:
                 self.model["IDQLPolicy"] = IDQLPolicy(config.model.IDQLPolicy).to(
@@ -264,7 +283,7 @@ class IDQLAlgorithm:
                     optimizer=None,
                     prefix="behaviour_policy",
                 )
-                
+
                 self.critic_train_epoch = load_model(
                     path=config.parameter.checkpoint_path,
                     model=self.model["IDQLPolicy"].critic,
@@ -298,7 +317,7 @@ class IDQLAlgorithm:
             if config is not None
             else self.config.train
         )
-        
+
         with wandb.init(
             project=(
                 config.project if hasattr(config, "project") else __class__.__name__
@@ -319,8 +338,8 @@ class IDQLAlgorithm:
                 if hasattr(config, "dataset")
                 else self.dataset
             )
-            
-            def evaluate(model, train_epoch,repeat=1):
+
+            def evaluate(model, train_epoch, repeat=1):
                 evaluation_results = dict()
 
                 def policy(obs: np.ndarray) -> np.ndarray:
@@ -335,18 +354,14 @@ class IDQLAlgorithm:
                             obs[key] = torch.tensor(
                                 obs[key],
                                 dtype=torch.float32,
-                                device=config.model.IDQLPolicy.device
+                                device=config.model.IDQLPolicy.device,
                             ).unsqueeze(0)
                             if obs[key].dim() == 1 and obs[key].shape[0] == 1:
                                 obs[key] = obs[key].unsqueeze(1)
                         obs = TensorDict(obs, batch_size=[1])
-                
+
                     action = (
-                        model.get_action(state=obs)
-                        .squeeze(0)
-                        .cpu()
-                        .detach()
-                        .numpy()
+                        model.get_action(state=obs).squeeze(0).cpu().detach().numpy()
                     )
                     return action
 
@@ -365,7 +380,7 @@ class IDQLAlgorithm:
                 evaluation_results[f"evaluation/return_std"] = return_std
                 evaluation_results[f"evaluation/return_max"] = return_max
                 evaluation_results[f"evaluation/return_min"] = return_min
-                
+
                 if repeat > 1:
                     log.info(
                         f"Train epoch: {train_epoch}, return_mean: {return_mean}, return_std: {return_std}, return_max: {return_max}, return_min: {return_min}"
@@ -374,11 +389,12 @@ class IDQLAlgorithm:
                     log.info(f"Train epoch: {train_epoch}, return: {return_mean}")
 
                 return evaluation_results
+
             # ---------------------------------------
             # Customized training code ↓
             # ---------------------------------------
-            
-            replay_buffer=TensorDictReplayBuffer(
+
+            replay_buffer = TensorDictReplayBuffer(
                 storage=self.dataset.storage,
                 batch_size=config.parameter.critic.batch_size,
                 sampler=SamplerWithoutReplacement(),
@@ -469,28 +485,26 @@ class IDQLAlgorithm:
                 )
 
                 if (
-                        epoch == 0
-                        or (epoch + 1)
-                        % config.parameter.evaluation.evaluation_interval
-                        == 0
-                    ):
+                    epoch == 0
+                    or (epoch + 1) % config.parameter.evaluation.evaluation_interval
+                    == 0
+                ):
                     save_model(
-                            path=config.parameter.checkpoint_path,
-                            model=self.model["IDQLPolicy"].critic,
-                            optimizer=q_optimizer,
-                            iteration=epoch,
-                            prefix="critic",
+                        path=config.parameter.checkpoint_path,
+                        model=self.model["IDQLPolicy"].critic,
+                        optimizer=q_optimizer,
+                        iteration=epoch,
+                        prefix="critic",
                     )
 
-
-            replay_buffer=TensorDictReplayBuffer(
+            replay_buffer = TensorDictReplayBuffer(
                 storage=self.dataset.storage,
                 batch_size=config.parameter.behaviour_policy.batch_size,
                 sampler=SamplerWithoutReplacement(),
                 prefetch=10,
                 pin_memory=True,
             )
-            
+
             behaviour_model_optimizer = torch.optim.Adam(
                 self.model["IDQLPolicy"].diffusion_model.model.parameters(),
                 lr=config.parameter.behaviour_policy.learning_rate,
@@ -502,29 +516,34 @@ class IDQLAlgorithm:
             ):
                 if self.behaviour_train_epoch >= epoch:
                     continue
-                
-                counter=0
+
+                counter = 0
                 behaviour_model_training_loss_sum = 0.0
                 for index, data in enumerate(replay_buffer):
                     behaviour_model_training_loss = self.model[
                         "IDQLPolicy"
-                    ].behaviour_policy_loss(data["a"].to(config.model.IDQLPolicy.device), data["s"].to(config.model.IDQLPolicy.device))
+                    ].behaviour_policy_loss(
+                        data["a"].to(config.model.IDQLPolicy.device),
+                        data["s"].to(config.model.IDQLPolicy.device),
+                    )
                     behaviour_model_optimizer.zero_grad()
                     behaviour_model_training_loss.backward()
                     behaviour_model_optimizer.step()
                     counter += 1
-                    behaviour_model_training_loss_sum += behaviour_model_training_loss.item()
-            
+                    behaviour_model_training_loss_sum += (
+                        behaviour_model_training_loss.item()
+                    )
+
                 self.behaviour_policy_train_epoch = epoch
-                
+
                 if (
                     epoch == 0
-                    or (epoch + 1)
-                    % config.parameter.evaluation.evaluation_interval
+                    or (epoch + 1) % config.parameter.evaluation.evaluation_interval
                     == 0
                 ):
                     evaluation_results = evaluate(
-                        self.model["IDQLPolicy"], train_epoch=epoch,
+                        self.model["IDQLPolicy"],
+                        train_epoch=epoch,
                         repeat=(
                             1
                             if not hasattr(config.parameter.evaluation, "repeat")
@@ -539,16 +558,16 @@ class IDQLAlgorithm:
                         iteration=epoch,
                         prefix="behaviour_policy",
                     )
-                    
+
                 wandb_run.log(
                     data=dict(
                         behaviour_policy_train_epoch=epoch,
-                        behaviour_model_training_loss=behaviour_model_training_loss_sum / counter,
+                        behaviour_model_training_loss=behaviour_model_training_loss_sum
+                        / counter,
                     ),
                     commit=True,
                 )
-                
-            
+
             # ---------------------------------------
             # Customized training code ↑
             # ---------------------------------------
