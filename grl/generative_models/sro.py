@@ -2,10 +2,8 @@ from typing import Union
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from easydict import EasyDict
 from tensordict import TensorDict
-from torch.distributions import Distribution
 
 from grl.generative_models.diffusion_model.diffusion_model import DiffusionModel
 
@@ -65,10 +63,10 @@ class SRPOConditionalDiffusionModel(nn.Module):
             condition (:obj:`Union[torch.Tensor, TensorDict]`): The input condition.
         """
         x = self.distribution_model(condition)
-        t_random = torch.rand(x.shape[0], device=x.device) * 0.96 + 0.02  # [256]
-        x_t = self.diffusion_model.diffusion_process.direct_sample(
-            t_random, x
-        )  # [256,6x]
+        # TODO: check if this is the right way to sample t_random with extra scaling and shifting
+        # t_random = torch.rand(x.shape[0], device=x.device)
+        t_random = torch.rand(x.shape[0], device=x.device) * 0.96 + 0.02
+        x_t = self.diffusion_model.diffusion_process.direct_sample(t_random, x)
         wt = self.diffusion_model.diffusion_process.std(t_random, x) ** 2
         with torch.no_grad():
             episilon = self.diffusion_model.noise_function(
