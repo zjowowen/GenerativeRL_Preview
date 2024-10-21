@@ -931,9 +931,15 @@ class GMPGAlgorithm:
                 if self.behaviour_policy_train_epoch >= epoch:
                     continue
                 if hasattr(config.parameter.evaluation, "analysis_interval") and epoch % config.parameter.evaluation.analysis_interval == 0:
-                    timlimited=0
+
+                    if hasattr(config.parameter.evaluation, "analysis_repeat"):
+                        analysis_repeat=config.parameter.evaluation.analysis_repeat
+                    else:
+                        analysis_repeat=10
+
+                    analysis_counter=0
                     for index, data in enumerate(replay_buffer):
-                        if timlimited ==0 :
+                        if analysis_counter ==0 :
                             if not os.path.exists(config.parameter.checkpoint_path):
                                 os.makedirs(config.parameter.checkpoint_path)
                             plot_distribution(data["a"].detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_base_{epoch}.png"))
@@ -960,7 +966,7 @@ class GMPGAlgorithm:
                             ),
                         )
                         
-                        if timlimited ==0 :
+                        if analysis_counter ==0 :
                             plot_distribution(action.detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_base_model_{epoch}_{evaluation_results['evaluation/return_mean']}.png"))
                         
                         log_p= compute_likelihood(
@@ -978,15 +984,15 @@ class GMPGAlgorithm:
                         
                         wandb.log(data=evaluation_results, commit=False)
                         
-                        timlimited+=1
-                        if timlimited>10:
+                        analysis_counter+=1
+                        if analysis_counter>=analysis_repeat:
                             logp_dict = {
                                         "logp_max": logp_max,
                                         "logp_min": logp_min,
                                         "logp_mean": logp_mean,
                                         "logp_sum": logp_sum,
                                         "end_return": end_return
-                                    }
+                            }
                             np.savez(os.path.join(config.parameter.checkpoint_path, f"logp_data_based_{epoch}.npz"), **logp_dict)
                             plot_histogram2d_x_y(end_return,logp_mean,os.path.join(config.parameter.checkpoint_path,f"return_logp_base_{epoch}.png"))
                             break
@@ -1332,11 +1338,8 @@ class GMPGAlgorithm:
 
                     guided_policy_loss_sum += guided_policy_loss.item()
 
-                    
                     self.guided_policy_train_epoch = epoch
                     
-                    timlimited=0
-                
                     if hasattr(config.parameter.evaluation, "analysis_interval") and guided_policy_train_iter % config.parameter.evaluation.analysis_interval == 0:
                         if hasattr(config.parameter.evaluation, "analysis_repeat"):
                             analysis_repeat=config.parameter.evaluation.analysis_repeat
@@ -1348,9 +1351,10 @@ class GMPGAlgorithm:
                         else:
                             analysis_distribution=True
                             
+                        analysis_counter=0
                         for index, data in enumerate(replay_buffer):
                             
-                            if timlimited==0 and analysis_distribution:
+                            if analysis_counter==0 and analysis_distribution:
                                 if not os.path.exists(config.parameter.checkpoint_path):
                                     os.makedirs(config.parameter.checkpoint_path)
                                 plot_distribution(data["a"].detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_guided_{guided_policy_train_iter}.png"))
@@ -1391,12 +1395,12 @@ class GMPGAlgorithm:
                             logp_sum.append(log_p.sum().detach().cpu().numpy())
                             end_return.append(evaluation_results["evaluation/return_mean"])
                             
-                            if timlimited==0 and analysis_distribution:
+                            if analysis_counter==0 and analysis_distribution:
                                 plot_distribution(action.detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_guided_model_{guided_policy_train_iter}_{evaluation_results['evaluation/return_mean']}.png"))
                             
-                            timlimited +=1
+                            analysis_counter +=1
                             wandb.log(data=evaluation_results, commit=False)
-                            if timlimited >analysis_repeat:
+                            if analysis_counter >analysis_repeat:
                                 logp_dict = {
                                         "logp_max": logp_max,
                                         "logp_min": logp_min,

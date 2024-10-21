@@ -40,7 +40,10 @@ def plot_distribution(data: np.ndarray, save_path:str, size=None, dpi=500):
         for j in range(N):
             if i == j:
                 # Diagonal: plot 1D histogram for feature i
-                axes[i, j].hist(data[:, i], bins=30, color='skyblue', edgecolor='black')
+                if N==1:
+                    axes.hist(data[:, i], bins=30, color='skyblue', edgecolor='black')
+                else:
+                    axes[i, j].hist(data[:, i], bins=30, color='skyblue', edgecolor='black')
                 # axes[i, j].set_title(f'Hist of Feature {i+1}')
             else:
                 # Off-diagonal: calculate 2D histogram and plot using pcolormesh with unified color scale (as percentage)
@@ -52,9 +55,10 @@ def plot_distribution(data: np.ndarray, save_path:str, size=None, dpi=500):
                 axes[i, j].set_xlabel(f'Dimension {j+1}')
                 axes[i, j].set_ylabel(f'Dimension {i+1}')
 
-    # Add a single colorbar for all pcolormesh plots (showing percentage)
-    cbar = fig.colorbar(mesh, ax=axes, orientation='vertical', fraction=0.02, pad=0.04)
-    cbar.set_label('Percentage (%)')
+    if N>1:
+        # Add a single colorbar for all pcolormesh plots (showing percentage)
+        cbar = fig.colorbar(mesh, ax=axes, orientation='vertical', fraction=0.02, pad=0.04)
+        cbar.set_label('Percentage (%)')
 
     # Save the figure to the provided path
     plt.savefig(save_path, dpi=dpi, bbox_inches='tight')

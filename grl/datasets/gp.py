@@ -739,7 +739,7 @@ class GPDeepMindControlTensorDictDataset(GPTensorDictDataset):
         )
 
 
-class GPDMControlVisualTensorDictDataset(torch.utils.data.Dataset):
+class GPDeepMindControlVisualTensorDictDataset(torch.utils.data.Dataset):
     def __init__(
         self,
         env_id: str,

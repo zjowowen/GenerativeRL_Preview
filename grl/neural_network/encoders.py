@@ -48,7 +48,7 @@ class GaussianFourierProjectionTimeEncoder(nn.Module):
         ``__init__``, ``forward``.
     """
 
-    def __init__(self, embed_dim, scale=30.0):
+    def __init__(self, embed_dim, scale=30.0, requires_grad=False):
         """
         Overview:
             Initialize the Gaussian Fourier Projection Time Encoder according to arguments.
@@ -60,7 +60,7 @@ class GaussianFourierProjectionTimeEncoder(nn.Module):
         # Randomly sample weights during initialization. These weights are fixed
         # during optimization and are not trainable.
         self.W = nn.Parameter(
-            torch.randn(embed_dim // 2) * scale * 2 * np.pi, requires_grad=False
+            torch.randn(embed_dim // 2) * scale * 2 * np.pi, requires_grad=requires_grad
         )
 
     def forward(self, x):
@@ -237,107 +237,32 @@ class SinusoidalPosEmb(nn.Module):
         emb = torch.cat((emb.sin(), emb.cos()), dim=-1)
         return emb
 
-class TensorDictencoder(nn.Module):
-    def __init__(self,usePixel=False,useRichData=True):
+class TensorDictConcatenateEncoder(nn.Module):
+    """
+    Overview:
+        Concatenate the tensors in the input dictionary. If the tensor is 1D, reshape it to 2D. If the tensor is 3D or higher, reshape it to 2D.
+        In this way, the output tensor is a 2D tensor, which is of shape (B, D), where B is the batch size and D is the total dimension of the input tensors.
+    Interfaces:
+        ``__init__``, ``forward``
+    """
+
+    def __init__(self):
         super().__init__()
-        self.usePixel=usePixel
-        self.useRichData=useRichData
-        if self.usePixel ==False:
-            self.useRichData=True
-        else:
-            from torchvision.transforms import v2
-            self.image_transform = transforms = v2.Compose([
-                # v2.ToDtype(torch.float32, scale=True),
-                v2.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
-            ])
-            self.conv_block = nn.Sequential(
-                nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, stride=1, padding=1),
-                nn.ReLU(),
-                nn.MaxPool2d(kernel_size=2, stride=2),
-                
-                nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1, padding=1),
-                nn.ReLU(),
-                nn.MaxPool2d(kernel_size=2, stride=2),
-                
-                nn.Flatten()
-            )
-            self.mlp_block = nn.Sequential(
-                nn.Linear(64 * 16 * 16, 512),
-                nn.ReLU(),
-                nn.Linear(512, 128),
-            )
-            
+
     def forward(self, x: dict) -> torch.Tensor:
+        
         tensors = []
         for v in x.values():
-            if v.dim() == 1 and self.useRichData == True:
+            if v.dim() == 1:
                 v = v.unsqueeze(-1)
-            if v.dim() == 3 and v.shape[0] == 1:
-                import ipdb
-                ipdb.set_trace()
-                v = v.view(1, -1)
-            if v.dim() == 2 and self.useRichData == True:
-                tensors.append(v)
-            if v.dim() == 4 and self.usePixel== True:
-                v = v.permute(0, 3, 1, 2)/255.0
-                v = self.image_transform(v)
-                v = self.conv_block(v)
-                v = self.mlp_block(v)
-                tensors.append(v)
-        new = torch.cat(tensors, dim=1)
-        return new
+            elif v.dim() == 2:
+                pass
+            elif v.dim() > 2:
+                v = v.reshape(v.shape[0], -1)
+            else:
+                raise ValueError(f"Unsupported tensor shape: {v.shape}")
+            tensors.append(v)
 
-class TensorDictNewEncoder(nn.Module):
-    def __init__(self,usePixel=False,useRichData=True,normalize_dict=None):
-        super().__init__()
-        self.usePixel=usePixel
-        self.useRichData=useRichData
-        self.normalize_dict=normalize_dict
-        if self.usePixel ==False:
-            self.useRichData=True
-        else:
-            from torchvision.transforms import v2
-            self.image_transform = transforms = v2.Compose([
-                # v2.ToDtype(torch.float32, scale=True),
-                v2.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
-            ])
-            self.conv_block = nn.Sequential(
-                nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, stride=1, padding=1),
-                nn.ReLU(),
-                nn.MaxPool2d(kernel_size=2, stride=2),
-                
-                nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1, padding=1),
-                nn.ReLU(),
-                nn.MaxPool2d(kernel_size=2, stride=2),
-                
-                nn.Flatten()
-            )
-            self.mlp_block = nn.Sequential(
-                nn.Linear(64 * 16 * 16, 512),
-                nn.ReLU(),
-                nn.Linear(512, 128),
-            )
-            
-    def forward(self, x: dict) -> torch.Tensor:
-        tensors = []
-        for k, v in x.items():
-            if self.normalize_dict is not None and k in self.normalize_dict:
-                v = (v - self.normalize_dict[k][0]) / self.normalize_dict[k][1]
-
-            if v.dim() == 1 and self.useRichData == True:
-                v = v.unsqueeze(-1)
-            if v.dim() == 3 and v.shape[0] == 1:
-                import ipdb
-                ipdb.set_trace()
-                v = v.view(1, -1)
-            if v.dim() == 2 and self.useRichData == True:
-                tensors.append(v)
-            if v.dim() == 4 and self.usePixel== True:
-                v = v.permute(0, 3, 1, 2)/255.0
-                v = self.image_transform(v)
-                v = self.conv_block(v)
-                v = self.mlp_block(v)
-                tensors.append(v)
         new = torch.cat(tensors, dim=1)
         return new
 
@@ -372,7 +297,6 @@ ENCODERS = {
     "GaussianFourierProjectionEncoder".lower(): GaussianFourierProjectionEncoder,
     "ExponentialFourierProjectionTimeEncoder".lower(): ExponentialFourierProjectionTimeEncoder,
     "SinusoidalPosEmb".lower(): SinusoidalPosEmb,
-    "TensorDictencoder".lower(): TensorDictencoder,
-    "TensorDictNewEncoder".lower(): TensorDictNewEncoder,
+    "TensorDictConcatenateEncoder".lower(): TensorDictConcatenateEncoder,
     "DiscreteEmbeddingEncoder".lower(): DiscreteEmbeddingEncoder,
 }

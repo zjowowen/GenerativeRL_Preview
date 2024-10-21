@@ -704,7 +704,7 @@ class QGPODeepMindControlTensorDictDataset(QGPOTensorDictDataset):
         )
 
 
-class QGPODMControlVisualTensorDictDataset(torch.utils.data.Dataset):
+class QGPODeepMindControlVisualTensorDictDataset(torch.utils.data.Dataset):
     def __init__(
         self,
         env_id: str,
