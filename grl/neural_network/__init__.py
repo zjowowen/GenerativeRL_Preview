@@ -579,14 +579,26 @@ class ConcatenateMLP(nn.Module):
         return self.model(torch.cat(x, dim=-1))
 
 
-class AllCatMLP(nn.Module):
-    def __init__(self, **kwargs):
+class TemporalConcatenateMLPResNet(nn.Module):
+    """
+    Overview:
+        Temporal Concatenate MLP Residual Network using multiple TemporalSpatialResBlock.
+    Interface:
+        ``__init__``, ``forward``
+    """
+
+    def __init__(
+            self,
+            t_dim:int = 64,
+            activation:str = "mish",
+            **kwargs
+    ):
         super().__init__()
         self.main = MLPResNet(**kwargs)
         self.t_cond = MultiLayerPerceptron(
-            hidden_sizes=[64, 128],
-            output_size=128,
-            activation="mish",
+            hidden_sizes=[t_dim, t_dim*2],
+            output_size=t_dim*2,
+            activation=activation,
         )
 
     def forward(
@@ -708,7 +720,7 @@ MODULES = {
     "ConcatenateLayer".lower(): ConcatenateLayer,
     "MultiLayerPerceptron".lower(): MultiLayerPerceptron,
     "ConcatenateMLP".lower(): ConcatenateMLP,
-    "AllCatMLP".lower(): AllCatMLP,
+    "TemporalConcatenateMLPResNet".lower(): TemporalConcatenateMLPResNet,
     "TemporalSpatialResidualNet".lower(): TemporalSpatialResidualNet,
     "TemporalSpatialConditionalResidualNet".lower(): TemporalSpatialConditionalResidualNet,
     "DiT".lower(): DiT,
