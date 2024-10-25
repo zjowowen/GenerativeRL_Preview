@@ -1107,7 +1107,7 @@ class GMPGAlgorithm:
 
                     # Update target
                     for param, target_param in zip(
-                        self.model["GPPolicy"].critic.parameters(),
+                        self.model["GPPolicy"].critic.q.parameters(),
                         self.model["GPPolicy"].critic.q_target.parameters(),
                     ):
                         target_param.data.copy_(

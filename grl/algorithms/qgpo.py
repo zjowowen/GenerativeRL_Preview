@@ -678,7 +678,7 @@ class QGPOAlgorithm:
 
                             # Update target
                             for param, target_param in zip(
-                                self.model["QGPOPolicy"].critic.parameters(),
+                                self.model["QGPOPolicy"].critic.q.parameters(),
                                 self.model["QGPOPolicy"].critic.q_target.parameters(),
                             ):
                                 target_param.data.copy_(

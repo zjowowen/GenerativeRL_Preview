@@ -412,7 +412,7 @@ class IDQLAlgorithm:
             )
 
             for epoch in track(
-                range(config.parameter.critic.iterations),
+                range(config.parameter.critic.epochs),
                 description="Critic training",
             ):
                 if self.critic_train_epoch >= epoch:
@@ -485,8 +485,9 @@ class IDQLAlgorithm:
                 )
 
                 if (
+                    hasattr(config.parameter, "checkpoint_freq") and
                     epoch == 0
-                    or (epoch + 1) % config.parameter.evaluation.evaluation_interval
+                    or (epoch + 1) % config.parameter.checkpoint_freq
                     == 0
                 ):
                     save_model(
@@ -511,7 +512,7 @@ class IDQLAlgorithm:
             )
 
             for epoch in track(
-                range(config.parameter.behaviour_policy.iterations),
+                range(config.parameter.behaviour_policy.epochs),
                 description="Behaviour policy training",
             ):
                 if self.behaviour_train_epoch >= epoch:
@@ -537,8 +538,9 @@ class IDQLAlgorithm:
                 self.behaviour_policy_train_epoch = epoch
 
                 if (
+                    hasattr(config.parameter, "checkpoint_freq") and
                     epoch == 0
-                    or (epoch + 1) % config.parameter.evaluation.evaluation_interval
+                    or (epoch + 1) % config.parameter.checkpoint_freq
                     == 0
                 ):
                     evaluation_results = evaluate(
