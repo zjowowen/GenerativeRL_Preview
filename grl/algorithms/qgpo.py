@@ -402,12 +402,7 @@ class QGPOAlgorithm:
             else self.config.train
         )
 
-        with wandb.init(
-            project=(
-                config.project if hasattr(config, "project") else __class__.__name__
-            ),
-            **config.wandb if hasattr(config, "wandb") else {},
-        ) as wandb_run:
+        with wandb.init(**config.wandb) as wandb_run:
             config = merge_two_dicts_into_newone(EasyDict(wandb_run.config), config)
             wandb_run.config.update(config)
             self.config.train = config
