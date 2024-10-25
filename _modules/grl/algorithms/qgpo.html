@@ -710,12 +710,7 @@
             <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">train</span>
         <span class="p">)</span>
 
-        <span class="k">with</span> <span class="n">wandb</span><span class="o">.</span><span class="n">init</span><span class="p">(</span>
-            <span class="n">project</span><span class="o">=</span><span class="p">(</span>
-                <span class="n">config</span><span class="o">.</span><span class="n">project</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;project&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
-            <span class="p">),</span>
-            <span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">wandb</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;wandb&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="p">{},</span>
-        <span class="p">)</span> <span class="k">as</span> <span class="n">wandb_run</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">wandb</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">wandb</span><span class="p">)</span> <span class="k">as</span> <span class="n">wandb_run</span><span class="p">:</span>
             <span class="n">config</span> <span class="o">=</span> <span class="n">merge_two_dicts_into_newone</span><span class="p">(</span><span class="n">EasyDict</span><span class="p">(</span><span class="n">wandb_run</span><span class="o">.</span><span class="n">config</span><span class="p">),</span> <span class="n">config</span><span class="p">)</span>
             <span class="n">wandb_run</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">train</span> <span class="o">=</span> <span class="n">config</span>
