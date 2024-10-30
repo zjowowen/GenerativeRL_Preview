@@ -132,7 +132,7 @@ config = EasyDict(
             ),
             evaluation=dict(
                 eval=True,
-                repeat=5,
+                repeat=10,
                 interval=5,
                 # analysis_interval=1,
             ),

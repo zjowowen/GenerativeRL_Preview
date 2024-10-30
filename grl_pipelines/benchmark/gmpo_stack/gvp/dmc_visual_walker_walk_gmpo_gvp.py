@@ -112,7 +112,7 @@ config = EasyDict(
             ),
         ),
         dataset=dict(
-            type="GPDMControlVisualTensorDictDataset",
+            type="GPDeepMindControlVisualTensorDictDataset",
             args=dict(
                 env_id=env_id,
                 policy_type=policy_type,
@@ -198,7 +198,7 @@ config = EasyDict(
             ),
             evaluation=dict(
                 eval=True,
-                repeat=5,
+                repeat=10,
                 epoch_interval=100,
             ),
             checkpoint_path=f"./{project_name}/checkpoint",

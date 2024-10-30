@@ -51,14 +51,14 @@ config = EasyDict(
             device=device,
             x_size=x_size,
             alpha=1.0,
-            solver=dict(
-                type="DPMSolver",
-                args=dict(
-                    order=2,
-                    device=device,
-                    steps=17,
+                solver=dict(
+                    type="DPMSolver",
+                    args=dict(
+                        order=2,
+                        device=device,
+                        steps=17,
+                    ),
                 ),
-            ),
             path=dict(
                 type="linear_vp_sde",
                 beta_0=0.1,
@@ -84,7 +84,7 @@ config = EasyDict(
             lr=5e-3,
             data_num=10000,
             iterations=1000,
-            batch_size=2048,
+            batch_size=4096,
             clip_grad_norm=1.0,
             eval_freq=500,
             checkpoint_freq=100,

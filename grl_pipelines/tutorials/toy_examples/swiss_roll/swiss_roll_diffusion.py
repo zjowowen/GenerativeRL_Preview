@@ -30,6 +30,7 @@ t_encoder = dict(
     args=dict(
         embed_dim=t_embedding_dim,
         scale=30.0,
+        requires_grad=True,
     ),
 )
 config = EasyDict(
@@ -69,10 +70,10 @@ config = EasyDict(
             training_loss_type="score_matching",
             lr=5e-3,
             data_num=10000,
-            iterations=1000,
-            batch_size=2048,
+            iterations=5000,
+            batch_size=4096,
             clip_grad_norm=1.0,
-            eval_freq=500,
+            eval_freq=1000,
             checkpoint_freq=100,
             checkpoint_path="./checkpoint",
             video_save_path="./video",

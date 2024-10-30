@@ -549,7 +549,7 @@ class QGPOAlgorithm:
             )
 
             for epoch in track(
-                range(config.parameter.behaviour_policy.iterations),
+                range(config.parameter.behaviour_policy.epochs),
                 description="Behaviour policy training",
             ):
                 
@@ -636,14 +636,14 @@ class QGPOAlgorithm:
             with Progress() as progress:
                 critic_training = progress.add_task(
                     "Critic training",
-                    total=config.parameter.critic.stop_training_iterations,
+                    total=config.parameter.critic.stop_training_epochs,
                 )
                 energy_guidance_training = progress.add_task(
                     "Energy guidance training",
-                    total=config.parameter.energy_guidance.iterations,
+                    total=config.parameter.energy_guidance.epochs,
                 )
 
-                for epoch in range(config.parameter.energy_guidance.iterations):
+                for epoch in range(config.parameter.energy_guidance.epochs):
                     
                     if self.energy_guidance_train_epoch >= epoch:
                         continue
@@ -654,7 +654,7 @@ class QGPOAlgorithm:
 
                     for index, data in enumerate(replay_buffer):
                     
-                        if epoch < config.parameter.critic.stop_training_iterations:
+                        if epoch < config.parameter.critic.stop_training_epochs:
 
                             q_loss = self.model["QGPOPolicy"].q_loss(
                                 data["a"].to(config.model.QGPOPolicy.device),
@@ -692,7 +692,7 @@ class QGPOAlgorithm:
 
                         counter += 1
 
-                    if epoch < config.parameter.critic.stop_training_iterations:
+                    if epoch < config.parameter.critic.stop_training_epochs:
                         progress.update(critic_training, advance=1)
                     progress.update(energy_guidance_training, advance=1)
 
