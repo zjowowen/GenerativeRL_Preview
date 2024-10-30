@@ -418,10 +418,14 @@
                 <span class="n">new_next_state</span> <span class="o">=</span> <span class="n">next_state</span><span class="o">.</span><span class="n">clone</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">next_state</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
-                        <span class="n">stacked_value</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">value</span><span class="p">]</span> <span class="o">*</span> <span class="n">fake_next_action</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                        <span class="n">stacked_value</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+                            <span class="p">[</span><span class="n">value</span><span class="p">]</span> <span class="o">*</span> <span class="n">fake_next_action</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
+                        <span class="p">)</span>
                         <span class="n">new_next_state</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">stacked_value</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">new_next_state</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">next_state</span><span class="p">]</span> <span class="o">*</span> <span class="n">fake_next_action</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">new_next_state</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">next_state</span><span class="p">]</span> <span class="o">*</span> <span class="n">fake_next_action</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
+                <span class="p">)</span>
             <span class="n">next_energy</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">q_target</span><span class="p">(</span>
                     <span class="n">fake_next_action</span><span class="p">,</span>
@@ -652,7 +656,9 @@
 
             <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">__version__</span> <span class="o">&gt;=</span> <span class="s2">&quot;2.0.0&quot;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;QGPOPolicy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
-                    <span class="n">QGPOPolicy</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">QGPOPolicy</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">QGPOPolicy</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+                    <span class="n">QGPOPolicy</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">QGPOPolicy</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span>
+                        <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">QGPOPolicy</span><span class="o">.</span><span class="n">device</span>
+                    <span class="p">)</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;QGPOPolicy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">QGPOPolicy</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">QGPOPolicy</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span>
@@ -669,7 +675,7 @@
                     <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                     <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;behaviour_policy&quot;</span><span class="p">,</span>
                 <span class="p">)</span>
-                
+
                 <span class="bp">self</span><span class="o">.</span><span class="n">energy_guidance_train_epoch</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span>
                     <span class="n">path</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">checkpoint_path</span><span class="p">,</span>
                     <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;QGPOPolicy&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">diffusion_model</span><span class="o">.</span><span class="n">energy_guidance</span><span class="p">,</span>
@@ -735,14 +741,16 @@
                 <span class="n">fake_actions_sampled</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">):</span>
                     <span class="kn">from</span> <span class="nn">torchrl.data</span> <span class="kn">import</span> <span class="n">LazyTensorStorage</span>
+
                     <span class="n">storage</span> <span class="o">=</span> <span class="n">LazyTensorStorage</span><span class="p">(</span><span class="n">max_size</span><span class="o">=</span><span class="n">states</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
                     <span class="n">storage</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
-                        <span class="nb">range</span><span class="p">(</span><span class="n">states</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">TensorDict</span><span class="p">(</span>
+                        <span class="nb">range</span><span class="p">(</span><span class="n">states</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+                        <span class="n">TensorDict</span><span class="p">(</span>
                             <span class="p">{</span>
                                 <span class="s2">&quot;s&quot;</span><span class="p">:</span> <span class="n">states</span><span class="p">,</span>
                             <span class="p">},</span>
                             <span class="n">batch_size</span><span class="o">=</span><span class="p">[</span><span class="n">states</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
-                        <span class="p">)</span>
+                        <span class="p">),</span>
                     <span class="p">)</span>
                     <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">states</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">4096</span><span class="p">):</span>
                         <span class="n">index</span> <span class="o">=</span> <span class="n">index</span><span class="o">.</span><span class="n">int</span><span class="p">()</span>
@@ -797,7 +805,7 @@
                 <span class="k">for</span> <span class="n">guidance_scale</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">evaluation</span><span class="o">.</span><span class="n">guidance_scale</span><span class="p">:</span>
 
                     <span class="k">def</span> <span class="nf">policy</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>   
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
                             <span class="n">obs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
                                 <span class="n">obs</span><span class="p">,</span>
                                 <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
@@ -808,7 +816,7 @@
                                 <span class="n">obs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
                                     <span class="n">obs</span><span class="p">[</span><span class="n">key</span><span class="p">],</span>
                                     <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
-                                    <span class="n">device</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">QGPOPolicy</span><span class="o">.</span><span class="n">device</span>
+                                    <span class="n">device</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">QGPOPolicy</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
                                 <span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
                                 <span class="k">if</span> <span class="n">obs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">obs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                                     <span class="n">obs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
@@ -843,7 +851,7 @@
 
                 <span class="k">return</span> <span class="n">evaluation_results</span>
 
-            <span class="n">replay_buffer</span><span class="o">=</span><span class="n">TensorDictReplayBuffer</span><span class="p">(</span>
+            <span class="n">replay_buffer</span> <span class="o">=</span> <span class="n">TensorDictReplayBuffer</span><span class="p">(</span>
                 <span class="n">storage</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">storage</span><span class="p">,</span>
                 <span class="n">batch_size</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">behaviour_policy</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
                 <span class="n">sampler</span><span class="o">=</span><span class="n">SamplerWithoutReplacement</span><span class="p">(),</span>
@@ -860,7 +868,7 @@
                 <span class="nb">range</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">behaviour_policy</span><span class="o">.</span><span class="n">epochs</span><span class="p">),</span>
                 <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Behaviour policy training&quot;</span><span class="p">,</span>
             <span class="p">):</span>
-                
+
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">behaviour_policy_train_epoch</span> <span class="o">&gt;=</span> <span class="n">epoch</span><span class="p">:</span>
                     <span class="k">continue</span>
 
@@ -870,23 +878,25 @@
 
                     <span class="n">behaviour_model_training_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span>
                         <span class="s2">&quot;QGPOPolicy&quot;</span>
-                    <span class="p">]</span><span class="o">.</span><span class="n">behaviour_policy_loss</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">QGPOPolicy</span><span class="o">.</span><span class="n">device</span><span class="p">),</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;s&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">QGPOPolicy</span><span class="o">.</span><span class="n">device</span><span class="p">))</span>
+                    <span class="p">]</span><span class="o">.</span><span class="n">behaviour_policy_loss</span><span class="p">(</span>
+                        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">QGPOPolicy</span><span class="o">.</span><span class="n">device</span><span class="p">),</span>
+                        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;s&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">QGPOPolicy</span><span class="o">.</span><span class="n">device</span><span class="p">),</span>
+                    <span class="p">)</span>
                     <span class="n">behaviour_model_optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
                     <span class="n">behaviour_model_training_loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
                     <span class="n">behaviour_model_optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
 
                     <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
-                    <span class="n">behaviour_model_training_loss_sum</span> <span class="o">+=</span> <span class="n">behaviour_model_training_loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                    <span class="n">behaviour_model_training_loss_sum</span> <span class="o">+=</span> <span class="p">(</span>
+                        <span class="n">behaviour_model_training_loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                    <span class="p">)</span>
 
                 <span class="k">if</span> <span class="p">(</span>
                     <span class="n">epoch</span> <span class="o">==</span> <span class="mi">0</span>
-                    <span class="ow">or</span> <span class="p">(</span><span class="n">epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-                    <span class="o">%</span> <span class="n">config</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">evaluation</span><span class="o">.</span><span class="n">evaluation_interval</span>
+                    <span class="ow">or</span> <span class="p">(</span><span class="n">epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">config</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">evaluation</span><span class="o">.</span><span class="n">evaluation_interval</span>
                     <span class="o">==</span> <span class="mi">0</span>
                 <span class="p">):</span>
-                    <span class="n">evaluation_results</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;QGPOPolicy&quot;</span><span class="p">],</span> <span class="n">epoch</span><span class="o">=</span><span class="n">epoch</span>
-                    <span class="p">)</span>
+                    <span class="n">evaluation_results</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;QGPOPolicy&quot;</span><span class="p">],</span> <span class="n">epoch</span><span class="o">=</span><span class="n">epoch</span><span class="p">)</span>
                     <span class="n">wandb_run</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">evaluation_results</span><span class="p">,</span> <span class="n">commit</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
                     <span class="n">save_model</span><span class="p">(</span>
                         <span class="n">path</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">checkpoint_path</span><span class="p">,</span>
@@ -901,7 +911,8 @@
                 <span class="n">wandb_run</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
                     <span class="n">data</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
                         <span class="n">behaviour_policy_train_epoch</span><span class="o">=</span><span class="n">epoch</span><span class="p">,</span>
-                        <span class="n">behaviour_model_training_loss</span><span class="o">=</span><span class="n">behaviour_model_training_loss_sum</span> <span class="o">/</span> <span class="n">counter</span><span class="p">,</span>
+                        <span class="n">behaviour_model_training_loss</span><span class="o">=</span><span class="n">behaviour_model_training_loss_sum</span>
+                        <span class="o">/</span> <span class="n">counter</span><span class="p">,</span>
                     <span class="p">),</span>
                     <span class="n">commit</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                 <span class="p">)</span>
@@ -918,12 +929,12 @@
             <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">load_fake_actions</span><span class="p">(</span>
-                    <span class="n">fake_actions</span><span class="o">=</span><span class="n">fake_actions</span><span class="p">,</span>
-                    <span class="n">fake_next_actions</span><span class="o">=</span><span class="n">fake_next_actions</span><span class="p">,</span>
-                <span class="p">)</span>
+                <span class="n">fake_actions</span><span class="o">=</span><span class="n">fake_actions</span><span class="p">,</span>
+                <span class="n">fake_next_actions</span><span class="o">=</span><span class="n">fake_next_actions</span><span class="p">,</span>
+            <span class="p">)</span>
 
             <span class="c1"># TODO add notation</span>
-            <span class="n">replay_buffer</span><span class="o">=</span><span class="n">TensorDictReplayBuffer</span><span class="p">(</span>
+            <span class="n">replay_buffer</span> <span class="o">=</span> <span class="n">TensorDictReplayBuffer</span><span class="p">(</span>
                 <span class="n">storage</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">storage</span><span class="p">,</span>
                 <span class="n">batch_size</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">energy_guided_policy</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
                 <span class="n">sampler</span><span class="o">=</span><span class="n">SamplerWithoutReplacement</span><span class="p">(),</span>
@@ -952,7 +963,7 @@
                 <span class="p">)</span>
 
                 <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">energy_guidance</span><span class="o">.</span><span class="n">epochs</span><span class="p">):</span>
-                    
+
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">energy_guidance_train_epoch</span> <span class="o">&gt;=</span> <span class="n">epoch</span><span class="p">:</span>
                         <span class="k">continue</span>
 
@@ -961,7 +972,7 @@
                     <span class="n">energy_guidance_loss_sum</span> <span class="o">=</span> <span class="mf">0.0</span>
 
                     <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">replay_buffer</span><span class="p">):</span>
-                    
+
                         <span class="k">if</span> <span class="n">epoch</span> <span class="o">&lt;</span> <span class="n">config</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">critic</span><span class="o">.</span><span class="n">stop_training_epochs</span><span class="p">:</span>
 
                             <span class="n">q_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;QGPOPolicy&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">q_loss</span><span class="p">(</span>
@@ -992,7 +1003,10 @@
 
                         <span class="n">energy_guidance_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span>
                             <span class="s2">&quot;QGPOPolicy&quot;</span>
-                        <span class="p">]</span><span class="o">.</span><span class="n">energy_guidance_loss</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;s&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">QGPOPolicy</span><span class="o">.</span><span class="n">device</span><span class="p">),</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;fake_a&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">QGPOPolicy</span><span class="o">.</span><span class="n">device</span><span class="p">))</span>
+                        <span class="p">]</span><span class="o">.</span><span class="n">energy_guidance_loss</span><span class="p">(</span>
+                            <span class="n">data</span><span class="p">[</span><span class="s2">&quot;s&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">QGPOPolicy</span><span class="o">.</span><span class="n">device</span><span class="p">),</span>
+                            <span class="n">data</span><span class="p">[</span><span class="s2">&quot;fake_a&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">QGPOPolicy</span><span class="o">.</span><span class="n">device</span><span class="p">),</span>
+                        <span class="p">)</span>
                         <span class="n">energy_guidance_optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
                         <span class="n">energy_guidance_loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
                         <span class="n">energy_guidance_optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
@@ -1006,8 +1020,7 @@
 
                     <span class="k">if</span> <span class="p">(</span>
                         <span class="n">epoch</span> <span class="o">==</span> <span class="mi">0</span>
-                        <span class="ow">or</span> <span class="p">(</span><span class="n">epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-                        <span class="o">%</span> <span class="n">config</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">evaluation</span><span class="o">.</span><span class="n">evaluation_interval</span>
+                        <span class="ow">or</span> <span class="p">(</span><span class="n">epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">config</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">evaluation</span><span class="o">.</span><span class="n">evaluation_interval</span>
                         <span class="o">==</span> <span class="mi">0</span>
                     <span class="p">):</span>
                         <span class="n">evaluation_results</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span>
@@ -1016,7 +1029,9 @@
                         <span class="n">wandb_run</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">evaluation_results</span><span class="p">,</span> <span class="n">commit</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
                         <span class="n">save_model</span><span class="p">(</span>
                             <span class="n">path</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">checkpoint_path</span><span class="p">,</span>
-                            <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;QGPOPolicy&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">diffusion_model</span><span class="o">.</span><span class="n">energy_guidance</span><span class="p">,</span>
+                            <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span>
+                                <span class="s2">&quot;QGPOPolicy&quot;</span>
+                            <span class="p">]</span><span class="o">.</span><span class="n">diffusion_model</span><span class="o">.</span><span class="n">energy_guidance</span><span class="p">,</span>
                             <span class="n">optimizer</span><span class="o">=</span><span class="n">energy_guidance_optimizer</span><span class="p">,</span>
                             <span class="n">iteration</span><span class="o">=</span><span class="n">epoch</span><span class="p">,</span>
                             <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;energy_guidance&quot;</span><span class="p">,</span>
