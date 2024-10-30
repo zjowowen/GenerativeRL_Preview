@@ -3,8 +3,16 @@ from typing import List, Union
 from tensordict import TensorDict
 from torchrl.data import ReplayBuffer
 from torchrl.data import TensorDictReplayBuffer
-from torchrl.data.replay_buffers.samplers import SamplerWithoutReplacement, RandomSampler
-from torchrl.data import TensorStorage, LazyMemmapStorage, LazyTensorStorage, ListStorage
+from torchrl.data.replay_buffers.samplers import (
+    SamplerWithoutReplacement,
+    RandomSampler,
+)
+from torchrl.data import (
+    TensorStorage,
+    LazyMemmapStorage,
+    LazyTensorStorage,
+    ListStorage,
+)
 
 
 class GeneralListBuffer:
@@ -14,6 +22,7 @@ class GeneralListBuffer:
     Interface:
         ``__init__``, ``add``, ``sample``, ``__len__``, ``__getitem__``, ``__setitem__``, ``__delitem__``, ``__iter__``, ``__contains__``, ``__repr__``, ``save``, ``load``
     """
+
     def __init__(self, config: EasyDict):
         """
         Overview:
@@ -30,11 +39,9 @@ class GeneralListBuffer:
 
         self.storage = ListStorage(max_size=self.size)
         self.buffer = ReplayBuffer(
-            storage=self.storage,
-            batch_size=self.batch_size, 
-            collate_fn=lambda x: x
+            storage=self.storage, batch_size=self.batch_size, collate_fn=lambda x: x
         )
-    
+
     def add(self, data: List):
         """
         Overview:
@@ -44,7 +51,7 @@ class GeneralListBuffer:
         """
         self.buffer.extend(data)
 
-    def sample(self, batch_size: int=None):
+    def sample(self, batch_size: int = None):
         """
         Overview:
             Sample data from the buffer.
@@ -121,21 +128,22 @@ class GeneralListBuffer:
         """
         return repr(self.buffer)
 
-    def save(self, path: str=None):
+    def save(self, path: str = None):
         raise NotImplementedError("GeneralListBuffer does not support save method.")
-        #TODO: Implement save method
+        # TODO: Implement save method
         # path = path if path is not None else self.path
         # if path is None:
         #     raise ValueError("Path is not provided.")
         # self.buffer.dump(path)
 
-    def load(self, path: str=None):
+    def load(self, path: str = None):
         raise NotImplementedError("GeneralListBuffer does not support load method.")
-        #TODO: Implement load method
+        # TODO: Implement load method
         # path = path if path is not None else self.path
         # if path is None:
         #     raise ValueError("Path is not provided.")
         # self.buffer.load(path)
+
 
 class TensorDictBuffer:
     """
@@ -145,7 +153,7 @@ class TensorDictBuffer:
         ``__init__``, ``add``, ``sample``, ``__len__``, ``__getitem__``, ``__setitem__``, ``__delitem__``, ``__iter__``, ``__contains__``, ``__repr__``, ``save``, ``load``
     """
 
-    def __init__(self, config: EasyDict, data: TensorDict=None):
+    def __init__(self, config: EasyDict, data: TensorDict = None):
         """
         Overview:
             Initialize the buffer.
@@ -176,17 +184,22 @@ class TensorDictBuffer:
 
         if self.lazy_init:
             if self.memory_map:
-                self.storage = LazyMemmapStorage(max_size=self.size, scratch_dir=config.scratch_dir if "scratch_dir" in config else None)
+                self.storage = LazyMemmapStorage(
+                    max_size=self.size,
+                    scratch_dir=config.scratch_dir if "scratch_dir" in config else None,
+                )
             else:
                 self.storage = LazyTensorStorage(max_size=self.size)
         else:
             self.storage = TensorStorage(storage=data, max_size=self.size)
 
         if self.replacement:
-            self.sampler = SamplerWithoutReplacement(drop_last=self.drop_last, shuffle=self.shuffle)
+            self.sampler = SamplerWithoutReplacement(
+                drop_last=self.drop_last, shuffle=self.shuffle
+            )
         else:
             self.sampler = RandomSampler()
-    
+
         self.buffer = TensorDictReplayBuffer(
             storage=self.storage,
             batch_size=self.batch_size,
@@ -206,7 +219,7 @@ class TensorDictBuffer:
             data = TensorDict(data)
         self.buffer.extend(data)
 
-    def sample(self, batch_size: int=None):
+    def sample(self, batch_size: int = None):
         """
         Overview:
             Sample data from the buffer.
@@ -279,7 +292,7 @@ class TensorDictBuffer:
         """
         return repr(self.buffer)
 
-    def save(self, path: str=None):
+    def save(self, path: str = None):
         """
         Overview:
             Save the buffer.
@@ -291,7 +304,7 @@ class TensorDictBuffer:
             raise ValueError("Path is not provided.")
         self.buffer.dump(path)
 
-    def load(self, path: str=None):
+    def load(self, path: str = None):
         """
         Overview:
             Load the buffer.

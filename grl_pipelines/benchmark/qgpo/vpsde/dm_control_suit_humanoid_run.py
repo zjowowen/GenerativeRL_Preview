@@ -2,69 +2,69 @@ import torch
 import torch.nn as nn
 from easydict import EasyDict
 from grl.neural_network.encoders import register_encoder
+
+
 class humanoid_run_encoder(nn.Module):
     def __init__(self):
         super(humanoid_run_encoder, self).__init__()
         self.joint_angles = nn.Sequential(
-            nn.Linear(21,42),
+            nn.Linear(21, 42),
             nn.ReLU(),
             nn.Linear(42, 42),
             nn.LayerNorm(42),
         )
 
         self.head_height = nn.Sequential(
-            nn.Linear(1, 2),
-            nn.ReLU(),
-            nn.Linear(2, 2),
-            nn.LayerNorm(2)
+            nn.Linear(1, 2), nn.ReLU(), nn.Linear(2, 2), nn.LayerNorm(2)
         )
-        
-        self.extremities=nn.Sequential(
-            nn.Linear(12, 24),
-            nn.ReLU(),
-            nn.Linear(24, 24),
-            nn.LayerNorm(24)
+
+        self.extremities = nn.Sequential(
+            nn.Linear(12, 24), nn.ReLU(), nn.Linear(24, 24), nn.LayerNorm(24)
         )
-        
-        self.torso_vertical=nn.Sequential(
-            nn.Linear(3, 6),
-            nn.ReLU(),
-            nn.Linear(6, 6),
-            nn.LayerNorm(6)
+
+        self.torso_vertical = nn.Sequential(
+            nn.Linear(3, 6), nn.ReLU(), nn.Linear(6, 6), nn.LayerNorm(6)
         )
-        
-        self.com_velocity=nn.Sequential(
-            nn.Linear(3, 6),
-            nn.ReLU(),
-            nn.Linear(6, 6),
-            nn.LayerNorm(6)
+
+        self.com_velocity = nn.Sequential(
+            nn.Linear(3, 6), nn.ReLU(), nn.Linear(6, 6), nn.LayerNorm(6)
         )
-        self.velocity=nn.Sequential(
-            nn.Linear(27, 54),
-            nn.ReLU(),
-            nn.Linear(54, 54),
-            nn.LayerNorm(54)
+        self.velocity = nn.Sequential(
+            nn.Linear(27, 54), nn.ReLU(), nn.Linear(54, 54), nn.LayerNorm(54)
         )
+
     def forward(self, x: dict) -> torch.Tensor:
         if x["head_height"].dim() == 1:
-            height=x["head_height"].unsqueeze(-1)
+            height = x["head_height"].unsqueeze(-1)
         else:
-            height=x["head_height"]
+            height = x["head_height"]
 
-        joint_angles=self.joint_angles(x["joint_angles"])
-        head_height=self.head_height(height)
-        extremities=self.extremities(x["extremities"])
-        torso_vertical=self.torso_vertical(x["torso_vertical"])
-        com_velocity=self.com_velocity(x["com_velocity"])
-        velocity=self.velocity(x["velocity"])
-        combined_output = torch.cat([joint_angles,head_height, extremities, torso_vertical,com_velocity,velocity], dim=-1)
+        joint_angles = self.joint_angles(x["joint_angles"])
+        head_height = self.head_height(height)
+        extremities = self.extremities(x["extremities"])
+        torso_vertical = self.torso_vertical(x["torso_vertical"])
+        com_velocity = self.com_velocity(x["com_velocity"])
+        velocity = self.velocity(x["velocity"])
+        combined_output = torch.cat(
+            [
+                joint_angles,
+                head_height,
+                extremities,
+                torso_vertical,
+                com_velocity,
+                velocity,
+            ],
+            dim=-1,
+        )
         return combined_output
-register_encoder(humanoid_run_encoder,"humanoid_run_encoder")  
 
-data_path=""
-domain_name="humanoid"
-task_name="run"
-env_id=f"{domain_name}-{task_name}"
+
+register_encoder(humanoid_run_encoder, "humanoid_run_encoder")
+
+data_path = ""
+domain_name = "humanoid"
+task_name = "run"
+env_id = f"{domain_name}-{task_name}"
 action_size = 21
 state_size = 67
 
@@ -127,8 +127,7 @@ config = EasyDict(
                         ),
                         state_encoder=dict(
                             type="humanoid_run_encoder",
-                            args=dict(
-                            ),
+                            args=dict(),
                         ),
                     ),
                 ),
@@ -170,8 +169,7 @@ config = EasyDict(
                             t_encoder=t_encoder,
                             condition_encoder=dict(
                                 type="humanoid_run_encoder",
-                                args=dict(
-                                            ),
+                                args=dict(),
                             ),
                             backbone=dict(
                                 type="TemporalSpatialResidualNet",
@@ -189,10 +187,9 @@ config = EasyDict(
                     energy_guidance=dict(
                         t_encoder=t_encoder,
                         condition_encoder=dict(
-                                type="humanoid_run_encoder",
-                                args=dict(
-                                            ),
-                            ),
+                            type="humanoid_run_encoder",
+                            args=dict(),
+                        ),
                         backbone=dict(
                             type="ConcatenateMLP",
                             args=dict(
@@ -235,7 +232,6 @@ config = EasyDict(
                 guidance_scale=[0.0, 1.0],
             ),
             checkpoint_path=f"./{env_id}-{algorithm_type}",
-
         ),
     ),
     deploy=dict(
@@ -255,7 +251,6 @@ if __name__ == "__main__":
 
     from grl.algorithms.qgpo import QGPOAlgorithm
     from grl.utils.log import log
-
 
     def qgpo_pipeline(config):
 
@@ -281,5 +276,6 @@ if __name__ == "__main__":
         # ---------------------------------------
         # Customized deploy code ↑
         # ---------------------------------------
+
     log.info("config: \n{}".format(config))
     qgpo_pipeline(config)

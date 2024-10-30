@@ -1,15 +1,15 @@
 import torch
 from easydict import EasyDict
 
-path=""
-domain_name="cartpole"
-task_name="swingup"
-env_id=f"{domain_name}-{task_name}"
-algorithm="SRPO"
+path = ""
+domain_name = "cartpole"
+task_name = "swingup"
+env_id = f"{domain_name}-{task_name}"
+algorithm = "SRPO"
 action_size = 1
 state_size = 5
 
-project_name =  f"{env_id}-{algorithm}"
+project_name = f"{env_id}-{algorithm}"
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 t_embedding_dim = 32
 t_encoder = dict(
@@ -60,8 +60,7 @@ config = EasyDict(
                         ),
                         state_encoder=dict(
                             type="TensorDictConcatenateEncoder",
-                            args=dict(
-                            ),
+                            args=dict(),
                         ),
                     ),
                     VNetwork=dict(
@@ -75,8 +74,7 @@ config = EasyDict(
                         ),
                         state_encoder=dict(
                             type="TensorDictConcatenateEncoder",
-                            args=dict(
-                            ),
+                            args=dict(),
                         ),
                     ),
                 ),
@@ -104,8 +102,7 @@ config = EasyDict(
                             t_encoder=t_encoder,
                             condition_encoder=dict(
                                 type="TensorDictConcatenateEncoder",
-                                args=dict(
-                                            ),
+                                args=dict(),
                             ),
                             backbone=dict(
                                 type="TemporalSpatialResidualNet",

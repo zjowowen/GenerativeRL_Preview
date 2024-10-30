@@ -37,6 +37,7 @@ from grl.utils.statistics import sort_files_by_criteria
 from grl.generative_models.metric import compute_likelihood
 from grl.utils.plot import plot_distribution
 
+
 def asymmetric_l2_loss(u, tau):
     return torch.mean(torch.abs(tau - (u < 0).float()) * u**2)
 
@@ -320,13 +321,14 @@ class DiffusionQLPolicy(nn.Module):
                 },
                 commit=False,
             )
+
         if repeats == 1:
-            state_repeated=state
+            state_repeated = state
         else:
             state_repeated = torch.repeat_interleave(
                 state, repeats=repeats, dim=0
             ).requires_grad_()
- 
+
         action_repeated = self.guided_model.sample(
             t_span=t_span, condition=state_repeated, with_grad=True
         )
@@ -379,7 +381,6 @@ class DiffusionQLPolicy(nn.Module):
                 -log_mu_per_dim.detach().mean(),
             )
 
-
     def policy_gradient_loss_add_matching_loss(
         self,
         action: Union[torch.Tensor, TensorDict],
@@ -393,12 +394,12 @@ class DiffusionQLPolicy(nn.Module):
         t_span = torch.linspace(0.0, 1.0, gradtime_step).to(state.device)
 
         if repeats == 1:
-            state_repeated=state
+            state_repeated = state
         else:
             state_repeated = torch.repeat_interleave(
                 state, repeats=repeats, dim=0
             ).requires_grad_()
- 
+
         action_repeated = self.guided_model.sample(
             t_span=t_span, condition=state_repeated, with_grad=True
         )
@@ -407,12 +408,13 @@ class DiffusionQLPolicy(nn.Module):
 
         loss_q = -beta * q_value_repeated.mean()
 
-        loss_matching = self.behaviour_policy_loss(action=action, state=state, maximum_likelihood=maximum_likelihood)
+        loss_matching = self.behaviour_policy_loss(
+            action=action, state=state, maximum_likelihood=maximum_likelihood
+        )
 
         loss = loss_q + loss_matching
 
         return loss, loss_q, loss_matching
-    
 
 
 class DiffusionQLAlgorithm:
@@ -465,7 +467,9 @@ class DiffusionQLAlgorithm:
 
             if torch.__version__ >= "2.0.0":
                 self.model["GPPolicy"] = torch.compile(
-                    DiffusionQLPolicy(config.model.GPPolicy).to(config.model.GPPolicy.device)
+                    DiffusionQLPolicy(config.model.GPPolicy).to(
+                        config.model.GPPolicy.device
+                    )
                 )
             else:
                 self.model["GPPolicy"] = DiffusionQLPolicy(config.model.GPPolicy).to(
@@ -703,7 +707,7 @@ class DiffusionQLAlgorithm:
                 fake_actions = torch.cat(fake_actions_sampled, dim=0)
                 return fake_actions
 
-            def generate_fake_action_   (model, states, action_augment_num):
+            def generate_fake_action_(model, states, action_augment_num):
 
                 fake_actions_sampled = []
                 for states in np.array_split(states, states.shape[0] // 4096 + 1):
@@ -740,7 +744,7 @@ class DiffusionQLAlgorithm:
                             obs[key] = torch.tensor(
                                 obs[key],
                                 dtype=torch.float32,
-                                device=config.model.GPPolicy.device
+                                device=config.model.GPPolicy.device,
                             ).unsqueeze(0)
                             if obs[key].dim() == 1 and obs[key].shape[0] == 1:
                                 obs[key] = obs[key].unsqueeze(1)
@@ -782,6 +786,7 @@ class DiffusionQLAlgorithm:
 
                 if isinstance(self.dataset, GPD4RLDataset):
                     import d4rl
+
                     env_id = config.dataset.args.env_id
                     evaluation_results[f"evaluation/return_mean_normalized"] = (
                         d4rl.get_normalized_score(env_id, return_mean)
@@ -807,13 +812,13 @@ class DiffusionQLAlgorithm:
 
             # ---------------------------------------
             # behavior training code ↓
-            # ---------------------------------------          
+            # ---------------------------------------
             behaviour_policy_optimizer = torch.optim.Adam(
                 self.model["GPPolicy"].base_model.model.parameters(),
                 lr=config.parameter.behaviour_policy.learning_rate,
             )
 
-            replay_buffer=TensorDictReplayBuffer(
+            replay_buffer = TensorDictReplayBuffer(
                 storage=self.dataset.storage,
                 batch_size=config.parameter.behaviour_policy.batch_size,
                 sampler=SamplerWithoutReplacement(),
@@ -822,22 +827,30 @@ class DiffusionQLAlgorithm:
             )
 
             behaviour_policy_train_iter = 0
-            
-            
+
             for epoch in track(
                 range(config.parameter.behaviour_policy.epochs),
                 description="Behaviour policy training",
             ):
                 if self.behaviour_policy_train_epoch >= epoch:
                     continue
-                if hasattr(config.parameter.evaluation, "analysis_interval") and epoch % config.parameter.evaluation.analysis_interval == 0:
+                if (
+                    hasattr(config.parameter.evaluation, "analysis_interval")
+                    and epoch % config.parameter.evaluation.analysis_interval == 0
+                ):
                     for index, data in enumerate(replay_buffer):
 
                         if not os.path.exists(config.parameter.checkpoint_path):
                             os.makedirs(config.parameter.checkpoint_path)
-                        plot_distribution(data["a"].detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_base_{epoch}.png"))
-                        
-                        action=self.model["GPPolicy"].behaviour_policy_sample(
+                        plot_distribution(
+                            data["a"].detach().cpu().numpy(),
+                            os.path.join(
+                                config.parameter.checkpoint_path,
+                                f"action_base_{epoch}.png",
+                            ),
+                        )
+
+                        action = self.model["GPPolicy"].behaviour_policy_sample(
                             state=data["s"].to(config.model.GPPolicy.device),
                             t_span=(
                                 torch.linspace(0.0, 1.0, config.parameter.t_span).to(
@@ -859,11 +872,17 @@ class DiffusionQLAlgorithm:
                             ),
                         )
 
-                        plot_distribution(action.detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_base_model_{epoch}_{evaluation_results['evaluation/return_mean']}.png"))
-                        
+                        plot_distribution(
+                            action.detach().cpu().numpy(),
+                            os.path.join(
+                                config.parameter.checkpoint_path,
+                                f"action_base_model_{epoch}_{evaluation_results['evaluation/return_mean']}.png",
+                            ),
+                        )
+
                         wandb.log(data=evaluation_results, commit=False)
                         break
-                
+
                 counter = 1
                 behaviour_policy_loss_sum = 0
                 for index, data in enumerate(replay_buffer):
@@ -890,7 +909,6 @@ class DiffusionQLAlgorithm:
 
                     behaviour_policy_train_iter += 1
                     self.behaviour_policy_train_epoch = epoch
-                    
 
                 wandb.log(
                     data=dict(
@@ -938,7 +956,7 @@ class DiffusionQLAlgorithm:
                 lr=config.parameter.critic.learning_rate,
             )
 
-            replay_buffer=TensorDictReplayBuffer(
+            replay_buffer = TensorDictReplayBuffer(
                 storage=self.dataset.storage,
                 batch_size=config.parameter.guided_policy.batch_size,
                 sampler=SamplerWithoutReplacement(),
@@ -951,17 +969,32 @@ class DiffusionQLAlgorithm:
             beta = config.parameter.guided_policy.beta
 
             for epoch in track(
-                range(max(config.parameter.critic.epochs, config.parameter.guided_policy.epochs)), description="Critic and Guided policy training"
+                range(
+                    max(
+                        config.parameter.critic.epochs,
+                        config.parameter.guided_policy.epochs,
+                    )
+                ),
+                description="Critic and Guided policy training",
             ):
-                
-                if hasattr(config.parameter.evaluation, "analysis_interval") and epoch % config.parameter.evaluation.analysis_interval == 0:
+
+                if (
+                    hasattr(config.parameter.evaluation, "analysis_interval")
+                    and epoch % config.parameter.evaluation.analysis_interval == 0
+                ):
                     for index, data in enumerate(replay_buffer):
 
                         if not os.path.exists(config.parameter.checkpoint_path):
                             os.makedirs(config.parameter.checkpoint_path)
-                        plot_distribution(data["a"].detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_guided_{epoch}.png"))
-                        
-                        action=self.model["GPPolicy"].sample(
+                        plot_distribution(
+                            data["a"].detach().cpu().numpy(),
+                            os.path.join(
+                                config.parameter.checkpoint_path,
+                                f"action_guided_{epoch}.png",
+                            ),
+                        )
+
+                        action = self.model["GPPolicy"].sample(
                             state=data["s"].to(config.model.GPPolicy.device),
                             t_span=(
                                 torch.linspace(0.0, 1.0, config.parameter.t_span).to(
@@ -983,8 +1016,14 @@ class DiffusionQLAlgorithm:
                             ),
                         )
 
-                        plot_distribution(action.detach().cpu().numpy(),os.path.join(config.parameter.checkpoint_path,f"action_guided_model_{epoch}_{evaluation_results['evaluation/return_mean']}.png"))
-                        
+                        plot_distribution(
+                            action.detach().cpu().numpy(),
+                            os.path.join(
+                                config.parameter.checkpoint_path,
+                                f"action_guided_model_{epoch}_{evaluation_results['evaluation/return_mean']}.png",
+                            ),
+                        )
+
                         wandb.log(data=evaluation_results, commit=False)
                         break
 
@@ -995,7 +1034,6 @@ class DiffusionQLAlgorithm:
                         if self.critic_train_epoch >= epoch:
                             continue
 
-
                         if config.parameter.critic.method.lower() == "in_support_ql":
 
                             fake_next_action = generate_fake_action(
@@ -1004,7 +1042,9 @@ class DiffusionQLAlgorithm:
                                 action_augment_num=config.parameter.critic.action_augment_num,
                             )
 
-                            q_loss, q, q_target = self.model["GPPolicy"].critic.in_support_ql_loss(
+                            q_loss, q, q_target = self.model[
+                                "GPPolicy"
+                            ].critic.in_support_ql_loss(
                                 action=data["a"].to(config.model.GPPolicy.device),
                                 state=data["s"].to(config.model.GPPolicy.device),
                                 reward=data["r"].to(config.model.GPPolicy.device),
@@ -1039,7 +1079,9 @@ class DiffusionQLAlgorithm:
                             v_optimizer.zero_grad(set_to_none=True)
                             v_loss.backward()
                             v_optimizer.step()
-                            q_loss, q, q_target = self.model["GPPolicy"].critic.iql_q_loss(
+                            q_loss, q, q_target = self.model[
+                                "GPPolicy"
+                            ].critic.iql_q_loss(
                                 state=data["s"].to(config.model.GPPolicy.device),
                                 action=data["a"].to(config.model.GPPolicy.device),
                                 reward=data["r"].to(config.model.GPPolicy.device),
@@ -1087,7 +1129,11 @@ class DiffusionQLAlgorithm:
                         if self.guided_policy_train_epoch >= epoch:
                             continue
 
-                        guided_policy_loss, guided_policy_loss_q, guided_policy_loss_matching = self.model[
+                        (
+                            guided_policy_loss,
+                            guided_policy_loss_q,
+                            guided_policy_loss_matching,
+                        ) = self.model[
                             "GPPolicy"
                         ].policy_gradient_loss_add_matching_loss(
                             data["a"].to(config.model.GPPolicy.device),
@@ -1110,7 +1156,8 @@ class DiffusionQLAlgorithm:
 
                         guided_policy_optimizer.zero_grad()
                         guided_policy_loss = guided_policy_loss * (
-                            data["s"].shape[0] / config.parameter.guided_policy.batch_size
+                            data["s"].shape[0]
+                            / config.parameter.guided_policy.batch_size
                         )
                         guided_policy_loss.backward()
                         guided_policy_optimizer.step()
@@ -1158,7 +1205,9 @@ class DiffusionQLAlgorithm:
                                 train_epoch=epoch,
                                 repeat=(
                                     1
-                                    if not hasattr(config.parameter.evaluation, "repeat")
+                                    if not hasattr(
+                                        config.parameter.evaluation, "repeat"
+                                    )
                                     else config.parameter.evaluation.repeat
                                 ),
                             )
@@ -1171,11 +1220,6 @@ class DiffusionQLAlgorithm:
                             ),
                             commit=True,
                         )
-
-
-
-
-
 
             # ---------------------------------------
             # critic and guided policy joint training code ↑

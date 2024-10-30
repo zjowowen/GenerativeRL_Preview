@@ -4,11 +4,11 @@ import d4rl
 
 action_size = 6
 state_size = 17
-env_id="walker2d-medium-expert-v2"
-algorithm="SRPO"
+env_id = "walker2d-medium-expert-v2"
+algorithm = "SRPO"
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 
-t_embedding_dim = 32  
+t_embedding_dim = 32
 t_encoder = dict(
     type="GaussianFourierProjectionTimeEncoder",
     args=dict(

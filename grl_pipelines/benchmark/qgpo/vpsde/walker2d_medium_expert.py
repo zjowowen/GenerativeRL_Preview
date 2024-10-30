@@ -3,7 +3,7 @@ from easydict import EasyDict
 
 action_size = 6
 state_size = 17
-env_id="walker2d-medium-expert-v2"
+env_id = "walker2d-medium-expert-v2"
 action_augment_num = 16
 
 algorithm_type = "QGPO"
@@ -177,7 +177,6 @@ if __name__ == "__main__":
     from grl.algorithms.qgpo import QGPOAlgorithm
     from grl.utils.log import log
 
-
     def qgpo_pipeline(config):
 
         qgpo = QGPOAlgorithm(config)
@@ -202,5 +201,6 @@ if __name__ == "__main__":
         # ---------------------------------------
         # Customized deploy code ↑
         # ---------------------------------------
+
     log.info("config: \n{}".format(config))
     qgpo_pipeline(config)

@@ -9,7 +9,11 @@ from grl.neural_network.activation import get_activation
 from grl.neural_network.encoders import get_encoder
 from grl.neural_network.residual_network import MLPResNet
 
-from grl.neural_network.neural_operator.fourier_neural_operator import FNO2d, FNO2dTemporal
+from grl.neural_network.neural_operator.fourier_neural_operator import (
+    FNO2d,
+    FNO2dTemporal,
+)
+
 
 def register_module(module: nn.Module, name: str):
     """
@@ -337,6 +341,7 @@ class TemporalSpatialResidualNet(nn.Module):
             u = block(t_condition_embedding, torch.cat([u, d[-i - 1]], dim=-1))
         return self.last_block(torch.cat([u, d[0]], dim=-1))
 
+
 class TemporalSpatialConditionalResidualNet(nn.Module):
     """
     Overview:
@@ -379,7 +384,6 @@ class TemporalSpatialConditionalResidualNet(nn.Module):
             self.condition_dim = condition_dim
             self.input_condition_dim = self.input_dim + condition_dim
             self.output_condition_dim = self.output_dim + condition_dim
-
 
         self.sort_t = nn.Sequential(
             nn.Linear(t_dim, t_hidden_dim),
@@ -440,7 +444,7 @@ class TemporalSpatialConditionalResidualNet(nn.Module):
         if self.condition_dim == 0:
             return out
         else:
-            return out[:, :self.output_dim]
+            return out[:, : self.output_dim]
 
 
 class ConcatenateLayer(nn.Module):
@@ -587,17 +591,12 @@ class TemporalConcatenateMLPResNet(nn.Module):
         ``__init__``, ``forward``
     """
 
-    def __init__(
-            self,
-            t_dim:int = 64,
-            activation:str = "mish",
-            **kwargs
-    ):
+    def __init__(self, t_dim: int = 64, activation: str = "mish", **kwargs):
         super().__init__()
         self.main = MLPResNet(**kwargs)
         self.t_cond = MultiLayerPerceptron(
-            hidden_sizes=[t_dim, t_dim*2],
-            output_size=t_dim*2,
+            hidden_sizes=[t_dim, t_dim * 2],
+            output_size=t_dim * 2,
             activation=activation,
         )
 
@@ -615,6 +614,7 @@ class TemporalConcatenateMLPResNet(nn.Module):
 
 from .transformers.dit import DiT, DiT1D, DiT2D, DiT3D
 from .transformers.maxvit import MaxViT_t
+
 
 class Sequential(nn.Module):
 

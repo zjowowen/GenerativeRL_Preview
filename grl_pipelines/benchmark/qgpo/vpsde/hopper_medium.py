@@ -177,7 +177,6 @@ if __name__ == "__main__":
     from grl.algorithms.qgpo import QGPOAlgorithm
     from grl.utils.log import log
 
-
     def qgpo_pipeline(config):
 
         qgpo = QGPOAlgorithm(config)
@@ -202,5 +201,6 @@ if __name__ == "__main__":
         # ---------------------------------------
         # Customized deploy code ↑
         # ---------------------------------------
+
     log.info("config: \n{}".format(config))
     qgpo_pipeline(config)

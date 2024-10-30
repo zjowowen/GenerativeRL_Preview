@@ -2,6 +2,8 @@ import torch
 from easydict import EasyDict
 from grl.neural_network.encoders import register_encoder
 import torch.nn as nn
+
+
 class walker_encoder(nn.Module):
     def __init__(self):
         super(walker_encoder, self).__init__()
@@ -13,39 +15,39 @@ class walker_encoder(nn.Module):
         )
 
         self.velocity_mlp = nn.Sequential(
-            nn.Linear(9, 18),
-            nn.ReLU(),
-            nn.Linear(18, 18),
-            nn.LayerNorm(18)
+            nn.Linear(9, 18), nn.ReLU(), nn.Linear(18, 18), nn.LayerNorm(18)
         )
-        
+
         self.height_mlp = nn.Sequential(
             nn.Linear(1, 2),
             nn.ReLU(),
             nn.Linear(2, 2),
             nn.LayerNorm(2),
         )
-    
+
     def forward(self, x: dict) -> torch.Tensor:
-        orientation_output = self.orientation_mlp(x['orientations'])
-        velocity_output = self.velocity_mlp(x['velocity'])
-        height=x["height"]
-        if height.dim() == 1:  
-            height = height.unsqueeze(-1)  
-        height_output = self.height_mlp(height)  
-        combined_output = torch.cat([orientation_output, velocity_output, height_output], dim=-1)
+        orientation_output = self.orientation_mlp(x["orientations"])
+        velocity_output = self.velocity_mlp(x["velocity"])
+        height = x["height"]
+        if height.dim() == 1:
+            height = height.unsqueeze(-1)
+        height_output = self.height_mlp(height)
+        combined_output = torch.cat(
+            [orientation_output, velocity_output, height_output], dim=-1
+        )
         return combined_output
-register_encoder(walker_encoder,"walker_encoder")  
 
 
+register_encoder(walker_encoder, "walker_encoder")
 
-data_path=""
-domain_name="walker"
-task_name="walk"
-env_id=f"{domain_name}-{task_name}"
+
+data_path = ""
+domain_name = "walker"
+task_name = "walk"
+env_id = f"{domain_name}-{task_name}"
 action_size = 6
 state_size = 24
-algorithm_type="SRPO"
+algorithm_type = "SRPO"
 generative_model_type = "linear_vp_sde"
 project_name = f"{domain_name}-{task_name}-{algorithm_type}-{generative_model_type}"
 
@@ -86,8 +88,7 @@ config = EasyDict(
                     layer=2,
                     state_encoder=dict(
                         type="walker_encoder",
-                        args=dict(
-                        ),
+                        args=dict(),
                     ),
                 ),
                 critic=dict(
@@ -104,8 +105,7 @@ config = EasyDict(
                         ),
                         state_encoder=dict(
                             type="walker_encoder",
-                            args=dict(
-                            ),
+                            args=dict(),
                         ),
                     ),
                     VNetwork=dict(
@@ -119,8 +119,7 @@ config = EasyDict(
                         ),
                         state_encoder=dict(
                             type="walker_encoder",
-                            args=dict(
-                            ),
+                            args=dict(),
                         ),
                     ),
                 ),
@@ -148,8 +147,7 @@ config = EasyDict(
                             t_encoder=t_encoder,
                             condition_encoder=dict(
                                 type="walker_encoder",
-                                args=dict(
-                                            ),
+                                args=dict(),
                             ),
                             backbone=dict(
                                 type="TemporalSpatialResidualNet",

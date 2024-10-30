@@ -382,15 +382,15 @@ class FNO2dTemporal(nn.Module):
 
     def forward(self, t, x):
         time_embedding = self.time_encoder(t)
-        
+
         x0 = x
         for i in range(self.num_layers):
             x = self.layers1[i](time_embedding, x)
         x = x + self.layer1_w(x0)
-        #x1 = x
-        #for i in range(self.num_layers):
+        # x1 = x
+        # for i in range(self.num_layers):
         #    x = self.layers2[i](time_embedding, x)
-        #x = x + self.layer2_w(x1)
+        # x = x + self.layer2_w(x1)
 
         return x
 

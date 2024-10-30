@@ -3,14 +3,14 @@ from easydict import EasyDict
 import os
 from tensordict import TensorDict
 
-os.environ['MUJOCO_EGL_DEVICE_ID'] = '0'
-os.environ['MUJOCO_GL'] = 'egl'
-Data_path="/mnt/nfs3/zhangjinouwen/dataset/dm_control/dm_locomotion/rodent_gaps.npy"
-domain_name="rodent"
-task_name="gaps"
-usePixel=True
-useRichData=True
-env_id=f"{domain_name}-{task_name}"
+os.environ["MUJOCO_EGL_DEVICE_ID"] = "0"
+os.environ["MUJOCO_GL"] = "egl"
+Data_path = "/mnt/nfs3/zhangjinouwen/dataset/dm_control/dm_locomotion/rodent_gaps.npy"
+domain_name = "rodent"
+task_name = "gaps"
+usePixel = True
+useRichData = True
+env_id = f"{domain_name}-{task_name}"
 action_size = 38
 state_size = 235
 algorithm_type = "GMPG"
@@ -49,7 +49,7 @@ model = dict(
                 args=dict(
                     usePixel=usePixel,
                     useRichData=useRichData,
-                            ),
+                ),
             ),
             backbone=dict(
                 type="TemporalSpatialResidualNet",
@@ -190,7 +190,6 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
 
-
     def gp_pipeline(config):
 
         gp = GMPGAlgorithm(config)
@@ -211,24 +210,25 @@ if __name__ == "__main__":
         from dm_control import composer
         from dm_control.locomotion.examples import basic_rodent_2020
 
-
         def partial_observation_rodent(obs_dict):
             # Define the keys you want to keep
             keys_to_keep = [
-                'walker/joints_pos',
-                'walker/joints_vel',
-                'walker/tendons_pos',
-                'walker/tendons_vel',
-                'walker/appendages_pos',
-                'walker/world_zaxis',
-                'walker/sensors_accelerometer',
-                'walker/sensors_velocimeter',
-                'walker/sensors_gyro',
-                'walker/sensors_touch',
-                'walker/egocentric_camera'
+                "walker/joints_pos",
+                "walker/joints_vel",
+                "walker/tendons_pos",
+                "walker/tendons_vel",
+                "walker/appendages_pos",
+                "walker/world_zaxis",
+                "walker/sensors_accelerometer",
+                "walker/sensors_velocimeter",
+                "walker/sensors_gyro",
+                "walker/sensors_touch",
+                "walker/egocentric_camera",
             ]
             # Filter the observation dictionary to only include the specified keys
-            filtered_obs = {key: obs_dict[key] for key in keys_to_keep if key in obs_dict}
+            filtered_obs = {
+                key: obs_dict[key] for key in keys_to_keep if key in obs_dict
+            }
             return filtered_obs
 
         max_frame = 100
@@ -237,18 +237,21 @@ if __name__ == "__main__":
         height = 480
         video = np.zeros((max_frame, height, 2 * width, 3), dtype=np.uint8)
 
-
-        env=basic_rodent_2020.rodent_run_gaps()
+        env = basic_rodent_2020.rodent_run_gaps()
         total_reward_list = []
         for i in range(1):
             time_step = env.reset()
-            observation=time_step.observation
+            observation = time_step.observation
             total_reward = 0
             for i in range(max_frame):
                 # env.render()
 
-                video[i] = np.hstack([env.physics.render(height, width, camera_id=0),
-                          env.physics.render(height, width, camera_id=1)])
+                video[i] = np.hstack(
+                    [
+                        env.physics.render(height, width, camera_id=0),
+                        env.physics.render(height, width, camera_id=1),
+                    ]
+                )
 
                 observation = partial_observation_rodent(observation)
 
@@ -256,17 +259,17 @@ if __name__ == "__main__":
                     observation[key] = torch.tensor(
                         observation[key],
                         dtype=torch.float32,
-                        device=config.train.model.GPPolicy.device
+                        device=config.train.model.GPPolicy.device,
                     )
                     if observation[key].dim() == 1 and observation[key].shape[0] == 1:
                         observation[key] = observation[key].unsqueeze(1)
                 observation = TensorDict(observation)
                 action = agent.act(observation)
-                
+
                 time_step = env.step(action)
                 observation = time_step.observation
                 reward = time_step.reward
-                done = time_step.last() 
+                done = time_step.last()
                 discount = time_step.discount
 
                 total_reward += reward
@@ -278,14 +281,15 @@ if __name__ == "__main__":
 
         fig, ax = plt.subplots()
         img = ax.imshow(video[0])
+
         # Function to update each frame
         def update(frame):
             img.set_data(video[frame])
-            return img,
+            return (img,)
 
         # Create animation
         ani = FuncAnimation(fig, update, frames=max_frame, blit=True, interval=50)
-        ani.save('rodent_locomotion.mp4', writer='ffmpeg', fps=30)
+        ani.save("rodent_locomotion.mp4", writer="ffmpeg", fps=30)
         plt.show()
 
         print(

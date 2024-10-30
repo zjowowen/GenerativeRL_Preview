@@ -1,10 +1,10 @@
 import torch
 from easydict import EasyDict
 
-data_path=""
-domain_name="cheetah"
-task_name="run"
-env_id=f"{domain_name}-{task_name}"
+data_path = ""
+domain_name = "cheetah"
+task_name = "run"
+env_id = f"{domain_name}-{task_name}"
 action_size = 6
 state_size = 17
 algorithm_type = "GMPG"
@@ -40,8 +40,7 @@ model = dict(
             t_encoder=t_encoder,
             condition_encoder=dict(
                 type="TensorDictConcatenateEncoder",
-                args=dict(
-                            ),
+                args=dict(),
             ),
             backbone=dict(
                 type="TemporalSpatialResidualNet",
@@ -96,8 +95,7 @@ config = EasyDict(
                         ),
                         state_encoder=dict(
                             type="TensorDictConcatenateEncoder",
-                            args=dict(
-                            ),
+                            args=dict(),
                         ),
                     ),
                     VNetwork=dict(
@@ -111,8 +109,7 @@ config = EasyDict(
                         ),
                         state_encoder=dict(
                             type="TensorDictConcatenateEncoder",
-                            args=dict(
-                            ),
+                            args=dict(),
                         ),
                     ),
                 ),

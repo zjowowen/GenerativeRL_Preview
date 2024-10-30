@@ -41,7 +41,7 @@ model = dict(
                     hidden_sizes=[512, 256, 128],
                     output_dim=action_size,
                     t_dim=t_embedding_dim,
-                    condition_dim=state_size+action_size,
+                    condition_dim=state_size + action_size,
                     condition_hidden_dim=32,
                     t_condition_hidden_dim=128,
                 ),
@@ -54,7 +54,9 @@ config = EasyDict(
     train=dict(
         project=project_name,
         device=device,
-        wandb=dict(project=f"IQL-{env_id}-{algorithm_type}-{generative_model_type}-with-mask"),
+        wandb=dict(
+            project=f"IQL-{env_id}-{algorithm_type}-{generative_model_type}-with-mask"
+        ),
         simulator=dict(
             type="GymEnvSimulator",
             args=dict(

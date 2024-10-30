@@ -4,6 +4,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+
 def register_encoder(module: nn.Module, name: str):
     """
     Overview:
@@ -16,6 +17,7 @@ def register_encoder(module: nn.Module, name: str):
     if name.lower() in ENCODERS:
         raise KeyError(f"Encoder {name} is already registered.")
     ENCODERS[name.lower()] = module
+
 
 def get_encoder(type: str):
     """
@@ -83,6 +85,7 @@ class GaussianFourierProjectionTimeEncoder(nn.Module):
         x_proj = x[..., None] * self.W[None, :]
         return torch.cat([torch.sin(x_proj), torch.cos(x_proj)], dim=-1)
 
+
 class GaussianFourierProjectionEncoder(nn.Module):
     r"""
     Overview:
@@ -144,6 +147,7 @@ class GaussianFourierProjectionEncoder(nn.Module):
             x_proj = torch.flatten(x_proj, start_dim=-1 - self.x_shape.__len__())
 
         return x_proj
+
 
 class ExponentialFourierProjectionTimeEncoder(nn.Module):
     r"""
@@ -223,6 +227,7 @@ class ExponentialFourierProjectionTimeEncoder(nn.Module):
         t_emb = self.mlp(t_freq)
         return t_emb
 
+
 class SinusoidalPosEmb(nn.Module):
     def __init__(self, dim):
         super().__init__()
@@ -237,6 +242,7 @@ class SinusoidalPosEmb(nn.Module):
         emb = torch.cat((emb.sin(), emb.cos()), dim=-1)
         return emb
 
+
 class TensorDictConcatenateEncoder(nn.Module):
     """
     Overview:
@@ -250,7 +256,7 @@ class TensorDictConcatenateEncoder(nn.Module):
         super().__init__()
 
     def forward(self, x: dict) -> torch.Tensor:
-        
+
         tensors = []
         for v in x.values():
             if v.dim() == 1:
@@ -266,21 +272,19 @@ class TensorDictConcatenateEncoder(nn.Module):
         new = torch.cat(tensors, dim=1)
         return new
 
+
 class DiscreteEmbeddingEncoder(nn.Module):
 
     def __init__(self, x_dim, x_num, hidden_dim):
         super().__init__()
-        
+
         self.x_dim = x_dim
         self.x_num = x_num
         self.hidden_dim = hidden_dim
         self.embedding = nn.Embedding(self.x_dim, self.hidden_dim)
-        self.linear = nn.Linear(self.hidden_dim*self.x_num, self.hidden_dim)
+        self.linear = nn.Linear(self.hidden_dim * self.x_num, self.hidden_dim)
 
-    def forward(
-        self,
-        x: torch.Tensor
-    ) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Overview:
             Return the output of the model at time t given the initial state.

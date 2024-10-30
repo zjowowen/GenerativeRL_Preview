@@ -740,8 +740,11 @@ class GMPOAlgorithm:
                 evaluation_results[f"evaluation/return_max"] = return_max
                 evaluation_results[f"evaluation/return_min"] = return_min
 
-                if isinstance(self.dataset, GPD4RLDataset) or isinstance(self.dataset, GPD4RLTensorDictDataset):
+                if isinstance(self.dataset, GPD4RLDataset) or isinstance(
+                    self.dataset, GPD4RLTensorDictDataset
+                ):
                     import d4rl
+
                     env_id = config.dataset.args.env_id
                     evaluation_results[f"evaluation/return_mean_normalized"] = (
                         d4rl.get_normalized_score(env_id, return_mean)
@@ -770,13 +773,14 @@ class GMPOAlgorithm:
                 num_steps,
                 guidance_scale=1.0,
                 random_policy=False,
-                random_ratio=0.0
+                random_ratio=0.0,
             ):
                 if random_policy:
                     return self.simulator.collect_steps(
                         policy=None, num_steps=num_steps, random_policy=True
                     )
                 else:
+
                     def policy(obs: np.ndarray) -> np.ndarray:
                         obs = torch.tensor(
                             obs,
@@ -787,9 +791,9 @@ class GMPOAlgorithm:
                             model.sample(
                                 condition=obs,
                                 t_span=(
-                                    torch.linspace(0.0, 1.0, config.parameter.t_span).to(
-                                        config.model.GPPolicy.device
-                                    )
+                                    torch.linspace(
+                                        0.0, 1.0, config.parameter.t_span
+                                    ).to(config.model.GPPolicy.device)
                                     if hasattr(config.parameter, "t_span")
                                     and config.parameter.t_span is not None
                                     else None
@@ -809,9 +813,11 @@ class GMPOAlgorithm:
                             # randomly select a value from -1 to 1
                             action[i] = np.random.rand() * 2 - 1
                         return action
+
                     return self.simulator.collect_steps(
                         policy=policy, num_steps=num_steps
                     )
+
             # ---------------------------------------
             # behavior training code ↓
             # ---------------------------------------
@@ -825,7 +831,8 @@ class GMPOAlgorithm:
             )
             # 如果 data 不是 TensorDict，则转换
             if not isinstance(data, TensorDict):
-                def onlinedatatoTensordict(data,action_augment_num):
+
+                def onlinedatatoTensordict(data, action_augment_num):
                     if isinstance(data, list):
                         # Assuming data is a list of dictionaries
                         states = []
@@ -837,16 +844,22 @@ class GMPOAlgorithm:
                         for item in data:
                             states.append(torch.from_numpy(item["obs"]).float())
                             actions.append(torch.from_numpy(item["action"]).float())
-                            next_states.append(torch.from_numpy(item["next_obs"]).float())
-                            rewards.append(torch.tensor(item["reward"]).float().unsqueeze(0))
-                            is_finished.append(torch.tensor(float(item["done"])).float().unsqueeze(0))
+                            next_states.append(
+                                torch.from_numpy(item["next_obs"]).float()
+                            )
+                            rewards.append(
+                                torch.tensor(item["reward"]).float().unsqueeze(0)
+                            )
+                            is_finished.append(
+                                torch.tensor(float(item["done"])).float().unsqueeze(0)
+                            )
 
                         self.states = torch.stack(states)
                         self.actions = torch.stack(actions)
                         self.next_states = torch.stack(next_states)
                         self.rewards = torch.stack(rewards)
                         self.is_finished = torch.stack(is_finished)
-                        
+
                         # Reward tuning code goes here...
 
                         self.len = self.states.shape[0]
@@ -856,22 +869,32 @@ class GMPOAlgorithm:
                         # Storing the data
                         if self.action_augment_num:
                             self.storage.set(
-                                range(self.len), TensorDict(
+                                range(self.len),
+                                TensorDict(
                                     {
                                         "s": self.states,
                                         "a": self.actions,
                                         "r": self.rewards,
                                         "s_": self.next_states,
                                         "d": self.is_finished,
-                                        "fake_a": torch.zeros_like(self.actions).unsqueeze(1).repeat_interleave(self.action_augment_num, dim=1),
-                                        "fake_a_": torch.zeros_like(self.actions).unsqueeze(1).repeat_interleave(self.action_augment_num, dim=1),
+                                        "fake_a": torch.zeros_like(self.actions)
+                                        .unsqueeze(1)
+                                        .repeat_interleave(
+                                            self.action_augment_num, dim=1
+                                        ),
+                                        "fake_a_": torch.zeros_like(self.actions)
+                                        .unsqueeze(1)
+                                        .repeat_interleave(
+                                            self.action_augment_num, dim=1
+                                        ),
                                     },
                                     batch_size=[self.len],
-                                )
+                                ),
                             )
                         else:
                             self.storage.set(
-                                range(self.len), TensorDict(
+                                range(self.len),
+                                TensorDict(
                                     {
                                         "s": self.states,
                                         "a": self.actions,
@@ -880,16 +903,16 @@ class GMPOAlgorithm:
                                         "d": self.is_finished,
                                     },
                                     batch_size=[self.len],
-                                )
+                                ),
                             )
                         return self.storage
                     else:
-                        raise ValueError("Expected data to be a list of dictionaries")               
-                
-                # 将 data 转换为 TensorDict 并存储在 storage 中
-            tensor_data_strorge = onlinedatatoTensordict(data,False)
+                        raise ValueError("Expected data to be a list of dictionaries")
 
-            replay_buffer=TensorDictReplayBuffer(
+                # 将 data 转换为 TensorDict 并存储在 storage 中
+            tensor_data_strorge = onlinedatatoTensordict(data, False)
+
+            replay_buffer = TensorDictReplayBuffer(
                 storage=tensor_data_strorge,
                 batch_size=config.parameter.behaviour_policy.batch_size,
                 sampler=SamplerWithoutReplacement(),
@@ -967,11 +990,12 @@ class GMPOAlgorithm:
             # )
             critic_train_iter = 0
             for epoch in track(
-                range(config.parameter.online_rl.iterations), description="Online RL iteration"
+                range(config.parameter.online_rl.iterations),
+                description="Online RL iteration",
             ):
                 if self.critic_train_epoch >= epoch:
                     continue
-                
+
                 counter = 1
 
                 v_loss_sum = 0.0
@@ -992,7 +1016,6 @@ class GMPOAlgorithm:
                     relative_energy_sum = 0.0
                     matching_loss_sum = 0.0
 
-
                 # ---------------------------------------
                 # Data collection code ↓
                 # ---------------------------------------
@@ -1003,7 +1026,7 @@ class GMPOAlgorithm:
                     random_policy=False,
                     random_ratio=0.01,
                 )
-                tensor_data_strorge = onlinedatatoTensordict(data,False)
+                tensor_data_strorge = onlinedatatoTensordict(data, False)
 
                 for idx in range(tensor_data_strorge.max_size):
                     data = tensor_data_strorge.get(idx)

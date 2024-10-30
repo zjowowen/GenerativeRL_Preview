@@ -166,11 +166,22 @@ if __name__ == "__main__":
 
         for i, data in enumerate(data_list):
             im = plt.scatter(data[:, 0], data[:, 1], s=1)
-            title = plt.text(0.5, 1.05, f't={i/len(data_list):.2f}', ha='center', va='bottom', transform=plt.gca().transAxes)
+            title = plt.text(
+                0.5,
+                1.05,
+                f"t={i/len(data_list):.2f}",
+                ha="center",
+                va="bottom",
+                transform=plt.gca().transAxes,
+            )
             ims.append([im, title])
 
         ani = animation.ArtistAnimation(fig, ims, interval=0.1, blit=True)
-        ani.save(os.path.join(video_save_path, f'iteration_{iteration}.mp4'), fps=fps, dpi=dpi)
+        ani.save(
+            os.path.join(video_save_path, f"iteration_{iteration}.mp4"),
+            fps=fps,
+            dpi=dpi,
+        )
         # clean up
         plt.close(fig)
         plt.clf()
@@ -218,7 +229,9 @@ if __name__ == "__main__":
             x_t = [
                 x.squeeze(0) for x in torch.split(x_t, split_size_or_sections=1, dim=0)
             ]
-            render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
+            render_video(
+                x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100
+            )
 
         batch_data = next(data_generator)
         batch_data = batch_data.to(config.device)

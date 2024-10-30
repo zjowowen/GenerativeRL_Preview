@@ -99,6 +99,8 @@ python ./grl_pipelines/benchmark/gmpo/gvp/halfcheetah_medium_expert.py
 | Walker walk                     | 869 ± 241  | 656 ± 233  |
 | **Average**                     | 561 ± 243  | 599 ± 230  |
 
+Please download [RL-Unplugged DeepMind Control Suite](https://huggingface.co/datasets/OpenDILabCommunity/rl_unplugged_dm_control_suite) datasets from Hugging Face repository.
+
 ## Requisites
 
 For different RL environments, you need to install the corresponding packages. For example, to install the Mujoco and D4RL environments on an Ubuntu 20.04 system, run the following command:

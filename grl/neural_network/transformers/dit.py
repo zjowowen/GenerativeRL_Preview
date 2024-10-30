@@ -615,7 +615,7 @@ class DiT(nn.Module):
         class_dropout_prob: float = 0.1,
         num_classes: int = 1000,
         learn_sigma: bool = True,
-        condition: bool=True,
+        condition: bool = True,
     ):
         """
         Overview:
@@ -644,7 +644,9 @@ class DiT(nn.Module):
         )
         self.t_embedder = ExponentialFourierProjectionTimeEncoder(hidden_size)
         if condition == True:
-            self.y_embedder = LabelEmbedder(num_classes, hidden_size, class_dropout_prob)
+            self.y_embedder = LabelEmbedder(
+                num_classes, hidden_size, class_dropout_prob
+            )
         num_patches = self.x_embedder.num_patches
         # Will use fixed sin-cos embedding:
         self.pos_embed = nn.Parameter(

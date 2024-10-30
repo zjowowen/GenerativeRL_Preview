@@ -1,15 +1,15 @@
 import torch
 from easydict import EasyDict
 
-path=""
-domain_name="cheetah"
-task_name="run"
-env_id=f"{domain_name}-{task_name}"
-algorithm="IDQL"
+path = ""
+domain_name = "cheetah"
+task_name = "run"
+env_id = f"{domain_name}-{task_name}"
+algorithm = "IDQL"
 action_size = 6
 state_size = 17
 
-project_name =  f"{env_id}-{algorithm}"
+project_name = f"{env_id}-{algorithm}"
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 t_embedding_dim = 32
 t_encoder = dict(
@@ -55,8 +55,7 @@ config = EasyDict(
                         ),
                         state_encoder=dict(
                             type="TensorDictConcatenateEncoder",
-                            args=dict(
-                            ),
+                            args=dict(),
                         ),
                     ),
                     VNetwork=dict(
@@ -70,8 +69,7 @@ config = EasyDict(
                         ),
                         state_encoder=dict(
                             type="TensorDictConcatenateEncoder",
-                            args=dict(
-                            ),
+                            args=dict(),
                         ),
                     ),
                 ),
@@ -99,8 +97,7 @@ config = EasyDict(
                             t_encoder=t_encoder,
                             condition_encoder=dict(
                                 type="TensorDictConcatenateEncoder",
-                                args=dict(
-                                            ),
+                                args=dict(),
                             ),
                             backbone=dict(
                                 type="TemporalConcatenateMLPResNet",

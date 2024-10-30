@@ -2,61 +2,53 @@ import torch
 from easydict import EasyDict
 from grl.neural_network.encoders import register_encoder
 import torch.nn as nn
+
+
 class finger_turn_hard(nn.Module):
     def __init__(self):
         super(finger_turn_hard, self).__init__()
         self.position = nn.Sequential(
-            nn.Linear(4,8),
-            nn.ReLU(),
-            nn.Linear(8, 8),
-            nn.LayerNorm(8)
+            nn.Linear(4, 8), nn.ReLU(), nn.Linear(8, 8), nn.LayerNorm(8)
         )
 
         self.dist_to_target = nn.Sequential(
-            nn.Linear(1, 2),
-            nn.ReLU(),
-            nn.Linear(2, 2),
-            nn.LayerNorm(2)
+            nn.Linear(1, 2), nn.ReLU(), nn.Linear(2, 2), nn.LayerNorm(2)
         )
-        
-        self.touch=nn.Sequential(
-            nn.Linear(2, 4),
-            nn.ReLU(),
-            nn.Linear(4, 4),
-            nn.LayerNorm(4)
+
+        self.touch = nn.Sequential(
+            nn.Linear(2, 4), nn.ReLU(), nn.Linear(4, 4), nn.LayerNorm(4)
         )
-        
-        self.target_position=nn.Sequential(
-            nn.Linear(2, 4),
-            nn.ReLU(),
-            nn.Linear(4, 4),
-            nn.LayerNorm(4)
+
+        self.target_position = nn.Sequential(
+            nn.Linear(2, 4), nn.ReLU(), nn.Linear(4, 4), nn.LayerNorm(4)
         )
-        
-        self.velocity=nn.Sequential(
-            nn.Linear(3, 6),
-            nn.ReLU(),
-            nn.Linear(6, 6),
-            nn.LayerNorm(6)
+
+        self.velocity = nn.Sequential(
+            nn.Linear(3, 6), nn.ReLU(), nn.Linear(6, 6), nn.LayerNorm(6)
         )
+
     def forward(self, x: dict) -> torch.Tensor:
         if x["dist_to_target"].dim() == 1:
-            dist_to_target=x["dist_to_target"].unsqueeze(-1)  
+            dist_to_target = x["dist_to_target"].unsqueeze(-1)
         else:
-            dist_to_target=x["dist_to_target"]
+            dist_to_target = x["dist_to_target"]
         position = self.position(x["position"])
         dist_to_target = self.dist_to_target(dist_to_target)
         touch = self.touch(x["touch"])
         target = self.target_position(x["target_position"])
         velocity = self.velocity(x["velocity"])
-        combined_output = torch.cat([position, dist_to_target, touch, target, velocity], dim=-1)
+        combined_output = torch.cat(
+            [position, dist_to_target, touch, target, velocity], dim=-1
+        )
         return combined_output
-register_encoder(finger_turn_hard,"finger_turn_hard") 
 
-data_path=""
-domain_name="finger"
-task_name="turn_hard"
-env_id=f"{domain_name}-{task_name}"
+
+register_encoder(finger_turn_hard, "finger_turn_hard")
+
+data_path = ""
+domain_name = "finger"
+task_name = "turn_hard"
+env_id = f"{domain_name}-{task_name}"
 action_size = 2
 state_size = 12
 algorithm_type = "GMPO"
@@ -110,7 +102,9 @@ config = EasyDict(
     train=dict(
         project=project_name,
         device=device,
-        wandb=dict(project=f"IQL-{domain_name}-{task_name}-{algorithm_type}-{generative_model_type}"),
+        wandb=dict(
+            project=f"IQL-{domain_name}-{task_name}-{algorithm_type}-{generative_model_type}"
+        ),
         simulator=dict(
             type="DeepMindControlEnvSimulator",
             args=dict(
@@ -144,8 +138,7 @@ config = EasyDict(
                         ),
                         state_encoder=dict(
                             type="finger_turn_hard",
-                            args=dict(
-                            ),
+                            args=dict(),
                         ),
                     ),
                     VNetwork=dict(
@@ -159,8 +152,7 @@ config = EasyDict(
                         ),
                         state_encoder=dict(
                             type="finger_turn_hard",
-                            args=dict(
-                            ),
+                            args=dict(),
                         ),
                     ),
                 ),

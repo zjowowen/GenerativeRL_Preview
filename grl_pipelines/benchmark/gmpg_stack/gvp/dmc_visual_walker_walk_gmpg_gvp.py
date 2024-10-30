@@ -1,12 +1,12 @@
 import torch
 from easydict import EasyDict
 
-data_path=""
-domain_name="walker"
-task_name="walk"
-policy_type="medium"
-pixel_size=64
-env_id=f"{domain_name}_{task_name}"
+data_path = ""
+domain_name = "walker"
+task_name = "walk"
+policy_type = "medium"
+pixel_size = 64
+env_id = f"{domain_name}_{task_name}"
 action_size = 6
 stack_frames = 4
 state_size = [stack_frames, 64, 64, 3]
@@ -22,33 +22,34 @@ device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("
 
 import torch.nn as nn
 
+
 class Encoder(nn.Module):
     def __init__(self, output_dim, stack_frames=4):
         super(Encoder, self).__init__()
-        
+
         # Define the CNN layers
-        self.conv1 = nn.Conv2d(3*stack_frames, 32, kernel_size=3, stride=2)
+        self.conv1 = nn.Conv2d(3 * stack_frames, 32, kernel_size=3, stride=2)
         self.conv2 = nn.Conv2d(32, 32, kernel_size=3, stride=1)
         self.conv3 = nn.Conv2d(32, 32, kernel_size=3, stride=1)
 
-        
         # Flatten and fully connected layer
-        self.fc = nn.Linear(32*27*27, output_dim)
-        
+        self.fc = nn.Linear(32 * 27 * 27, output_dim)
+
         # Activation function
         self.relu = nn.ReLU()
 
     def forward(self, x):
         x = x.float() / 255.0 - 0.5
         x = x.permute(0, 4, 1, 2, 3)
-        x = x.reshape(x.size(0), x.size(1)*x.size(2), x.size(3), x.size(4))
+        x = x.reshape(x.size(0), x.size(1) * x.size(2), x.size(3), x.size(4))
         x = self.relu(self.conv1(x))
         x = self.relu(self.conv2(x))
         x = self.relu(self.conv3(x))
-        x = x.reshape(x.size(0), -1) 
+        x = x.reshape(x.size(0), -1)
         x = self.fc(x)
         return x
-    
+
+
 from grl.neural_network.encoders import register_encoder
 
 register_encoder(Encoder, "Encoder")
@@ -102,7 +103,9 @@ config = EasyDict(
     train=dict(
         project=project_name,
         device=device,
-        wandb=dict(project=f"IQL-{domain_name}-{task_name}-{policy_type}-{pixel_size}-{algorithm_type}-{generative_model_type}"),
+        wandb=dict(
+            project=f"IQL-{domain_name}-{task_name}-{policy_type}-{pixel_size}-{algorithm_type}-{generative_model_type}"
+        ),
         simulator=dict(
             type="DeepMindControlVisualEnvSimulator2",
             args=dict(
@@ -134,7 +137,11 @@ config = EasyDict(
                         backbone=dict(
                             type="ConcatenateMLP",
                             args=dict(
-                                hidden_sizes=[action_size + state_condition_hidden_dim, 256, 256],
+                                hidden_sizes=[
+                                    action_size + state_condition_hidden_dim,
+                                    256,
+                                    256,
+                                ],
                                 output_size=1,
                                 activation="relu",
                             ),

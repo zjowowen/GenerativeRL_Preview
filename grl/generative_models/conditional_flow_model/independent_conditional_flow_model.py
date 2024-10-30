@@ -167,7 +167,6 @@ class IndependentConditionalFlowModel(nn.Module):
             solver_config=solver_config,
         )[-1]
 
-
     def sample_forward_process(
         self,
         t_span: torch.Tensor = None,
@@ -523,7 +522,7 @@ class IndependentConditionalFlowModel(nn.Module):
             log_likelihood (:obj:`torch.Tensor`): The log likelihood of the final state given the initial state and the condition.
         """
 
-        model_drift = lambda t, x: - self.model(1 - t, x, condition)
+        model_drift = lambda t, x: -self.model(1 - t, x, condition)
         model_params = find_parameters(self.model)
 
         def compute_trace_of_jacobian_general(dx, x):
@@ -626,9 +625,7 @@ class IndependentConditionalFlowModel(nn.Module):
         with_grad: bool = False,
         solver_config: EasyDict = None,
         using_Hutchinson_trace_estimator: bool = True,
-    ) -> Tuple[
-        Union[torch.Tensor, TensorDict, treetensor.torch.Tensor], torch.Tensor
-    ]:
+    ) -> Tuple[Union[torch.Tensor, TensorDict, treetensor.torch.Tensor], torch.Tensor]:
         """
         Overview:
             Sample from the model, return the final state and the log probability of the initial state.
@@ -705,9 +702,7 @@ class IndependentConditionalFlowModel(nn.Module):
         """
 
         if mask is None:
-            return self.flow_matching_loss(
-                self.model, x0, x1, condition, average
-            )
+            return self.flow_matching_loss(self.model, x0, x1, condition, average)
         else:
             # loss shape is (B, D)
             loss = self.velocity_function_.flow_matching_loss_icfm(
@@ -715,7 +710,7 @@ class IndependentConditionalFlowModel(nn.Module):
             )
 
             # replace the False elements in mask with 0
-            loss=loss.masked_fill(~mask, 0.)
+            loss = loss.masked_fill(~mask, 0.0)
 
             # num of elements in mask, sum them batch-wise, there maybe more than 1 dim in mask
             num_elements = mask.sum(dim=tuple(range(1, len(mask.shape))))
@@ -751,7 +746,7 @@ class IndependentConditionalFlowModel(nn.Module):
             with_grad (:obj:`bool`): Whether to return the gradient.
             solver_config (:obj:`EasyDict`): The configuration of the solver.
         """
-        
+
         return self.forward_sample_process(
             x=x,
             t_span=t_span,
@@ -759,7 +754,7 @@ class IndependentConditionalFlowModel(nn.Module):
             with_grad=with_grad,
             solver_config=solver_config,
         )[-1]
-        
+
     def forward_sample_process(
         self,
         x: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
@@ -784,7 +779,7 @@ class IndependentConditionalFlowModel(nn.Module):
         # TODO: very important function
         # TODO: validate these functions
         t_span = t_span.to(self.device)
-        
+
         if solver_config is not None:
             solver = get_solver(solver_config.type)(**solver_config.args)
         else:
@@ -792,11 +787,12 @@ class IndependentConditionalFlowModel(nn.Module):
                 self, "solver"
             ), "solver must be specified in config or solver_config"
             solver = self.solver
-        
+
         if isinstance(solver, ODESolver):
+
             def reverse_drift(t, x):
-                reverse_t=t_span.max()-t+t_span.min()
-                return - self.model(t=reverse_t, x=x, condition=condition)
+                reverse_t = t_span.max() - t + t_span.min()
+                return -self.model(t=reverse_t, x=x, condition=condition)
 
             # TODO: make it compatible with TensorDict
             if solver.library == "torchdiffeq_adjoint":
@@ -834,54 +830,54 @@ class IndependentConditionalFlowModel(nn.Module):
                 "Solver type {} is not implemented".format(self.config.solver.type)
             )
         return data
-                
+
     def optimal_transport_flow_matching_loss(
-            self,
-            x0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            x1: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
-            condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
-            average: bool = True,
-        ) -> torch.Tensor:
-            """
-            Overview:
-                Return the flow matching loss function of the model given the initial state and the condition, using the optimal transport plan to match samples from two distributions.
-            Arguments:
-                x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
-                condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
-            """
+        self,
+        x0: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        x1: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor],
+        condition: Union[torch.Tensor, TensorDict, treetensor.torch.Tensor] = None,
+        average: bool = True,
+    ) -> torch.Tensor:
+        """
+        Overview:
+            Return the flow matching loss function of the model given the initial state and the condition, using the optimal transport plan to match samples from two distributions.
+        Arguments:
+            x (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input state.
+            condition (:obj:`Union[torch.Tensor, TensorDict, treetensor.torch.Tensor]`): The input condition.
+        """
 
-            a = ot.unif(x0.shape[0])
-            b = ot.unif(x1.shape[0])
-            # TODO: make it compatible with TensorDict and treetensor.torch.Tensor
-            if x0.dim() > 2:
-                x0_ = x0.reshape(x0.shape[0], -1)
-            else:
-                x0_ = x0
-            if x1.dim() > 2:
-                x1_ = x1.reshape(x1.shape[0], -1)
-            else:
-                x1_ = x1
+        a = ot.unif(x0.shape[0])
+        b = ot.unif(x1.shape[0])
+        # TODO: make it compatible with TensorDict and treetensor.torch.Tensor
+        if x0.dim() > 2:
+            x0_ = x0.reshape(x0.shape[0], -1)
+        else:
+            x0_ = x0
+        if x1.dim() > 2:
+            x1_ = x1.reshape(x1.shape[0], -1)
+        else:
+            x1_ = x1
 
-            M = torch.cdist(x0_, x1_) ** 2
-            p = ot.emd(a, b, M.detach().cpu().numpy())
-            assert np.all(np.isfinite(p)), "p is not finite"
+        M = torch.cdist(x0_, x1_) ** 2
+        p = ot.emd(a, b, M.detach().cpu().numpy())
+        assert np.all(np.isfinite(p)), "p is not finite"
 
-            p_flatten = p.flatten()
-            p_flatten = p_flatten / p_flatten.sum()
+        p_flatten = p.flatten()
+        p_flatten = p_flatten / p_flatten.sum()
 
-            choices = np.random.choice(
-                p.shape[0] * p.shape[1], p=p_flatten, size=x0.shape[0], replace=True
-            )
+        choices = np.random.choice(
+            p.shape[0] * p.shape[1], p=p_flatten, size=x0.shape[0], replace=True
+        )
 
-            i, j = np.divmod(choices, p.shape[1])
-            x0_ot = x0[i]
-            x1_ot = x1[j]
-            if condition is not None:
-                # condition_ot = condition0_ot = condition1_ot = condition[j]
-                condition_ot = condition[j]
-            else:
-                condition_ot = None
+        i, j = np.divmod(choices, p.shape[1])
+        x0_ot = x0[i]
+        x1_ot = x1[j]
+        if condition is not None:
+            # condition_ot = condition0_ot = condition1_ot = condition[j]
+            condition_ot = condition[j]
+        else:
+            condition_ot = None
 
-            return self.velocity_function_.flow_matching_loss_icfm(
-                self.model, x0_ot, x1_ot, condition_ot, average
-            )
+        return self.velocity_function_.flow_matching_loss_icfm(
+            self.model, x0_ot, x1_ot, condition_ot, average
+        )

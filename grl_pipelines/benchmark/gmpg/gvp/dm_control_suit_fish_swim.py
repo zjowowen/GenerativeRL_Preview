@@ -3,54 +3,50 @@ from easydict import EasyDict
 
 from grl.neural_network.encoders import register_encoder
 import torch.nn as nn
+
+
 class fish_swim(nn.Module):
     def __init__(self):
         super(fish_swim, self).__init__()
         self.joint_angles = nn.Sequential(
-            nn.Linear(7,14),
+            nn.Linear(7, 14),
             nn.ReLU(),
             nn.Linear(14, 14),
             nn.LayerNorm(14),
         )
 
         self.upright = nn.Sequential(
-            nn.Linear(1, 2),
-            nn.ReLU(),
-            nn.Linear(2, 2),
-            nn.LayerNorm(2)
+            nn.Linear(1, 2), nn.ReLU(), nn.Linear(2, 2), nn.LayerNorm(2)
         )
-        
-        self.target=nn.Sequential(
-            nn.Linear(3, 6),
-            nn.ReLU(),
-            nn.Linear(6, 6),
-            nn.LayerNorm(6)
+
+        self.target = nn.Sequential(
+            nn.Linear(3, 6), nn.ReLU(), nn.Linear(6, 6), nn.LayerNorm(6)
         )
-        
-        self.velocity=nn.Sequential(
-            nn.Linear(13, 26),
-            nn.ReLU(),
-            nn.Linear(26, 26),
-            nn.LayerNorm(26)
+
+        self.velocity = nn.Sequential(
+            nn.Linear(13, 26), nn.ReLU(), nn.Linear(26, 26), nn.LayerNorm(26)
         )
+
     def forward(self, x: dict) -> torch.Tensor:
         if x["upright"].dim() == 1:
-            upright=x["upright"].unsqueeze(-1)  
+            upright = x["upright"].unsqueeze(-1)
         else:
-            upright=x["upright"]
-        joint_angles=self.joint_angles(x["joint_angles"])
-        upright=self.upright(upright)
-        target=self.target(x["target"])
-        velocity=self.velocity(x["velocity"])
-        combined_output = torch.cat([joint_angles,upright, target,velocity], dim=-1)
+            upright = x["upright"]
+        joint_angles = self.joint_angles(x["joint_angles"])
+        upright = self.upright(upright)
+        target = self.target(x["target"])
+        velocity = self.velocity(x["velocity"])
+        combined_output = torch.cat([joint_angles, upright, target, velocity], dim=-1)
         return combined_output
-register_encoder(fish_swim,"fish_swim")  
 
 
-data_path=""
-domain_name="fish"
-task_name="swim"
-env_id=f"{domain_name}-{task_name}"
+register_encoder(fish_swim, "fish_swim")
+
+
+data_path = ""
+domain_name = "fish"
+task_name = "swim"
+env_id = f"{domain_name}-{task_name}"
 action_size = 5
 state_size = 24
 algorithm_type = "GMPG"
@@ -86,8 +82,7 @@ model = dict(
             t_encoder=t_encoder,
             condition_encoder=dict(
                 type="fish_swim",
-                args=dict(
-                            ),
+                args=dict(),
             ),
             backbone=dict(
                 type="TemporalSpatialResidualNet",
@@ -142,8 +137,7 @@ config = EasyDict(
                         ),
                         state_encoder=dict(
                             type="fish_swim",
-                            args=dict(
-                            ),
+                            args=dict(),
                         ),
                     ),
                     VNetwork=dict(
@@ -157,8 +151,7 @@ config = EasyDict(
                         ),
                         state_encoder=dict(
                             type="fish_swim",
-                            args=dict(
-                            ),
+                            args=dict(),
                         ),
                     ),
                 ),

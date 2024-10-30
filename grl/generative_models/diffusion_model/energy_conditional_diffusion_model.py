@@ -345,10 +345,16 @@ class EnergyConditionalDiffusionModel(nn.Module):
             if isinstance(condition, TensorDict):
                 repeated_condition = TensorDict(
                     {
-                        key: torch.repeat_interleave(value, torch.prod(extra_batch_size), dim=0)
+                        key: torch.repeat_interleave(
+                            value, torch.prod(extra_batch_size), dim=0
+                        )
                         for key, value in condition.items()
                     },
-                    batch_size=int(torch.prod(torch.tensor([*condition.batch_size,extra_batch_size]))),
+                    batch_size=int(
+                        torch.prod(
+                            torch.tensor([*condition.batch_size, extra_batch_size])
+                        )
+                    ),
                 )
                 repeated_condition.to(condition.device)
                 condition = repeated_condition
@@ -1316,14 +1322,17 @@ class EnergyConditionalDiffusionModel(nn.Module):
         t_random = torch.stack([t_random] * x.shape[1], dim=1)
         if condition is not None:
             if isinstance(condition, TensorDict):
-                condition_repeat_reshape = TensorDict({}, batch_size=[x.shape[0] * x.shape[1]]).to(x.device)
+                condition_repeat_reshape = TensorDict(
+                    {}, batch_size=[x.shape[0] * x.shape[1]]
+                ).to(x.device)
                 for key, value in condition.items():
                     if isinstance(value, torch.Tensor):
                         value_repeat = torch.stack([value] * x.shape[1], axis=1)
                         value_repeat = value_repeat.reshape(
                             value_repeat.shape[0] * value_repeat.shape[1],
-                            *value_repeat.shape[2:])
-                        condition_repeat_reshape.set(key, value_repeat)    
+                            *value_repeat.shape[2:]
+                        )
+                        condition_repeat_reshape.set(key, value_repeat)
             else:
                 condition_repeat = torch.stack([condition] * x.shape[1], axis=1)
                 condition_repeat_reshape = condition_repeat.reshape(
@@ -1340,14 +1349,17 @@ class EnergyConditionalDiffusionModel(nn.Module):
         x_t = self.diffusion_process.direct_sample(t_random, x, condition)
         if condition is not None:
             if isinstance(condition, TensorDict):
-                condition_repeat_reshape_new = TensorDict({}, batch_size=[x.shape[0] * x.shape[1]]).to(x.device)
+                condition_repeat_reshape_new = TensorDict(
+                    {}, batch_size=[x.shape[0] * x.shape[1]]
+                ).to(x.device)
                 for key, value in condition.items():
                     value_repeat = torch.stack([value] * x_t.shape[1], axis=1)
                     value_reshape = value_repeat.reshape(
-                        value_repeat.shape[0] * value_repeat.shape[1], *value_repeat.shape[2:]
+                        value_repeat.shape[0] * value_repeat.shape[1],
+                        *value_repeat.shape[2:]
                     )
                     condition_repeat_reshape_new.set(key, value_reshape)
-            else:       
+            else:
                 condition_repeat = torch.stack([condition] * x_t.shape[1], axis=1)
                 condition_repeat_reshape_new = condition_repeat.reshape(
                     condition_repeat.shape[0] * condition_repeat.shape[1],
@@ -1360,7 +1372,7 @@ class EnergyConditionalDiffusionModel(nn.Module):
             )
             xt_energy_guidance = xt_energy_guidance.reshape(
                 x_t.shape[0], x_t.shape[1]
-            ).squeeze(dim=-1)  
+            ).squeeze(dim=-1)
         else:
             # xt_energy_guidance = self.energy_guidance(t_random, x_t).squeeze(dim=-1)
             x_t_reshape = x_t.reshape(x_t.shape[0] * x_t.shape[1], *x_t.shape[2:])
@@ -1368,7 +1380,7 @@ class EnergyConditionalDiffusionModel(nn.Module):
             xt_energy_guidance = self.energy_guidance(t_random_reshape, x_t_reshape)
             xt_energy_guidance = xt_energy_guidance.reshape(
                 x_t.shape[0], x_t.shape[1]
-            ).squeeze(dim=-1)          
+            ).squeeze(dim=-1)
         log_xt_relative_energy = nn.LogSoftmax(dim=1)(xt_energy_guidance)
         x0_relative_energy = nn.Softmax(dim=1)(energy * self.alpha)
         loss = -torch.mean(

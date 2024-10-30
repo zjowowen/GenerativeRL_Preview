@@ -198,7 +198,9 @@ class DiscreteFlowMatchingModel(nn.Module):
             conditional_probability_velocity = torch.einsum(
                 "b,bij->bij", 1 / (1 - t), probability_denoiser_softmax - xt_one_hot
             )
-            xt_new = xt_one_hot + torch.einsum("b,bij->bij", t_next - t, conditional_probability_velocity)
+            xt_new = xt_one_hot + torch.einsum(
+                "b,bij->bij", t_next - t, conditional_probability_velocity
+            )
             # sample from xt_new
             xt = torch.distributions.Categorical(probs=xt_new).sample()
             xt_history.append(xt)
@@ -270,7 +272,9 @@ class DiscreteFlowMatchingModel(nn.Module):
         # probability_denoiser_softmax is of shape (B, N, D)
 
         eps = 1e-6
-        probability_denoiser_softmax = torch.clamp(probability_denoiser_softmax, eps, 1 - eps)
+        probability_denoiser_softmax = torch.clamp(
+            probability_denoiser_softmax, eps, 1 - eps
+        )
 
         loss = -torch.sum(
             x1_one_hot * torch.log(probability_denoiser_softmax), dim=[-1, -2]

@@ -1,5 +1,9 @@
 from .gym_env_simulator import GymEnvSimulator
-from .dm_control_env_simulator import DeepMindControlEnvSimulator, DeepMindControlVisualEnvSimulator, DeepMindControlVisualEnvSimulator2
+from .dm_control_env_simulator import (
+    DeepMindControlEnvSimulator,
+    DeepMindControlVisualEnvSimulator,
+    DeepMindControlVisualEnvSimulator2,
+)
 
 
 def get_simulator(type: str):

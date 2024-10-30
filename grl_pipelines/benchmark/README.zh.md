@@ -98,6 +98,8 @@ python ./grl_pipelines/benchmark/gmpo/gvp/halfcheetah_medium_expert.py
 | Walker walk                     | 869 ± 241  | 656 ± 233  |
 | **Average**                     | 561 ± 243  | 599 ± 230  |
 
+请从 Hugging Face 仓库下载 [RL-Unplugged DeepMind Control Suite](https://huggingface.co/datasets/OpenDILabCommunity/rl_unplugged_dm_control_suite) 数据集。
+
 ## 配置要求
 
 对于不同的强化学习环境，需要安装对应的软件包。例如，在 Ubuntu 20.04 系统上安装 Mujoco 和 D4RL 环境，运行以下命令：

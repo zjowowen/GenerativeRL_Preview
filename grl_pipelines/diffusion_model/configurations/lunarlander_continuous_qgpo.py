@@ -3,7 +3,7 @@ from easydict import EasyDict
 
 action_size = 2
 state_size = 8
-env_id="LunarLanderContinuous-v2"
+env_id = "LunarLanderContinuous-v2"
 action_augment_num = 16
 
 algorithm_type = "QGPO"

@@ -63,7 +63,7 @@ config = EasyDict(
                             t_dim=t_embedding_dim,
                             condition_dim=x_size,
                             condition_hidden_dim=t_embedding_dim,
-                            t_condition_hidden_dim=2*t_embedding_dim,
+                            t_condition_hidden_dim=2 * t_embedding_dim,
                         ),
                     ),
                 ),
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     data = (data - data.min()) / (data.max() - data.min())
     data = data * 10 - 5
 
-    # 
+    #
     optimizer = torch.optim.Adam(
         flow_model.parameters(),
         lr=config.parameter.lr,
@@ -158,7 +158,9 @@ if __name__ == "__main__":
         plt.scatter(data[:, 0], data[:, 1])
         plt.show()
 
-    def render_video(data_list, video_save_path, iteration, fps=100, dpi=100, special=""):
+    def render_video(
+        data_list, video_save_path, iteration, fps=100, dpi=100, special=""
+    ):
         if not os.path.exists(video_save_path):
             os.makedirs(video_save_path)
         fig = plt.figure(figsize=(6, 6))
@@ -173,7 +175,13 @@ if __name__ == "__main__":
             ims.append([im])
         ani = animation.ArtistAnimation(fig, ims, interval=0.1, blit=True)
         ani.save(
-            os.path.join(video_save_path, f"iteration_{iteration}.mp4") if special == "" else os.path.join(video_save_path, f"iteration_{iteration}_{special}.mp4"),
+            (
+                os.path.join(video_save_path, f"iteration_{iteration}.mp4")
+                if special == ""
+                else os.path.join(
+                    video_save_path, f"iteration_{iteration}_{special}.mp4"
+                )
+            ),
             fps=fps,
             dpi=dpi,
         )
@@ -217,32 +225,45 @@ if __name__ == "__main__":
             flow_model.eval()
             t_span = torch.linspace(0.0, 1.0, 1000)
             x_0 = flow_model.gaussian_generator(500).to(config.device)
-            condition=torch.zeros_like(x_0).to(config.device)
+            condition = torch.zeros_like(x_0).to(config.device)
             x_t = (
-                flow_model.sample_forward_process(t_span=t_span, x_0=x_0, condition=condition)
+                flow_model.sample_forward_process(
+                    t_span=t_span, x_0=x_0, condition=condition
+                )
                 .cpu()
                 .detach()
             )
             x_t = [
                 x.squeeze(0) for x in torch.split(x_t, split_size_or_sections=1, dim=0)
             ]
-            render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100)
+            render_video(
+                x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100
+            )
 
         if iteration > 0 and iteration % config.parameter.eval_freq == 0:
             flow_model.eval()
             t_span = torch.linspace(0.0, 1.0, 1000)
             x_0 = flow_model.gaussian_generator(500).to(config.device)
-            condition=torch.zeros_like(x_0).to(config.device)
+            condition = torch.zeros_like(x_0).to(config.device)
             condition[:, 1] = condition[:, 1] + 1.0
             x_t = (
-                flow_model.sample_forward_process(t_span=t_span, x_0=x_0, condition=condition)
+                flow_model.sample_forward_process(
+                    t_span=t_span, x_0=x_0, condition=condition
+                )
                 .cpu()
                 .detach()
             )
             x_t = [
                 x.squeeze(0) for x in torch.split(x_t, split_size_or_sections=1, dim=0)
             ]
-            render_video(x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100, special="x1=1")
+            render_video(
+                x_t,
+                config.parameter.video_save_path,
+                iteration,
+                fps=100,
+                dpi=100,
+                special="x1=1",
+            )
 
         batch_data = next(data_generator)
 
@@ -261,7 +282,9 @@ if __name__ == "__main__":
         if config.parameter.training_loss_type == "flow_matching":
             x0 = flow_model.gaussian_generator(batch_data.shape[0]).to(config.device)
             # loss = flow_model.flow_matching_loss(x0=x0, x1=batch_data, condition=condition_data)
-            loss = flow_model.flow_matching_loss_with_mask(x0=x0, x1=batch_data, mask=mask, condition=condition_data)
+            loss = flow_model.flow_matching_loss_with_mask(
+                x0=x0, x1=batch_data, mask=mask, condition=condition_data
+            )
         else:
             raise NotImplementedError("Unknown loss type")
         optimizer.zero_grad()
@@ -315,9 +338,11 @@ if __name__ == "__main__":
             flow_model.eval()
             t_span = torch.linspace(0.0, 1.0, 1000)
             x_0 = flow_model.gaussian_generator(500).to(config.device)
-            condition=torch.zeros_like(x_0).to(config.device)
+            condition = torch.zeros_like(x_0).to(config.device)
             x_t = (
-                flow_model.sample_forward_process(t_span=t_span, x_0=x_0, condition=condition)
+                flow_model.sample_forward_process(
+                    t_span=t_span, x_0=x_0, condition=condition
+                )
                 .cpu()
                 .detach()
             )
@@ -332,10 +357,12 @@ if __name__ == "__main__":
             flow_model.eval()
             t_span = torch.linspace(0.0, 1.0, 1000)
             x_0 = flow_model.gaussian_generator(500).to(config.device)
-            condition=torch.zeros_like(x_0).to(config.device)
+            condition = torch.zeros_like(x_0).to(config.device)
             condition[:, 1] = condition[:, 1] + 1.0
             x_t = (
-                flow_model.sample_forward_process(t_span=t_span, x_0=x_0, condition=condition)
+                flow_model.sample_forward_process(
+                    t_span=t_span, x_0=x_0, condition=condition
+                )
                 .cpu()
                 .detach()
             )
@@ -343,7 +370,12 @@ if __name__ == "__main__":
                 x.squeeze(0) for x in torch.split(x_t, split_size_or_sections=1, dim=0)
             ]
             render_video(
-                x_t, config.parameter.video_save_path, iteration, fps=100, dpi=100, special="x1=1"
+                x_t,
+                config.parameter.video_save_path,
+                iteration,
+                fps=100,
+                dpi=100,
+                special="x1=1",
             )
 
         if (iteration + 1) % config.parameter.checkpoint_freq == 0:

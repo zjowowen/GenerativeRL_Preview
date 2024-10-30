@@ -2,13 +2,13 @@ import torch
 from easydict import EasyDict
 import d4rl
 
-env_id="halfcheetah-medium-expert-v2"
+env_id = "halfcheetah-medium-expert-v2"
 action_size = 6
 state_size = 17
-algorithm="IDQL"
+algorithm = "IDQL"
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 
-t_embedding_dim = 32  
+t_embedding_dim = 32
 t_encoder = dict(
     type="GaussianFourierProjectionTimeEncoder",
     args=dict(

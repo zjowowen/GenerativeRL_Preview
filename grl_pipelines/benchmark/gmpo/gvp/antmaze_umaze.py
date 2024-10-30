@@ -1,7 +1,7 @@
 import torch
 from easydict import EasyDict
 
-env_id="antmaze-umaze-v0"
+env_id = "antmaze-umaze-v0"
 action_size = 8
 state_size = 29
 algorithm_type = "GMPO"
@@ -198,4 +198,3 @@ if __name__ == "__main__":
 
     log.info("config: \n{}".format(config))
     gp_pipeline(config)
-

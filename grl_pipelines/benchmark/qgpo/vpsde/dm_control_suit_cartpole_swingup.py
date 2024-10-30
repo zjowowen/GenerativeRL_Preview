@@ -1,10 +1,10 @@
 import torch
 from easydict import EasyDict
 
-data_path=""
-domain_name="cartpole"
-task_name="swingup"
-env_id=f"{domain_name}-{task_name}"
+data_path = ""
+domain_name = "cartpole"
+task_name = "swingup"
+env_id = f"{domain_name}-{task_name}"
 action_size = 1
 state_size = 5
 
@@ -67,8 +67,7 @@ config = EasyDict(
                         ),
                         state_encoder=dict(
                             type="TensorDictConcatenateEncoder",
-                            args=dict(
-                            ),
+                            args=dict(),
                         ),
                     ),
                 ),
@@ -110,8 +109,7 @@ config = EasyDict(
                             t_encoder=t_encoder,
                             condition_encoder=dict(
                                 type="TensorDictConcatenateEncoder",
-                                args=dict(
-                                ),
+                                args=dict(),
                             ),
                             backbone=dict(
                                 type="TemporalSpatialResidualNet",
@@ -130,8 +128,7 @@ config = EasyDict(
                         t_encoder=t_encoder,
                         condition_encoder=dict(
                             type="TensorDictConcatenateEncoder",
-                            args=dict(
-                            ),
+                            args=dict(),
                         ),
                         backbone=dict(
                             type="ConcatenateMLP",
@@ -195,7 +192,6 @@ if __name__ == "__main__":
     from grl.algorithms.qgpo import QGPOAlgorithm
     from grl.utils.log import log
 
-
     def qgpo_pipeline(config):
 
         qgpo = QGPOAlgorithm(config)
@@ -220,5 +216,6 @@ if __name__ == "__main__":
         # ---------------------------------------
         # Customized deploy code ↑
         # ---------------------------------------
+
     log.info("config: \n{}".format(config))
     qgpo_pipeline(config)

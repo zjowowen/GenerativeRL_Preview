@@ -480,10 +480,9 @@ class IDQLAlgorithm:
                 )
 
                 if (
-                    hasattr(config.parameter, "checkpoint_freq") and
-                    epoch == 0
-                    or (epoch + 1) % config.parameter.checkpoint_freq
-                    == 0
+                    hasattr(config.parameter, "checkpoint_freq")
+                    and epoch == 0
+                    or (epoch + 1) % config.parameter.checkpoint_freq == 0
                 ):
                     save_model(
                         path=config.parameter.checkpoint_path,
@@ -533,10 +532,9 @@ class IDQLAlgorithm:
                 self.behaviour_policy_train_epoch = epoch
 
                 if (
-                    hasattr(config.parameter, "checkpoint_freq") and
-                    epoch == 0
-                    or (epoch + 1) % config.parameter.checkpoint_freq
-                    == 0
+                    hasattr(config.parameter, "checkpoint_freq")
+                    and epoch == 0
+                    or (epoch + 1) % config.parameter.checkpoint_freq == 0
                 ):
                     evaluation_results = evaluate(
                         self.model["IDQLPolicy"],

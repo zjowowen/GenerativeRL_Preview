@@ -17,19 +17,23 @@ import torch as th
 import torch.nn as nn
 from torch._utils import _flatten_dense_tensors, _unflatten_dense_tensors
 
+
 class SiLU(nn.Module):
     def forward(self, x):
         return x * th.sigmoid(x)
 
+
 class GroupNorm32(nn.GroupNorm):
     def forward(self, x):
         return super().forward(x.float()).type(x.dtype)
-    
+
+
 def linear(*args, **kwargs):
     """
     Create a linear module.
     """
     return nn.Linear(*args, **kwargs)
+
 
 def avg_pool_nd(dims, *args, **kwargs):
     """
@@ -43,6 +47,7 @@ def avg_pool_nd(dims, *args, **kwargs):
         return nn.AvgPool3d(*args, **kwargs)
     raise ValueError(f"unsupported dimensions: {dims}")
 
+
 def conv_nd(dims, *args, **kwargs):
     """
     Create a 1D, 2D, or 3D convolution module.
@@ -55,6 +60,7 @@ def conv_nd(dims, *args, **kwargs):
         return nn.Conv3d(*args, **kwargs)
     raise ValueError(f"unsupported dimensions: {dims}")
 
+
 def zero_module(module):
     """
     Zero out the parameters of a module and return it.
@@ -62,6 +68,7 @@ def zero_module(module):
     for p in module.parameters():
         p.detach().zero_()
     return module
+
 
 def normalization(channels):
     """
@@ -71,6 +78,7 @@ def normalization(channels):
     :return: an nn.Module for normalization.
     """
     return GroupNorm32(32, channels)
+
 
 def timestep_embedding(timesteps, dim, max_period=10000):
     """
@@ -92,6 +100,7 @@ def timestep_embedding(timesteps, dim, max_period=10000):
         embedding = th.cat([embedding, th.zeros_like(embedding[:, :1])], dim=-1)
     return embedding
 
+
 def checkpoint(func, inputs, params, flag):
     """
     Evaluate a function without caching intermediate activations, allowing for
@@ -108,6 +117,7 @@ def checkpoint(func, inputs, params, flag):
         return CheckpointFunction.apply(func, len(inputs), *args)
     else:
         return func(*inputs)
+
 
 class CheckpointFunction(th.autograd.Function):
     @staticmethod
@@ -139,6 +149,7 @@ class CheckpointFunction(th.autograd.Function):
         del output_tensors
         return (None, None) + input_grads
 
+
 def convert_module_to_f16(l):
     """
     Convert primitive modules to float16.
@@ -147,6 +158,7 @@ def convert_module_to_f16(l):
         l.weight.data = l.weight.data.half()
         l.bias.data = l.bias.data.half()
 
+
 def convert_module_to_f32(l):
     """
     Convert primitive modules to float32, undoing convert_module_to_f16().
@@ -154,6 +166,7 @@ def convert_module_to_f32(l):
     if isinstance(l, (nn.Conv1d, nn.Conv2d, nn.Conv3d)):
         l.weight.data = l.weight.data.float()
         l.bias.data = l.bias.data.float()
+
 
 def make_master_params(model_params):
     """
@@ -167,6 +180,7 @@ def make_master_params(model_params):
     master_params.requires_grad = True
     return [master_params]
 
+
 def model_grads_to_master_grads(model_params, master_params):
     """
     Copy the gradients from the model parameters into the master parameters
@@ -175,6 +189,7 @@ def model_grads_to_master_grads(model_params, master_params):
     master_params[0].grad = _flatten_dense_tensors(
         [param.grad.data.detach().float() for param in model_params]
     )
+
 
 def master_params_to_model_params(model_params, master_params):
     """
@@ -189,11 +204,15 @@ def master_params_to_model_params(model_params, master_params):
     ):
         param.detach().copy_(master_param)
 
+
 def unflatten_master_params(model_params, master_params):
     """
     Unflatten the master parameters to look like model_params.
     """
-    return _unflatten_dense_tensors(master_params[0].detach(), tuple(tensor for tensor in model_params))
+    return _unflatten_dense_tensors(
+        master_params[0].detach(), tuple(tensor for tensor in model_params)
+    )
+
 
 def zero_grad(model_params):
     for param in model_params:
@@ -201,6 +220,7 @@ def zero_grad(model_params):
         if param.grad is not None:
             param.grad.detach_()
             param.grad.zero_()
+
 
 class TimestepBlock(nn.Module):
     """
@@ -212,6 +232,7 @@ class TimestepBlock(nn.Module):
         """
         Apply the module to `x` given `emb` timestep embeddings.
         """
+
 
 class TimestepEmbedSequential(nn.Sequential, TimestepBlock):
     """
@@ -226,6 +247,7 @@ class TimestepEmbedSequential(nn.Sequential, TimestepBlock):
             else:
                 x = layer(x)
         return x
+
 
 class Upsample(nn.Module):
     """
@@ -257,6 +279,7 @@ class Upsample(nn.Module):
             x = self.conv(x)
         return x
 
+
 class Downsample(nn.Module):
     """
     A downsampling layer with an optional convolution.
@@ -281,6 +304,7 @@ class Downsample(nn.Module):
     def forward(self, x):
         assert x.shape[1] == self.channels
         return self.op(x)
+
 
 class ResBlock(TimestepBlock):
     """
@@ -374,6 +398,7 @@ class ResBlock(TimestepBlock):
             h = self.out_layers(h)
         return self.skip_connection(x) + h
 
+
 class AttentionBlock(nn.Module):
     """
     An attention block that allows spatial positions to attend to each other.
@@ -405,6 +430,7 @@ class AttentionBlock(nn.Module):
         h = h.reshape(b, -1, h.shape[-1])
         h = self.proj_out(h)
         return (x + h).reshape(b, c, *spatial)
+
 
 class QKVAttention(nn.Module):
     """
@@ -447,8 +473,9 @@ class QKVAttention(nn.Module):
         # We perform two matmuls with the same number of ops.
         # The first computes the weight matrix, the second computes
         # the combination of the value vectors.
-        matmul_ops = 2 * b * (num_spatial ** 2) * c
+        matmul_ops = 2 * b * (num_spatial**2) * c
         model.total_ops += th.DoubleTensor([matmul_ops])
+
 
 class unet_2D(nn.Module):
     """
@@ -697,6 +724,7 @@ class unet_2D(nn.Module):
             result["up"].append(h.type(x.dtype))
         return result
 
+
 class SuperResModel(unet_2D):
     """
     A UNetModel that performs super-resolution.
@@ -718,4 +746,3 @@ class SuperResModel(unet_2D):
         upsampled = F.interpolate(low_res, (new_height, new_width), mode="bilinear")
         x = th.cat([x, upsampled], dim=1)
         return super().get_feature_vectors(x, timesteps, **kwargs)
-

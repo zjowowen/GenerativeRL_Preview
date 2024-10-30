@@ -5,7 +5,7 @@ env_id = "halfcheetah-medium-expert-v2"
 action_size = 6
 state_size = 17
 algorithm_type = "DiffusionQL"
-q_learning_type =  "in_support_ql" # "IQL" #
+q_learning_type = "in_support_ql"  # "IQL" #
 solver_type = "ODESolver"
 model_type = "DiffusionModel"
 generative_model_type = "GVP"
@@ -55,7 +55,9 @@ config = EasyDict(
     train=dict(
         project=project_name,
         device=device,
-        wandb=dict(project=f"{q_learning_type}-{env_id}-{algorithm_type}-{generative_model_type}"),
+        wandb=dict(
+            project=f"{q_learning_type}-{env_id}-{algorithm_type}-{generative_model_type}"
+        ),
         simulator=dict(
             type="GymEnvSimulator",
             args=dict(

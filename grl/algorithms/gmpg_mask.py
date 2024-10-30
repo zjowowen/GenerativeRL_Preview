@@ -217,10 +217,13 @@ class GMPGPolicy(nn.Module):
         Returns:
             action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
+        x0 = self.guided_model.gaussian_generator(batch_size=state.shape[0])
+        condition_action = torch.zeros_like(x0)
+        condition_data = torch.concatenate([state, condition_action], dim=-1)
 
         return self.guided_model.sample(
             t_span=t_span,
-            condition=state,
+            condition=condition_data,
             batch_size=batch_size,
             with_grad=with_grad,
             solver_config=solver_config,
@@ -246,9 +249,13 @@ class GMPGPolicy(nn.Module):
         Returns:
             action (:obj:`Union[torch.Tensor, TensorDict]`): The output action.
         """
+        x0 = self.guided_model.gaussian_generator(batch_size=state.shape[0])
+        condition_action = torch.zeros_like(x0)
+        condition_data = torch.concatenate([state, condition_action], dim=-1)
+
         return self.base_model.sample(
             t_span=t_span,
-            condition=state,
+            condition=condition_data,
             batch_size=batch_size,
             with_grad=with_grad,
             solver_config=solver_config,
@@ -301,7 +308,14 @@ class GMPGPolicy(nn.Module):
             "SchrodingerBridgeConditionalFlowModel",
         ]:
             x0 = self.base_model.gaussian_generator(batch_size=state.shape[0])
-            return self.base_model.flow_matching_loss(x0=x0, x1=action, condition=state)
+            mask = torch.rand_like(x0) > 0.5
+            mask = mask.to(x0.device)
+            condition_action = torch.masked_fill(action, mask, 0.0)
+            condition_data = torch.concatenate([state, condition_action], dim=-1)
+            loss = self.base_model.flow_matching_loss_with_mask(
+                x0=x0, x1=action, mask=mask, condition=condition_data
+            )
+            return loss
 
     def policy_gradient_loss(
         self,
@@ -324,13 +338,23 @@ class GMPGPolicy(nn.Module):
 
         if repeats == 1:
             state_repeated = state
+            x0 = self.guided_model.gaussian_generator(batch_size=state.shape[0])
+            condition_action = torch.zeros_like(x0)
+            condition_data = torch.concatenate([state, condition_action], dim=-1)
+            condition_data_repeated = condition_data
         else:
             state_repeated = torch.repeat_interleave(
                 state, repeats=repeats, dim=0
             ).requires_grad_()
+            x0 = self.guided_model.gaussian_generator(batch_size=state.shape[0])
+            condition_action = torch.zeros_like(x0)
+            condition_data = torch.concatenate([state, condition_action], dim=-1)
+            condition_data_repeated = torch.repeat_interleave(
+                condition_data, repeats=repeats, dim=0
+            ).requires_grad_()
 
         action_repeated = self.guided_model.sample(
-            t_span=t_span, condition=state_repeated, with_grad=True
+            t_span=t_span, condition=condition_data_repeated, with_grad=True
         )
 
         q_value_repeated = self.critic(action_repeated, state_repeated).squeeze(dim=-1)
@@ -338,7 +362,7 @@ class GMPGPolicy(nn.Module):
         log_p = compute_likelihood(
             model=self.guided_model,
             x=action_repeated,
-            condition=state_repeated,
+            condition=condition_data_repeated,
             t=t_span,
             using_Hutchinson_trace_estimator=True,
         )
@@ -351,7 +375,7 @@ class GMPGPolicy(nn.Module):
         log_mu = compute_likelihood(
             model=self.base_model,
             x=action_repeated,
-            condition=state_repeated,
+            condition=condition_data_repeated,
             t=t_span,
             using_Hutchinson_trace_estimator=True,
         )
@@ -392,8 +416,16 @@ class GMPGPolicy(nn.Module):
         t_span = torch.linspace(0.0, 1.0, gradtime_step).to(state.device)
 
         state_repeated = torch.repeat_interleave(state, repeats=repeats, dim=0)
+
+        x0 = self.guided_model.gaussian_generator(batch_size=state.shape[0])
+        condition_action = torch.zeros_like(x0)
+        condition_data = torch.concatenate([state, condition_action], dim=-1)
+        condition_data_repeated = torch.repeat_interleave(
+            condition_data, repeats=repeats, dim=0
+        ).requires_grad_()
+
         action_repeated = self.base_model.sample(
-            t_span=t_span, condition=state_repeated, with_grad=False
+            t_span=t_span, condition=condition_data_repeated, with_grad=False
         )
         q_value_repeated = self.critic(action_repeated, state_repeated).squeeze(dim=-1)
         v_value_repeated = self.critic.v(state_repeated).squeeze(dim=-1)
@@ -408,7 +440,7 @@ class GMPGPolicy(nn.Module):
         log_p = compute_likelihood(
             model=self.guided_model,
             x=action_repeated,
-            condition=state_repeated,
+            condition=condition_data_repeated,
             t=t_span,
             using_Hutchinson_trace_estimator=True,
         )
@@ -419,7 +451,7 @@ class GMPGPolicy(nn.Module):
         log_mu = compute_likelihood(
             model=self.base_model,
             x=action_repeated,
-            condition=state_repeated,
+            condition=condition_data_repeated,
             t=t_span,
             using_Hutchinson_trace_estimator=True,
         )
@@ -450,9 +482,16 @@ class GMPGPolicy(nn.Module):
         assert repeats > 1
         t_span = torch.linspace(0.0, 1.0, gradtime_step).to(state.device)
 
+        x0 = self.guided_model.gaussian_generator(batch_size=state.shape[0])
+        condition_action = torch.zeros_like(x0)
+        condition_data = torch.concatenate([state, condition_action], dim=-1)
+        condition_data_repeated = torch.repeat_interleave(
+            condition_data, repeats=repeats, dim=0
+        ).requires_grad_()
+
         state_repeated = torch.repeat_interleave(state, repeats=repeats, dim=0)
         action_repeated = self.base_model.sample(
-            t_span=t_span, condition=state_repeated, with_grad=False
+            t_span=t_span, condition=condition_data_repeated, with_grad=False
         )
         q_value_repeated = self.critic(action_repeated, state_repeated).squeeze(dim=-1)
         q_value_reshaped = q_value_repeated.reshape(-1, repeats)
@@ -463,7 +502,7 @@ class GMPGPolicy(nn.Module):
         log_p = compute_likelihood(
             model=self.guided_model,
             x=action_repeated,
-            condition=state_repeated,
+            condition=condition_data_repeated,
             t=t_span,
             using_Hutchinson_trace_estimator=True,
         )
@@ -474,7 +513,7 @@ class GMPGPolicy(nn.Module):
         log_mu = compute_likelihood(
             model=self.base_model,
             x=action_repeated,
-            condition=state_repeated,
+            condition=condition_data_repeated,
             t=t_span,
             using_Hutchinson_trace_estimator=True,
         )
@@ -508,13 +547,23 @@ class GMPGPolicy(nn.Module):
 
         if repeats == 1:
             state_repeated = state
+            x0 = self.guided_model.gaussian_generator(batch_size=state.shape[0])
+            condition_action = torch.zeros_like(x0)
+            condition_data = torch.concatenate([state, condition_action], dim=-1)
+            condition_data_repeated = condition_data
         else:
             state_repeated = torch.repeat_interleave(
                 state, repeats=repeats, dim=0
             ).requires_grad_()
+            x0 = self.guided_model.gaussian_generator(batch_size=state.shape[0])
+            condition_action = torch.zeros_like(x0)
+            condition_data = torch.concatenate([state, condition_action], dim=-1)
+            condition_data_repeated = torch.repeat_interleave(
+                condition_data, repeats=repeats, dim=0
+            ).requires_grad_()
 
         action_repeated = self.guided_model.sample(
-            t_span=t_span, condition=state_repeated, with_grad=True
+            t_span=t_span, condition=condition_data_repeated, with_grad=True
         )
 
         q_value_repeated = self.critic(action_repeated, state_repeated).squeeze(dim=-1)
@@ -844,9 +893,14 @@ class GMPGAlgorithm:
                             if obs[key].dim() == 1 and obs[key].shape[0] == 1:
                                 obs[key] = obs[key].unsqueeze(1)
                         obs = TensorDict(obs, batch_size=[1])
+
+                    x0 = model.gaussian_generator(batch_size=obs.shape[0])
+                    condition_action = torch.zeros_like(x0)
+                    condition_data = torch.concatenate([obs, condition_action], dim=-1)
+
                     action = (
                         model.sample(
-                            condition=obs,
+                            condition=condition_data,
                             t_span=(
                                 torch.linspace(0.0, 1.0, config.parameter.t_span).to(
                                     config.model.GPPolicy.device
@@ -938,15 +992,9 @@ class GMPGAlgorithm:
                     hasattr(config.parameter.evaluation, "analysis_interval")
                     and epoch % config.parameter.evaluation.analysis_interval == 0
                 ):
-
-                    if hasattr(config.parameter.evaluation, "analysis_repeat"):
-                        analysis_repeat = config.parameter.evaluation.analysis_repeat
-                    else:
-                        analysis_repeat = 10
-
-                    analysis_counter = 0
+                    timlimited = 0
                     for index, data in enumerate(replay_buffer):
-                        if analysis_counter == 0:
+                        if timlimited == 0:
                             if not os.path.exists(config.parameter.checkpoint_path):
                                 os.makedirs(config.parameter.checkpoint_path)
                             plot_distribution(
@@ -979,7 +1027,7 @@ class GMPGAlgorithm:
                             ),
                         )
 
-                        if analysis_counter == 0:
+                        if timlimited == 0:
                             plot_distribution(
                                 action.detach().cpu().numpy(),
                                 os.path.join(
@@ -988,10 +1036,17 @@ class GMPGAlgorithm:
                                 ),
                             )
 
+                        zero_action = torch.zeros_like(data["a"]).to(
+                            config.model.GPPolicy.device
+                        )
+                        condition_data = torch.concatenate(
+                            [data["s"].to(config.model.GPPolicy.device), zero_action],
+                            dim=-1,
+                        )
                         log_p = compute_likelihood(
                             model=self.model["GPPolicy"].base_model,
                             x=data["a"].to(config.model.GPPolicy.device),
-                            condition=data["s"].to(config.model.GPPolicy.device),
+                            condition=condition_data,
                             t=torch.linspace(0.0, 1.0, 100).to(
                                 config.model.GPPolicy.device
                             ),
@@ -1005,8 +1060,8 @@ class GMPGAlgorithm:
 
                         wandb.log(data=evaluation_results, commit=False)
 
-                        analysis_counter += 1
-                        if analysis_counter >= analysis_repeat:
+                        timlimited += 1
+                        if timlimited > 10:
                             logp_dict = {
                                 "logp_max": logp_max,
                                 "logp_min": logp_min,
@@ -1373,6 +1428,8 @@ class GMPGAlgorithm:
 
                     self.guided_policy_train_epoch = epoch
 
+                    timlimited = 0
+
                     if (
                         hasattr(config.parameter.evaluation, "analysis_interval")
                         and guided_policy_train_iter
@@ -1395,10 +1452,9 @@ class GMPGAlgorithm:
                         else:
                             analysis_distribution = True
 
-                        analysis_counter = 0
                         for index, data in enumerate(replay_buffer):
 
-                            if analysis_counter == 0 and analysis_distribution:
+                            if timlimited == 0 and analysis_distribution:
                                 if not os.path.exists(config.parameter.checkpoint_path):
                                     os.makedirs(config.parameter.checkpoint_path)
                                 plot_distribution(
@@ -1433,10 +1489,20 @@ class GMPGAlgorithm:
                                 ),
                             )
 
+                            zero_action = torch.zeros_like(data["a"]).to(
+                                config.model.GPPolicy.device
+                            )
+                            condition_data = torch.concatenate(
+                                [
+                                    data["s"].to(config.model.GPPolicy.device),
+                                    zero_action,
+                                ],
+                                dim=-1,
+                            )
                             log_p = compute_likelihood(
                                 model=self.model["GPPolicy"].guided_model,
                                 x=data["a"].to(config.model.GPPolicy.device),
-                                condition=data["s"].to(config.model.GPPolicy.device),
+                                condition=condition_data,
                                 t=torch.linspace(0.0, 1.0, 100).to(
                                     config.model.GPPolicy.device
                                 ),
@@ -1451,7 +1517,7 @@ class GMPGAlgorithm:
                                 evaluation_results["evaluation/return_mean"]
                             )
 
-                            if analysis_counter == 0 and analysis_distribution:
+                            if timlimited == 0 and analysis_distribution:
                                 plot_distribution(
                                     action.detach().cpu().numpy(),
                                     os.path.join(
@@ -1460,9 +1526,9 @@ class GMPGAlgorithm:
                                     ),
                                 )
 
-                            analysis_counter += 1
+                            timlimited += 1
                             wandb.log(data=evaluation_results, commit=False)
-                            if analysis_counter > analysis_repeat:
+                            if timlimited > analysis_repeat:
                                 logp_dict = {
                                     "logp_max": logp_max,
                                     "logp_min": logp_min,

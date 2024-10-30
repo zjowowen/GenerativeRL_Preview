@@ -245,7 +245,9 @@ class VelocityFunction:
                     )
                 else:
                     if sum_all_elements:
-                        return torch.sum(0.5 * (velocity_value - velocity) ** 2, dim=(1,))
+                        return torch.sum(
+                            0.5 * (velocity_value - velocity) ** 2, dim=(1,)
+                        )
                     else:
                         return 0.5 * (velocity_value - velocity) ** 2
             elif isinstance(velocity_value, TensorDict):
@@ -263,11 +265,17 @@ class VelocityFunction:
                 else:
                     if sum_all_elements:
                         return treetensor.torch.sum(
-                            0.5 * (velocity_value - velocity) * (velocity_value - velocity),
+                            0.5
+                            * (velocity_value - velocity)
+                            * (velocity_value - velocity),
                             dim=(1,),
                         )
                     else:
-                        return 0.5 * (velocity_value - velocity) * (velocity_value - velocity)
+                        return (
+                            0.5
+                            * (velocity_value - velocity)
+                            * (velocity_value - velocity)
+                        )
             else:
                 raise NotImplementedError(
                     "Unknown type of velocity_value {}".format(type)

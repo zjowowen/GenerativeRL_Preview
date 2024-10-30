@@ -198,4 +198,3 @@ if __name__ == "__main__":
 
     log.info("config: \n{}".format(config))
     gp_pipeline(config)
-
