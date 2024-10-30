@@ -70,7 +70,7 @@ python ./grl_pipelines/benchmark/gmpo/gvp/halfcheetah_medium_expert.py
 
 ## RL-Unplugged DeepMind Control Suite
 
-| Algo.                           | [D4PG](https://arxiv.org/abs/2209.14548) | [RABM](https://arxiv.org/abs/2208.06193)         |[QGPO](https://proceedings.mlr.press/v202/lu23d/lu23d.pdf) |[IDQL](https://arxiv.org/abs/2304.10573)|[SRPO](https://arxiv.org/abs/2310.07297)|
+| Algo.                           | [D4PG](https://arxiv.org/abs/1804.08617) | [RABM](https://arxiv.org/abs/2002.08396)         |[QGPO](https://proceedings.mlr.press/v202/lu23d/lu23d.pdf) |[IDQL](https://arxiv.org/abs/2304.10573)|[SRPO](https://arxiv.org/abs/2310.07297)|
 |-------------------------------- | ---------- | ---------- | ---------- | --------- | --------- |
 | Env./Model.                     | /                                        |  /                                               | VPSDE                                                     |  VPSDE                                 |  VPSDE                                 |
 | Cartpole swingup                | 856 ± 13                                 |  798 ± 31                                        | 806 ± 54                                                  |  851 ± 9                               |  842 ± 13                              |
