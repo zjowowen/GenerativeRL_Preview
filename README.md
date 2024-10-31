@@ -1,4 +1,4 @@
-# Generative Reinforcement Learning (GRL)
+# Generative Reinforcement Learning
     
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
@@ -55,6 +55,7 @@ For stable version of **GenerativeRL**, please visit [GenerativeRL](https://gith
 
 | Algo./Models                                        | Diffusion Model                                                                                                                                             |  Flow Model            |
 |---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| [IDQL](https://arxiv.org/abs/2304.10573)            | ✔                                                                                                                                                           |  🚫                   |
 | [QGPO](https://arxiv.org/abs/2304.12824)            | ✔                                                                                                                                                           |  🚫                   |
 | [SRPO](https://arxiv.org/abs/2310.07297)            | ✔                                                                                                                                                           |  🚫                   |
 | GMPO                                                | ✔  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1A79ueOdLvTfrytjOPyfxb6zSKXi1aePv)  | ✔                     |
