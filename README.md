@@ -136,6 +136,18 @@ We offer some baseline experiments to evaluate the performance of generative rei
 
 We welcome contributions to GenerativeRL! If you are interested in contributing, please refer to the [Contributing Guide](CONTRIBUTING.md).
 
+## Citation
+
+```latex
+@misc{generative_rl,
+    title={GenerativeRL: A Python Library for Solving Reinforcement Learning Problems Using Generative Models},
+    author={Zhang, Jinouwen and Xue, Rongkun and Niu, Yazhe and Chen, Yun and Chen, Xinyan and Wang, Ruiheng and Liu, Yu},
+    publisher={GitHub},
+    howpublished={\url{https://github.com/opendilab/GenerativeRL}},
+    year={2024},
+}
+```
+
 ## License
 
 GenerativeRL is licensed under the Apache License 2.0. See [LICENSE](LICENSE) for more details.

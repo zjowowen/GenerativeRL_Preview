@@ -135,6 +135,18 @@ if __name__ == '__main__':
 
 我们欢迎所有对 GenerativeRL 的贡献和支持！请参考 [开源贡献指南](CONTRIBUTING.md)。
 
+## 引用
+
+```latex
+@misc{generative_rl,
+    title={GenerativeRL: A Python Library for Solving Reinforcement Learning Problems Using Generative Models},
+    author={Zhang, Jinouwen and Xue, Rongkun and Niu, Yazhe and Chen, Yun and Chen, Xinyan and Wang, Ruiheng and Liu, Yu},
+    publisher={GitHub},
+    howpublished={\url{https://github.com/opendilab/GenerativeRL}},
+    year={2024},
+}
+```
+
 ## 开源协议
 
 GenerativeRL 开源协议为 Apache License 2.0。更多信息和文档，请参考 [开源协议](LICENSE)。
