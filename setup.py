@@ -1,9 +1,14 @@
 from setuptools import setup, find_packages
 
+with open('README.md', 'r', encoding="utf-8") as f:
+    readme = f.read()
+
 setup(
     name='GenerativeRL',
     version='0.0.1',
     description='PyTorch implementations of generative reinforcement learning algorithms',
+    long_description=readme,
+    long_description_content_type='text/markdown',
     author='zjowowen',
     author_email="zjowowen@gmail.com",
     url="https://github.com/zjowowen/GenerativeRL_Preview",
