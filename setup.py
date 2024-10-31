@@ -5,6 +5,8 @@ setup(
     version='0.0.1',
     description='PyTorch implementations of generative reinforcement learning algorithms',
     author='zjowowen',
+    author_email="zjowowen@gmail.com",
+    url="https://github.com/zjowowen/GenerativeRL_Preview",
 
     packages=find_packages(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
@@ -47,5 +49,15 @@ setup(
             'black',
             'isort',
         ],
-    }
+    },
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "License :: OSI Approved :: Apache Software License",
+        "Operating System :: OS Independent",
+    ],
+    license="Apache-2.0",
 )
