@@ -2,23 +2,23 @@
 
 English | [简体中文(Simplified Chinese)](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/README.zh.md)
 
-## Train a Generative Model
+## Train a generative model
 
-### Diffusion Model
+### Diffusion model
 
 We provide a simple colab notebook to demonstrate how to build a diffusion model using the `GenerativeRL` library. You can access the notebook [here](https://colab.research.google.com/drive/18yHUAmcMh_7xq2U6TBCtcLKX2y4YvNyk#scrollTo=aqtDAvG6cQ1V).
 
-### Flow Model
+### Flow model
 
 We provide a simple colab notebook to demonstrate how to build a flow model using the `GenerativeRL` library. You can access the notebook [here](https://colab.research.google.com/drive/1vrxREVXKsSbnsv9G2CnKPVvrbFZleElI?usp=drive_link).
 
-## Evaluate a Generative Model
+## Evaluate a generative model
 
-### Sample Generation
+### Sample generation
 
 We provide a simple colab notebook to demonstrate how to generate samples from a trained generative model using the `GenerativeRL` library. You can access the notebook [here](https://colab.research.google.com/drive/16jQhf1BDjtToxMZ4lDxB4IwGdRmr074j?usp=sharing).
 
-### Density Estimation
+### Density estimation
 
 We provide a simple colab notebook to demonstrate how to estimate the density of samples using a trained generative model using the `GenerativeRL` library. You can access the notebook [here](https://colab.research.google.com/drive/1zHsW13n338YqX87AIWG26KLC4uKQL1ZP?usp=sharing).
 
