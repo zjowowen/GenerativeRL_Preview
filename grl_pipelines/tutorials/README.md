@@ -28,26 +28,26 @@ We provide several toy examples to demonstrate the features of the `GenerativeRL
 
 ### Diverse generative models
 
-- [Diffusion Model](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/toy_examples/generative_models/swiss_roll_diffusion.py)
-- [Energy condition Diffusion Model](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/toy_examples/generative_models/swiss_roll_energy_condition.py)
-- [Independent Conditional Flow Matching Model](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/toy_examples/generative_models/swiss_roll_icfm.py)
-- [Optimal Transport Conditional Flow Matching Model](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/toy_examples/generative_models/swiss_roll_otcfm.py)
-- [SF2M](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/toy_examples/generative_models/swiss_roll_otcfm.py)
+- [Diffusion Model](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/generative_models/swiss_roll_diffusion.py)
+- [Energy condition Diffusion Model](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/generative_models/swiss_roll_energy_condition.py)
+- [Independent Conditional Flow Matching Model](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/generative_models/swiss_roll_icfm.py)
+- [Optimal Transport Conditional Flow Matching Model](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/generative_models/swiss_roll_otcfm.py)
+- [SF2M](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/generative_models/swiss_roll_otcfm.py)
 
 ### Generative model applications
 
-- [World Model](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/toy_examples/applications/swiss_roll_world_model.py)
+- [World Model](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/applications/swiss_roll_world_model.py)
 
 ### Generative model evaluation
 
-- [Likelihood Evaluation](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/toy_examples/metrics/swiss_roll_likelihood.py)
+- [Likelihood Evaluation](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/metrics/swiss_roll_likelihood.py)
 
 ### ODE/SDE solvers usages
 
-- [DPM Solver](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/toy_examples/solvers/swiss_roll_dpmsolver.py)
-- [SDE Solver](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/toy_examples/solvers/swiss_roll_sdesolver.py)
+- [DPM Solver](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/solvers/swiss_roll_dpmsolver.py)
+- [SDE Solver](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/solvers/swiss_roll_sdesolver.py)
 
 ### Special usages in GenerativeRL
 
-- [Customized Neural Network Modules](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/toy_examples/special_usages/customized_modules.py)
-- [Dict-like Structure Data Generation](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/toy_examples/special_usages/dict_tensor_ode.py)
+- [Customized Neural Network Modules](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/special_usages/customized_modules.py)
+- [Dict-like Structure Data Generation](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/special_usages/dict_tensor_ode.py)

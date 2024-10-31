@@ -28,26 +28,26 @@
 
 ### 多种生成模型
 
-- [扩散模型](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/toy_examples/generative_models/swiss_roll_diffusion.py)
-- [能量条件扩散模型](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/toy_examples/generative_models/swiss_roll_energy_condition.py)
-- [独立条件流匹配模型](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/toy_examples/generative_models/swiss_roll_icfm.py)
-- [最优输运条件流匹配模型](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/toy_examples/generative_models/swiss_roll_otcfm.py)
-- [SF2M](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/toy_examples/generative_models/swiss_roll_otcfm.py)
+- [扩散模型](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/generative_models/swiss_roll_diffusion.py)
+- [能量条件扩散模型](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/generative_models/swiss_roll_energy_condition.py)
+- [独立条件流匹配模型](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/generative_models/swiss_roll_icfm.py)
+- [最优输运条件流匹配模型](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/generative_models/swiss_roll_otcfm.py)
+- [SF2M](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/generative_models/swiss_roll_otcfm.py)
 
 ### 生成模型应用
 
-- [世界模型](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/toy_examples/applications/swiss_roll_world_model.py)
+- [世界模型](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/applications/swiss_roll_world_model.py)
 
 ### 生成模型评估
 
-- [似然性评估](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/toy_examples/metrics/swiss_roll_likelihood.py)
+- [似然性评估](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/metrics/swiss_roll_likelihood.py)
 
 ### ODE/SDE 求解器用法
 
-- [DPM 求解器](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/toy_examples/solvers/swiss_roll_dpmsolver.py)
-- [SDE 求解器](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/toy_examples/solvers/swiss_roll_sdesolver.py)
+- [DPM 求解器](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/solvers/swiss_roll_dpmsolver.py)
+- [SDE 求解器](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/solvers/swiss_roll_sdesolver.py)
 
 ### GenerativeRL 的特殊用法
 
-- [自定义神经网络模块](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/toy_examples/special_usages/customized_modules.py)
-- [类似字典结构的数据生成](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/toy_examples/special_usages/dict_tensor_ode.py)
+- [自定义神经网络模块](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/special_usages/customized_modules.py)
+- [类似字典结构的数据生成](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/special_usages/dict_tensor_ode.py)
