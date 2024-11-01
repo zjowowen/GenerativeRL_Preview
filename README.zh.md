@@ -125,11 +125,11 @@ if __name__ == '__main__':
 
 ## 教程
 
-我们提供了一些案例教程，用于帮助你更好地了解 GenerativeRL。详见于 [tutorials](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials)。
+我们提供了一些案例教程，用于帮助你更好地了解 GenerativeRL。详见于 [教程](https://github.com/zjowowen/GenerativeRL_Preview/blob/main/grl_pipelines/tutorials/README.zh.md)。
 
 ## 基线实验
 
-我们提供了一些基线实验，用于评估生成式强化学习算法的性能。详见于 [benchmark](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/benchmark)。
+我们提供了一些基线实验，用于评估生成式强化学习算法的性能。详见于 [基线实验](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/benchmark/README.zh.md)。
 
 ## 开源支持
 
