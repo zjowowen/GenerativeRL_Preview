@@ -1178,6 +1178,75 @@
 
     <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">len</span>
+
+<span class="k">class</span> <span class="nc">GPAtariVisualTensorDictDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">max_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000000</span><span class="p">,</span>
+    <span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">len</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">storage</span> <span class="o">=</span> <span class="n">LazyMemmapStorage</span><span class="p">(</span><span class="n">max_size</span><span class="o">=</span><span class="n">max_size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">episode_counter</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">extend_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">episode_data</span><span class="p">:</span> <span class="n">List</span><span class="p">):</span>
+        <span class="c1"># concatenate the data into the dataset</span>
+
+        <span class="c1"># collate the data by sorting the keys</span>
+
+        <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="s2">&quot;action&quot;</span><span class="p">,</span> <span class="s2">&quot;done&quot;</span><span class="p">,</span> <span class="s2">&quot;next_obs&quot;</span><span class="p">,</span> <span class="s2">&quot;reward&quot;</span><span class="p">]</span>
+
+        <span class="n">collated_data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">keys</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span> <span class="n">episode_data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="p">))</span>
+        <span class="p">}</span>
+
+        <span class="n">len_after_extend</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">len</span> <span class="o">+</span> <span class="n">collated_data</span><span class="p">[</span><span class="s2">&quot;obs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+            <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">len</span><span class="p">,</span> <span class="n">len_after_extend</span><span class="p">),</span>
+            <span class="n">TensorDict</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;s&quot;</span><span class="p">:</span> <span class="n">collated_data</span><span class="p">[</span><span class="s2">&quot;obs&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="n">collated_data</span><span class="p">[</span><span class="s2">&quot;action&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;r&quot;</span><span class="p">:</span> <span class="n">collated_data</span><span class="p">[</span><span class="s2">&quot;reward&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;s_&quot;</span><span class="p">:</span> <span class="n">collated_data</span><span class="p">[</span><span class="s2">&quot;next_obs&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;d&quot;</span><span class="p">:</span> <span class="n">collated_data</span><span class="p">[</span><span class="s2">&quot;done&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;episode&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">episode_counter</span><span class="p">]</span> <span class="o">*</span> <span class="n">collated_data</span><span class="p">[</span><span class="s2">&quot;obs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+                    <span class="s2">&quot;step&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">collated_data</span><span class="p">[</span><span class="s2">&quot;obs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+                <span class="p">},</span>
+                <span class="n">batch_size</span><span class="o">=</span><span class="p">[</span><span class="n">collated_data</span><span class="p">[</span><span class="s2">&quot;obs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">len</span> <span class="o">=</span> <span class="n">len_after_extend</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">episode_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">collated_data</span><span class="p">[</span><span class="s1">&#39;obs&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> data loaded in GPOnlineDataset&quot;</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overview:</span>
+<span class="sd">            Get data by index</span>
+<span class="sd">        Arguments:</span>
+<span class="sd">            index (:obj:`int`): Index of data</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            data (:obj:`dict`): Data dict</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            The data dict contains the following keys:</span>
+
+<span class="sd">            s (:obj:`torch.Tensor`): State</span>
+<span class="sd">            a (:obj:`torch.Tensor`): Action</span>
+<span class="sd">            r (:obj:`torch.Tensor`): Reward</span>
+<span class="sd">            s_ (:obj:`torch.Tensor`): Next state</span>
+<span class="sd">            d (:obj:`torch.Tensor`): Is finished</span>
+<span class="sd">            episode (:obj:`torch.Tensor`): Episode index</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">len</span>
+
 </pre></div>
 
               </article>
