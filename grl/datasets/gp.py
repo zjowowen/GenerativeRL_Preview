@@ -870,3 +870,72 @@ class GPDeepMindControlVisualTensorDictDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return self.len
+
+class GPAtariVisualTensorDictDataset(torch.utils.data.Dataset):
+    def __init__(
+        self,
+        max_size: int = 1000000,
+    ):
+
+        self.len = 0
+        self.storage = LazyMemmapStorage(max_size=max_size)
+        self.episode_counter = 0
+
+    def extend_data(self, episode_data: List):
+        # concatenate the data into the dataset
+
+        # collate the data by sorting the keys
+
+        keys = ["obs", "action", "done", "next_obs", "reward"]
+
+        collated_data = {
+            keys[i]: episode_data[i] for i in range(len(keys))
+        }
+
+        len_after_extend = self.len + collated_data["obs"].shape[0]
+        self.storage.set(
+            range(self.len, len_after_extend),
+            TensorDict(
+                {
+                    "s": collated_data["obs"],
+                    "a": collated_data["action"],
+                    "r": collated_data["reward"],
+                    "s_": collated_data["next_obs"],
+                    "d": collated_data["done"],
+                    "episode": torch.tensor([self.episode_counter] * collated_data["obs"].shape[0]),
+                    "step": torch.arange(collated_data["obs"].shape[0]),
+                },
+                batch_size=[collated_data["obs"].shape[0]],
+            ),
+        )
+        self.len = len_after_extend
+        self.episode_counter += 1
+        log.debug(f"{collated_data['obs'].shape[0]} data loaded in GPOnlineDataset")
+
+
+    def __getitem__(self, index):
+        """
+        Overview:
+            Get data by index
+        Arguments:
+            index (:obj:`int`): Index of data
+        Returns:
+            data (:obj:`dict`): Data dict
+
+        .. note::
+            The data dict contains the following keys:
+
+            s (:obj:`torch.Tensor`): State
+            a (:obj:`torch.Tensor`): Action
+            r (:obj:`torch.Tensor`): Reward
+            s_ (:obj:`torch.Tensor`): Next state
+            d (:obj:`torch.Tensor`): Is finished
+            episode (:obj:`torch.Tensor`): Episode index
+        """
+
+        data = self.storage.get(index=index)
+        return data
+
+    def __len__(self):
+        return self.len
+
