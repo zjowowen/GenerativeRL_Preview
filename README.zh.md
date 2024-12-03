@@ -153,8 +153,8 @@ if __name__ == '__main__':
 
 ### 使用 GenerativeRL 的论文
 
-- [Data-driven Aerodynamic Shape Optimization and Multi-fidelity Design Exploration using Conditional Diffusion-based Geometry Sampling Method](https://www.icas.org/ICAS_ARCHIVE/ICAS2024/data/papers/ICAS2024_0431_paper.pdf)(Yang et al. 2024)
-- [Pretrained Reversible Generation as Unsupervised Visual Representation Learning](https://arxiv.org/abs/2412.01787)(Xue et al. 2024)
+- [Data-driven Aerodynamic Shape Optimization and Multi-fidelity Design Exploration using Conditional Diffusion-based Geometry Sampling Method](https://www.icas.org/ICAS_ARCHIVE/ICAS2024/data/papers/ICAS2024_0431_paper.pdf) (Yang et al. 2024)
+- [Pretrained Reversible Generation as Unsupervised Visual Representation Learning](https://arxiv.org/abs/2412.01787) (Xue et al. 2024)
 
 ## 开源协议
 
