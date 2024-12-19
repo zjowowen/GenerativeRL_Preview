@@ -56,6 +56,7 @@
 
 ### 上传模型
 我们提供了将训练好的模型上传到 Hugging Face 网站的[示例](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/huggingface/lunarlander_continuous_qgpo_huggingface_push.py)。
+
 在这个示例中，我们将训练好的 LunarLanderContinuous 模型上传到 Hugging Face 网站，并通过[模板](https://github.com/zjowowen/GenerativeRL_Preview/tree/main/grl_pipelines/tutorials/huggingface/modelcard_template.md)自动生成模型卡片，展示模型的[详细信息](https://huggingface.co/OpenDILabCommunity/LunarLanderContinuous-v2-QGPO)。
 
 ### 下载模型
