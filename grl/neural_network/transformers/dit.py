@@ -1266,7 +1266,6 @@ class DiT1D(nn.Module):
         # Initialize patch_embed like nn.Linear (instead of nn.Conv2d):
         w = self.x_embedder.weight.data
         nn.init.xavier_uniform_(w.view([w.shape[0], -1]))
-        nn.init.constant_(self.x_embedder.proj.bias, 0)
 
         # Initialize timestep embedding MLP:
         nn.init.normal_(self.t_embedder.mlp[0].weight, std=0.02)
@@ -1301,6 +1300,7 @@ class DiT1D(nn.Module):
         # x is of shape (N, T, C), reshape to (N, C, T)
         x = torch.einsum("ntc->nct", x)
         x = self.x_embedder(x) + torch.einsum("th->ht", self.pos_embed)
+        x = torch.einsum("nht->nth", x) # (N, total_patches, hidden_size)
 
         t = self.t_embedder(t)  # (N, hidden_size)
 
