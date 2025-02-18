@@ -1,5 +1,6 @@
 # Generative Reinforcement Learning
-    
+
+[![GenerativeRL Preprint](http://img.shields.io/badge/paper-arxiv.2412.01245-B31B1B.svg)](https://arxiv.org/abs/2412.01245)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 English | [简体中文(Simplified Chinese)](https://github.com/zjowowen/GenerativeRL_Preview/blob/main/README.zh.md)

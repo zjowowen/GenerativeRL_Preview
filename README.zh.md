@@ -1,5 +1,6 @@
 # 生成式强化学习
-    
+
+[![GenerativeRL Preprint](http://img.shields.io/badge/paper-arxiv.2412.01245-B31B1B.svg)](https://arxiv.org/abs/2412.01245)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 [英语 (English)](https://github.com/zjowowen/GenerativeRL_Preview/blob/main/README.md) | 简体中文
